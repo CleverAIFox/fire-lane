@@ -2,7 +2,7 @@
 
 ★ 양성 대조 — 정본 하나를 바꾸면 틀이 따라가고, 틀을 손으로 고치면 `--check` 가 운다. 사본이면 둘 다 안 운다.
 
-밖    **틀이 지시문으로서 좋은가는 안 본다.** `docnum_check.verdicts()` · `pushready.CHECKS` · `obligations.OBLIGATIONS` 가
+밖    **틀이 지시문으로서 좋은가는 안 본다.** 금지 칸은 **정본이 하나**인지만 본다 — 금지 문장을 틀이 따로 들고 있으면 아래 시험이 운다. `docnum_check.verdicts()` · `pushready.CHECKS` · `obligations.OBLIGATIONS` 가
       옳게 세는가는 각자의 시험이 든다 — 여기는 틀이 **그것을 읽는가**만 본다.
 """
 from __future__ import annotations
@@ -50,3 +50,31 @@ def test_a_read_first_section_that_does_not_exist_fails_closed(monkeypatch, caps
 
 def test_the_real_read_first_sections_exist():
     assert T.missing_sections() == []
+
+
+def test_the_forbidden_column_is_read_from_the_repository_canon_not_written_in_the_template(monkeypatch):
+    """★ 금지 칸의 정본은 이미 코드에 있다(PLAN #204 · 사람이 정했다) — 정본에 하나 더하면 틀에 나오고 빼면 사라진다. 사본이면 그대로 남는다."""
+    base = "\n".join(T.forbidden())
+    for tool in T.fixable.HUMAN_FIRST:
+        assert f"· {tool} " in base                                  # 사람 전용 표 전부
+    monkeypatch.setitem(T.fixable.HUMAN_FIRST, "tools/zz_probe.py", "시험이 심은 사유")
+    assert "tools/zz_probe.py — 시험이 심은 사유" in "\n".join(T.forbidden())
+    monkeypatch.delitem(T.fixable.HUMAN_FIRST, "tools/zz_probe.py")
+    monkeypatch.delitem(T.fixable.HUMAN_FIRST, next(iter(T.fixable.HUMAN_FIRST)))
+    assert len(T.fixable.HUMAN_FIRST) == 10 and "· tools/golden.py " not in "\n".join(T.forbidden())
+
+
+def test_the_forbidden_column_counts_ratchets_and_the_verdict_closure_from_their_owners():
+    text = "\n".join(T.forbidden())
+    assert f"도구 {len(T.ratchet.owners())}개" in text
+    names = sorted(p.relative_to(T.ROOT / "src" / "firelane").as_posix() for p in T.shardseal.code_closure())
+    assert f"모듈 {len(names)}개" in text and "ingest.py" in text
+    assert "읽기만 한다" in text and "사람이 한다" in text
+
+
+def test_the_template_is_not_committed_anywhere_in_the_repository():
+    """★ 커밋하는 순간 그것이 사본이다(사람이 정했다). 틀을 찍은 파일이 저장소에 있으면 운다 — 첫 줄 표지로 찾는다."""
+    marker = "# 작업 지시문 틀 — 이 파일은 `tools/tasktpl.py` 가 찍는다."
+    hits = [p for p in T.ROOT.rglob("*") if p.is_file() and p.suffix in {".md", ".txt"} and ".venv" not in p.parts and "node_modules" not in p.parts
+            and ".git" not in p.parts and marker in p.read_text(encoding="utf-8", errors="ignore")]
+    assert not hits, f"틀이 저장소에 커밋돼 있다 — 사본이다: {hits}"

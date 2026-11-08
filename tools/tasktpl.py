@@ -17,13 +17,18 @@ tasktpl.py — LLM 에게 주는 **작업 지시문 틀**을 저장소에서 읽
   푸시를 막는 관문      `.githooks/pre-push.gates` 의 이름 열.
   푸시 전 한 명령의 축   `pushready.CHECKS` 의 키와 그 도구 머리말 「무엇을 보나」 줄.
   새 파일의 등재 의무    `obligations.OBLIGATIONS`.
-  ★ **사람이 이번 일에 거는 규칙**(푸시 금지 · 도장 금지 …)은 저장소에 없다 — 틀에는 빈 칸 한 줄만 두고 안 지어낸다.
+  하지 말 것(금지 칸)   **새로 안 적는다 — 정본이 이미 코드에 있다**(사람이 정했다):
+      사람 전용          `fixable.HUMAN_FIRST` — `tools/fix.sh` 가 「손도 안 댄 것」으로 찍는 그 표(이름 · 사유)
+      상한 올리기        `ratchet.owners()` — 래칫 수. 느슨해지는 쪽을 `--write` 가 거부하는 것이 집행이다
+      판정 폐포          `shardseal.code_closure()` — ingest 가 import 하는 모듈. 이 파일들이 판정을 움직인다
+      푸시 · 도장        `pushready` 머리말의 「읽기만 한다」 줄과 그 축
 
-IN    위의 다섯 곳 읽기 전용 · `--check` 의 PATH
-OUT   화면 · `--write` 가 준 경로 한 파일. 기본 위치가 없다 — 어디에 두는가는 사람이 정한다(PLAN #204)
+IN    위 곳들 읽기 전용 · `--check` 의 PATH
+OUT   화면(기본) · `--write` 가 준 경로 한 파일. **기본 위치가 없다 — 틀을 저장소에 커밋하지 않는다**(커밋하면 그것이 사본이다 · 사람이 정했다).
+      화면으로 받아 쓰고, `--check` 는 「누가 복사해 둔 틀이 낡았나」를 볼 때만 쓴다.
 PARAM READ_FIRST
 밖    **틀이 지시문으로서 좋은가는 안 본다.** 어느 지시문이 규칙을 지켰는지도 안 본다.
-      **금지 목록의 정본을 아직 모른다**(위 ★) — 봉인(`evalset_2610.key.json`)을 지키는 줄은 이 도구가 못 낸다.
+      **이번 일에만 거는 규칙**(이 일은 푸시하지 마라 같은 것)은 안 낸다 — 그것은 일을 시키는 사람의 문장이다.
 부류  조사   사람이 손으로 돌려 틀을 낸다. 어느 관문에도 안 올렸다  (DECISIONS §398)
 """
 from __future__ import annotations
@@ -34,8 +39,12 @@ import sys
 from pathlib import Path
 
 import docnum_check
+import fixable
 import obligations
 import pushready
+import ratchet
+
+from firelane import shardseal
 
 ROOT = Path(__file__).resolve().parent.parent
 GATES = ROOT / ".githooks" / "pre-push.gates"
@@ -74,6 +83,20 @@ def axes() -> list[str]:
     return [f"{k} {said.get(k, '(머리말에 설명이 없다)')}" for k, _ in pushready.CHECKS]
 
 
+def forbidden() -> list[str]:
+    """금지 칸 — **저장소의 정본을 읽어** 채운다. 사본을 안 만든다."""
+    L = ["- 사람 전용(손도 안 댄다 · 판단이 먼저다) — `fixable.HUMAN_FIRST`"]
+    for tool, why in fixable.HUMAN_FIRST.items():
+        t = " ".join(why.split())
+        L.append(f"    · {tool} — {t if len(t) <= 90 else t[:90] + '…'}")
+    L.append(f"- 상한 올리기 금지 — 래칫을 가진 도구 {len(ratchet.owners())}개. 느슨해지는 쪽은 `ratchet.py --write` 가 안 받는다(손으로 올리고 이유를 적는 일은 사람의 몫이다)")
+    names = sorted(p.relative_to(ROOT / "src" / "firelane").as_posix() for p in shardseal.code_closure())
+    L.append(f"- 판정 폐포 — ingest 가 import 하는 모듈 {len(names)}개를 고치면 판정이 움직인다: {' · '.join(names)}")
+    said = next((ln.strip() for ln in (pushready.__doc__ or "").splitlines() if "읽기만 한다" in ln), "")
+    L.append(f"- 푸시 · 도장 — {said.removeprefix('★ ').strip()} 도장(`docseal`)과 푸시는 사람이 한다")
+    return L
+
+
 def render(verdicts: dict[str, int] | None = None) -> str:
     v = verdicts if verdicts is not None else docnum_check.verdicts()
     L = ["# 작업 지시문 틀 — 이 파일은 `tools/tasktpl.py` 가 찍는다. 손으로 고치지 않는다.", ""]
@@ -88,7 +111,7 @@ def render(verdicts: dict[str, int] | None = None) -> str:
     L += ["", "## 푸시 전 한 명령 — `uv run python tools/pushready.py`"] + [f"- {a}" for a in axes()]
     L += ["", "## 새 파일에 따라붙는 의무(`obligations --new` 가 이름으로 댄다)"]
     L += [f"- {o.name} — {o.applies}: {o.fix}" for o in obligations.OBLIGATIONS]
-    L += ["", "## 이번 일에 거는 규칙 — 사람이 적는다(저장소에 정본이 없다)", "- (여기)", ""]
+    L += ["", "## 하지 말 것 — 정본은 저장소에 있다(`tools/tasktpl.py` 가 읽어 채운다)"] + forbidden() + [""]
     return "\n".join(L)
 
 
