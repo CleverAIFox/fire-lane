@@ -23,7 +23,8 @@ pushready.py — 「푸시해도 되는가」 **한 명령.**  (PLAN #207)
   ㉣ `git status` — **커밋 안 된 추적 파일 변경.** `test_fix_door` 는 커밋된 트리를 쓴다.
   ㉤ `mutate` — 변이 장부가 낡았는가(`ratchet_values()` 가 죽는가)
   ㉥ `testpick --run` — 실측으로 고른 시험 묶음(구조 규약 시험 포함 · PLAN #209)
-순서는 사슬이다 — **시험 → 래칫 → 변이 장부 → 문서 도장 → 커밋.** 목록은 그 순서로 낸다.
+  ㉦ `obligations --new` — 새 파일의 빠진 등재 의무를 이름으로(PLAN #199 · 훅이 아니라 여기 — 훅은 예산이 없다)
+순서는 사슬이다 — **시험 → 등재 의무 → 래칫 → 변이 장부 → 문서 도장 → 커밋.** 목록은 그 순서로 낸다.
 
 부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398 — 아직 어느 관문에도 안 올렸다: 2분이 예산 30초에 안 든다)
 IN    `tools/ratchet.py` · `tools/docseal.py` · `tools/mutate.py` 의 출력과 종료 코드 · `git status --porcelain`
@@ -203,9 +204,24 @@ def check_tests(root: Path, run: Runner) -> Block | None:
                  [" ".join([*_PY, "tools/testpick.py", "--run"]) + "   # 빨간 파일을 읽고 고친다 — 고친 뒤 래칫 · 도장을 다시 사슬로"])
 
 
+# ── ㉦ 새 파일의 등재 의무 ───────────────────────────────────────
+def check_obligations(root: Path, run: Runner) -> Block | None:
+    """`obligations --new` — 새 파일에 따라붙는 의무(MASTER §22·§23 등재 · 「부류」 · 「밖」) 중 **무엇이** 빠졌는지 이름으로 댄다. (PLAN #199)
+
+    ★ 훅이 아니라 **여기**다 — 등재 누락은 푸시 전에 알아야 하지만 훅은 예산 30초에 겨우 든다(2026-11-08 사람이 정했다).
+      새 파일이 없으면 0.1초대로 끝나고, 있으면 약 5초다(세 검사의 판정을 부른다).
+    """
+    rc, out = run([*_PY, "tools/obligations.py", "--new"], root)
+    if rc == 0:
+        return None
+    tail = [x.rstrip() for x in out.strip().splitlines() if x.strip()]
+    return Block("㉦", "새 파일의 등재 의무가 빠졌다", tail[:14] + ([f"… 그리고 {len(tail) - 14}줄 더"] if len(tail) > 14 else []),
+                 [" ".join([*_PY, "tools/obligations.py", "--new"]) + "   # 빠진 의무를 이름으로 댄다 — 적은 뒤 다시"])
+
+
 #: 사슬 순서 — 래칫 → 변이 장부 → 문서 도장 → 커밋. **싼 것을 앞에 두지 않는다**(사람이 칠 순서가 목록 순서다).
 CHECKS: list[tuple[str, Callable[[Path, Runner], Block | None]]] = [
-    ("㉥", check_tests), ("㉠", check_ratchet), ("㉤", check_mutate), ("㉡", check_invalid_seals),
+    ("㉥", check_tests), ("㉦", check_obligations), ("㉠", check_ratchet), ("㉤", check_mutate), ("㉡", check_invalid_seals),
     ("㉢", check_unsealed), ("㉣", check_dirty),
 ]
 
@@ -224,9 +240,9 @@ def survey(root: Path = ROOT, run: Runner = real_run, *, log: Callable[[str], No
 
 def render(blocks: list[Block]) -> str:
     if not blocks:
-        return ("✓ 푸시 가능 — 시험 묶음 · 래칫 · 변이 장부 · 도장(낡음 · 없음) · 커밋 다섯 축이 막지 않는다.\n"
+        return ("✓ 푸시 가능 — 시험 묶음 · 새 파일 등재 · 래칫 · 변이 장부 · 도장(낡음 · 없음) · 커밋 여섯 축이 막지 않는다.\n"
                 "  (전수 pytest 는 안 돌았다 — 이 도구는 그 대신이 아니다.)")
-    L = [f"✗ 푸시 불가 — 막는 것 {len(blocks)}가지 (사슬 순서: 시험 → 래칫 → 변이 장부 → 문서 도장 → 커밋)\n"]
+    L = [f"✗ 푸시 불가 — 막는 것 {len(blocks)}가지 (사슬 순서: 시험 → 등재 의무 → 래칫 → 변이 장부 → 문서 도장 → 커밋)\n"]
     for b in blocks:
         L.append(f"  {b.key} {b.what}")
         L += [f"      {d}" for d in b.detail]
