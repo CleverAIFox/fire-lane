@@ -47334,3 +47334,19 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 **닫는 문장: 로컬 npm 이 10.9.9 로 바뀌었고 로컬 · CI 의 깨끗한 `npm ci` 가 둘 다 `added 217 packages` 다 — 설치본이 같다.** 이 판에서 로컬을 다시 쟀다(`package.json` · `package-lock.json` 만 빈 디렉터리에 복사해 `npm ci --no-audit --no-fund` → `added 217 packages in 4s` · npm 10.9.9). CI 쪽 217 은 사람이 전한 값이고 이 판에서 CI 를 돌리지는 못했다.
 - **원래 도착 조건과의 차.** ① `npm -v` 가 같다 — 로컬 10.9.9 와 CI(12.2.0 으로 적혀 있었다)는 **메이저가 아직 다르다.** ② `verify` 가 엔진을 검사한다 · ③ 양성 대조 — **없다.** 닫는 근거를 「같은 lock 에서 같은 설치본이 나온다」로 낮췄고 그것은 사람이 정했다. 엔진 지문이 없으므로 로컬 npm 이 다시 어긋나도 `verify` 는 모른다(같은 병의 재발은 안 막힌다).
 - **그래서 `#203` 의 전건이 풀렸다.** 같은 엔진 조건이 아니라 같은 설치본 조건에서 `eslint` 갱신을 시도한다.
+
+## 668. PLAN #203 — eslint 10 으로 올려도 minimatch 경고는 안 사라진다, 되돌렸다 (판정 불변 · `web/navi` 변경 0)
+
+> 2026-11-08
+
+유병률  **1회** — `#203` 의 전건 `#202`(닫힘 · §667)가 서서 같은 엔진에서 다시 시도했다.
+
+강제자  없다 — 시도해 보고 되돌린 기록이다.
+
+**닫는 문장: 올리면 나빠진다 — 되돌렸고 `#203` 은 열려 있다.**
+- **올린 것.** `eslint` 9.39.5 → 10.14.0 · `@eslint/js` 9 → 10.0.1 · `eslint-plugin-react-hooks` 6.1.1 → 7.1.1. 셋째는 **끌려온 것**이다 — 6.1.1 의 peer 가 `eslint ^9` 까지라 `npm install` 이 `ERESOLVE` 로 멈춘다(`--legacy-peer-deps` 로 우회하지 않았다).
+- **본 것.** `npm run lint` 전후 **둘 다 rc 0 · 출력 0**(규칙이 움직여도 이 코드에는 안 걸렸다). `npm run build` 진입 청크 **117,152 바이트 전후 같다**. `typecheck` 통과. 단위 시험(`npm run test`)은 돌렸으나 끝줄이 워커 안내문뿐이라 **통과를 확인하지 못했다**.
+- **`npm audit`.** 8 → **11**(moderate 7 → 10 · high 1 그대로 — `zod`). 늘어난 셋은 `eslint` · `@eslint/js` · `@eslint/config-array` 이다. 경고(GHSA-g3hv-75wg-m249)의 범위는 `>=7.0.0 <11.0.1` 이다. `minimatch@3.1.5` 는 범위 **밖**이었고, eslint 10 이 그것을 없애는 대신 `config-array@0.23.5` 가 `minimatch@10.2.6`(범위 **안**)을 끌어온다. `fontnik` → `glob@7` 의 3.1.5 는 어차피 남는다.
+- **고친 판은 11.0.1 부터**이고 `@typescript-eslint/typescript-estree` 최신 8.72.1(`^10.2.2`) · `@eslint/config-array` 최신 0.23.5(`^10.2.4`) 가 둘 다 `^10` 이다 — 상류가 안 올렸다. 풀리는 길은 상류가 `minimatch ^11` 로 올리는 것이거나 `overrides` 인데, 후자는 `glob@7` 이 `require('minimatch')` 로 쓰는 자리에서 깨지므로 안 갔다(사람이 막았다).
+- **되돌림.** `package.json` · `package-lock.json` 을 `git checkout` 했고 `npm ci` 로 `node_modules` 를 맞췄다(`added 217 packages`) — `web/navi` 에는 변경이 없다.
+- **`#203` 에 남은 일.** 상류가 `minimatch ^11` 로 올리거나 개발 의존이고 번들 밖이라는 사유로 선언하고 닫는 것. 번들 밖은 사실이다(`dist` 에 0건).
