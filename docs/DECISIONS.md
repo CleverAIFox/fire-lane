@@ -47352,3 +47352,17 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 - **`#203` 에 남은 일.** 상류가 `minimatch ^11` 로 올리거나 개발 의존이고 번들 밖이라는 사유로 선언하고 닫는 것. 번들 밖은 사실이다(`dist` 에 0건).
 
 > **2026-11-08 정정 · §668 의 끝줄.** `npm run test` 는 되돌린 트리(eslint 9)에서 다시 돌렸다 — **41개 파일 534건 통과**(rc 0). eslint 10 을 얹은 채로는 여전히 통과를 확인하지 못했다. 그리고 `#203` 의 도착 조건을 「상류가 `minimatch` 11 을 받는다」로 바꿨다 — 우리가 못 당기는 조건이다(Dependabot 이 무는 집합과 `npm audit` 이 세는 집합이 달라 올려도 줄지 않았다).
+
+## 669. worktree 에서 푸시하면 본 저장소 `core.bare` 가 `true` 가 된다 — 훅과 시험 둘에서 막는다 (PLAN #200 · 안 닫음 · 판정 불변)
+
+> 2026-11-08
+
+유병률  **1회** — 2026-11-07 에 떼어낸 worktree 의 `pre-push` 뒤 본 저장소가 bare 로 보이고 인덱스가 2,373건 삭제로 보였다. 이 판에서 **복제본으로 재현**했다.
+
+강제자  `tests/test_git_env_scrub.py`(훅 쪽 `unset` · 시험 쪽 픽스처 각각 + **양성 대조 둘** — 막는 줄을 빼면 미끼 저장소의 `core.hooksPath` · `core.bare` 가 오염된다).
+
+**닫는 문장: 재현된 경로 둘을 막았다. 11-07 의 원인은 못 가려 행은 열어 둔다.**
+- **원인(복제본 실측).** worktree 에서 `git push` 를 하면 git 이 `pre-push` 에 `GIT_DIR=<본>/.git/worktrees/<이름>` 을 내보낸다(본 저장소에서는 안 내보낸다). 게이트가 부르는 `pytest` 와 시험의 자식 `git` 이 그것을 상속하고, `test_prepush_hook` 의 픽스처가 `tmp_path` 안에서 부르는 `git init` 은 환경변수가 우선해 **worktree 의 gitdir 을 다시 초기화**한다 — worktree 의 config 는 본 저장소와 공유라 `core.bare=true` 가 본 저장소에 쓰인다(`git status` → `must be run in a work tree`). 같은 픽스처의 `config core.hooksPath <tmp>` 도 본 저장소에 쓰이고 `add -A` · `commit` 은 worktree 의 인덱스 · HEAD 를 바꾼다(그것이 「인덱스가 삭제로 보인다」의 설명). 명령별 실측 — 상속된 `GIT_DIR` 아래 `git init`(비 bare)만 `core.bare` 를 바꾸고 `git init --bare <경로>` · `remote add` · `test_batch_tools` · `test_fix_door` 는 안 바꿨다. `tools/merge_batch.sh:203·212` 는 `core.bare` 를 안 쓴다. `worktree remove --force` · `prune` 은 필요 없었다.
+- **막은 곳 둘.** ㉯ `.githooks/pre-push` 머리(`cd "$root"` 다음)에서 `unset $(git rev-parse --local-env-vars)` — 훅을 거치는 모든 게이트. ㉮ `tests/conftest.py` 의 자동 픽스처 `_inherited_git_repo_env_does_not_leak` — 사람이 `uv run pytest` 를 직접 치는 길(오늘 전수를 세 번 직접 돌렸다). **같은 판단을 두 벌 적은 것이 아니라 다른 경로를 막는 것이다.** 이름 목록은 손으로 안 적는다 — 둘 다 `git rev-parse --local-env-vars` 가 정본이다.
+- **세션 가드의 사각.** 중첩 pytest 실험에서 `tracked_guard`(세션 시작 훅)가 **픽스처보다 먼저** 물려받은 `GIT_DIR` 로 `git diff HEAD` 를 부르는 것이 드러났다. worktree 의 gitdir 이면 맞는 저장소를 보지만 안 고쳤다(다른 사고 모양이다).
+- **못 가린 것.** 11-07 에 무엇이 `GIT_DIR` 을 물려줬는지 — 그날 게이트에는 `시험 묶음` 이 없었다. 재현된 것은 지금 훅에 있는 `시험 묶음` 이 `test_prepush_hook` 을 도는 경로다. 그래서 `#200` 은 열려 있다.
