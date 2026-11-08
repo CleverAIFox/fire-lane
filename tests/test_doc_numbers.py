@@ -298,3 +298,12 @@ def test_that_axis_bites_a_moved_claim():
     bad = R.present_faults(D.counts(), lambda rel: "숫자가 하나도 없는 글")
     assert bad, "주장이 없는데 조용하다 — 빈 그물이다"
     assert any("패턴이 낡았다" in m for m in bad), bad
+
+
+# ── 행 번호 인용 `#N` 은 폐기값이 아니다 (2026-11-08 · contract-strict 빨강) ──────────
+def test_a_row_citation_is_not_read_as_a_retired_count():
+    """`#63` 은 PLAN 의 63번 행이다. 옛 blocked 값 63 으로 읽으면 행을 인용한 문장이 빨개진다 — main 에서만 도는 검사라 dev 가 통과했다."""
+    pat = _docnum().retired_pattern(["63", "120"])
+    assert not pat.findall("`#63` 의 「그 칸을 채울 원천이 `#3` 이다」 · `#120` 행")
+    assert pat.findall("blocked 는 63 구간이다") == ["63"]      # 건수로 적은 것은 여전히 잡는다
+    assert pat.findall("#5 와 63 구간") == ["63"]                  # 같은 줄의 건수는 가려지지 않는다
