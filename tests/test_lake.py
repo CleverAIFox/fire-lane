@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from firelane import lake, ledger, paths
+from firelane import authority, lake, ledger, paths
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -138,22 +138,6 @@ def owner_block_readers(srcs: list[tuple[str, str]]) -> list[str]:
     return [r for r, s in srcs if r not in EXEMPT_FILES and OWNER_BLOCK.search(s)]
 
 
-AUTHORITY = re.compile(r"^\S.*\S \((?P<route>[^()]+)\)$")
-
-
-def authority_bad(y: dict) -> list[str]:
-    out = []
-    for k, e in (y.get("datasets") or {}).items():
-        a = str((e or {}).get("authority") or "").strip()
-        if not a:
-            out.append(f"{k}: 칸 없음")
-        elif "경유" in a:
-            out.append(f"{k}: 개인 경유 — {a}")
-        elif not AUTHORITY.match(a):
-            out.append(f"{k}: 받은 경로 괄호 없음 — {a}")
-    return out
-
-
 # ── 래칫 ────────────────────────────────────────────────────────────
 def test_retired_entries_name_files_not_globs():
     """폐기 항목은 파일 이름으로 주인이 된다(§173-2). 글롭은 활성을 잡는다(§172-5)."""
@@ -179,52 +163,35 @@ def test_file_owners_are_resolved_in_one_place():
     _ratchet("주인 블록 직접 해석", len(bad), MAX_OWNER_BLOCK_READERS, bad)
 
 
-def _authority_split(y: dict) -> dict[str, list[str]]:
-    """위반을 **사유별로** 가른다. 판별은 `authority_bad` 하나가 한다(§445).
-
-    ★ 낱말로 가르지 않는다 — `authority_bad` 가 내는 꼬리말이 판별의 출력이고,
-      그것을 다시 파싱하면 자가 둘이 된다. 그래서 그 함수의 **세 갈래 문구**를
-      그대로 키로 쓴다. 문구가 바뀌면 아래 `test_the_split_covers_every_verdict`
-      가 운다.
-    """
-    out: dict[str, list[str]] = {"칸 없음": [], "받은 경로 괄호 없음": [], "개인 경유": []}
-    for b in authority_bad(y):
-        for k in out:
-            if k in b:
-                out[k].append(b)
-                break
-    return out
-
-
 def test_authority_entries_name_their_institution():
     """★ 칸이 **아예 없는** 쪽. 짐작해 적으면 거짓이 되므로 사람이 내린다."""
-    bad = _authority_split(ledger.load())["칸 없음"]
+    bad = authority.split(ledger.load())["칸 없음"]
     _ratchet("authority 칸 없음", len(bad), MAX_AUTHORITY_MISSING, bad)
 
 
 def test_authority_entries_name_the_route_they_came_by():
     """★ 괄호 꼴만 안 맞는 쪽. 문서 작업으로 내려간다 — 그래서 따로 센다."""
-    bad = _authority_split(ledger.load())["받은 경로 괄호 없음"]
+    bad = authority.split(ledger.load())["받은 경로 괄호 없음"]
     _ratchet("authority 받은 경로 없음", len(bad), MAX_AUTHORITY_NO_ROUTE, bad)
 
 
 def test_no_authority_goes_through_a_person():
     """개인 경유는 **상한이 0 이다.** 받아적을 수가 아니다(MASTER §18-3a)."""
-    bad = _authority_split(ledger.load())["개인 경유"]
+    bad = authority.split(ledger.load())["개인 경유"]
     assert not bad, "authority 가 개인 이름을 든다:\n" + "\n".join(f"  {b}" for b in bad)
 
 
 def test_the_split_covers_every_verdict():
     """★ 가름이 **전수**인가. 한 갈래라도 새면 그 수가 아무 래칫에도 안 든다."""
     y = ledger.load()
-    got, split = authority_bad(y), _authority_split(y)
+    got, split = authority.bad(y), authority.split(y)
     assert sum(len(v) for v in split.values()) == len(got), (
         f"위반 {len(got)} 중 가른 것 {sum(len(v) for v in split.values())} — "
         "`authority_bad` 의 문구가 바뀌었다. 가름을 고쳐라")
     # ★ 합성 — 세 갈래가 각각 제 칸에 든다
     probe = {"datasets": {"a": {}, "b": {"authority": "동부소방서 (김OO 경유)"},
                           "c": {"authority": "동부소방서"}}}
-    s = _authority_split(probe)
+    s = authority.split(probe)
     assert [len(s[k]) for k in ("칸 없음", "개인 경유", "받은 경로 괄호 없음")] == [1, 1, 1], s
 
 
@@ -346,7 +313,7 @@ def test_ratchet_probes_are_alive():
                       "z": {"authority": "동부소방서 (우지혜 경유)"}, "w": {}}}
     assert retired_globbed(y) == ["g"], "폐기 글롭 판별식이 죽었다"
     assert retired_without_sha(y) == ["n: safety/a.csv"], "sha 판별식이 죽었다"
-    assert len(authority_bad(y)) == 3, f"authority 판별식이 죽었다: {authority_bad(y)}"
+    assert len(authority.bad(y)) == 3, f"authority 판별식이 죽었다: {authority.bad(y)}"
     srcs = [("tools/a.py", 'yaml.safe_load(open("sources.yaml"))'),
             ("tools/b.py", 'y.get("retired")'), ("tools/c.py", 'print("retired")'),
             ("src/firelane/ledger.py", 'yaml.safe_load(open("sources.yaml")) ; y["retired"]')]

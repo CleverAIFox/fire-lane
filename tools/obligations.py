@@ -15,27 +15,32 @@ obligations.py — 새 파일에 따라붙는 **등재 의무**를, 이미 그 �
   `toolclass` · `scopedecl` 이 머리말을. 이 표는 그 검사들의 **판정 함수를 부를 뿐**이고 의무의 내용을 한 줄도 다시 적지 않는다.
   검사가 바뀌면 표가 따라간다 — 표가 따로 낡을 자리가 없다. 같은 판단을 두 자리에 적어 한쪽만 고쳐지는 병(`.gitleaks.toml` · `plan_renumber` 정규식)을 안 만든다.
 
-★ **아직 도출 못 한 의무는 표에 「미도출」로 적는다**(`NOT_DERIVED`) — 새 절의 하위 번호 · 「쓴 칸」 머릿줄 · `none:` 선언 · 대장을 건드릴 때의 받은 경로 괄호 · 봉인지.
-  그 검사들은 파일 단위 판정 함수가 없거나 절 단위다. 있는 척하지 않는다.
+★ **새 절 · 새 대장 항목도 이름으로 댄다**(2026-11-08 · PLAN #199 ④) — `git diff HEAD` 로 **새로 더해진 `#` 제목 줄**을 찾아 그 절만 `dms`(칸 · 물림 · 하위 수) ·
+  `measurecols`(쓴 칸 · `none:` 선언)에 묻고, 새 `datasets` 키는 `firelane.authority`(받은 경로 괄호)에 묻는다. 받은 경로 판정은 시험 안에 살았다 — 한 벌로 꺼냈다.
+★ **아직 도출 못 한 의무는 표에 「미도출」로 적는다**(`NOT_DERIVED`) — 대장을 건드릴 때의 봉인지(`shardseal`)뿐이다. 있는 척하지 않는다.
 
-IN    `toolclass.classify` · `scopedecl.measure` · `sealcov.survey` 의 판정 · git 의 새 파일
+IN    `toolclass.classify` · `scopedecl.measure` · `sealcov.survey` · `dms` · `measurecols` · `authority` 의 판정 · git 의 새 파일 · `git diff HEAD`
 OUT   화면 · 종료 코드(빠진 의무가 있으면 1). 아무것도 안 쓴다
 PARAM NOT_DERIVED
-밖    **의무가 옳은가는 안 본다** — 검사가 그렇다고 하면 그렇다. 절 단위 의무(새 절 · 대장)는 이 도구가 안 든다(위 「미도출」).
+밖    **의무가 옳은가는 안 본다** — 검사가 그렇다고 하면 그렇다. 봉인지 의무는 안 든다(위 「미도출」). **옛 절 · 옛 대장 항목의 빚은 안 센다**(래칫이 센다) — 새로 더해진 것만 본다.
       **고치지 않는다** — 어느 의무가 빠졌는지와 그 검사가 무엇이라 하는지만 낸다.
 부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398 — 어느 관문에도 안 올렸다)
 """
 from __future__ import annotations
 
 import argparse
+import re
 import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+import dms
 import scopedecl
 import sealcov
 import toolclass
+
+from firelane import authority, ledger, measurecols
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -60,8 +65,7 @@ OBLIGATIONS = (
 
 #: 아직 파일 단위로 도출 못 한 의무 — 있는 척하지 않는다. (종류 → 의무 · 그 검사)
 NOT_DERIVED = (
-    ("새 절", "하위 번호 · 「쓴 칸」 머릿줄 · `none:` 선언", "tools/dms.py · src/firelane/measurecols.py — 절 단위 판정이라 파일 하나로 못 묻는다"),
-    ("대장을 건드릴 때", "받은 경로 괄호 · 봉인지", "tests/test_lake.py(시험이 정본) · src/firelane/shardseal.py — 파일 단위 판정 함수가 없다"),
+    ("대장을 건드릴 때", "봉인지(`src/firelane/shardseal.py`)", "ingest 가 짓는 것이라 사람이 적는 의무인지 못 가렸다 — 모르는 것을 있는 척 도출하지 않는다"),
 )
 
 
@@ -120,6 +124,104 @@ def new_files() -> list[str]:
     return sorted(ln[3:] for ln in r.stdout.splitlines() if ln[:2] in ("??", "A ", "AM"))
 
 
+#: 의무를 지키는 문서 — dms 의 절 ID 가 이 문서들에서 나온다.
+DOC_FILES = ("docs/MASTER.md", "docs/DECISIONS.md", "docs/PLAN.md", "README.md")
+_HUNK = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@")
+
+
+def added_headings(diff: str) -> dict[str, set[int]]:
+    """`git diff -U0` 본문에서 **새로 더해진 `#` 제목 줄**의 (문서 → 새 파일의 줄 번호). 절의 신설을 이 줄로 가른다."""
+    out: dict[str, set[int]] = {}
+    rel, at = "", 0
+    for ln in diff.splitlines():
+        if ln.startswith("+++ "):
+            rel = ln[6:] if ln.startswith("+++ b/") else ""
+        elif (m := _HUNK.match(ln)):
+            at = int(m.group(1))
+        elif ln.startswith("+") and not ln.startswith("+++"):
+            if rel and ln.startswith("+#"):
+                out.setdefault(rel, set()).add(at)
+            at += 1
+    return out
+
+
+def _diff_head() -> str:
+    r = subprocess.run(["git", "diff", "HEAD", "-U0", "--no-color", "--", *DOC_FILES], cwd=ROOT, capture_output=True, text=True, check=True, timeout=60)
+    return r.stdout
+
+
+def section_unmet(added: dict[str, set[int]], data: dict | None = None) -> dict[str, list[str]]:
+    """새 절 → 빠진 의무. **판정은 기존 검사가 한다** — `dms`(칸 · 물림 · 하위 수) · `measurecols`(쓴 칸 · `none:` 선언). 여기는 새 절만 거른다."""
+    d = data if data is not None else dms.scan()
+    new = [r for r in d["rows"] if r["line"] in added.get(r["doc"], set())]
+    out: dict[str, list[str]] = {}
+    if not new:
+        return out
+    _said, mute = dms.inherit_split(d)
+    parents = {f"{r['id'].partition('/')[0]}/{r['id'].partition('/')[2].split('/')[0].split('-')[0]}" for r in new}
+    count_bad = dms.inherit_counts(d)
+    for r in new:
+        miss = []
+        if r["state"] == "blank":
+            miss.append("칸 없음 — 절에 `유병률` · `강제자` 칸이 없다(tools/dms.py)")
+        if r["id"] in mute:
+            miss.append("물림이 말이 없다 — 부모 칸이 하위 절을 덮는다고 안 적었다(tools/dms.py)")
+        if miss:
+            out[r["id"]] = miss
+    for ln in count_bad:                       # 「하위 N」 이 실제와 다르다 — 새 절이 늘렸다
+        pid = next((p for p in parents if f"  {p}  " in ln), None)
+        if pid:
+            out.setdefault(pid, []).append(ln.strip() + " (tools/dms.py)")
+    return out
+
+
+def measure_unmet(added: dict[str, set[int]], decisions: str | None = None, sources: dict | None = None) -> dict[str, list[str]]:
+    """새 DECISIONS 측정 절의 「쓴 칸」 머릿줄 · `none:` 선언 — `measurecols.check_section` 이 판정한다."""
+    text = decisions if decisions is not None else (ROOT / "docs" / "DECISIONS.md").read_text(encoding="utf-8")
+    lines = text.split("\n")
+    nums = set()
+    for ln in added.get("docs/DECISIONS.md", set()):
+        m = re.match(r"## (\d+)\.", lines[ln - 1]) if 0 < ln <= len(lines) else None
+        if m:
+            nums.add(int(m.group(1)))
+    led = sources if sources is not None else ledger.load_sources()
+    out: dict[str, list[str]] = {}
+    for num, title, body in measurecols.sections(text):
+        if num in nums and num >= measurecols.START and (any(w in title for w in measurecols.SCOPE_WORDS) or measurecols.used_line(body) is not None):
+            errs = measurecols.check_section(num, title, body, led)
+            if errs:
+                out[f"DECISIONS/{num}"] = [f"{e} (src/firelane/measurecols.py)" for e in errs]
+    return out
+
+
+def new_datasets(now: dict, before: dict) -> list[str]:
+    return sorted(set(now.get("datasets") or {}) - set(before.get("datasets") or {}))
+
+
+def dataset_unmet(now: dict, before: dict) -> dict[str, list[str]]:
+    """새 대장 항목 → 빠진 의무(받은 경로 괄호 · 칸 · 개인 경유). 판정은 `firelane.authority` 한 벌이다."""
+    keys = set(new_datasets(now, before))
+    sub = {"datasets": {k: v for k, v in (now.get("datasets") or {}).items() if k in keys}}
+    out: dict[str, list[str]] = {}
+    for line in authority.bad(sub):
+        k = line.split(":", 1)[0]
+        out.setdefault(k, []).append(line.split(": ", 1)[1] + " (src/firelane/authority.py)")
+    return out
+
+
+def _sources_at_head() -> dict:
+    r = subprocess.run(["git", "show", "HEAD:sources.yaml"], cwd=ROOT, capture_output=True, text=True, timeout=60)
+    return ledger.parse(r.stdout) if r.returncode == 0 else {}
+
+
+def document_unmet() -> dict[str, list[str]]:
+    """새 절 · 새 대장 항목의 빠진 의무 — `git diff HEAD` 로 **새로 더해진 것**만 본다(스테이징 여부와 무관)."""
+    added = added_headings(_diff_head())
+    out = {**section_unmet(added), **measure_unmet(added)}
+    out.update({f"대장/{k}": v for k, v in dataset_unmet(ledger.load(), _sources_at_head()).items()})
+    return out
+
+
 def table() -> str:
     L = ["종류 → 의무 → 그 의무를 지키는 검사  (정본은 검사다 — 이 표는 그 검사의 판정 함수를 부른다)", ""]
     for o in OBLIGATIONS:
@@ -129,13 +231,21 @@ def table() -> str:
     return "\n".join(L)
 
 
-def render(missing: dict[str, list[Obligation]]) -> str:
-    if not missing:
-        return "✓ 빠진 의무가 없다 — 도출한 의무(MASTER §22·§23 · 「부류」 · 「밖」)만 봤다. 새 절 · 대장 의무는 미도출이다(`--table`)."
-    L = [f"✗ 빠진 의무 — 파일 {len(missing)}개", ""]
-    for rel, obs in missing.items():
-        L.append(f"  {rel}")
-        L += [f"      · {o.name}  ({o.owner} 가 운다)\n        {o.fix}" for o in obs]
+def render(missing: dict[str, list[Obligation]], docs: dict[str, list[str]] | None = None) -> str:
+    docs = docs or {}
+    if not missing and not docs:
+        return "✓ 빠진 의무가 없다 — 새 파일(등재 · 「부류」 · 「밖」) · 새 절(칸 · 물림 · 쓴 칸) · 새 대장 항목(받은 경로)을 봤다. 봉인지는 미도출이다(`--table`)."
+    L = []
+    if missing:
+        L += [f"✗ 빠진 의무 — 파일 {len(missing)}개", ""]
+        for rel, obs in missing.items():
+            L.append(f"  {rel}")
+            L += [f"      · {o.name}  ({o.owner} 가 운다)\n        {o.fix}" for o in obs]
+    if docs:
+        L += ([""] if L else []) + [f"✗ 빠진 의무 — 새 절 · 새 대장 항목 {len(docs)}개", ""]
+        for key, msgs in docs.items():
+            L.append(f"  {key}")
+            L += [f"      · {m}" for m in msgs]
     return "\n".join(L)
 
 
@@ -150,12 +260,13 @@ def main(argv: list[str] | None = None) -> int:
         print(table())
         return 0
     files = new_files() if a.new else [Path(f).as_posix() for f in a.file]
-    if a.new and not files:
-        print("새 파일이 없다 — 추적 안 된 것도 스테이징한 새 것도 없다")
+    docs = document_unmet() if a.new else {}
+    if a.new and not files and not docs:
+        print("새 파일이 없다 — 추적 안 된 것도 스테이징한 새 것도 없다 · 새 절 · 새 대장 항목도 빠진 의무가 없다")
         return 0
     miss = unmet(files)
-    print(render(miss))
-    return 1 if miss else 0
+    print(render(miss, docs))
+    return 1 if miss or docs else 0
 
 
 if __name__ == "__main__":
