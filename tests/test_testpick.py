@@ -95,3 +95,14 @@ def test_the_hook_line_declares_the_condition_the_budget_is_measured_under():
                 if "testpick.py" in ln and not ln.lstrip().startswith("#"))
     assert "--load" in gate and "--budget" in gate
     assert float(gate.split("--budget")[1].split()[0]) < 30
+
+
+def test_measuring_only_some_files_overwrites_just_those_ledger_cells(tmp_path, monkeypatch):
+    """`--only` — 고친 시험 하나를 11분 안 들이고 갱신한다. 나머지 칸은 그대로여야 한다."""
+    led = tmp_path / "t.json"
+    led.write_text(json.dumps({"seconds": {"test_a.py": 9.0, "test_b.py": 7.0, "test_gone.py": 1.0}}), encoding="utf-8")
+    monkeypatch.setattr(T, "LEDGER", led)
+    monkeypatch.setattr(T, "test_files", lambda root=T.ROOT: ["test_a.py", "test_b.py"])
+    monkeypatch.setattr(T, "run_all", lambda names, jobs, ledger, root=T.ROOT: ({"test_a.py": 0.5}, {}))
+    assert T.main(["--measure", "--write", "--only", "test_a.py"]) == 0
+    assert json.loads(led.read_text(encoding="utf-8"))["seconds"] == {"test_a.py": 0.5, "test_b.py": 7.0}

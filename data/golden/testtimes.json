@@ -145,7 +145,7 @@
   "test_ownership.py": 1.18,
   "test_pages_navi.py": 0.0,
   "test_pipeline_stale_publish.py": 0.39,
-  "test_place_idempotent.py": 646.68,
+  "test_place_idempotent.py": 3.8,
   "test_plan_blocks.py": 0.0,
   "test_plan_tables.py": 0.01,
   "test_pr_body_check.py": 0.72,

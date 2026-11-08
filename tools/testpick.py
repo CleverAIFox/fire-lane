@@ -149,6 +149,7 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--list", action="store_true", help="고른 묶음을 낸다")
     g.add_argument("--run", action="store_true", help="고른 묶음을 병렬로 돌린다")
     ap.add_argument("--write", action="store_true", help="--measure 결과를 장부에 쓴다")
+    ap.add_argument("--only", nargs="+", metavar="FILE", help="--measure 가 이 파일들만 다시 잰다(나머지 장부 칸은 그대로 — 고친 시험 하나를 11분 안 들이고 갱신)")
     ap.add_argument("--budget", type=float, default=DEFAULT_BUDGET, help="벽시계 예산(초)")
     ap.add_argument("--load", type=float, default=0.0, help=f"같은 시간에 도는 남의 일(CPU-초). 훅 안에서는 {LOAD:g}")
     ap.add_argument("--jobs", type=int, default=os.cpu_count() or 2)
@@ -157,6 +158,12 @@ def main(argv: list[str] | None = None) -> int:
 
     if a.measure:
         t = time.monotonic()
+        if a.only:
+            unknown = [n for n in a.only if n not in files]
+            if unknown:
+                print(f"✗ 없는 시험 파일: {', '.join(unknown)}", file=sys.stderr)
+                return 1
+            files = sorted(a.only)
         secs, red = run_all(files, a.jobs, load_ledger())
         secs = {n: round(s, 2) for n, s in secs.items()}
         for n, o in sorted(red.items()):
@@ -167,10 +174,12 @@ def main(argv: list[str] | None = None) -> int:
         if a.write:
             # 장부에 못 적힌 파일(죽은 통 · 시한)은 「새 시험」이라 무조건 묶음에 든다(닫힌 쪽). 빨간 파일의 초는 시험이 끝까지 돌았으니 적는다.
             LEDGER.parent.mkdir(parents=True, exist_ok=True)
+            if a.only:      # 일부만 쟀다 — 나머지 칸은 그대로 두고 잰 칸만 덮는다(없어진 파일은 버린다)
+                secs = {**{k: v for k, v in load_ledger().items() if k in test_files()}, **secs}
             LEDGER.write_text(json.dumps({"_": "tools/testpick.py --measure --write 가 쓴다. 손으로 고치지 않는다.",
                                           "seconds": dict(sorted(secs.items()))}, ensure_ascii=False, indent=1) + "\n",
                               encoding="utf-8")
-            print(f"장부 {LEDGER.relative_to(ROOT)} 를 썼다")
+            print(f"장부 {LEDGER} 를 썼다")
         return 1 if red else 0
 
     ledger = load_ledger()

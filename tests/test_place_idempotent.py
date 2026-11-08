@@ -20,6 +20,7 @@ test_place_idempotent.py — 배치가 멱등인가.
 """
 from __future__ import annotations
 
+import functools
 import pathlib
 import re
 
@@ -70,6 +71,8 @@ ORG = providers.all()
 EXT = M.PASSTHROUGH_EXT          # 정본. 이 사본에는 json 이 빠져 있었다
 
 
+@functools.cache    # ★ 2026-11-08 (PLAN #206). 표는 **한 번만** 짓는다 — 호출마다 지으면 85+개 매개변수가 각 3.5초(`ext_alt` 가 제공기관마다
+                    #   대장을 다시 읽는다)로 전수 500초 중 365초가 여기였다. 표는 읽기만 한다(아래 어느 시험도 안 고친다).
 def rules():
     """main() 이 조립하는 것과 **같은** 규칙 표. 이제 진짜로 같다.
 
