@@ -45223,7 +45223,7 @@ csv 비기하 24개는 shapely · geopandas · pyogrio · pyproj 를 한 번도 
 - `#182`(닫힘)는 `acquire.judge()` 와 `missing_from_register()` 를 `ledger.absence()` 에 연결했다. **`cmd_verify` 의 「사라짐」 루프는 파일 경로 목록(`_acquire.json`)만 들고 있어** 데이터셋 항목을 못 얻어 배선하지 못했고, 닫을 때 이 자리를 안 셌다. 파일이 raw 에 없으면 무조건 사라짐이라 `status: missing` 다섯(`moleg_hydrantdevice_rule` · `moleg_roadtraffic_act` ×2 · `nfa_rapidresponse` · `eais_roadledger_dm` · `vworld_uq164` — 파일로는 여섯)이 `--verify` 마다 빨갰다.
 - **고쳤다.** `tools/acquire.py::_declared_owner(rel)` 가 `dataset_globs()` 의 글롭으로 경로 → 주인 데이터셋을 거꾸로 찾고 `_declared_absent` 를 묻는다. 루프는 선언된 부재를 **`declared`** 로 따로 찍고(사라짐 목록에서 빼) 종료 판정에도 안 센다.
 - **측정**: `acquire --verify` — declared 6(파일) · 사라짐 1. 남은 1(`nfa_dispatch_119…20260903.csv`)은 이 판이 안 건드린 것이다 — 그 파일은 `raw/nfa` 에서 옮겨졌고 같은 이름 줄기의 새 판(`…_20261104.csv`)이 `landing/nfa` 에 있다. 2024 · 2025 신고접수(`#39`)를 들이는 반입이 진행 중인 것으로 보고, 대장 갱신은 반입이 끝난 뒤 사람이 한다.
-- `#182` 번호는 다시 쓰지 않는다 — 새 행 `PLAN #191`. 도착 조건에 이 자리를 적었다.
+- `#182` 번호는 다시 쓰지 않는다 — 새 행 `PLAN #191`(닫힘). 도착 조건에 이 자리를 적었다.
 
 ## 625. `#39` · `#69` — 119 신고접수 952건으로 잰 것 (측정 기록 · 판정 불변 · 코드 변경 0)
 
@@ -47124,7 +47124,7 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 | 5 | `nfa_dispatch_119` · `nfa_ems` · `nfa_fire_incident` · `nfa_rescue` · `nfa_target_building` | **이 배치(§647 ~ §649).** `status: missing` 으로 내려 「결손 선언됨」 경고가 됐다 |
 | 2 | `eais_roadledger_dm` · `vworld_uq164` | §602. 실패 → 경고(레이크 분실 뒤 「받지 않기로 했다」). 실패는 줄고 경고가 늘었다 |
 | 2 | `building_connector` · `building_entrance` | 11-04 `a5a3467e` 가 대장을 `juso_bldg_geom_jngj_20260801.zip` 으로 바꾼 뒤 「`.prj` 가 없다」 경고 |
-- **`REAL_WARN_RATCHET` 은 안 올렸다.** 올리면 이 배치가 다섯을 늘린 사실이 래칫 안에 숨는다. 관문은 「이 배치가 늘렸다」로 계속 운다 — 그것이 지금의 정직한 상태다. 내릴 길은 둘이다: 다섯은 입력이 있는 `status: missing` 을 경고 아닌 별도 등급(`declared`)으로 세는 것(PLAN `#191` 이 `acquire --verify` 에 한 것과 같은 모양) · 둘은 `.prj` 가 있는 원천으로 바꾸는 것. 어느 쪽이든 사람이 정한다.
+- **`REAL_WARN_RATCHET` 은 안 올렸다.** 올리면 이 배치가 다섯을 늘린 사실이 래칫 안에 숨는다. 관문은 「이 배치가 늘렸다」로 계속 운다 — 그것이 지금의 정직한 상태다. 내릴 길은 둘이다: 다섯은 입력이 있는 `status: missing` 을 경고 아닌 별도 등급(`declared`)으로 세는 것(PLAN `#191`(닫힘) 이 `acquire --verify` 에 한 것과 같은 모양) · 둘은 `.prj` 가 있는 원천으로 바꾸는 것. 어느 쪽이든 사람이 정한다.
 - **`REAL_FAIL_RATCHET` 은 8 → 7 로 조였다.** 같은 실행에서 실패가 7 이었다. 조이는 쪽이다.
 - 원인이 `nfa_*` 의 결손 선언이라는 것은 657-6 의 도구 쪽 고침과 독립이다 — 도구가 `_hold` 를 알아도 항목은 여전히 `status: missing` 이라 경고 하나씩이다.
 
@@ -47138,7 +47138,7 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 - **norm 에 같은 지역판 다섯이 있다**(`norm/nfa/` 의 dispatch 둘 · fire · rescue · target). 모두 `_prep.json` 의 `dst_sha256` 과 같은 온전한 파생본이고, norm 은 `regenerable: true` · `backup: false` 이며 `ingest` 가 `nfa_*` 를 norm 에서 읽지 않는다(`layers.norm.migrated` 에 없고 추출은 `--extract-from` 이다). 상류가 retired 로 가면 쓸모가 없다.
 - 확인: 하드링크 사본 레이크에서 이동 → norm 삭제 → `prep --prune` 을 흉내 냈다. 이동만 하면 `prep --check` 는 38 정상이고(`src` 가 없는 norm 은 불평하지 않는다) `--prune` 은 「뺄 것이 없다」이며 `lakecheck` L5 가 5건을 낸다. norm 5개를 지운 뒤에는 `prep --check` 가 「누락 5」를 내고 `--prune` 이 같은 다섯을 「raw · norm 둘 다 없다」로 든다(38 중 5 · 절반 미만이라 통과). `--prune --apply` 뒤에는 L5 0.
 - **정리 순서(사람이 친다).** ① raw 4개를 `retired/nfa/` 로 옮긴다 ② `norm/nfa/*jngj-dong*` 다섯을 지운다 ③ `uv run python -m firelane.prep --prune --apply` 가 `data/_prep.json` 에서 그 다섯을 뺀다(스크립트가 쓰고 손으로 안 고친다) ④ `lakecheck` · `lake gate` · `prep --check` 를 다시 돌린다. `data/_intake.json` 의 `origin_name` 기록은 입수 이력이라 안 건드린다.
-- ★ **L5 의 상류 판정이 눈멀었다 — 지금 초록인 것이 틀린 이유로 초록이다.** `lakecheck.l5` 는 norm 파일 이름의 앞 14자(`nfa_dispatch_1`)로 시작하는 raw 가 **하나라도** 있으면 통과시킨다. `norm/nfa/nfa_dispatch_119_jngj-dongmyeong_20260903.csv` 는 raw 에 짝이 없는데(raw 에는 `…20261104` 뿐이다) 형제 한 장 때문에 L5 가 「상류 없는 것 0건」을 낸다. 4개를 옮기면 형제가 사라져 5건이 한꺼번에 울린다 — 그 5건이 정직한 값이다. **PLAN `#197`** 로 세웠다(표 셋 — §1 · §10-1 `Zs` · §10-5 `C`). 도착 조건은 `_prep.json` 의 raw 경로 키로 판정하고 형제가 있어도 짝 없는 norm 이 잡히는 양성 대조 시험을 두는 것이다.
+- ★ **L5 의 상류 판정이 눈멀었다 — 지금 초록인 것이 틀린 이유로 초록이다.** `lakecheck.l5` 는 norm 파일 이름의 앞 14자(`nfa_dispatch_1`)로 시작하는 raw 가 **하나라도** 있으면 통과시킨다. `norm/nfa/nfa_dispatch_119_jngj-dongmyeong_20260903.csv` 는 raw 에 짝이 없는데(raw 에는 `…20261104` 뿐이다) 형제 한 장 때문에 L5 가 「상류 없는 것 0건」을 낸다. 4개를 옮기면 형제가 사라져 5건이 한꺼번에 울린다 — 그 5건이 정직한 값이다. **PLAN `#197`(닫힘)** 로 세웠다(표 셋 — §1 · §10-1 `Zs` · §10-5 `C`). 도착 조건은 `_prep.json` 의 raw 경로 키로 판정하고 형제가 있어도 짝 없는 norm 이 잡히는 양성 대조 시험을 두는 것이다.
 - 이 판은 L5 를 고치지 않았다 — 행으로 세웠을 뿐이다. 정리를 먼저 하지 않고 L5 를 고치면 그 자리에서 1건이 운다(위 dispatch).
 
 ### 657-11. 래칫 · 도구
@@ -47195,15 +47195,15 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 
 > 2026-11-07
 
-유병률  **1회** — 「아무도 안 밟았을 뿐 열려 있던 길」. 실물에서는 나지 않았다(실물 대장에 돌린 계획 출력이 전후 동일하다). 정규화가 `YYYY` vintage 를 통과시키는 순간 열리는 길이어서 PLAN #196 을 고치다가 보였다.
+유병률  **1회** — 「아무도 안 밟았을 뿐 열려 있던 길」. 실물에서는 나지 않았다(실물 대장에 돌린 계획 출력이 전후 동일하다). 정규화가 `YYYY` vintage 를 통과시키는 순간 열리는 길이어서 PLAN #196(닫힘) 을 고치다가 보였다.
 
 강제자  `tests/test_ledger_fields.py`(`test_a_sheet_number_after_a_year_is_not_read_as_a_date` · `test_a_short_vintage_does_not_fill_updated` · `test_a_short_vintage_is_reported_as_skipped_not_silent` · `test_an_eight_digit_vintage_still_fills_next_to_a_part`) · `tests/test_normalize_rules.py`(`test_the_passthrough_rule_reads_the_grammar_from_naming`)
 
 쓴 칸    없음 — 사유: 표 칸을 안 읽었다. 입력은 **파일명**(`x_kr_2025_35616037.csv` 꼴)이고 `ledger_fields` 가 파일명에서 `updated` 를 유도하는 길을 고쳤다
 
 `tools/ledger_fields.py` 의 `updated` 유도가 8자리 숫자를 파일명 **어디서든** 집었다(`_(\d{8})(?:_|\.)`). `x_kr_2025_35616037.csv` 는 vintage 가 `2025` 이고 `35616037` 은 도엽번호인데, 그 정규식은 도엽번호를 날짜로 읽어 `3561-60-37` 을 대장에 쓸 수 있었다. 아무도 안 밟았을 뿐 열려 있었다 — 지금 실물은 전부 8자리 vintage 라 vintage 가 곧 첫 8자리 숫자였기 때문이다.
-- **고침.** vintage 토큰(**숫자 토큰 중 첫째** — 도엽번호 · 개정은 그 뒤에 온다)만 본다. 문법은 `naming.VINTAGE_ALT` 한 곳에서 읽는다(PLAN #196). 8자리면 ISO 로 채우고 `YYYY` · `YYYYMM` 은 **채우지 않고 사유를 찍는다**(정밀도가 모자라다 — `YYYY1231` 로 메우면 파일명이 말하지 않은 날이 박힌다).
-- 이것은 문법을 넓히기(PLAN #196)의 **전제**였다. 규칙만 넓혔으면 이 길이 열린 채로 `YYYY` 파일이 정규화를 통과했을 것이다. 남은 것은 PLAN #196 에 적었다 — norm 관문(`providers.pattern_file` · `layers.norm.naming`)은 아직 `\d{8}` 이다.
+- **고침.** vintage 토큰(**숫자 토큰 중 첫째** — 도엽번호 · 개정은 그 뒤에 온다)만 본다. 문법은 `naming.VINTAGE_ALT` 한 곳에서 읽는다(PLAN #196(닫힘)). 8자리면 ISO 로 채우고 `YYYY` · `YYYYMM` 은 **채우지 않고 사유를 찍는다**(정밀도가 모자라다 — `YYYY1231` 로 메우면 파일명이 말하지 않은 날이 박힌다).
+- 이것은 문법을 넓히기(PLAN #196(닫힘))의 **전제**였다. 규칙만 넓혔으면 이 길이 열린 채로 `YYYY` 파일이 정규화를 통과했을 것이다. 남은 것은 PLAN #196 에 적었다 — norm 관문(`providers.pattern_file` · `layers.norm.naming`)은 아직 `\d{8}` 이다.
 
 ## 660. 소화전 근접 등급을 지금 판정(clear 275)으로 다시 쟀다 — 수는 새로 섰고 PLAN #95 의 밀도 정의는 이번에도 재현하지 못했다 (측정 기록 · 판정 불변 · 유보 유지)
 
@@ -47507,3 +47507,21 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 **별개 5개 — 건드리지 않았다.** `nfa_dispatch_119` · `nfa_rescue` · `nfa_ems` · `nfa_fire_incident` · `nfa_target_building` 은 **raw 가 달라 `--reseal-code` 가 거절한다**(다시 빌드가 필요하다 · 재봉인 대상이 아니다). 이 실행의 46키에 들지 않는다.
 
 **앞으로 이어질 것(같은 날 적는다).** 이 46개를 재봉인한 뒤에 `paths.py` · `layers.py` 를 고치면(PLAN #183 · #55) `code_print` 가 다시 움직여 봉인이 또 낡는다. 그 두 행의 코드 변경이 끝난 **뒤에** 한 번만 치는 것이 낫다.
+
+## 674. PLAN #191 · #196 · #197 · #188 — 결번으로 닫는다 — 「못 한 것」은 미완이 아니라 확인 불가다 (`#188` 은 동 출입구만 `#59` 로 넘긴다 · 판정 불변)
+
+> 2026-11-09
+
+유병률  **각 1회** — `#191`: 선언된 부재가 「사라짐」으로 세어졌다(§624). `#196`: `YYYY` raw 가 정규화는 통과해도 norm 단계에서 막혔다. `#197`: L5 가 파일명 접두 14자로만 대서 짝 없는 norm 을 통과시켰다(§657).
+
+강제자  `#191` — `tests/test_acquire.py` 의 선언된 부재 시험. `#196` — `tests/test_intake_rules.py` 의 vintage 문법 시험(문법 셋 통과 · 밖 거절 · 대장 `layers.norm.naming` 이 생성기와 같다). `#197` — `tests/test_lakecheck_l5.py` 합성 시험 7개. `#188` — 없다(코드가 아니라 소비처를 안 정한 것이다).
+
+**닫는 문장.**
+- **`#191` — 선언된 부재는 사라짐이 아니다.** `acquire --verify` 를 이 기계 레이크에서 돌려 declared 13 · 사라짐 0 · rc 0 을 확인했다. ★ **확인 불가 하나:** 이 실행이 낸 다섯(retired 로 옮겨졌는데 sha 대장에 남아 있던 옛 지역판)이 「계속 빨갛던 다섯」과 같은 것인지는 그때의 출력이 없어 확인할 수 없다 — 미완이 아니라 확인 불가다.
+- **`#196` — norm 관문이 `naming.VINTAGE_ALT` 한 곳을 읽는다.** 문법 셋(`YYYYMMDD` · `YYYYMM` · `YYYY`)이 관문을 통과하고 문법 밖(5 · 7 · 3자리)은 거절한다. 옛 시험(「관문은 8자리만」)은 뒤집었다. `acquire_rules.derive_files` 의 8자리 전제는 **의도된 것**이라 그대로다(시험이 같이 못박는다).
+- **`#197` — L5 가 `_prep.json` 의 raw 경로 키로 상류를 댄다.** 이 기계 레이크에서는 L5 가 0건이다(정리가 끝났다). 레이크 사본에 짝 없는 norm 한 장을 되살리자 정확히 1건을 짚었다. ★ **확인 불가 하나:** 형제 raw 가 있는 경우(옛 접두 비교가 놓치던 꼴)는 스크래치 레이크 구성이 권한 검사에 막혀 실물로 못 했다 — 합성 시험 7개가 그 자리를 든다. 미완이 아니라 확인 불가다.
+- **`#188` — 셋을 「안 쓴다」로 행에서 뺀다.** 쓰려면 소비처를 먼저 세워야 하는데 소비처를 세우는 것은 새 일이고 지금은 `Zs` 를 비우는 중이다. 기타자료 미배선 7레이어 · 사물주소 62레이어는 지금 아무도 안 부른다 — 번호는 영구 식별자라 결번이 정상이고 소비처가 생기면 새 행으로 선다. **동 출입구(`RD`)만 다르다** — 건물 출입구 위치는 목적지 스냅과 진입로 판정에 직접 닿는 자료라 소비처 후보가 이미 있다. 빼지 않고 `#59` 행에 한 줄로 넘겼다. 쓸 만한지는 자료를 본 사람이 뒤집어도 된다.
+
+**닫히지 않은 것.** `#55` 는 ④(봉인 `20260814-ngii-ngi20` 재생성 여부 · 사람이 확인한다)가 남아 안 닫는다.
+
+**따라온 것.** 닫으며 이 문서의 옛 절 · `MASTER` 한 줄이 맨몸으로 가리키던 `#191` · `#196` · `#197` 일곱 곳에 `(닫힘)` 을 달았다 — 그 절의 도장이 낡았다(사람이 읽고 찍는다).
