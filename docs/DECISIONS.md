@@ -47350,3 +47350,5 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 - **고친 판은 11.0.1 부터**이고 `@typescript-eslint/typescript-estree` 최신 8.72.1(`^10.2.2`) · `@eslint/config-array` 최신 0.23.5(`^10.2.4`) 가 둘 다 `^10` 이다 — 상류가 안 올렸다. 풀리는 길은 상류가 `minimatch ^11` 로 올리는 것이거나 `overrides` 인데, 후자는 `glob@7` 이 `require('minimatch')` 로 쓰는 자리에서 깨지므로 안 갔다(사람이 막았다).
 - **되돌림.** `package.json` · `package-lock.json` 을 `git checkout` 했고 `npm ci` 로 `node_modules` 를 맞췄다(`added 217 packages`) — `web/navi` 에는 변경이 없다.
 - **`#203` 에 남은 일.** 상류가 `minimatch ^11` 로 올리거나 개발 의존이고 번들 밖이라는 사유로 선언하고 닫는 것. 번들 밖은 사실이다(`dist` 에 0건).
+
+> **2026-11-08 정정 · §668 의 끝줄.** `npm run test` 는 되돌린 트리(eslint 9)에서 다시 돌렸다 — **41개 파일 534건 통과**(rc 0). eslint 10 을 얹은 채로는 여전히 통과를 확인하지 못했다. 그리고 `#203` 의 도착 조건을 「상류가 `minimatch` 11 을 받는다」로 바꿨다 — 우리가 못 당기는 조건이다(Dependabot 이 무는 집합과 `npm audit` 이 세는 집합이 달라 올려도 줄지 않았다).
