@@ -36,6 +36,7 @@ import sys
 from pathlib import Path
 
 import docseal as D  # 정본은 docseal 이다 — 두 번째 파서를 안 만든다
+import ratchetstore  # 래칫 값은 파일 밖이다(PLAN #198)
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -136,7 +137,9 @@ CODE_EXT = (".py", ".ts", ".tsx", ".js", ".sh")
 #   (finish_647~656 · finish_c1 · ledger_add_nfa_ems · ledger_contract_nfa_ems).
 #   덮임은 **676/676 = 100%** 다 — 땅이 줄었을 뿐 덮지 못한 곳은 0 이다.
 #   ★ 덮임류는 실측을 따라간다(§579).
-SEALED_FILES = 684
+# ★ 2026-11-08 (PLAN #198). **값은 도구 파일 밖에 있다**(`ratchetstore` 의 값 파일). 이 줄이 숫자 리터럴이던 때 한 칸 조일 때마다 이 파일의 글자가 바뀌어
+#   이 파일을 지목한 도장 28절이 죽었다. 논리를 고치면 여전히 죽는다 — 값만 밖에 있다. 이력 주석은 위에 그대로 있다.
+SEALED_FILES = ratchetstore.read("sealcov.py", "SEALED_FILES")
 
 #: **강제자 칸만으로** 덮인 파일 수. 내려가는 쪽. 2026-10-10 실측 37 → **0**.
 #: 늘면 「산문 없이 칸만 적었다」는 뜻이고 그것은 한 번 속은 자리다(PLAN #165).
