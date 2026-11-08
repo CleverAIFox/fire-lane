@@ -235,27 +235,28 @@ def test_the_bookmark_has_a_door_that_drops_sections():
         "`prune` 이 `--apply` 없이 북마크를 건드렸다")
 
 
-def test_the_prune_door_actually_drops_a_phantom():
+def test_the_prune_door_actually_drops_a_phantom(tmp_path):
     """★ 양성 대조. **없는 절을 심고** 문이 떨어내는가.
 
     깨끗한 트리에서 「0건이니 통과」는 안 떨어내는 문도 통과시킨다
     (`test_fix_door` 가 같은 이유로 결함을 심는다).
+
+    ★ **복사본에서 한다**(PLAN #200 곁길 · 2026-11-08). 예전에는 실제 `BOOKMARK.json`(추적 파일)을 잠깐 고쳤다가 되돌렸다 — 그 사이를
+      다른 pytest 세션의 추적 파일 가드(`tests/tracked_guard.py`)가 지나가면 「시험이 추적 파일을 바꿨다」로 세션이 빨개졌다(병렬 묶음에서 간헐).
     """
+    import os
+    import shutil
     d = _dms()
-    p = ROOT / "data" / "dms" / "BOOKMARK.json"
-    original = p.read_text(encoding="utf-8")
-    bm = json.loads(original)
-    try:
-        bm["done"] = sorted(set(bm["done"]) | {"PLAN/0-없는절"})
-        p.write_text(json.dumps(bm, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        r = subprocess.run(
-            ["uv", "run", "--no-sync", "python", "tools/dms.py", "prune", "--apply"],
-            cwd=ROOT, capture_output=True, text=True, timeout=600)
-        assert r.returncode == 0, r.stdout + r.stderr
-        assert "PLAN/0-없는절" in r.stdout, f"심은 유령을 못 봤다\n{r.stdout}"
-        assert "PLAN/0-없는절" not in json.loads(p.read_text(encoding="utf-8"))["done"], (
-            "문이 돌았는데 유령이 그대로 남았다")
-        assert d is not None
-    finally:
-        if p.read_text(encoding="utf-8") != original:
-            p.write_text(original, encoding="utf-8")
+    for sub in ("tools", "docs", "data/dms"):
+        shutil.copytree(ROOT / sub, tmp_path / sub, ignore=shutil.ignore_patterns("__pycache__", ".venv"))
+    shutil.copy2(ROOT / "README.md", tmp_path / "README.md")
+    p = tmp_path / "data" / "dms" / "BOOKMARK.json"
+    bm = json.loads(p.read_text(encoding="utf-8"))
+    bm["done"] = sorted(set(bm["done"]) | {"PLAN/0-없는절"})
+    p.write_text(json.dumps(bm, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    env = {**os.environ, "PYTHONPATH": os.pathsep.join([str(ROOT / "src"), str(tmp_path / "tools")])}
+    r = subprocess.run([sys.executable, "tools/dms.py", "prune", "--apply"], cwd=tmp_path, env=env, capture_output=True, text=True, timeout=600)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "PLAN/0-없는절" in r.stdout, f"심은 유령을 못 봤다\n{r.stdout}"
+    assert "PLAN/0-없는절" not in json.loads(p.read_text(encoding="utf-8"))["done"], "문이 돌았는데 유령이 그대로 남았다"
+    assert d is not None

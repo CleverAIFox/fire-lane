@@ -17,6 +17,8 @@ PARAM 없음 — 끄는 스위치를 일부러 두지 않았다(`FIRE_LANE_HOOK_
 """
 from __future__ import annotations
 
+import functools
+import os
 import subprocess
 from pathlib import Path
 
@@ -24,8 +26,27 @@ ROOT = Path(__file__).resolve().parents[1]
 _STATE: dict[str, dict[str, str]] = {}
 
 
+@functools.lru_cache(maxsize=1)
+def local_env_names() -> tuple[str, ...]:
+    """git 이 **저장소를 가리키려고** 쓰는 환경변수 전부 — 손으로 안 적는다. `git rev-parse --local-env-vars` 가 정본이다. (PLAN #200)
+
+    ★ 비면 죽는다 — 조용히 아무것도 안 비우면 아래 환경 정리는 없는 것과 같다.
+    """
+    r = subprocess.run(["git", "rev-parse", "--local-env-vars"], capture_output=True, text=True, check=True, timeout=30)
+    got = tuple(x for x in r.stdout.split() if x.startswith("GIT_"))
+    assert "GIT_DIR" in got, f"git 이 저장소 환경변수를 안 냈다: {r.stdout!r}"
+    return got
+
+
 def _git(root: Path, *args: str) -> str:
-    r = subprocess.run(["git", *args], cwd=root, capture_output=True, text=True, check=False, timeout=60)
+    """★ 물려받은 `GIT_DIR` 등을 **지우고** 부른다 — 세션 훅은 `conftest` 의 자동 픽스처보다 먼저 돌아 그쪽이 못 막는다. (PLAN #200)
+
+    worktree 의 `pre-push` 가 `GIT_DIR=<본>/.git/worktrees/<이름>` 을 물려주면 `cwd` 가 어디든 git 이 그 저장소를 본다.
+    `cwd=root` 의 저장소를 찾게 두는 것이 이 가드가 묻는 「이 트리」다.
+    """
+    drop = set(local_env_names())
+    env = {k: v for k, v in os.environ.items() if k not in drop}
+    r = subprocess.run(["git", *args], cwd=root, capture_output=True, text=True, check=False, timeout=60, env=env)
     if r.returncode != 0:
         raise RuntimeError(f"git {' '.join(args)} 가 실패했다 — {r.stderr.strip()[:120]}")
     return r.stdout

@@ -291,6 +291,27 @@ def unresolved_section_refs(text: str) -> list[str]:
     return sorted(bad)
 
 
+#: 행 번호 `#N` — 바로 앞에 글자 · `§` · `#` 가 붙은 것(`PR#12`)은 안 본다. `### … → §1 #N` 길잡이 제목은 `_guides` 가 따로 본다.
+_ROW_REF = re.compile(r"(?<![\w§#])#(\d+)\b")
+
+
+def unresolved_row_refs(text: str) -> list[str]:
+    """PLAN 안의 `#N` 중 **§1 에 없는 행**을 가리키면서 **그 줄에 죽었다는 표시(`닫힘` · `결번` · `닫혀`)가 없는 것.** 비면 정합이다.
+
+    ★ 2026-11-08 (PLAN #208 · 사람이 **줄 단위**를 골랐다). `§N` 쪽(`unresolved_section_refs`)의 반대쪽이다. 묘비 `#43(닫힘)` · 지난 일 서술은 통과하고
+      맨몸으로 빈 번호를 가리키는 산 문장만 걸린다. 표시는 **줄 전체**에서 본다 — 밖 문서 쪽 가름(`_outside_kind`)과 같은 규칙이고 말씨 분류기를 안 쓴다.
+    ★ **느슨함을 숨기지 않는다.** 긴 행은 어딘가에 `닫힘` 이 있으면 다른 번호도 통과한다 — 번호마다 붙이기(273곳 이행)는 오기를 늘려 안 갔다.
+    ★ **못 잡는 것** — 살아 있는 행의 **안쪽**을 가리키는 문장(`#69` 의 「`#5` 질의 ④」: 그 행에 ④ 가 없다)은 죽은 번호가 아니라 여기서 안 본다. 사람이 읽는다.
+    """
+    live = set(_rows(text))
+    out: list[str] = []
+    for ln, line in enumerate(text.splitlines(), 1):
+        if any(w in line for w in CLOSED) or (line.startswith("### ") and GUIDE.search(line)):    # 길잡이 제목은 `_guides` 가 따로 본다
+            continue
+        out += [f"L{ln} #{m.group(1)}" for m in _ROW_REF.finditer(line) if int(m.group(1)) not in live]
+    return out
+
+
 def selftest() -> int:
     """판별식이 살아 있나. **`_canary` 를 품는다** — 둘이 같은 일이다.
 
@@ -337,6 +358,11 @@ def selftest() -> int:
     if collection_gap(synth) != ([3, 4], []):
         fails.append(f"대조군이 쪼개진 표를 못 잡는다 — {collection_gap(synth)}")
 
+    # ★ `#N` 쪽(PLAN #208) — 맨몸으로 빈 번호를 가리키면 걸리고 표시가 있거나 산 행이면 통과한다
+    rows = "## 1. 남은 일\n\n| 1 | a |\n\n### 끝\n"
+    if unresolved_row_refs(rows + "전건 #7 이다\n") != ["L6 #7"] or unresolved_row_refs(rows + "#7(닫힘) · #1\n"):
+        fails.append("`#N` 판별식이 빈 번호를 못 가르거나 표시를 못 읽는다")
+
     # ★ 래칫이 0 을 **내지 않는다** — 수집이 비면 터져야 한다
     try:
         v = ratchet_values()
@@ -347,7 +373,7 @@ def selftest() -> int:
 
     for f in fails:
         print(f"  ✗ {f}")
-    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 9")
+    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 10")
     return 1 if fails else 0
 
 
@@ -431,6 +457,14 @@ def main() -> int:
         for r in dead_sec:
             print(f"  ✗ {r}")
         print("    다른 문서의 절이면 `DECISIONS §633-3` · `MASTER §16-1` 처럼 소속을 앞에 적는다.")
+        return 1
+
+    dead_row = unresolved_row_refs(text)
+    if dead_row:
+        print("★ PLAN 안에 **빈 번호를 맨몸으로 가리키는 `#N`** 이 있다\n")
+        for r in dead_row[:40]:
+            print(f"  ✗ {r}")
+        print("    그 줄에 `닫힘` · `결번` 을 적는다(`#N(닫힘)`). 산 문장이면 실재하는 번호로 고친다.")
         return 1
 
     # ── PLAN **안**의 산 길잡이 — 여기는 빨강이다 ──────────────

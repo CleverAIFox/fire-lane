@@ -91,7 +91,7 @@ def test_the_rank_names_the_costliest_tools_and_the_moved_one_is_marked():
     rows = RS.rank()
     assert rows and rows == sorted(rows, key=lambda r: (-r[0], r[1])), "많은 순이 아니다"
     top = rows[0]
-    assert top[1] == "sealcov.py" and top[3] is True, "값 파일로 옮긴 도구가 표시되지 않는다"
+    assert top[1] == "sealcov.py" and top[3] is True and top[4] is True, "값 파일로 옮긴 도구가 표시되지 않는다"
     assert top[0] >= RS.MOVE_AT, f"옮긴 근거가 기준({RS.MOVE_AT}) 미만이다 — {top[0]}절"
 
 
@@ -101,3 +101,19 @@ def test_the_store_has_exactly_the_tools_above_the_bar_or_a_reason():
     low = {t: cnt.get(f"tools/{t}", 0) for t in RS.load() if cnt.get(f"tools/{t}", 0) < RS.MOVE_AT}
     assert not low, f"기준 {RS.MOVE_AT} 미만인 도구가 값 파일에 있다: {low}"
     assert docseal  # 같은 survey 를 쓴다 — 두 번째 셈이 없다
+
+
+def test_a_value_at_its_floor_is_not_movable_and_so_not_due():
+    """★ 기준은 둘이다(PLAN #198 ④) — 지목한 도장이 많아도 값이 바닥(0)이면 조일 일이 없다. `docseal.UNSEALED` 가 그 사례다."""
+    assert RS.movable("down", 5) and not RS.movable("down", 0)
+    assert RS.movable("up", 0)                                   # 올라가는 쪽은 바닥이 없다
+    assert RS.movable("down-map", {"a": 0, "b": 2}) and not RS.movable("down-map", {"a": 0})
+    assert RS.movable("down", "?")                               # 모르는 꼴은 움직일 수 있다고 본다
+    rows = [(23, "x.py", ["A"], False, False), (23, "y.py", ["B"], False, True), (5, "z.py", ["C"], False, True), (30, "w.py", ["D"], True, True)]
+    assert RS.due(rows) == ["y.py"]                              # 도장 많고 움직일 수 있고 아직 안 옮긴 것만
+
+
+def test_docseal_is_ranked_high_but_not_due_because_its_value_is_at_the_floor():
+    rows = {r[1]: r for r in RS.rank()}
+    assert rows["docseal.py"][0] >= RS.MOVE_AT and rows["docseal.py"][4] is False
+    assert "docseal.py" not in RS.due(RS.rank())

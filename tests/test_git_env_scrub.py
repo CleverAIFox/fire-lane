@@ -92,3 +92,27 @@ def test_without_the_unset_line_the_gate_sees_git_dir_so_the_test_above_can_fail
     stripped.write_text("".join(kept), encoding="utf-8")
     r = _hook_env_gate(tmp_path, stripped)
     assert r.returncode != 0 and "GIT_DIR 이 비었다" in r.stdout + r.stderr, r.stdout + r.stderr
+
+
+def test_the_session_guard_reads_its_own_tree_even_with_an_inherited_git_dir(tmp_path, monkeypatch):
+    """★★ 세션 훅(`tracked_guard`)은 자동 픽스처보다 **먼저** 돈다 — 그쪽이 못 막는 구멍. (PLAN #200 ⑤)
+
+    양성 대조 — 물려받은 `GIT_DIR` 이 미끼를 가리키는데 가드는 **자기 트리**(`tmp_path/work`)의 더러움을 읽어야 한다.
+    같은 환경에서 맨 `git diff HEAD` 는 미끼를 본다(= 막는 줄이 없으면 가드가 엉뚱한 저장소를 읽는다는 증거).
+    """
+    import tracked_guard as G
+    decoy = _decoy(tmp_path)
+    work = tmp_path / "work"
+    work.mkdir()
+    clean = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    def run(*a):
+        subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *a], cwd=work, check=True, timeout=60, env=clean, capture_output=True)
+    run("init", "-q")
+    (work / "f.txt").write_text("1", encoding="utf-8")
+    run("add", "-A")
+    run("commit", "-q", "-m", "c")
+    (work / "f.txt").write_text("2", encoding="utf-8")                 # 더럽힌다
+    monkeypatch.setenv("GIT_DIR", str(decoy / ".git"))
+    raw = subprocess.run(["git", "diff", "HEAD", "--name-only"], cwd=work, capture_output=True, text=True, timeout=60)
+    assert "f.txt" not in raw.stdout                                    # 맨 git 은 물려받은 미끼를 본다
+    assert list(G.snapshot(work)) == ["f.txt"]                          # 가드는 제 트리를 본다
