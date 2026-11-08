@@ -79,3 +79,19 @@ def test_the_real_ledger_picks_the_structure_rules_within_budget():
 def test_the_ledger_file_is_one_json_with_seconds():
     d = json.loads(T.LEDGER.read_text(encoding="utf-8"))
     assert set(d["seconds"].values()) and all(isinstance(v, (int, float)) for v in d["seconds"].values())
+
+
+def test_other_gates_load_shrinks_the_choice_and_zero_load_is_the_standalone_model():
+    more = {f"s{i}.py": 2.0 for i in range(40)}
+    fs = list(more)
+    alone, a = T.pick(fs, more, 20.0, 8, startup=0, load=0)
+    inside, b = T.pick(fs, more, 20.0, 8, startup=0, load=60)
+    assert len(inside) < len(alone) and b["est"] <= 20.0 and a["est"] <= 20.0
+
+
+def test_the_hook_line_declares_the_condition_the_budget_is_measured_under():
+    """예산 30초는 **훅 전체 벽시계 · 게이트 동시**의 30초다(PLAN #210 ㉡) — 줄이 `--load` 로 그 조건을 적고 있는가."""
+    gate = next(ln for ln in (T.ROOT / ".githooks" / "pre-push.gates").read_text(encoding="utf-8").splitlines()
+                if "testpick.py" in ln and not ln.lstrip().startswith("#"))
+    assert "--load" in gate and "--budget" in gate
+    assert float(gate.split("--budget")[1].split()[0]) < 30

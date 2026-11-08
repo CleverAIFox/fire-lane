@@ -20,6 +20,7 @@ GREEN = {
     "invalid": (0, ""),
     "unsealed": (0, "DECLARED 0\n"),
     "git": (0, ""),
+    "tests": (0, "✓ 시험 묶음 198개 파일 · 빨강 0 · 25.0초\n"),
 }
 
 
@@ -29,6 +30,8 @@ def _runner(**over):
 
     def run(argv: list[str], cwd: Path) -> tuple[int, str]:
         s = " ".join(argv)
+        if "testpick.py" in s:
+            return table["tests"]
         if "ratchet.py" in s:
             return table["ratchet"]
         if "import mutate" in s:
@@ -125,3 +128,9 @@ def test_every_blocker_prints_a_command_and_exit_code_follows(capsys, monkeypatc
     monkeypatch.setattr(P, "survey", lambda *a, **k: [])
     assert P.main([]) == 0
     assert P.main(["--write"]) == 2          # 쓰기 옵션은 없다 — 읽기 전용
+
+
+def test_a_red_test_bundle_blocks_first_in_the_chain():
+    b = P.survey(ROOT, _runner(tests=(1, "  ✗ test_layering.py\n      E   sys.path 조작\n✗ 시험 묶음 198개 파일 · 빨강 1\n")))
+    assert [x.key for x in b] == ["㉥"] and "testpick.py --run" in " ".join(b[0].cmds)
+    assert [k for k, _ in P.CHECKS][0] == "㉥"          # 고치면 도장이 낡으므로 사슬의 맨 앞이다

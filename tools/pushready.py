@@ -22,7 +22,8 @@ pushready.py — 「푸시해도 되는가」 **한 명령.**  (PLAN #207)
   ㉢ `docseal` 의 `UNSEALED` — 도장 없는 절(선언 `docseal.UNSEALED` 보다 많으면 막는다)
   ㉣ `git status` — **커밋 안 된 추적 파일 변경.** `test_fix_door` 는 커밋된 트리를 쓴다.
   ㉤ `mutate` — 변이 장부가 낡았는가(`ratchet_values()` 가 죽는가)
-순서는 사슬이다 — **래칫 → 변이 장부 → 문서 도장 → 커밋.** 목록은 그 순서로 낸다.
+  ㉥ `testpick --run` — 실측으로 고른 시험 묶음(구조 규약 시험 포함 · PLAN #209)
+순서는 사슬이다 — **시험 → 래칫 → 변이 장부 → 문서 도장 → 커밋.** 목록은 그 순서로 낸다.
 
 부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398 — 아직 어느 관문에도 안 올렸다: 2분이 예산 30초에 안 든다)
 IN    `tools/ratchet.py` · `tools/docseal.py` · `tools/mutate.py` 의 출력과 종료 코드 · `git status --porcelain`
@@ -188,9 +189,23 @@ def check_mutate(root: Path, run: Runner) -> Block | None:
                  [" ".join([*_PY, "tools/mutate.py", "--write", "--stale"]) + "   # 느리다 · 고친 도구의 과녁만 다시 잰다"])
 
 
+# ── ㉥ 구조 규약 시험 묶음 ───────────────────────────────────────
+def check_tests(root: Path, run: Runner) -> Block | None:
+    """`testpick --run` — 실측 장부에서 **계산한** 시험 묶음(PLAN #209). 손 목록이 아니다.
+
+    ★ 훅(`--load 60`)보다 큰 묶음이다 — 여기는 남의 일이 없어 `test_layering` 같은 구조 규약 시험이 든다(2026-11-08 에 CI 만 물었다).
+    """
+    rc, out = run([*_PY, "tools/testpick.py", "--run"], root)
+    if rc == 0:
+        return None
+    tail = [x for x in out.strip().splitlines() if x.strip()]
+    return Block("㉥", "시험 묶음이 빨갛다(또는 장부가 없다)", tail[-8:],
+                 [" ".join([*_PY, "tools/testpick.py", "--run"]) + "   # 빨간 파일을 읽고 고친다 — 고친 뒤 래칫 · 도장을 다시 사슬로"])
+
+
 #: 사슬 순서 — 래칫 → 변이 장부 → 문서 도장 → 커밋. **싼 것을 앞에 두지 않는다**(사람이 칠 순서가 목록 순서다).
 CHECKS: list[tuple[str, Callable[[Path, Runner], Block | None]]] = [
-    ("㉠", check_ratchet), ("㉤", check_mutate), ("㉡", check_invalid_seals),
+    ("㉥", check_tests), ("㉠", check_ratchet), ("㉤", check_mutate), ("㉡", check_invalid_seals),
     ("㉢", check_unsealed), ("㉣", check_dirty),
 ]
 
@@ -209,9 +224,9 @@ def survey(root: Path = ROOT, run: Runner = real_run, *, log: Callable[[str], No
 
 def render(blocks: list[Block]) -> str:
     if not blocks:
-        return ("✓ 푸시 가능 — 래칫 · 변이 장부 · 도장(낡음 · 없음) · 커밋 네 축이 막지 않는다.\n"
+        return ("✓ 푸시 가능 — 시험 묶음 · 래칫 · 변이 장부 · 도장(낡음 · 없음) · 커밋 다섯 축이 막지 않는다.\n"
                 "  (전수 pytest 는 안 돌았다 — 이 도구는 그 대신이 아니다.)")
-    L = [f"✗ 푸시 불가 — 막는 것 {len(blocks)}가지 (사슬 순서: 래칫 → 변이 장부 → 문서 도장 → 커밋)\n"]
+    L = [f"✗ 푸시 불가 — 막는 것 {len(blocks)}가지 (사슬 순서: 시험 → 래칫 → 변이 장부 → 문서 도장 → 커밋)\n"]
     for b in blocks:
         L.append(f"  {b.key} {b.what}")
         L += [f"      {d}" for d in b.detail]
