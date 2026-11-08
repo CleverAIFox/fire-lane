@@ -44,7 +44,8 @@ MAX_OWNER_BLOCK_READERS = 8   # 2026-09-22 W10-1 이 하나를 뺐다(§217-5) �
 #
 #   가르고 나면 둘째가 줄어드는 것을 첫째가 못 가린다. 2026-09-17 실측 45 · 17.
 MAX_AUTHORITY_MISSING = 44    # authority 칸이 아예 없는 datasets
-MAX_AUTHORITY_NO_ROUTE = 17   # 기관은 적었으나 받은 경로 괄호가 없는 datasets
+MAX_AUTHORITY_NO_ROUTE = 16   # 기관은 적었으나 받은 경로 괄호가 없는 datasets
+#   ★ 2026-11-07 17 → 16. `nfa_mas_spec_2025` 가 retired 로 갔다(mas_vehicle_spec 과 바이트 동일 · PLAN #55 ③). 조이는 쪽이다.
 
 
 def _ratchet(name: str, got: int, cap: int, detail: list[str]) -> None:

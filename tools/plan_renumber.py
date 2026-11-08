@@ -266,6 +266,31 @@ def collection_gap(text: str) -> tuple[list[int], list[int]]:
 
 
 
+def unresolved_section_refs(text: str) -> list[str]:
+    """PLAN 안의 `§N` · `§N-M` 중 **이 문서에 없는 절**을 가리키는 것. 비면 정합이다.
+
+    다른 문서를 가리킬 때는 바로 앞에 소속(`MASTER` · `DECISIONS` · `README`)을 적는다 —
+    `DECISIONS §633-3`. 앞에 조사나 여는 괄호가 붙어도(`잡는다(MASTER §16-1`) 인정한다.
+    ★ 2026-11-08. 이 판단의 **유일한 자리다.** `tests/test_declaration_sync.py::
+      test_plan_section_refs_resolve` 가 이 함수를 부른다 — 정규식이 두 벌이면 한쪽만 고쳐진다.
+      소속 없는 `§633-3`(DECISIONS 절)이 pre-push 를 통과하고 CI 에서 죽은 것이 그 사고다.
+    """
+    h2 = set(re.findall(r"^## (\d+)\.", text, re.M))
+    h3 = set(re.findall(r"^### (\d+-[0-9a-z]+)\.", text, re.M))
+    bad: set[str] = set()
+    for m in re.finditer(r"§(\d+)(?:-([0-9a-z]+))?", text):
+        before = text[max(0, m.start() - 12):m.start()]
+        if re.search(r"(MASTER|DECISIONS|README)\s*$", before):
+            continue
+        top, sub = m.group(1), m.group(2)
+        if sub:
+            if f"{top}-{sub}" not in h3 and top not in h2:
+                bad.add(f"§{top}-{sub}")
+        elif top not in h2:
+            bad.add(f"§{top}")
+    return sorted(bad)
+
+
 def selftest() -> int:
     """판별식이 살아 있나. **`_canary` 를 품는다** — 둘이 같은 일이다.
 
@@ -398,6 +423,14 @@ def main() -> int:
         if lost:
             shown = ", ".join(f"#{n}" for n in lost)
             print(f"  ✗ 선언에 없는 결번: {shown} — 머리 줄에 더해라")
+        return 1
+
+    dead_sec = unresolved_section_refs(text)
+    if dead_sec:
+        print("★ PLAN 안에 **실체가 없는 절 참조**가 있다\n")
+        for r in dead_sec:
+            print(f"  ✗ {r}")
+        print("    다른 문서의 절이면 `DECISIONS §633-3` · `MASTER §16-1` 처럼 소속을 앞에 적는다.")
         return 1
 
     # ── PLAN **안**의 산 길잡이 — 여기는 빨강이다 ──────────────

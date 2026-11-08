@@ -1090,7 +1090,7 @@ tools/transition.py        봉인 ↔ 현재 전이표 · --self 항등 자기�
 소방장비 기본규격 · 소방차량 관리카드(받는 대로 반입 · 4대분).
 
 <!--gen: datasets-->
-대장은 `sources.yaml` 하나다. `datasets` 88종 · `retired` 8종.
+대장은 `sources.yaml` 하나다. `datasets` 87종 · `retired` 9종.
 <!--/gen-->
 ★ `datasets` 종수는 `tools/docgen.py` 가 대장에서 받아 **채운다** — 손으로 적으면 낡는다(08-31 에 실제로 셋 다 낡아 있었다). `retired` 종수는 대조만 한다(§246 밖 ②). `norm` 은 텍스트 14종 이관 완료다(§123).
 
@@ -2785,7 +2785,7 @@ PLAN 번호·참조 · 커버리지 래칫 · 문서 정합 도장을 밟는다.
 
 <!--gen: sealable-->
 ★ **raw 지문으로 파이프라인 전량을 생략한다**(`PLAN #15`(결번) · `#68` → `DECISIONS
-  §160~161`). `SEAL.json` 이 소스 87종의 raw sha256 을 갖고, `dms.py rawdiff`
+  §160~161`). `SEAL.json` 이 소스 86종의 raw sha256 을 갖고, `dms.py rawdiff`
   가 그것을 실물과 대조한다. 같으면 전량을 안 돈다 — **한 자릿수 분이 1분 밑으로** 준다.
   못 재거나 봉인이 없으면 **안 건너뛴다.** 모를 때 건너뛰는 것은 검사를
   끄는 것과 같다.
@@ -3271,7 +3271,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 3,067 전수 · **분모(blank) 0절** · 물림(inherit) 1,916절.
+★ **강제자 칸의 분모.** 절 3,074 전수 · **분모(blank) 0절** · 물림(inherit) 1,916절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -3672,7 +3672,7 @@ CRS 변경               ★ 중단. 무조건
 ### 18-3c. retired — 폐기 기록
 
 **지운 것도 대장에 남긴다.** 없으면 3개월 뒤에 또 받고 또 조사한다.
-현재 `retired` 8종이 있다(NGI 원본 20도엽 · 기본도 옛 판 · 건축물대장 동구 판 · 도로명주소 건물DB 전남광주 판 · 소방청 수동 파생본 넷(119 · 화재 · 구조 · 소방대상물 · 전국본 재추출로 대체 — DECISIONS §649-2) — DECISIONS §183-2). 전부 파일이 있는 보관본이다 — 파일 없는 기각 기록은 대장에 두지 않고 `landing_disposition` 과 DECISIONS 가 든다.
+현재 `retired` 9종이 있다(NGI 원본 20도엽 · 기본도 옛 판 · 건축물대장 동구 판 · 도로명주소 건물DB 전남광주 판 · 소방청 수동 파생본 넷(119 · 화재 · 구조 · 소방대상물 · 전국본 재추출로 대체 — DECISIONS §649-2) · MAS 제작규격 hwp 한 장(`mas_vehicle_spec` 과 바이트 동일 — DECISIONS §658) — DECISIONS §183-2). 전부 파일이 있는 보관본이다 — 파일 없는 기각 기록은 대장에 두지 않고 `landing_disposition` 과 DECISIONS 가 든다.
 
 ```yaml
 retired:
@@ -4813,6 +4813,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `web/navi/test/dataSource.test.ts` | **없으면 죽는 것**과 없어도 도는 것. `style` 이 없으면 죽는다는 선언을 민다(§483) |
 | `web/navi/test/simulation.test.ts` | 경로를 따라 걷는 점 — **dt 0.1초 자름.** 없으면 시연 중에 점이 날아간다(§483) |
 | `web/navi/test/refOpacity.test.ts` | 관제가 발행 범위 밖(`reference`)을 **흐리게 그리고 숨김일 때만 질의에서 빼는가.** 곱셈이라 층 사이 위계가 안 깨지고 범위 안은 기존값 그대로이며 `?ref=` 가 모르는 값이면 보임이다 — 막힌 길을 오타 하나로 지우지 않는다(DECISIONS §614 · DECISIONS §617) |
+| `web/navi/test/destSnap.test.ts` | 목적지 색인(`dest.geojson`) 1,592점이 전부 `SCOPE_M`(60m) 안에서 도로에 붙는지(PLAN #59 ②의 기계 쪽 확인)와, 접수 카드의 도로명 먼저 표기 · 자료 기준일 읽기(PLAN #73)를 묶는다. 눈 확인이 아니다 |
 
 ## 23. 코드 지도 — 가장자리와 검사
 
@@ -4892,6 +4893,9 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `tests/test_figure_fit.py` | 그림 라벨이 **폭까지** 화면·박스 안에 드는가 |
 | `tests/test_sweep_bookmark.py` | 레이크 지문 **북마크**가 낡은 것을 재사용하지 않는가 |
 | `tests/test_lakecheck_l3.py` | L3 이 **레이크를 전부 해시하지 않는지** — 판정이 아니라 **비용**을 잰다 |
+| `tests/test_lakecheck_l5.py` | L5 가 norm 의 상류를 `_prep.json` 의 raw 경로 키(`lake.norm_owners`)로 판정하는지 — 형제 raw 가 있어도 **짝 없는 norm 은 잡힌다**(PLAN #197). 합성 레이크라 레이크 없는 기계에서도 돈다. 시험이라 「부류」 줄은 없다 |
+| `tests/test_pushready.py` | 「푸시해도 되는가」 한 명령(`tools/pushready.py` · PLAN #207 닫힘)이 **다섯 축(래칫 · 낡은 도장 · 도장 없음 · 커밋 안 된 변경 · 변이 장부)을 하나씩 막는가** — ㉣ 는 실제 git 저장소로 「도장만 찍고 커밋 안 함」을 만든다. 읽기 전용이고 합성 출력이라 2분짜리 실물을 안 돈다. 시험이라 「부류」 줄은 없다 |
+| `tests/test_testpick.py` | 푸시 전 시험 묶음(`tools/testpick.py` · PLAN #209 닫힘)을 **실측 장부에서 계산하는가** — 짧은 순 · 예산 · 새 시험은 무조건 · 장부가 비면 닫힌 쪽 · 실물 장부에서 구조 규약 시험(`test_layering` 등)이 묶음에 드는가. 시험을 돌리지 않는다(계산만). 시험이라 「부류」 줄은 없다 |
 | `tests/test_refcheck_paths.py` | 경로 표기 검사가 **무엇을 넘기는가** |
 
 ## 24. 저장소 안내 — 루트에서 내린 것
@@ -5226,7 +5230,7 @@ web/
 도달 불가    468         지도에 점선으로 겹친다 — 판정이 clear 여도 닿지 못한다
 총연장       58,821.5m
 기준        소방청 2025 골든타임 대책 + 2026-08-06 현장 답사 (통과 하한 3.0m)
-대장        `datasets` 88종 · `retired` 8종
+대장        `datasets` 87종 · `retired` 9종
 web/data    지형 22타일 · 정사영상 1,423타일 포함 (크기는 web_manifest 가 낸다)
 내비        web/navi/ — GPS 위치 추정(경로 투영 · 순간이동 재동기화) · A* · 턴바이턴 · 대체 접근 지점
             edge_cost 는 파이썬과 전량 대조 · 단위 시험 web/navi/test (npm run test · vitest)

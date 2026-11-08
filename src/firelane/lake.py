@@ -221,13 +221,21 @@ def _shared(own: tuple[str, ...], c: Claims) -> bool:
     return all(lays) and len(set(lays)) == len(lays)
 
 
+def norm_owners(prep: dict | None) -> dict[str, list[str]]:
+    """norm 상대경로 → 그것을 낳은 raw 상대경로들 — **norm 의 주인 판정 정본**(#197 · `resolve` 와 L5 가 같이 읽는다).
+    `_prep.json` 의 키는 raw 경로고 `dst` 가 norm 경로다(없으면 키와 같다)."""
+    out: dict[str, list[str]] = {}
+    for k, v in ((prep or {}).get("files") or {}).items():
+        out.setdefault(str((v or {}).get("dst") or k), []).append(k)
+    return out
+
+
 def resolve(y: dict, root: Path, prep: dict | None = None) -> list[Row]:
     """레이크 루트(`FIRE_LANE_DATA`) 아래 모든 파일을 판정한다. **읽기만 한다.**"""
     c = claims(y)
     # ★ `_prep.json` 의 키는 raw 상대경로다. 변환기가 확장자를 바꾸면(관리카드 pdf → csv)
     #   norm 실물은 `dst` 에 있다(§172-3). 키만 보면 그 넷이 주인없음이 된다.
-    prep_files = {str((v or {}).get("dst") or k)
-                  for k, v in ((prep or {}).get("files") or {}).items()}
+    prep_files = set(norm_owners(prep))
     rows: list[Row] = []
     seen_literal: set[str] = set()
     seen_held: set[tuple[str, str]] = set()
@@ -547,7 +555,7 @@ def table(rows: list[Row]) -> str:
     return "\n".join(lines)
 
 
-def _load_prep() -> dict:
+def load_prep() -> dict:
     p = paths.ROOT / "data" / "_prep.json"
     return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
 
@@ -579,7 +587,7 @@ def main(argv: list[str] | None = None) -> int:
         pm, pr = write_commands(res, a.out, top)
         print(f"\n이동 {len(res.moves)} → {pm}\n삭제 {len(res.deletes)} → {pr}")
         return 0
-    rows = resolve(y, paths.DATA, _load_prep())
+    rows = resolve(y, paths.DATA, load_prep())
     print(table(rows))
     if a.json:
         a.json.write_text(json.dumps([asdict(r) for r in rows], ensure_ascii=False, indent=1) + "\n",

@@ -127,3 +127,27 @@ export function searchPois(pois: Poi[], q: string, limit = 20): PoiHit[] {
     || a.name.length - b.name.length);
   return hits.slice(0, limit);
 }
+
+/**
+ * 접수 카드에 줄 주소 — **도로명주소가 먼저, 지번은 뒤다.** (PLAN #73 · DECISIONS §544-2 진술 3
+ * 「구 주소만 뜨고 도로명 주소가 안 뜸」)
+ *
+ * 색인의 `addr` 가 도로명주소이고 `alt` 가 지번이다. 둘 다 없으면 빈 배열 —
+ * 없는 주소를 지어내지 않는다. 같은 문자열이면 한 번만 낸다.
+ */
+export function addressLines(p: { addr: string; alt: string }): string[] {
+  const out: string[] = [];
+  if (p.addr) out.push(p.addr);
+  if (p.alt && p.alt !== p.addr) out.push(p.alt);
+  return out;
+}
+
+/**
+ * 자료 기준일 `YYYY-MM-DD` — `_manifest.json` 의 `generated_at`(ISO)에서 날짜 부분만.
+ * (PLAN #73 · 진술 1 「최신 데이터가 없음」) 읽을 수 없으면 null — **오늘로 채우지 않는다.**
+ */
+export function asOfDate(generatedAt: unknown): string | null {
+  if (typeof generatedAt !== "string") return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})(?:T|$)/.exec(generatedAt);
+  return m ? `${m[1]}-${m[2]}-${m[3]}` : null;
+}

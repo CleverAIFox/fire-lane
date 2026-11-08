@@ -110,11 +110,11 @@ def passthrough_rules(orgs=None) -> list[tuple[str, str, str]]:
       `<stem>_<scope>_<날짜>_<part>` 를 만들고 `naming.check` 도 통과시키는데 이 정규식만
       날짜로 끝나야 했다 — 같은 형태의 세 번째다(하이픈 · json). 관리카드가 처음 걸렸다.
     """
+    from firelane.naming import VINTAGE_ALT
     from firelane.raw_ext import ext_alt as _ext_alt
-    org_list = providers.all() if orgs is None else orgs
     return list(RULES) + [
-        (rf"^{o}_[a-z0-9_-]+_\d{{8}}(?:_[a-z0-9-]+)?\.({_ext_alt()})$", o, None)
-        for o in sorted(org_list)
+        (rf"^{o}_[a-z0-9_-]+_(?:{VINTAGE_ALT})(?:_[a-z0-9-]+)?\.({_ext_alt()})$", o, None)
+        for o in sorted(providers.all() if orgs is None else orgs)
     ]
 
 

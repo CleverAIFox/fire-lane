@@ -63,6 +63,11 @@ DOUBLE_EXT = ("tar.gz", "tar.bz2", "tar.xz")
 PROVIDER_RE = re.compile(r"^[a-z][a-z0-9]{1,15}$")
 DATASET_RE = re.compile(r"^[a-z0-9]+(_[a-z0-9]+)*$")
 VINTAGE_RE = re.compile(r"^(\d{4})(\d{2})?(\d{2})?$")
+# ★ 2026-11-07 (#196). vintage 문법의 **정본 한 곳.** `normalize_raw` 의 통과 규칙과
+#   이 파일의 개명 산출이 정규식 사본을 따로 들고 있었고, 사본은 8자리만 받았다.
+#   긴 꼴이 먼저다 — 교대(alternation)는 왼쪽부터 시도한다.
+VINTAGE_ALT = r"\d{8}|\d{6}|\d{4}"
+VINTAGE_TOKEN = re.compile(VINTAGE_ALT)          # fullmatch 로 쓴다
 PART_RE = re.compile(r"^[a-z0-9]+$")
 REV_RE = re.compile(r"^r(\d+)$")
 
@@ -369,7 +374,7 @@ def canonical(rel: str, entry: dict) -> str | None:
         # 스코프 토큰이 아예 없다. 대장이 적어줘야 넣는다.
         if want_scope is None:
             return None
-        if not re.fullmatch(r"\d{8}|\d{6}|\d{4}", bits[-1]):
+        if not VINTAGE_TOKEN.fullmatch(bits[-1]):
             return None
         head, vintage, tail = bits[:-1], bits[-1], []
     else:
@@ -384,19 +389,19 @@ def canonical(rel: str, entry: dict) -> str | None:
             if want_scope is None:
                 return None
             want_part = want_part or bits[idx]
-            if not tail or not re.fullmatch(r"\d{8}|\d{6}|\d{4}", tail[0]):
+            if not tail or not VINTAGE_TOKEN.fullmatch(tail[0]):
                 return None
             vintage, tail = tail[0], tail[1:]
         else:
             if want_scope is None:
                 want_scope = cur
-            if not tail or not re.fullmatch(r"\d{8}|\d{6}|\d{4}", tail[0]):
+            if not tail or not VINTAGE_TOKEN.fullmatch(tail[0]):
                 # `gj_dong` 처럼 스코프 토큰이 두 낱말인 경우가 여기 온다.
                 # 대장이 scope 를 적어야 나머지를 버릴 수 있다.
                 if entry.get("scope") is None:
                     return None
                 rest = [x for x in tail if not re.fullmatch(r"\d{4,8}", x)]
-                nums = [x for x in tail if re.fullmatch(r"\d{8}|\d{6}|\d{4}", x)]
+                nums = [x for x in tail if VINTAGE_TOKEN.fullmatch(x)]
                 if len(nums) != 1:
                     return None
                 # 버려지는 낱말은 authority 로 옮겨졌어야 한다.

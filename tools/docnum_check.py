@@ -105,6 +105,17 @@ def retired_clashes(cur: dict[str, int], retired: dict[str, list[str]]) -> list[
     return out
 
 
+def retired_pattern(old: list[str]) -> re.Pattern[str]:
+    """폐기값이 **판정 건수로** 적힌 자리를 찾는 정규식. 순수 함수 — `--selftest` · 시험이 부른다.
+
+    ★ 앞에 `#` 가 붙으면 건수가 아니라 **행 번호 인용**이다(`#63` = PLAN 의 63번 행). PLAN 은 행을 `#N` 으로 가리키는 것이
+      유일한 표기이고(`§N` 은 절), 그 표기가 수치로 읽혀 contract-strict 가 빨개졌다(2026-11-08 · PLAN #208 본문의 `#63`).
+      **줄마다 `<!--stale-ok-->` 를 다는 길(억제 래칫이 운다)이 아니라 표기를 규약으로 세운다.**
+    """
+    return re.compile(r"(?<![\d,.#])(" + "|".join(map(re.escape, old))
+                      + r")(?![\d,.]|\s*[%％]|\s*[mM]\b|\s*분\b|\s*초\b)")
+
+
 def verdicts() -> dict[str, int]:
     """판정 네 수 + 구간 수. **산출물에서 직접 센다.**
 
@@ -479,9 +490,7 @@ def main() -> int:
     #   `도달 가능 687(62%)` 의 62 를 옛 blocked 값으로 잡았다.
     #   앞에 `(` 가 오는 경우도 같다 — 괄호 안 백분율이다.
     #   **검사가 문맥 없이 숫자만 보면 새 사실을 쓸 수 없게 만든다.**
-    pats = {label: re.compile(r"(?<![\d,.])(" + "|".join(map(re.escape, old))
-                              + r")(?![\d,.]|\s*[%％]|\s*[mM]\b|\s*분\b|\s*초\b)")
-            for label, old in RETIRED.items()}
+    pats = {label: retired_pattern(old) for label, old in RETIRED.items()}
     for rel in ("README.md", "docs/MASTER.md", "docs/PLAN.md"):
         for no, ln in live_lines(rel, read(rel)):
             for label, pat in pats.items():
