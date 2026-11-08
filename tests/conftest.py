@@ -13,6 +13,7 @@ from zoneinfo import ZoneInfo
 import pytest
 import skip_policy as sp
 from tracked_guard import (  # noqa: F401  세션 앞뒤 추적 파일 지문(Zm39 · §580)
+    local_env_names,
     pytest_sessionfinish,
     pytest_sessionstart,
 )
@@ -87,19 +88,6 @@ def _shell_switches_do_not_leak(monkeypatch):
         monkeypatch.delenv(k, raising=False)
 
 
-@functools.lru_cache(maxsize=1)
-def _git_local_env_names() -> tuple[str, ...]:
-    """git 이 **저장소를 가리키려고** 쓰는 환경변수 전부. 손으로 안 적는다 — `git rev-parse --local-env-vars` 가 그 정본이다.
-
-    ★ 비면 죽는다 — 조용히 아무것도 안 비우면 아래 픽스처는 없는 것과 같다.
-    """
-    import subprocess
-    r = subprocess.run(["git", "rev-parse", "--local-env-vars"], capture_output=True, text=True, check=True, timeout=30)
-    got = tuple(x for x in r.stdout.split() if x.startswith("GIT_"))
-    assert "GIT_DIR" in got, f"git 이 저장소 환경변수를 안 냈다: {r.stdout!r}"
-    return got
-
-
 @pytest.fixture(autouse=True)
 def _inherited_git_repo_env_does_not_leak(monkeypatch):
     """worktree 의 `pre-push` 가 물려준 `GIT_DIR` 이 시험의 `git init` 을 **본 저장소로** 보내지 못하게 한다. (PLAN #200)
@@ -108,7 +96,7 @@ def _inherited_git_repo_env_does_not_leak(monkeypatch):
       `config core.hooksPath` 가 worktree 의 gitdir 에 쓰이고, 그 config 는 본 저장소와 공유라 `core.bare=true` 가 남는다.
       훅이 `unset` 하는 길(`.githooks/pre-push`)과 짝이다 — 그것은 훅을 거치는 길만 막고, 사람이 `uv run pytest` 를 직접 치는 길은 이쪽이 막는다.
     """
-    for k in _git_local_env_names():
+    for k in local_env_names():
         monkeypatch.delenv(k, raising=False)
 
 
