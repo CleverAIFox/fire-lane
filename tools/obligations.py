@@ -15,7 +15,7 @@ obligations.py — 새 파일에 따라붙는 **등재 의무**를, 이미 그 �
   `toolclass` · `scopedecl` 이 머리말을. 이 표는 그 검사들의 **판정 함수를 부를 뿐**이고 의무의 내용을 한 줄도 다시 적지 않는다.
   검사가 바뀌면 표가 따라간다 — 표가 따로 낡을 자리가 없다. 같은 판단을 두 자리에 적어 한쪽만 고쳐지는 병(`.gitleaks.toml` · `plan_renumber` 정규식)을 안 만든다.
 
-★ **아직 도출 못 한 의무는 표에 「미도출」로 적는다**(`NOT_DERIVED`) — 새 절의 하위 번호 · 「쓴 칸」 머릿줄 · 대장을 건드릴 때의 받은 경로 괄호 · `none:` 선언 · 봉인지.
+★ **아직 도출 못 한 의무는 표에 「미도출」로 적는다**(`NOT_DERIVED`) — 새 절의 하위 번호 · 「쓴 칸」 머릿줄 · `none:` 선언 · 대장을 건드릴 때의 받은 경로 괄호 · 봉인지.
   그 검사들은 파일 단위 판정 함수가 없거나 절 단위다. 있는 척하지 않는다.
 
 IN    `toolclass.classify` · `scopedecl.measure` · `sealcov.survey` 의 판정 · git 의 새 파일
@@ -60,8 +60,8 @@ OBLIGATIONS = (
 
 #: 아직 파일 단위로 도출 못 한 의무 — 있는 척하지 않는다. (종류 → 의무 · 그 검사)
 NOT_DERIVED = (
-    ("새 절", "하위 번호 · 「쓴 칸」 머릿줄", "tools/dms.py · tools/measurecols.py — 절 단위 판정이라 파일 하나로 못 묻는다"),
-    ("대장을 건드릴 때", "받은 경로 괄호 · `none:` 선언 · 봉인지(`ledger_*` · `shardseal`)", "대장 검사들 — 파일 단위 판정 함수가 없다"),
+    ("새 절", "하위 번호 · 「쓴 칸」 머릿줄 · `none:` 선언", "tools/dms.py · src/firelane/measurecols.py — 절 단위 판정이라 파일 하나로 못 묻는다"),
+    ("대장을 건드릴 때", "받은 경로 괄호 · 봉인지", "tests/test_lake.py(시험이 정본) · src/firelane/shardseal.py — 파일 단위 판정 함수가 없다"),
 )
 
 
