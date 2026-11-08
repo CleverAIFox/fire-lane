@@ -4906,6 +4906,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `tests/test_testpick.py` | 푸시 전 시험 묶음(`tools/testpick.py` · PLAN #209 닫힘)을 **실측 장부에서 계산하는가** — 짧은 순 · 예산 · 새 시험은 무조건 · 장부가 비면 닫힌 쪽 · 실물 장부에서 구조 규약 시험(`test_layering` 등)이 묶음에 드는가. 시험을 돌리지 않는다(계산만). 시험이라 「부류」 줄은 없다 |
 | `tests/test_tasktpl.py` | 지시문 틀이 **읽은 것**인가 — 불변량을 바꾸면 틀이 따라가고 의무 하나를 빼면 틀에서도 빠지며 손으로 고친 틀은 `--check` 가 운다 · 먼저 읽을 절이 없으면 닫힌 쪽 |
 | `tests/test_plan_row_refs.py` | PLAN 안의 `#N` 이 **빈 행을 맨몸으로 가리키지 않는가**(`plan_renumber.unresolved_row_refs` · PLAN #208) — 죽은 번호를 맨몸으로 적으면 걸리고 표시가 있거나 산 행이면 통과 · 줄 단위의 느슨함을 못 박는다 · 실제 PLAN 이 깨끗한가 · pre-push 가 그 도구를 도는가 |
+| `tests/test_processed_env.py` | **`FIRE_LANE_PROCESSED` 로 격리 재취입이 메인 `data/processed` 를 못 건드리는가**(PLAN #183) — 자식이 보는 산출 경로가 스크래치인지 먼저 단언하고 메인 해시가 전후로 같은지 문다 · 환경변수가 없으면 저장소 안 그대로다. 예전의 코드 통째 복사 레시피를 대체한다 |
 | `tests/test_refcheck_paths.py` | 경로 표기 검사가 **무엇을 넘기는가** |
 
 ## 24. 저장소 안내 — 루트에서 내린 것
