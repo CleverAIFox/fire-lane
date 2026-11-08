@@ -47418,6 +47418,6 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 > ① **§669:** `tracked_guard` 의 구멍을 `#200` 행 본문에 올렸다 — `pytest_sessionstart` 가 자동 픽스처보다 **먼저** 돌아 `tests/conftest.py` 의 픽스처가 그 경로를 못 막는다. 지금 막는 것은 훅 머리의 `unset` 뿐이고 훅 밖 직접 `pytest` 는 여전히 난다. 새 행은 안 세웠다(같은 `GIT_DIR` 상속 족이다).
 > ② **§671:** `obligations --new` 는 **`pushready` 가 부른다**(㉦ · 사슬에서 시험 다음 · 래칫 앞). 훅은 안 부른다 — 훅이 25.8초로 30초에 겨우 들어 더 얹지 않는다. 걸린 시간은 새 파일이 없으면 0.1~0.2초, 있으면 약 5.4초(`uv run` 기동 포함 · 세 검사의 판정을 부른다).
 
-**2026-11-08 추가 — 미도출을 저장소에서 다시 읽었다(PLAN #199 ④). 길은 안 골랐다.** 처음 표에 적은 이름 둘이 **틀렸다** — 「쓴 칸」 검사는 `tools/measurecols.py` 가 아니라 `src/firelane/measurecols.py` 이고, `none:` 선언은 대장 검사(`ledger_*`)가 아니라 그 검사의 ③ 이 든다. `tools/obligations.py` 의 `NOT_DERIVED` 를 고쳤다(경로 · 묶음).
+**2026-11-08 추가 — 미도출을 저장소에서 다시 읽었다(PLAN #199 ④). 길은 안 골랐다.** 처음 표에 적은 이름 둘이 **틀렸다** — 「쓴 칸」 검사는 `tools/` 아래가 아니라 `src/firelane/measurecols.py` 이고, `none:` 선언은 대장 검사(`ledger_*`)가 아니라 그 검사의 ③ 이 든다. `tools/obligations.py` 의 `NOT_DERIVED` 를 고쳤다(경로 · 묶음).
 - **두 묶음이다.** ⓐ 새 절 — 하위 번호(`tools/dms.py` 의 `inherit_split` · `inherit_counts`) · 「쓴 칸」 · `none:`(`src/firelane/measurecols.py` 의 `check_all`). 판정 함수가 **이미 있고** 문서 전체를 읽어 절 이름이 붙은 위반을 낸다. 길: 새 절 = 지금 절 집합 − `HEAD` 의 절 집합으로 좁혀 그 위반만 거른다. ⓑ 대장 — 받은 경로 괄호는 `tests/test_lake.py` 의 시험이 정본이라 모듈에 판정 함수가 없다(`MAX_AUTHORITY_NO_ROUTE` 래칫). 봉인지는 `src/firelane/shardseal.py`.
 - **ⓑ 의 길 둘.** ㉠ 시험 안의 판정을 모듈로 꺼내 시험이 부르게 한다(정본이 시험에서 모듈로 옮겨 간다) ㉡ 도출할 수 없는 이유를 적고 표에서 뺀다. ㉠ 은 시험을 건드리므로 사람이 정한다.
