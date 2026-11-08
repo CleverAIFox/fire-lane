@@ -106,3 +106,15 @@ def test_measuring_only_some_files_overwrites_just_those_ledger_cells(tmp_path, 
     monkeypatch.setattr(T, "run_all", lambda names, jobs, ledger, root=T.ROOT: ({"test_a.py": 0.5}, {}))
     assert T.main(["--measure", "--write", "--only", "test_a.py"]) == 0
     assert json.loads(led.read_text(encoding="utf-8"))["seconds"] == {"test_a.py": 0.5, "test_b.py": 7.0}
+
+
+def test_a_red_file_blocks_writing_the_ledger(tmp_path, monkeypatch):
+    """★ 빨간 파일이 있으면 장부를 안 쓴다 — 흔들린 판의 초가 추정을 오염시키지 않는다. 끝나면 장부는 그대로다."""
+    led = tmp_path / "t.json"
+    before = json.dumps({"seconds": {"test_a.py": 9.0}})
+    led.write_text(before, encoding="utf-8")
+    monkeypatch.setattr(T, "LEDGER", led)
+    monkeypatch.setattr(T, "test_files", lambda root=T.ROOT: ["test_a.py"])
+    monkeypatch.setattr(T, "run_all", lambda names, jobs, ledger, root=T.ROOT: ({"test_a.py": 0.5}, {"test_a.py": "boom"}))
+    assert T.main(["--measure", "--write"]) == 1
+    assert led.read_text(encoding="utf-8") == before

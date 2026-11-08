@@ -171,8 +171,11 @@ def main(argv: list[str] | None = None) -> int:
         top = sorted(secs.items(), key=lambda kv: -kv[1])
         print(f"{len(secs)}/{len(files)}개 파일 · 합 {sum(secs.values()):.0f}초 · 벽시계 {time.monotonic() - t:.0f}초 (병렬 {a.jobs}) · 빨강 {len(red)}")
         print(f"  상위 25 합 {sum(s for _, s in top[:25]):.0f}초 · 나머지 합 {sum(s for _, s in top[25:]):.0f}초")
+        if a.write and red:
+            print("✗ 빨간 파일이 있어 장부를 안 썼다 — 빨강을 고치거나 흔들림인지 가린 뒤 다시 잰다", file=sys.stderr)
+            return 1
         if a.write:
-            # 장부에 못 적힌 파일(죽은 통 · 시한)은 「새 시험」이라 무조건 묶음에 든다(닫힌 쪽). 빨간 파일의 초는 시험이 끝까지 돌았으니 적는다.
+            # 장부에 못 적힌 파일(죽은 통 · 시한)은 「새 시험」이라 무조건 묶음에 든다(닫힌 쪽). 빨강이 있으면 위에서 이미 막았다.
             LEDGER.parent.mkdir(parents=True, exist_ok=True)
             if a.only:      # 일부만 쟀다 — 나머지 칸은 그대로 두고 잰 칸만 덮는다(없어진 파일은 버린다)
                 secs = {**{k: v for k, v in load_ledger().items() if k in test_files()}, **secs}
