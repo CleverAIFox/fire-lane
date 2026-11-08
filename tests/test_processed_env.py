@@ -68,7 +68,7 @@ def test_isolated_reingest_with_the_processed_env_keeps_ingest_out_of_the_main_p
     assert tree_hash(root / "data" / "processed") == before, "**메인 `data/processed` 가 바뀌었다** — 격리가 샜다"
 
 
-def test_the_processed_env_is_optional_and_defaults_to_the_repository_value():
+def test_the_processed_env_is_optional_and_defaults_to_the_repository_value(tmp_path):
     """환경변수가 없으면 지금 값 그대로다(PLAN #183 · 도착 조건). 있으면 그리로 간다."""
     import os
     import subprocess
@@ -82,4 +82,5 @@ def test_the_processed_env_is_optional_and_defaults_to_the_repository_value():
                               cwd=root, env=e, capture_output=True, text=True, check=True, timeout=60).stdout.strip()
 
     assert Path(run(base)) == root / "data" / "processed"
-    assert run({**base, "FIRE_LANE_PROCESSED": "/tmp/zz_processed"}) == "/tmp/zz_processed"
+    p = str(tmp_path / "zz_processed")
+    assert run({**base, "FIRE_LANE_PROCESSED": p}) == p
