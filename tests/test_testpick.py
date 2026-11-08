@@ -79,3 +79,42 @@ def test_the_real_ledger_picks_the_structure_rules_within_budget():
 def test_the_ledger_file_is_one_json_with_seconds():
     d = json.loads(T.LEDGER.read_text(encoding="utf-8"))
     assert set(d["seconds"].values()) and all(isinstance(v, (int, float)) for v in d["seconds"].values())
+
+
+def test_other_gates_load_shrinks_the_choice_and_zero_load_is_the_standalone_model():
+    more = {f"s{i}.py": 2.0 for i in range(40)}
+    fs = list(more)
+    alone, a = T.pick(fs, more, 20.0, 8, startup=0, load=0)
+    inside, b = T.pick(fs, more, 20.0, 8, startup=0, load=60)
+    assert len(inside) < len(alone) and b["est"] <= 20.0 and a["est"] <= 20.0
+
+
+def test_the_hook_line_declares_the_condition_the_budget_is_measured_under():
+    """예산 30초는 **훅 전체 벽시계 · 게이트 동시**의 30초다(PLAN #210 ㉡) — 줄이 `--load` 로 그 조건을 적고 있는가."""
+    gate = next(ln for ln in (T.ROOT / ".githooks" / "pre-push.gates").read_text(encoding="utf-8").splitlines()
+                if "testpick.py" in ln and not ln.lstrip().startswith("#"))
+    assert "--load" in gate and "--budget" in gate
+    assert float(gate.split("--budget")[1].split()[0]) < 30
+
+
+def test_measuring_only_some_files_overwrites_just_those_ledger_cells(tmp_path, monkeypatch):
+    """`--only` — 고친 시험 하나를 11분 안 들이고 갱신한다. 나머지 칸은 그대로여야 한다."""
+    led = tmp_path / "t.json"
+    led.write_text(json.dumps({"seconds": {"test_a.py": 9.0, "test_b.py": 7.0, "test_gone.py": 1.0}}), encoding="utf-8")
+    monkeypatch.setattr(T, "LEDGER", led)
+    monkeypatch.setattr(T, "test_files", lambda root=T.ROOT: ["test_a.py", "test_b.py"])
+    monkeypatch.setattr(T, "run_all", lambda names, jobs, ledger, root=T.ROOT: ({"test_a.py": 0.5}, {}))
+    assert T.main(["--measure", "--write", "--only", "test_a.py"]) == 0
+    assert json.loads(led.read_text(encoding="utf-8"))["seconds"] == {"test_a.py": 0.5, "test_b.py": 7.0}
+
+
+def test_a_red_file_blocks_writing_the_ledger(tmp_path, monkeypatch):
+    """★ 빨간 파일이 있으면 장부를 안 쓴다 — 흔들린 판의 초가 추정을 오염시키지 않는다. 끝나면 장부는 그대로다."""
+    led = tmp_path / "t.json"
+    before = json.dumps({"seconds": {"test_a.py": 9.0}})
+    led.write_text(before, encoding="utf-8")
+    monkeypatch.setattr(T, "LEDGER", led)
+    monkeypatch.setattr(T, "test_files", lambda root=T.ROOT: ["test_a.py"])
+    monkeypatch.setattr(T, "run_all", lambda names, jobs, ledger, root=T.ROOT: ({"test_a.py": 0.5}, {"test_a.py": "boom"}))
+    assert T.main(["--measure", "--write"]) == 1
+    assert led.read_text(encoding="utf-8") == before

@@ -29,6 +29,11 @@ fi
 BUDGET=30
 root="$(git rev-parse --show-toplevel)" || exit 1
 cd "$root" || exit 1
+# ★ PLAN #200 (2026-11-08 복제본 실측). 떼어낸 worktree 에서 푸시하면 git 이 `GIT_DIR=<본>/.git/worktrees/<이름>` 을 훅에 물려주고, 그것이
+#   게이트의 `pytest` · 시험의 자식 `git` 까지 상속돼 `git init` 이 임시 폴더가 아니라 worktree 의 gitdir 에 쓴다 — 그 config 는 본 저장소와 공유라
+#   `core.bare=true` 가 본 저장소에 남는다. 저장소는 위 `cd` 로 이미 정했으므로 이 변수들은 게이트에게 필요 없다. 목록은 git 이 낸다(손으로 안 적는다).
+# shellcheck disable=SC2046
+unset $(git rev-parse --local-env-vars) 2>/dev/null || true
 gates_file="${FIRE_LANE_PREPUSH_GATES:-$root/.githooks/pre-push.gates}"
 now() { date +%s.%N; }
 t0=$(now)

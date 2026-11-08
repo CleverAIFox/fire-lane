@@ -90,6 +90,8 @@ import importlib.util
 import sys
 from pathlib import Path
 
+import ratchetstore  # 값을 도구 파일 밖에 둔 래칫(PLAN #198)
+
 ROOT = Path(__file__).resolve().parents[1]
 TOOLS = ROOT / "tools"
 
@@ -268,6 +270,12 @@ def survey() -> list[dict]:
                 rows.append({"tool": p.name, "name": name, "err":
                              "`ratchet_values()` 가 이 이름을 안 낸다"})
                 continue
+            stored = ratchetstore.load().get(p.name, {})
+            if name in stored:
+                # 값이 도구 파일 밖에 있다 — 쓸 자리는 값 파일이다(`at` 의 오프셋 대신 `store` 표식). 값만 움직이면 이 도구를 지목한 도장이 안 죽는다.
+                rows.append({"tool": p.name, "name": name, "dir": direction,
+                             "declared": stored[name], "measured": vals[name], "at": (stored[name], 0, 0), "store": True})
+                continue
             at = _scalar(src, name)
             if at is None:
                 rows.append({"tool": p.name, "name": name, "err":
@@ -335,6 +343,9 @@ def run(write: bool) -> int:
     if write and tight:
         by: dict[Path, list] = {}
         for r in tight:
+            if r.get("store"):
+                ratchetstore.write(r["tool"], r["name"], r["measured"])
+                continue
             # `at` 은 `survey()` 에서 이미 확인됐다 — 못 찾은 것은 `err` 로 빠진다.
             by.setdefault(TOOLS / r["tool"], []).append((r["measured"], r["at"][1], r["at"][2]))
         for p, edits in by.items():

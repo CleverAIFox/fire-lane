@@ -27,5 +27,6 @@ PLAN 이력 빚	uv run python tools/planwork.py
 # ── PLAN #193 · DECISIONS §634 — 코드가 대장이 지목한 좌표 칸 이름을 직접 쓰지 않는가(AST · src/firelane). pytest 한 파일이라 시작이 약 2초 ──
 좌표 칸 리터럴(대장 coords)	uv run pytest tests/test_coord_literals.py -q -p no:cacheprovider
 # ── PLAN #209 — 구조 규약을 무는 시험(test_layering · test_no_unbounded_waits · test_sizecheck …)이 어느 관문에도 없었다. 손 목록이 아니라 **실측 장부**(data/golden/testtimes.json)에서 예산 안에 드는 파일을 계산해 돈다.
-#    새 시험은 장부에 없어도 무조건 든다. 장부 갱신은 `tools/testpick.py --measure --write`. ──
-시험 묶음(실측으로 고름)	uv run python tools/testpick.py --run --budget 20
+#    새 시험은 장부에 없어도 무조건 든다. 장부 갱신은 `tools/testpick.py --measure --write`.
+#    예산은 **훅 전체 벽시계 · 게이트 동시 · 8코어**(testpick 머리말 · PLAN #210) — `--load 60` 은 이 훅의 다른 게이트들이 쓰는 CPU-초다. ──
+시험 묶음(실측으로 고름)	uv run python tools/testpick.py --run --budget 28 --load 60
