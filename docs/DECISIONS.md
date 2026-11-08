@@ -47434,3 +47434,76 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 **닫는 문장: 로컬이 `@{u}` 보다 뒤이면 `pushready` ㉧ 이 막고 받을 명령을 댄다 — 도착 조건이 섰다.**
 - **`fetch` 안 함은 미완이 아니라 결정이다**(사람이 정했다). 읽기 전용이 `pushready` 의 정체성이고, 네트워크를 타면 `actionpin` 과 같은 사유로 사람 전용이 되어 매번 못 돈다 — 매번 못 도는 관문은 없는 관문이다. 이날 사고는 로컬 ref 비교로도 잡혔다.
 - **한계는 출력과 행에 적혀 있다** — 마지막 `git fetch` 이후의 뒤처짐은 못 본다(정확히 보려면 `git fetch` 를 먼저 친다).
+
+## 673. PLAN #201 — `--reseal-code` 46개를 **전후 트리에서 `ingest` 를 돌려** 대조했다 — 산출물이 같다(의견과 실측을 가른다 · `--reseal-code` 는 안 쳤다)
+
+> 2026-11-09
+
+유병률  **1회** — 봉인 46개가 코드 지문(`code_print`)만 낡았다(`0789e1…` → `a5d0ac…`). 전에는 「읽고 판단했다」는 의견뿐이었고 실행 근거가 없었다.
+
+강제자  없다 — 이것은 **한 번의 측정 기록**이다. 도착 조건(사람이 읽고 `--reseal-code` 를 친다)은 그대로 사람 몫이다.
+
+**앞 두 번의 실행은 왜 `rc=1` 이었나 — 비교가 못 믿는 것이었다.** 두 번 모두 스크래치 사본이 `/tmp`(tmpfs 3.9G)에 있었고 **그 볼륨이 찼다.** `before` 는 `FAIL 35종` · `after` 는 `FAIL 36종` 이었고 `Errno 28 No space left on device` 가 각각 25 · 26건, 나머지 10건은 gpkg 를 짓는 `sqlite3_exec(CREATE TABLE …)` 오류였다. 같은 코드 · 같은 입력을 디스크 볼륨(`/home`)에서 다시 돌리자 **둘 다 `rc=0` · `FAIL 0` · `OK 46`** 이다 — 앞의 FAIL 은 코드가 아니라 볼륨이었다. 실패한 실행의 산출물로는 비교하지 않았다.
+
+**실측(전후 트리, 같은 입력 · `ingest --only` 46키).** 전 트리의 `code_print` 는 `0789e1ecd337dc03`(봉인 46개가 든 값) · 후 트리는 `a5d0ac0a5eb2ff29`(지금 HEAD). 둘 다 `rc=0` · 각 약 2분 30초.
+- **산출물 80개 중 바이트 동일 50개.** 나머지 30개는 모두 `*_5186.gpkg` 이고 **내용이 같다** — 레이어마다 속성 · 도형(WKB)을 해시해 대조했더니 30/30 같았다. 바이트가 다른 것은 `gpkg_contents.last_change` 시각뿐이다(예: `cctv` `2026-11-08T15:40:52` 대 `15:43:22`).
+- **봉인 raw · cfg · out · 피처 수가 46개 전부 같다**(`_manifest.json`). 바뀐 칸은 `code` 하나다.
+- **변경 코드가 실제로 실행됐는가(커버리지 실측).** 후 트리에서 46키를 `coverage` 아래 돌려 변경한 두 파일만 쟀다. `extract_decl.py` 의 새 함수 `held` · `held_names` · `hold_hits` 는 **한 줄도 실행되지 않았고**(미실행 줄 102-103 · 108-114 · 119-122) `naming.py` 의 `canonical`(354-427) 도 **실행되지 않았다.** 실행된 것은 import 때 정의되는 상수(`HOLD` · `VINTAGE_ALT` · `VINTAGE_TOKEN`)뿐이다.
+
+**의견과 실측을 가른다.**
+- **의견(코드를 읽고 한 판단).** 변경은 둘이다: ① `extract_decl.py` — 새 함수 셋과 상수 하나(호출처는 `lake.py` · `contract.py` 뿐이라 ingest 폐포 밖) ② `naming.py` — 정규식 리터럴 `\d{8}|\d{6}|\d{4}` 를 같은 식의 이름 붙은 상수로 바꿨다(`fullmatch` 의미가 같다). 어느 키도 변경 코드에 **닿지 않는다** → 46개 모두 ㉯.
+- **실측(실행으로 확인한 것).** 위 세 줄: 산출물이 같다 · 봉인 칸이 같다 · 변경 함수가 안 돌았다. **㉮(닿는다)는 0개다.** 의견이 틀렸다면 산출물이 달랐을 것이고 달랐던 것은 없다.
+- **이 실측이 말하지 않는 것.** 이 입력(46키 · 이 레이크)에서 같다는 것이다. 다른 입력에서 변경 함수가 실행되는지는 이 실행이 안 본다. 재봉인(`--reseal-code`)을 칠지는 사람이 읽고 정한다.
+
+| 키 | 산출물 수 | 바이트 동일 | gpkg(내용 동일 · 시각만 다름) | 의견 | 실측(전후 `ingest`) |
+|---|---:|---:|---:|---|---|
+| juso_tunnel | 2 | 1 | 1 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| juso_overpass | 2 | 1 | 1 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| juso_bridge | 2 | 1 | 1 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| juso_river | 2 | 1 | 1 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| node_link_changelog | 1 | 1 | 0 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| road_link | 2 | 1 | 1 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| road_rw | 2 | 1 | 1 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| road_intrvl | 2 | 1 | 1 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| ngii1k | 10 | 5 | 5 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| streetlight | 2 | 1 | 1 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| ngii_road | 2 | 1 | 1 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| node_link | 2 | 1 | 1 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| node_point | 2 | 1 | 1 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| turn_restriction | 1 | 1 | 0 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| cctv | 2 | 1 | 1 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| fire_station | 2 | 1 | 1 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| poi_store | 2 | 1 | 1 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| boundary_emd | 2 | 1 | 1 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| building | 2 | 1 | 1 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| building_entrance | 2 | 1 | 1 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| building_connector | 2 | 1 | 1 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| hydrant_point | 2 | 1 | 1 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| fire_access | 1 | 1 | 0 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| hydrant_summary | 1 | 1 | 0 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| ngii_road_center | 2 | 1 | 1 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| bin_trash | 2 | 1 | 1 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| bin_cloth | 2 | 1 | 1 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| station_jurisdiction | 1 | 1 | 0 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| parking_lot | 1 | 1 | 0 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| enforce_cam | 1 | 1 | 0 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| school_zone | 1 | 1 | 0 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| parking_zone | 1 | 1 | 0 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| gjfire_fleet_dongbu | 1 | 1 | 0 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| gjfire_district_dongbu | 1 | 1 | 0 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| bldg_ledger_dm | 1 | 1 | 0 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| child_zone_std | 2 | 1 | 1 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| senior_zone_std | 2 | 1 | 1 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| speedbump | 1 | 1 | 0 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| admin_cctv | 1 | 1 | 0 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| speed_cam | 1 | 1 | 0 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| parking_enforce | 1 | 1 | 0 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| hydrant_type | 1 | 1 | 0 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| parking_std | 1 | 1 | 0 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| navi_build | 1 | 1 | 0 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| navi_jibun | 1 | 1 | 0 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+| civil_office | 2 | 1 | 1 | ㉯ 안 닿는다 | 봉인 raw · cfg · out · 피처 수 같다 |
+
+**별개 5개 — 건드리지 않았다.** `nfa_dispatch_119` · `nfa_rescue` · `nfa_ems` · `nfa_fire_incident` · `nfa_target_building` 은 **raw 가 달라 `--reseal-code` 가 거절한다**(다시 빌드가 필요하다 · 재봉인 대상이 아니다). 이 실행의 46키에 들지 않는다.
+
+**앞으로 이어질 것(같은 날 적는다).** 이 46개를 재봉인한 뒤에 `paths.py` · `layers.py` 를 고치면(PLAN #183 · #55) `code_print` 가 다시 움직여 봉인이 또 낡는다. 그 두 행의 코드 변경이 끝난 **뒤에** 한 번만 치는 것이 낫다.
