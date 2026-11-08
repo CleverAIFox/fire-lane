@@ -24,12 +24,13 @@ pushready.py — 「푸시해도 되는가」 **한 명령.**  (PLAN #207)
   ㉤ `mutate` — 변이 장부가 낡았는가(`ratchet_values()` 가 죽는가)
   ㉥ `testpick --run` — 실측으로 고른 시험 묶음(구조 규약 시험 포함 · PLAN #209)
   ㉦ `obligations --new` — 새 파일의 빠진 등재 의무를 이름으로(PLAN #199 · 훅이 아니라 여기 — 훅은 예산이 없다)
-순서는 사슬이다 — **시험 → 등재 의무 → 래칫 → 변이 장부 → 문서 도장 → 커밋.** 목록은 그 순서로 낸다.
+  ㉧ 로컬이 **로컬에 있는 원격 추적 가지**(`@{u}`)보다 뒤인가 — 뒤면 받을 명령을 댄다(PLAN #211). `fetch` 는 **안 한다**(사람이 정했다: 읽기 전용이 정체성이다)
+순서는 사슬이다 — **받기 → 시험 → 등재 의무 → 래칫 → 변이 장부 → 문서 도장 → 커밋.** 목록은 그 순서로 낸다(받으면 트리가 바뀌어 뒤의 것이 다 낡으므로 ㉧ 이 맨 앞이다).
 
 부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398 — 아직 어느 관문에도 안 올렸다: 2분이 예산 30초에 안 든다)
 IN    `tools/ratchet.py` · `tools/docseal.py` · `tools/mutate.py` 의 출력과 종료 코드 · `git status --porcelain`
 OUT   화면 · 종료 코드(가능 0 · 불가 1). 파일은 안 쓴다.
-밖    **푸시할 ref 가 무엇인지는 안 본다**(그것은 `.githooks/pre-push` 의 몫) · **원격 상태를 안 본다**(네트워크 없음) ·
+밖    **푸시할 ref 가 무엇인지는 안 본다**(그것은 `.githooks/pre-push` 의 몫) · **원격 상태를 안 본다**(네트워크 없음 — ㉧ 은 마지막 `git fetch` 가 받아 둔 로컬 ref 만 비교한다) ·
       **CI 가 도는 시험 전체를 안 돈다** — 전수 `pytest` 는 25분이고 이 도구는 그 대신이 아니다. 이 도구가 「가능」이라고
       한 것은 **도장 · 래칫 · 변이 장부 · 커밋** 네 축이 푸시를 막지 않는다는 뜻이다.
       ★ **느리다** — `ratchet.py` 전수가 2분이다. 그래서 `pre-push` 30초 예산에 못 올렸다(PLAN #207).
@@ -219,9 +220,47 @@ def check_obligations(root: Path, run: Runner) -> Block | None:
                  [" ".join([*_PY, "tools/obligations.py", "--new"]) + "   # 빠진 의무를 이름으로 댄다 — 적은 뒤 다시"])
 
 
+# ── ㉧ 로컬이 원격 추적 가지보다 뒤인가 ──────────────────────────
+#: ★ 한계를 **출력에 적는다** — 이 축은 네트워크를 안 타므로 마지막 `git fetch` 이후의 일은 못 본다.
+BEHIND_LIMIT = "마지막 `git fetch` 이후의 뒤처짐은 못 본다. 정확히 보려면 `git fetch` 를 먼저 쳐라."
+
+
+def _upstream(root: Path, run: Runner) -> str | None:
+    rc, out = run(["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"], root)
+    return out.strip() if rc == 0 and out.strip() else None
+
+
+def check_behind(root: Path, run: Runner) -> Block | None:
+    """`git rev-list --left-right --count HEAD...@{u}` — 로컬이 업스트림보다 **뒤**면 막는다. (PLAN #211)
+
+    2026-11-08 브로드캐스트가 원격만 갱신했고 로컬은 열여섯 커밋을 그 위에 쌓아 푸시가 non-fast-forward 로 거절됐다.
+    ★ 읽기 전용이다. `fetch` 를 안 한다 — 네트워크를 타면 `actionpin` 과 같은 사유로 사람 전용이 되어 매번 못 돈다.
+    업스트림이 없는 가지는 **막지 않는다**(`notes()` 가 그 사실만 적는다). 읽을 수 없으면 닫힌 쪽(막는다).
+    """
+    up = _upstream(root, run)
+    if up is None:
+        return None
+    rc, out = run(["git", "rev-list", "--left-right", "--count", "HEAD...@{u}"], root)
+    nums = out.split()
+    if rc != 0 or len(nums) != 2 or not all(n.isdigit() for n in nums):
+        return Block("㉧", f"{up} 와의 앞뒤를 못 읽었다", out.strip().splitlines()[-3:] + [BEHIND_LIMIT], ["git status -sb"])
+    ahead, behind = int(nums[0]), int(nums[1])
+    if behind == 0:
+        return None
+    return Block("㉧", f"로컬이 {up} 보다 {behind} 커밋 뒤다(앞 {ahead}) — 푸시가 non-fast-forward 로 거절된다",
+                 [BEHIND_LIMIT], [f"git merge {up}   # 받은 뒤 트리가 바뀌므로 아래 사슬을 다시 돈다"])
+
+
+def notes(root: Path = ROOT, run: Runner = real_run) -> list[str]:
+    """막지는 않고 **적기만** 하는 사실."""
+    if _upstream(root, run) is None:
+        return ["업스트림이 없는 가지다(`@{u}` 없음) — 원격보다 뒤인지는 못 봤다. 막지 않는다."]
+    return []
+
+
 #: 사슬 순서 — 래칫 → 변이 장부 → 문서 도장 → 커밋. **싼 것을 앞에 두지 않는다**(사람이 칠 순서가 목록 순서다).
 CHECKS: list[tuple[str, Callable[[Path, Runner], Block | None]]] = [
-    ("㉥", check_tests), ("㉦", check_obligations), ("㉠", check_ratchet), ("㉤", check_mutate), ("㉡", check_invalid_seals),
+    ("㉧", check_behind), ("㉥", check_tests), ("㉦", check_obligations), ("㉠", check_ratchet), ("㉤", check_mutate), ("㉡", check_invalid_seals),
     ("㉢", check_unsealed), ("㉣", check_dirty),
 ]
 
@@ -238,17 +277,20 @@ def survey(root: Path = ROOT, run: Runner = real_run, *, log: Callable[[str], No
     return out
 
 
-def render(blocks: list[Block]) -> str:
+def render(blocks: list[Block], notes: list[str] | None = None) -> str:
+    tail = [f"  · {n}" for n in notes or []]
     if not blocks:
-        return ("✓ 푸시 가능 — 시험 묶음 · 새 파일 등재 · 래칫 · 변이 장부 · 도장(낡음 · 없음) · 커밋 여섯 축이 막지 않는다.\n"
-                "  (전수 pytest 는 안 돌았다 — 이 도구는 그 대신이 아니다.)")
-    L = [f"✗ 푸시 불가 — 막는 것 {len(blocks)}가지 (사슬 순서: 시험 → 등재 의무 → 래칫 → 변이 장부 → 문서 도장 → 커밋)\n"]
+        return "\n".join(["✓ 푸시 가능 — 원격 대비 · 시험 묶음 · 새 파일 등재 · 래칫 · 변이 장부 · 도장(낡음 · 없음) · 커밋 일곱 축이 막지 않는다.",
+                          "  (전수 pytest 는 안 돌았다 — 이 도구는 그 대신이 아니다.)",
+                          f"  ★ {BEHIND_LIMIT}", *tail])
+    L = [f"✗ 푸시 불가 — 막는 것 {len(blocks)}가지 (사슬 순서: 받기 → 시험 → 등재 의무 → 래칫 → 변이 장부 → 문서 도장 → 커밋)\n"]
     for b in blocks:
         L.append(f"  {b.key} {b.what}")
         L += [f"      {d}" for d in b.detail]
         L.append("    사람이 칠 명령:")
         L += [f"      {c}" for c in b.cmds]
         L.append("")
+    L += tail
     L.append("  ★ 이 도구는 읽기만 한다. 도장은 사람이 읽고 찍는다. 찍은 뒤에는 **커밋까지** 한다 — 그리고 다시 이 명령을 돌린다.")
     return "\n".join(L)
 
@@ -260,7 +302,7 @@ def main(argv: list[str] | None = None) -> int:
         print(__doc__)
         return 2
     blocks = survey(log=lambda s: print(s, file=sys.stderr))
-    print(render(blocks))
+    print(render(blocks, notes()))
     return 1 if blocks else 0
 
 

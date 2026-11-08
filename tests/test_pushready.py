@@ -21,6 +21,8 @@ GREEN = {
     "unsealed": (0, "DECLARED 0\n"),
     "git": (0, ""),
     "tests": (0, "✓ 시험 묶음 198개 파일 · 빨강 0 · 25.0초\n"),
+    "upstream": (0, "origin/part/infra\n"),
+    "behind": (0, "3\t0\n"),
     "obligations": (0, "새 파일이 없다 — 추적 안 된 것도 스테이징한 새 것도 없다\n"),
 }
 
@@ -31,6 +33,10 @@ def _runner(**over):
 
     def run(argv: list[str], cwd: Path) -> tuple[int, str]:
         s = " ".join(argv)
+        if "rev-list" in s:
+            return table["behind"]
+        if "rev-parse" in s:
+            return table["upstream"]
         if "obligations.py" in s:
             return table["obligations"]
         if "testpick.py" in s:
@@ -136,11 +142,70 @@ def test_every_blocker_prints_a_command_and_exit_code_follows(capsys, monkeypatc
 def test_a_red_test_bundle_blocks_first_in_the_chain():
     b = P.survey(ROOT, _runner(tests=(1, "  ✗ test_layering.py\n      E   sys.path 조작\n✗ 시험 묶음 198개 파일 · 빨강 1\n")))
     assert [x.key for x in b] == ["㉥"] and "testpick.py --run" in " ".join(b[0].cmds)
-    assert [k for k, _ in P.CHECKS][0] == "㉥"          # 고치면 도장이 낡으므로 사슬의 맨 앞이다
+    assert [k for k, _ in P.CHECKS][:2] == ["㉧", "㉥"]    # 받기 다음 · 고치면 도장이 낡으므로 시험이 그 뒤 맨 앞이다
 
 
 def test_a_missing_registration_blocks_and_names_what_is_missing():
     out = "✗ 빠진 의무 — 파일 1개\n\n  tools/x.py\n      · 머리말 「밖」  (tools/scopedecl.py 가 운다)\n"
     b = P.survey(ROOT, _runner(obligations=(1, out)))
     assert [x.key for x in b] == ["㉦"] and any("머리말 「밖」" in d for d in b[0].detail)
-    assert [k for k, _ in P.CHECKS][:2] == ["㉥", "㉦"]      # 시험 다음 · 래칫 앞 — 등재를 적으면 도장이 낡으므로
+    assert [k for k, _ in P.CHECKS][1:3] == ["㉥", "㉦"]    # 시험 다음 · 래칫 앞 — 등재를 적으면 도장이 낡으므로
+
+
+# ── ㉧ 로컬이 원격 추적 가지보다 뒤인가 (PLAN #211) ─────────────────
+def _commit(cwd: Path, name: str) -> None:
+    (cwd / name).write_text(name, encoding="utf-8")
+    _git(cwd, "add", "-A")
+    _git(cwd, "commit", "-q", "-m", name)
+
+
+def _two_clones(tmp_path: Path) -> tuple[Path, Path]:
+    """원격(bare) 하나와 그 클론 둘 — 한쪽이 푸시하고 다른 쪽이 fetch 만 하면 **로컬이 뒤**다(2026-11-08 의 꼴)."""
+    remote, a, b = tmp_path / "r.git", tmp_path / "a", tmp_path / "b"
+    subprocess.run(["git", "init", "-q", "--bare", "-b", "main", str(remote)], check=True, capture_output=True, timeout=60)
+    _git(tmp_path, "clone", "-q", str(remote), "a")
+    _commit(a, "x1")
+    _git(a, "push", "-q", "origin", "HEAD:main")
+    _git(tmp_path, "clone", "-q", str(remote), "b")
+    return a, b
+
+
+def test_a_local_behind_its_upstream_is_blocked_and_names_the_receiving_command(tmp_path: Path):
+    """★★ 양성 대조 — 합성 저장소로 로컬이 뒤인 꼴을 만든다. 막고, **받을 명령**을 대고, 한계를 적는다."""
+    a, b = _two_clones(tmp_path)
+    assert P.check_behind(b, P.real_run) is None                        # 같으면 통과
+    _commit(b, "local1")
+    assert P.check_behind(b, P.real_run) is None                        # 앞서기만 하면 막지 않는다
+    _commit(a, "x2")
+    _git(a, "push", "-q", "origin", "HEAD:main")
+    _git(b, "fetch", "-q")                                              # 원격 추적 가지만 앞으로 간다 — 로컬은 안 받았다
+    blk = P.check_behind(b, P.real_run)
+    assert blk is not None and blk.key == "㉧" and "1 커밋 뒤" in blk.what and "앞 1" in blk.what
+    assert blk.cmds[0].startswith("git merge origin/main")
+    assert "git fetch" in " ".join(blk.detail) and "못 본다" in " ".join(blk.detail)
+    _git(b, "merge", "-q", "--no-edit", "origin/main")
+    assert P.check_behind(b, P.real_run) is None                        # 받으면 풀린다
+
+
+def test_a_branch_without_upstream_is_not_blocked_only_noted(tmp_path: Path):
+    _git(tmp_path, "init", "-q")
+    _commit(tmp_path, "x")
+    assert P.check_behind(tmp_path, P.real_run) is None
+    assert "업스트림이 없는 가지" in " ".join(P.notes(tmp_path, P.real_run))
+
+
+def test_behind_check_reads_only_and_fails_closed_on_unreadable_output():
+    seen: list[list[str]] = []
+
+    def run(argv, cwd):
+        seen.append(argv)
+        return (0, "origin/x\n") if "rev-parse" in argv else (0, "garbage")
+    blk = P.check_behind(ROOT, run)
+    assert blk is not None and blk.key == "㉧"                          # 못 읽으면 닫힌 쪽
+    assert not any(a[1] in ("fetch", "pull", "merge", "push") for a in seen)     # 네트워크 · 쓰기 명령을 안 부른다
+
+
+def test_behind_blocks_first_in_survey_and_green_output_states_the_limit():
+    b = P.survey(ROOT, _runner(behind=(0, "2\t5\n")))
+    assert [x.key for x in b] == ["㉧"] and "5 커밋 뒤" in b[0].what
+    assert "마지막 `git fetch` 이후" in P.render([], [])
