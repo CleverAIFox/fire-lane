@@ -31,6 +31,7 @@ import re
 from functools import lru_cache
 
 from firelane import layers as L
+from firelane import naming as _nm
 
 ACTIVE, RESERVED = "active", "reserved"
 STATES = (ACTIVE, RESERVED)
@@ -106,7 +107,9 @@ def pattern_file() -> str:
       목록을 손으로 적으면 다섯 번째 사본이 된다.
     """
     # ★ 2026-09-17. 날짜 뒤 `_<part>` 를 받는다 — 대장 `parts` 가 만드는 이름이다(DECISIONS §172-3).
-    return pattern() + r"\w+_[a-z0-9-]+_[a-z0-9-]+_\d{8}(?:_[a-z0-9-]+)?\."
+    # ★ 2026-11-09 (PLAN #196). vintage 는 **`naming` 의 문법 한 곳**(`VINTAGE_ALT` — `YYYYMMDD` · `YYYYMM` · `YYYY`)에서 읽는다 —
+    #   이 정규식이 `\d{8}` 사본을 따로 들고 있어 `YYYY` raw 가 정규화는 통과해도 norm 단계에서 막혔다.
+    return pattern() + r"\w+_[a-z0-9-]+_[a-z0-9-]+_(?:" + _nm.VINTAGE_ALT + r")(?:_[a-z0-9-]+)?\."
 
 
 def naming_matches_registry() -> tuple[bool, str]:

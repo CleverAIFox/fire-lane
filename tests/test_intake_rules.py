@@ -520,53 +520,34 @@ def test_observation_mode_keeps_only_non_mutating_steps():
         assert "--yes" not in s.argv(True), f"{s.name} 이 파괴 인자를 받는다"
 
 
-def test_the_syntax_allows_three_vintage_forms_but_the_norm_gate_takes_only_eight():
-    """★ **선언 둘이 다른 수를 말한다** — 적어 두고 실물로 붙든다 (§494-5).
+def test_the_syntax_and_the_norm_gate_take_the_same_three_vintage_forms():
+    """★ 선언 둘이 **같은 수**를 말한다 — `naming` 의 문법과 norm 관문(PLAN #196 · 2026-11-09).
 
-        `firelane.naming` 머리말 ·`VINTAGE_RE`   YYYYMMDD | YYYYMM | YYYY
-        `layers.norm.naming`(`providers.pattern_file`)  `\\d{8}` **만**
-        MASTER §18-2b 의 토큰표                 「**8자리**」
+        `firelane.naming` · `VINTAGE_ALT`                     YYYYMMDD | YYYYMM | YYYY
+        `layers.norm.naming`(`providers.pattern_file`)         **그 상수를 읽는다**(`\\d{8}` 사본이 없다)
 
-    셋 중 둘이 8 이고 하나가 셋을 받는다. 지금 실물은 **전부 8자리**라
-    (`_acquire.json` 89건 · 대장 글롭 전건) 어긋남이 **잠복**해 있다 —
-    월 단위로만 내는 원천이 처음 오는 날 깨어난다. 실제로 `RULES` 는 그
-    자리를 이미 **01 로 채워서** 8자리를 만든다(`juso_adrdc_kr_{0}01.zip`).
+    예전에는 문법이 셋을 받고 관문이 8자리만 받아 **어긋남이 잠복**했다(이 시험이 그 차이를 못박았다 · §494-5). 이제 한 곳에서 읽는다 —
+    `YYYY` raw 가 정규화를 통과해 norm 단계에서 막히는 일이 없다.
 
-    ★ 여기서 문법을 조이지 않는다. `naming` 이 raw 쪽에서 세 꼴을 받는 것은
-      머리말이 **일부러** 적어 둔 선택이고, 그것을 밤에 혼자 뒤집으면
-      「왜 받게 해 뒀나」가 사라진다. 대신 **두 선언의 차이를 못박는다** —
-      월 단위 원천이 오면 이 시험이 그 자리를 가리킨다.
+    ★ **`acquire_rules.derive_files` 의 8자리 전제는 안 건드렸다** — 의도된 것이다(앞 판에서 확인). `vintage: 2025` 처럼 연도만 있는 항목을 파생하면
+      판이 특정되지 않아 실물 두 판이 고아가 된다. 그 길은 아래에서 못박는다.
     """
     import re as _re
 
-    from firelane import providers
+    from firelane import acquire_rules, layers, providers
 
-    # ① 문법은 세 꼴을 받는다
-    for v in ("20260630", "202606", "2026"):
+    for v in ("20260630", "202606", "2026"):                                   # ① 문법이 셋을 받는다
         assert nm.parse(f"safety_cctv_jngj_{v}.csv").vintage == v
-
-    # ② norm 관문은 8자리만 받는다 — 같은 이름 셋 중 하나만 통과한다
-    rx = _re.compile(providers.pattern_file())
-    passed = [v for v in ("20260630", "202606", "2026")
-              if rx.match(f"safety/safety_cctv_jngj_{v}.csv")]
-    assert passed == ["20260630"], f"관문이 받는 꼴이 바뀌었다 — {passed}"
-
-    # ③ 그래서 지금 실물은 전부 8자리여야 한다. 하나라도 아니면 그 파일이
-    #    문법은 통과하고 **관문에서 막힌다** — 이 차이가 깨어난 순간이다
-    import json
-    from pathlib import Path
-
-    root = Path(__file__).resolve().parents[1]
-    raw = json.loads((root / "data/_acquire.json").read_text(encoding="utf-8"))["files"]
-    assert raw, "실물 목록이 비었다 — 이 검사가 빈 그물이 됐다"
-    short = [p for p in sorted(raw)
-             if not _re.search(r"_\d{8}(?=[._])", p.rsplit("/", 1)[-1])]
-    assert not short, (
-        "vintage 가 8자리가 아닌 실물이 생겼다 — **잠복한 어긋남이 깨어났다**:\n  "
-        + "\n  ".join(short)
-        + "\n  ★ 셋 중 하나를 고쳐야 한다 — 문법을 조이거나(8자리만),"
-        "\n    관문을 넓히거나(`\\d{4,8}`), 반입이 01 로 채우거나."
-        "\n    `RULES` 는 이미 세 번째를 한다(`juso_adrdc_kr_{0}01.zip`).")
+    rx = _re.compile(providers.pattern_file())                                 # ② 관문이 같은 셋을 받는다
+    passed = [v for v in ("20260630", "202606", "2026") if rx.match(f"safety/safety_cctv_jngj_{v}.csv")]
+    assert passed == ["20260630", "202606", "2026"], f"관문이 받는 꼴이 문법과 다르다 — {passed}"
+    for bad in ("20260", "2026063", "202"):                                    # ③ 문법 밖은 여전히 거절한다
+        assert not rx.match(f"safety/safety_cctv_jngj_{bad}.csv"), bad
+    assert nm.VINTAGE_ALT in providers.pattern_file()                          # ④ 사본이 아니라 그 상수다
+    assert layers.policy("norm").get("naming") == providers.pattern_file(), "대장 `layers.norm.naming` 이 생성기와 다르다 — 손으로 고치지 않는다"
+    # ⑤ 파생의 8자리 전제(의도) — 연도만 있으면 안 만든다
+    e = {"stems": ["x"], "ext": ["csv"], "scope": "jngj", "vintage": "2025", "provider": "safety"}
+    assert acquire_rules.derive_files(e) == [], "연도만 있는데 하나로 파생했다 — 실물 두 판이 고아가 된다"
 
 
 # ── 정규명 산출 — 개명 규칙의 정본 (DECISIONS §496) ───────────

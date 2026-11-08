@@ -688,7 +688,7 @@ layers:
     #     네 곳에 있었고 세 곳에서 달랐다(§18-2a). raw 와 **같은 생성기**를
     #     탄다 — providers.pattern_file() 이 만들고
     #     test_provider_registry 가 대조한다.
-    naming: '^(eais|gjbg|gjcity|gjpolice|its|juso|mois|moleg|nfa|ngii|nsdi|safety|sbiz|vworld)/\w+_[a-z0-9-]+_[a-z0-9-]+_\d{8}(?:_[a-z0-9-]+)?\.'
+    naming: '^(eais|gjbg|gjcity|gjpolice|its|juso|mois|moleg|nfa|ngii|nsdi|safety|sbiz|vworld)/\w+_[a-z0-9-]+_[a-z0-9-]+_(?:\d{8}|\d{6}|\d{4})(?:_[a-z0-9-]+)?\.'
     encoding: utf-8
     # ★ 2026-08-31. status 는 통제 어휘다 — layers.implemented() 가
     #   "미구현" 하나만 본다. 한 번 "미배선" 으로 바꿨다가 되돌렸다.
