@@ -21,7 +21,9 @@ OUT   값 파일(쓰기는 `write()` 뿐 — `ratchet.py --write` 가 부른다)
 PARAM MOVE_AT
 밖    **값이 옳은 수인가는 안 본다**(그것은 `ratchet.py` 도 안 본다). 어느 도구를 옮길지 **고르지도 않는다** — 수만 낸다.
       값 파일을 읽는 도구는 제 값을 여기서 받는다 — 읽는 자리가 하나다(`read`).
-부류  몸통   진입점이 아니다 — `ratchet.py` · `sealcov.py` 가 부른다  (DECISIONS §437)
+부류  조사   `--rank` 는 사람이 손으로 돌려 **수를 내고 멈춘다** — 어느 도구를 옮길지는 안 고른다.
+             `read`/`write` 를 `ratchet.py` 가 부르지만 `main()` 이 있어 **몸통이 아니다**.
+             `testpick.py` 와 같은 꼴이다 — 그쪽도 `--run` 을 훅이 부르는데 「조사」다  (DECISIONS §437)
 """
 from __future__ import annotations
 

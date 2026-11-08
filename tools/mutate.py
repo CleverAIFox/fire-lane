@@ -204,7 +204,18 @@ TIMEOUT = 180
 #   조인 수이고, 장부(mutation.json)는 그때도 83 이다. 83번째 생존자는 `sealcov.py:186` 의 `lru_cache(maxsize=1)` `1 → 2` — 동작이 같은 등가 변이라
 #   시험으로 못 죽인다(`functools.cache` 로 바꾸면 표본만 옮겨간다). ★ 정확도도 확산도 아니다 — 근거 없이 조여진 것을 제자리로 놓는다.
 #   ★ 교훈은 절차다: 측정이 빨간 상태에서 조이면 가짜로 조여지고 막는 것이 없다. 전말 · 재현은 DECISIONS §657-3.
-SURVIVORS = 82
+#: ★ 2026-11-08 (PLAN #198 · DECISIONS §657 족). 82 → **83.**
+#:   `#198` 이 `SEALED_FILES` 를 `ratchetstore` 로 빼면서 그 줄의 **숫자 리터럴이
+#:   사라졌다.** 변이 과녁이 아래 `ENFORCER_INFLATION = 0` 으로 내려왔고
+#:   자기검사가 그 상한을 안 문다 — `sealcov 146: 0 → 1` 이 그것이다.
+#:   ★ **구멍이 아니다.** `tests/test_sealcov.py` 의
+#:     `test_the_enforcer_column_inflation_is_measured_not_assumed` 가 선언과 실측을
+#:     같이 물고, 손으로 `0 → 1` 로 바꿔 **죽는 것을 확인했다.**
+#:   ★ 이 도구가 재는 것은 「**자기검사**가 무는가」다 — 기본이 자기검사만이고
+#:     「시험이 무는가」는 `--deep` 이 잰다. 머리말이 그것을 숨기지 않는다.
+#:   ★ 사라진 `sealcov 190: 1 → 2` 와 새 `218: 1 → 2` 는 **같은 생존**이다 —
+#:     `@functools.lru_cache(maxsize=1)` 이고 줄만 밀렸다.
+SURVIVORS = 83
 #: 흔든 수 — 올라가는 쪽으로만. 분모를 안 잠그면 생존 수는 수가 아니다.
 # ★ 2026-10-11 — 124 → 128 (DECISIONS §478-1). **조이는 쪽이다.** 도구가
 #   31 → 32 로 늘어 흔든 수가 넷 늘었다(`tools/selftests.py`). `SURVIVORS` 가
