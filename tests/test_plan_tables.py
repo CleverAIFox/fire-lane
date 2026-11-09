@@ -8,6 +8,7 @@ IN    docs/PLAN.md (`planclose` 의 파서를 그대로 쓴다 — 사본을 안
 OUT   없음 (검사)
 PARAM 없음
 밖    **판 배정이 옳은지는 안 본다.** 어느 판이 어느 행을 닫는지는 사람의 판단이다.
+PLAN 본문  규칙 — §1 행 · §10-1 배치 표 · §10-5 구획 표가 같은 행을 같은 식으로 가리켜야 한다
 """
 from __future__ import annotations
 

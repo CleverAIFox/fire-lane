@@ -26,6 +26,7 @@
 ★ `DECISIONS.md` 와 `tools/**` 의 주석은 **대상이 아니다.** 거기 적힌
   「39단계」·「42단계」는 날짜가 붙은 **작성 시점 기록**이라 지금 틀린 것이
   옳다. `docnum_check` 가 §13~§16 을 `HIST` 로 잘라내는 것과 같은 원리다.
+PLAN 본문  규칙 — 문서의 `verify.sh` 단계 인용과 래칫 숫자는 실물과 같아야 한다
 """
 from __future__ import annotations
 

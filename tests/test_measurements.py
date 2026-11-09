@@ -23,6 +23,7 @@ test_measurements.py — 측정 대장(PLAN §1-27)이 형식을 지키는가 (P
 IN    docs/PLAN.md §1-27 · docs/PLAN.md §1
 OUT   없음 (검사)
 PARAM 없음
+PLAN 본문  규칙 — §1-27 측정 대장 표는 형식(물음 · 판정 기준 · 봉인 자리)을 지킨다
 """
 from __future__ import annotations
 

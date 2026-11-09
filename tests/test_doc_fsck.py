@@ -10,6 +10,7 @@ test_doc_fsck.py — `tools/doc_fsck.py` 의 넷을 CI 에서 강제한다.
 
 IN    tools/doc_fsck.py
 OUT   없음 (검사)
+PLAN 본문  규칙 — `doc_fsck` 의 검사들 — 어긋난 자리를 그대로 옮겨 낸다(정본은 사람이 정한다)
 """
 from __future__ import annotations
 

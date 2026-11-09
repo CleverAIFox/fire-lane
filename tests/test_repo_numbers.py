@@ -47,6 +47,7 @@ PARAM 없음
          열려면 `firelane.lake` 가 폐기 종수를 주는 문을 먼저 내야 한다.
       ③ **블록이 실물과 같은가는 안 본다.** 그것은 `tests/test_docgen.py` 가
          `docgen --check` 로 든다. 이 파일은 블록 **밖**까지 본다.
+PLAN 본문  규칙 — 저장소 구조 숫자는 실물과 같다 · 전량 재실행의 벽시계 수는 수로 적지 않는다(`전량` · `fire-lane` 등 낱말이 같은 줄에 있으면)
 """
 from __future__ import annotations
 

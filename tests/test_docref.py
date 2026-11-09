@@ -30,6 +30,7 @@ test_docref.py — 절 참조가 실재하는가. 하위 절 번호가 유일한
 IN    README.md · docs/*.md · src/**/*.py · tools/*.py · tests/*.py
 OUT   없음 (검사)
 PARAM 없음
+PLAN 본문  규칙 — 절 참조는 실재해야 하고 하위 절 번호는 유일해야 한다
 """
 from __future__ import annotations
 

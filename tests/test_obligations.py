@@ -6,6 +6,7 @@
 ★ 표를 따로 세우지 않았으므로(사람이 정했다) 이 시험은 **검사의 판정이 표에 그대로 흘러드는가**를 든다 — 검사가 바뀌면 표가 따라가는 길이 살아 있는가.
 
 밖    세 검사(`sealcov` · `toolclass` · `scopedecl`) **각각이 옳게 우는가**는 그 검사의 시험이 든다. 새 절 · 새 대장 항목 쪽은 **걸러내는 길**만 본다(그 검사가 옳은지는 `dms` · `measurecols` · `authority` 쪽 시험). 봉인지는 「미도출」로 적혀 있는지만 본다.
+PLAN 본문  규칙 없음 — `git diff` 합성 입력에 PLAN 경로가 나올 뿐 본문을 읽지 않는다
 """
 from __future__ import annotations
 
@@ -16,6 +17,7 @@ ALL_OK = {
     "MASTER §22·§23 등재 분모": {NEW}, "MASTER §22·§23 등재 빠짐": set(),
     "머리말 「부류」 분모": {NEW}, "머리말 「부류」 빠짐": set(),
     "머리말 「밖」 분모": {NEW}, "머리말 「밖」 빠짐": set(),
+    "PLAN 본문 표지 분모": {NEW}, "PLAN 본문 표지 빠짐": set(),
 }
 
 
@@ -84,7 +86,7 @@ def test_not_derived_obligations_are_listed_not_pretended():
 
 def test_the_table_names_one_owner_per_obligation_and_no_rule_text_is_copied():
     owners = {o.owner for o in O.OBLIGATIONS}
-    assert owners == {"tools/sealcov.py", "tools/toolclass.py", "tools/scopedecl.py"}
+    assert owners == {"tools/sealcov.py", "tools/toolclass.py", "tools/scopedecl.py", "tools/tasktpl.py"}
 
 
 # ── 새 절 · 새 대장 항목 (PLAN #199 ④) ───────────────────────────────

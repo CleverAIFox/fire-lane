@@ -61,6 +61,8 @@ OBLIGATIONS = (
                "머리말에 `부류  조사|절차|생산|몸통` 한 줄을 적는다(verify · CI 가 부르면 관문이라 안 적는다)"),
     Obligation("머리말 「밖」", "tools/scopedecl.py", "`tools/` 의 도구 · `tests/test_*.py`",
                "머리말에 `밖  …` 칸을 적는다 — 이 도구가 **안 보는 것**"),
+    Obligation("PLAN 본문 표지", "tools/tasktpl.py", "PLAN.md 를 읽는 `tests/test_*.py`(PLAN #204)",
+               "머리말(모듈 docstring)에 `PLAN 본문  규칙 — <무엇을 무는가>` 또는 `PLAN 본문  규칙 없음 — <사유>` 한 줄을 적는다"),
 )
 
 #: 아직 파일 단위로 도출 못 한 의무 — 있는 척하지 않는다. (종류 → 의무 · 그 검사)
@@ -80,7 +82,11 @@ def _state() -> dict[str, set[str]]:
     bad_files = {ln.split()[0] for ln in bad}
     ens, no_decl, _selftest, _gap = scopedecl.measure()
     s = sealcov.survey()
+    import tasktpl  # 늦게 든다 — `tasktpl` 이 이 모듈을 맨 위에서 가져온다(순환을 피한다)
+    readers = tasktpl.plan_reader_tests()
     return {
+        "PLAN 본문 표지 분모": {_rel(p) for p in readers},
+        "PLAN 본문 표지 빠짐": {_rel(p) for p in readers if tasktpl.plan_marker(p) is None},
         "MASTER §22·§23 등재 분모": set(sealcov.denominator()),
         "MASTER §22·§23 등재 빠짐": set(s["빈 곳"]),
         "머리말 「부류」 분모": set(rows),
