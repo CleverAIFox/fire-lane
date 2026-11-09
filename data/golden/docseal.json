@@ -16013,14 +16013,14 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "0b026df2bd2f070e",
-   "1ed18150488b9c61",
-   "208a36032a3b7a79",
-   "898ff2a56270faa6",
-   "90fd39b492a9f2ec",
-   "c8b206b5daebe5d8",
-   "f7fe83ce21bca0c9",
-   "fa71148a162aacea"
+   "5c8fe63782e39d59",
+   "9de3d01267a5b453",
+   "aaed7d26dfeeb52e",
+   "af68ae0a2c84c20a",
+   "d024eb325a521fd2",
+   "d3e6a5dff4cad8ba",
+   "de957397f64b3ef0",
+   "f62c117978128a2c"
   ],
   "parts": {
    ".github/actions/build-navi/action.yml": "7bd07a49dd13d991",
@@ -16065,9 +16065,9 @@
    "tools/verify.sh": "7029cf3ef81e404d",
    "web/assets/vehicles/profiles.json": "1348b7791e2e1e9c",
    "web/navi/vite.config.ts": "5c31395ea740c669",
-   "본문": "eea5c212965bd322"
+   "본문": "dc618167359cb07e"
   },
-  "sha": "208a36032a3b7a79"
+  "sha": "de957397f64b3ef0"
  },
  "PLAN/1-27": {
   "doc": "docs/PLAN.md",
