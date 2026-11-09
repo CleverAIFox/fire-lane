@@ -185,7 +185,10 @@ QUARANTINE = (DATA / "_quarantine") if DATA else (ROOT / "data" / "_quarantine")
 #   raw 2.6GB 없이 지도를 띄워야 하고 재현 증적이 저장소에 남아야 해서다.
 #   `sources.yaml` layers.processed.committed_exceptions 가 정본이고
 #   `datalog fsck` 가 git 추적 목록과 대조한다.
-PROCESSED = ROOT / "data" / "processed"
+# ★ 2026-11-09 (PLAN #183). `FIRE_LANE_PROCESSED` 가 있으면 산출 디렉터리를 그리로 돌린다 — **격리 재취입**(worktree · 스크래치)이 메인 `data/processed`
+#   를 못 건드리게 하는 길이다. 없으면 지금 값 그대로다. 환경변수라 `ingest` 의 자식 프로세스가 따라온다.
+_processed = os.environ.get("FIRE_LANE_PROCESSED")
+PROCESSED = Path(_processed).expanduser() if _processed else ROOT / "data" / "processed"
 
 # ★ 2026-08-26. 계층 선언 밖에 있던 둘을 등재했다. `pipeline.py` 가
 #   `ROOT / "data/golden/..."` 를 문자열로 조립하고 `baseline.py` 가

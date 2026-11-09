@@ -180,10 +180,6 @@
    "sha256": "dac553bb5e289ae8a594ce464800eda97f7f8a850c100a6b504dbc527917e581",
    "bytes": 640
   },
-  "nfa/nfa_mas_spec_kr_20260610.hwp": {
-   "sha256": "9ec7d8d516e631a4c597c8495f8d14050b5b2040ff9ddeb8fac9d38cca8ab5a5",
-   "bytes": 1320960
-  },
   "nfa/nfa_spec_chem_gj_jngj_20260101.hwp": {
    "sha256": "6f228f5abb327b0d9e2416119af4658db08dbe5549f16583fb57e71be2063a35",
    "bytes": 518144
@@ -207,18 +203,6 @@
   "nfa/nfa_vehicle_spec_kr_20240304.pdf": {
    "sha256": "3c5d91db980d0b896e8f2cfd2b2c51a385e580d40f7b355f6b5b6835509ba623",
    "bytes": 466483
-  },
-  "nfa/nfa_fire_incident_jngj-donggu_20260903.csv": {
-   "sha256": "c1f98a86160ef4f7d545d609ac953e33a288ad4d8113e25b45f0371e95f2f621",
-   "bytes": 193220
-  },
-  "nfa/nfa_rescue_jngj-dongmyeong_20260903.csv": {
-   "sha256": "66cd210b56f6fb13f4dbd7f26b560e2059936e34f4a06a38a9b3ce820d7363f5",
-   "bytes": 83820
-  },
-  "nfa/nfa_target_building_jngj-dongmyeong_20260903.csv": {
-   "sha256": "d85ec9f5b7fbdca363c3fb2a569aee5cca8d139169f54f00aee1b8f11f934394",
-   "bytes": 4755
   },
   "eais/eais_bldgledger_dm_jngj-dongmyeong_20260906.json": {
    "sha256": "82d938c21281441c166e4e8dcef539a983f603b6195d949281f3d5f05f93bd63",
@@ -364,10 +348,6 @@
    "sha256": "052a0d76fba8dc874607771348a25b6b7dec470ca99e2281c9963500e91edb63",
    "bytes": 14796
   },
-  "nfa/nfa_dispatch_119_jngj-dongmyeong_20261104.csv": {
-   "sha256": "153a0ddc9d0b1331f7c2152a4be0208a04307ec12c0b64e9e14afb4d3386aea7",
-   "bytes": 334220
-  },
   "nfa/nfa_ems_kr_20191231.csv": {
    "sha256": "fb4cb83c4a0774bfcee0752b746afa52bc0f94ae3668e92a9ed03613b5cf90f4",
    "bytes": 511068094
@@ -397,5 +377,5 @@
    "bytes": 1800360231
   }
  },
- "at": "2026-11-05T22:24:33+09:00"
+ "at": "2026-11-09T00:52:39+09:00"
 }
