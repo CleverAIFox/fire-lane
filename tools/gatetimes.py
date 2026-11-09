@@ -73,8 +73,12 @@ def merge(runs: list[dict[str, tuple[bool, float]]], expect: list[str]) -> dict[
     return {n: round(statistics.median(r[n][1] for r in runs), 1) for n in expect}
 
 
-def write(secs: dict[str, float], path: Path = GATES) -> None:
-    """셋째 열만 다시 쓴다. 주석 · 빈 줄 · 이름 · 명령은 글자 그대로 둔다."""
+def write(secs: dict[str, float], path: Path | None = None) -> None:
+    """셋째 열만 다시 쓴다. 주석 · 빈 줄 · 이름 · 명령은 글자 그대로 둔다.
+
+    ★ 쓰는 경로를 **기본 인자로 정의 시점에 묶지 않는다**(`tests/test_no_bound_default_writers.py` — 평가셋 55행이 합성 데이터로 덮인 사고, §571). 부를 때 정한다.
+    """
+    path = path or GATES
     out = []
     for ln in path.read_text(encoding="utf-8").splitlines():
         if not ln.strip() or ln.startswith("#"):
