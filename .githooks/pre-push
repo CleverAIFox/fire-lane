@@ -68,14 +68,14 @@ if [ -n "$dirty_before" ]; then
     fail+=("추적 파일 변경 감지(시작)")
 fi
 
-# 게이트 — `이름<TAB>명령`. 하나가 빨개도 **끝까지 돈다**(한 번에 다 보여야 왕복이 준다).
+# 게이트 — `이름<TAB>명령<TAB>초`(셋째 열은 `tools/gatetimes.py` 가 쓰는 측정값 · 훅은 안 쓴다). 하나가 빨개도 **끝까지 돈다**(한 번에 다 보여야 왕복이 준다).
 # ★ 2026-11-04 (PLAN #185 · DECISIONS §620). **병렬로 띄우고 순서대로 모은다.** 게이트는 서로 독립이고 읽기만 한다 —
 #   직렬 합 약 19초가 가장 긴 하나(`deadcheck` 약 10초)로 줄어든다. 출력 순서는 게이트 파일 순서 그대로다.
 #   **병렬이 이상하면** `FIRE_LANE_PREPUSH_SERIAL=1` 로 종전처럼 한 줄씩 돈다(원인을 가를 때).
 if [ ${#fail[@]} -eq 0 ]; then
     names=(); outs=(); tdir="$(mktemp -d)"; trap 'rm -f "$out"; rm -rf "$tdir"' EXIT
     i=0
-    while IFS=$'\t' read -r name cmd; do
+    while IFS=$'\t' read -r name cmd _secs; do   # 셋째 열(`_secs` · 훅 안 벽시계 초 · PLAN #210)은 읽고 **버린다** — 변수가 둘이면 `cmd` 꼬리에 붙어 게이트 명령의 인자가 된다
         case "$name" in ''|'#'*) continue ;; esac
         i=$((i + 1)); names+=("$name"); o="$tdir/$i"
         run_gate() {   # 결과 — $o(출력) · $o.rc · $o.t(초)

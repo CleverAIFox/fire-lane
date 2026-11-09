@@ -14,6 +14,7 @@ gatefast.py — `pre-push.gates` 의 게이트가 **CI 빠른 잡(`contract-fast
     인자가 다르다  이름은 같고 인자가 다르다 — **세 번째 수로 따로 낸다**(같은 검사기를 훅은 `--ratchet` 만, CI 는 전수로 돌 수 있다)
     안 덮인다      이름이 CI 빠른 잡에 없다
   「덮인다」가 거짓이면 안 세는 것보다 나쁘다 — 그래서 이름만 맞는 것을 덮인다에 넣지 않는다.
+★ **면제는 갈래를 안 바꾼다** — 사유가 붙어도 「안 덮인다」는 그대로 센다(사유는 의도임을 적을 뿐 CI 가 막게 되는 것이 아니다). 면제는 따로 세어 「사유 없음」이 0 인지를 본다.
 
 ★ **사본이 아니다.** 선언을 복사하지 않는다 — 훅의 명령(`pre-push.gates`)과 CI 의 명령(`contract.yml`)을 **각자의 자리에서 읽어 맞대기만** 한다.
   인자를 어디에도 적지 않는다. 「인자가 다르다」가 결함인지 의도인지 기계는 모른다 — 의도면 이미 있는 `# ci-exempt:`(`tools/verify.sh`)로 사유를 적는다(새 형식을 안 만든다).
@@ -33,32 +34,20 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import shlex
 import sys
 from pathlib import Path
 
 import gate_parity as GP
 import yaml
+from gate_parity import (  # 열쇠를 읽는 자리는 `gate_parity` 한 곳이다(다시 구현하지 않는다)
+    gate_commands,
+    keys,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
-GATES = ROOT / ".githooks" / "pre-push.gates"
 WORKFLOW = ROOT / ".github" / "workflows" / "contract.yml"
 JOB = "contract-fast"
-
-_PYTEST_TARGET = re.compile(r"(tests/[A-Za-z0-9_./-]+\.py)")
-
-
-def gate_commands(path: Path = GATES) -> list[tuple[str, str]]:
-    """(이름, 명령) — **첫 두 열만** 읽는다. 셋째 열(실측 초 등)이 생겨도 명령에 안 섞인다."""
-    out = []
-    for ln in path.read_text(encoding="utf-8").splitlines():
-        if not ln.strip() or ln.startswith("#"):
-            continue
-        cols = ln.split("\t")
-        out.append((cols[0], cols[1] if len(cols) > 1 else ""))
-    return out
-
 
 def fast_commands(workflow: Path = WORKFLOW, job: str = JOB) -> list[str]:
     """`contract-fast` 잡의 `run:` 명령 줄들(`\\` 이음 · 줄머리 주석 정리)."""
@@ -77,15 +66,6 @@ def fast_commands(workflow: Path = WORKFLOW, job: str = JOB) -> list[str]:
         if buf:
             out.append(buf)
     return out
-
-
-def keys(cmd: str) -> list[str]:
-    """명령의 열쇠 — 검사기 경로(`tools/x.py` · `firelane.x`) 또는 pytest 가 가리킨 시험 파일. 없으면 빈 목록."""
-    ks = sorted(GP.tokens(cmd))
-    targets = _PYTEST_TARGET.findall(cmd) if "pytest" in cmd else []
-    if targets:
-        ks = [k for k in ks if k != "pytest"] + targets      # 시험 파일을 가리킨 pytest 는 그 파일이 열쇠다(맨 `pytest` 는 열쇠가 못 된다)
-    return ks
 
 
 def args_of(cmd: str, key: str) -> list[str]:
@@ -130,8 +110,11 @@ def classify(gates: list[tuple[str, str]] | None = None, fast: list[str] | None 
 
 def render(res: dict[str, dict]) -> str:
     n = {k: sum(1 for v in res.values() if v["갈래"] == k) for k in ("덮인다", "인자가 다르다", "안 덮인다", "열쇠 없음")}
+    gone = [v for v in res.values() if v["갈래"] != "덮인다"]
+    ex = sum(1 for v in gone if v["면제"])
     L = [f"훅 {len(res)}게이트 → CI `{JOB}` : 덮인다 {n['덮인다']} · **인자가 다르다 {n['인자가 다르다']}** · 안 덮인다 {n['안 덮인다']}"
-         + (f" · 열쇠 없음 {n['열쇠 없음']}(못 잰 것)" if n["열쇠 없음"] else "")]
+         + (f" · 열쇠 없음 {n['열쇠 없음']}(못 잰 것)" if n["열쇠 없음"] else "")
+         + f"   (안 덮인 것과 인자가 다른 것 {len(gone)} 중 면제 {ex} · **사유 없음 {len(gone) - ex}**)"]
     for kind in ("인자가 다르다", "안 덮인다", "열쇠 없음"):
         rows = [(nm, v) for nm, v in res.items() if v["갈래"] == kind]
         if rows:

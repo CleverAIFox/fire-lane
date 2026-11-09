@@ -31,6 +31,12 @@ FAST = [
 ]
 
 
+def test_no_gates_means_nothing_to_classify_and_a_real_gate_is_classified():
+    """카나리아 쌍 — 게이트가 없으면 조용하고(`assert not`) 합성 게이트는 갈래가 붙는다(`assert … ==`)."""
+    assert not F.classify([], FAST, {})
+    assert F.classify(GATES, FAST, {})["같다"]["갈래"] == "덮인다"
+
+
 def test_the_three_kinds_are_told_apart():
     res = F.classify(GATES, FAST, {})
     assert res["같다"]["갈래"] == "덮인다"
@@ -54,7 +60,7 @@ def test_an_exemption_is_attached_by_the_checker_path_and_not_invented():
 def test_a_bare_pytest_is_not_a_key_and_the_test_file_is():
     assert F.keys("uv run pytest tests/test_eee.py -q") == ["tests/test_eee.py"]
     assert F.keys("uv run python tools/aaa.py x") == ["tools/aaa.py"]
-    assert F.keys("echo hi") == []
+    assert not F.keys("echo hi")                           # 열쇠가 없는 명령은 조용하다(카나리아의 정상 입력 쪽)
 
 
 def test_a_gate_without_a_key_is_named_not_counted():
@@ -97,3 +103,11 @@ def test_the_cli_prints_the_three_numbers_and_json_roundtrips(capsys):
 ])
 def test_arguments_are_read_after_the_key(cmd, key, want):
     assert F.args_of(cmd, key) == want
+
+
+def test_an_exemption_does_not_change_the_kind_it_is_counted_apart():
+    """면제가 붙어도 「안 덮인다」는 그대로 센다 — 면제는 따로 세어 사유 없는 것이 몇인지 본다."""
+    res = F.classify([("a", "uv run python tools/a.py"), ("b", "uv run python tools/b.py")], [], {"tools/a.py": "의도"})
+    assert res["a"]["갈래"] == "안 덮인다" and res["a"]["면제"] == "의도" and res["b"]["면제"] is None
+    head = F.render(res).splitlines()[0]
+    assert "안 덮인다 2" in head and "면제 1" in head and "사유 없음 1" in head

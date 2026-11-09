@@ -104,7 +104,7 @@ def test_the_probe_blocks_loudly_instead_of_passing(repo: Path) -> None:
 
 
 def test_the_real_gate_file_lists_only_tools_that_exist() -> None:
-    gates = [ln.split("\t", 1) for ln in (HOOKS / "pre-push.gates").read_text(encoding="utf-8").splitlines() if ln and not ln.startswith("#")]
+    gates = [ln.split("\t")[:2] for ln in (HOOKS / "pre-push.gates").read_text(encoding="utf-8").splitlines() if ln and not ln.startswith("#")]   # 첫 두 열만 — 셋째 열은 측정 초(PLAN #210)
     assert len(gates) >= 7, gates
     for name, cmd in gates:
         for tok in cmd.split():
@@ -115,3 +115,14 @@ def test_the_real_gate_file_lists_only_tools_that_exist() -> None:
 def test_the_hooks_are_executable() -> None:
     for f in ("pre-push", "global-pre-push.sh"):
         assert os.access(HOOKS / f, os.X_OK), f"{f} 에 실행권한이 없다 — 전역 훅이 후보로 안 집는다"
+
+
+def test_a_third_column_is_not_passed_to_the_gate_as_an_argument(repo: Path) -> None:
+    """★ 셋째 열(훅 안 벽시계 초)이 게이트 명령 **꼬리에 안 붙는다**(PLAN #210 · 양성 대조).
+
+    `read -r name cmd` 였을 때 셋째 열이 `cmd` 꼬리에 붙어 `printf %s ok > 파일<TAB>12.3` 이 되고 파일에 `ok12.3` 이 적혔다(인자가 하나 더 붙었다).
+    """
+    marker = repo / "args.txt"
+    r = _push(repo, _gates(repo, f"기록\tprintf %s ok > {marker}\t12.3\n"))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert marker.read_text(encoding="utf-8") == "ok", marker.read_text(encoding="utf-8")

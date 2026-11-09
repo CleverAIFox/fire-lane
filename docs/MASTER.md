@@ -4911,6 +4911,8 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `tests/test_contract_verdict_ratchets.py` | **`contract_verdict` 의 래칫 둘이 `tools/ratchet.py` 의 선언 안에 있는가**(PLAN #185(닫힘) ②) — 훑기가 `src/firelane/` 의 그 모듈을 실제로 집는다 · 선언한 이름이 `ratchet_values()` 와 같다 · 방향이 판정과 맞다 · `TOOLS` 를 사본으로 갈아끼운 시험은 실물 `src` 를 안 읽는다 · `real_counts` 의 셈이 한 곳이다. 실물 갈래 둘은 안 본다(선언 밖에 남겼다) |
 | `tools/gatefast.py` | **`pre-push.gates` 의 게이트가 CI 빠른 잡(`contract-fast`)에 덮이는가**를 세 갈래로 센다(PLAN #210) — 덮인다(이름 · 인자 같음) · **인자가 다르다**(이름만 같음) · 안 덮인다. 훅 명령과 `contract.yml` 의 명령을 각자의 자리에서 읽어 맞대기만 한다(선언을 복사하지 않는다) · 면제는 `gate_parity.exemptions()` 를 부른다 |
 | `tests/test_gatefast.py` | `gatefast` 의 세 갈래가 갈리는가 — 이름만 같은 것을 덮인다에 넣지 않는다 · 면제는 검사기 경로로 붙는다 · 셋째 열이 생겨도 명령에 안 섞인다 · 실제 훅 24줄이 모두 열쇠를 가진다 |
+| `tools/gatetimes.py` | **`pre-push.gates` 셋째 열(훅 안에서 잰 벽시계 초)을 재고 쓴다**(PLAN #210) — 훅을 실제로 돌려 훅이 찍은 줄을 읽어 중앙값을 낸다 · 셋째 열만 다시 쓴다 · 빨간 게이트가 있거나 줄을 못 읽으면 안 쓴다 · **단독 초가 아니다**(§665 의 조건) · 사람이 손으로 돌린다(훅은 셋째 열을 읽고 버린다) |
+| `tests/test_gatetimes.py` | `gatetimes` 의 읽기 · 합치기 · 쓰기 — 훅이 찍는 줄 서식과 정규식이 맞는다 · 빨강 · 못 읽음이면 안 쓴다 · 셋째 열만 바뀌고 두 번 써도 같다 |
 | `tests/test_refcheck_paths.py` | 경로 표기 검사가 **무엇을 넘기는가** |
 
 ## 24. 저장소 안내 — 루트에서 내린 것

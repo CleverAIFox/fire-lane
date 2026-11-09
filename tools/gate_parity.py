@@ -292,6 +292,37 @@ def _hook_tokens(src: str) -> set[str]:
     return tokens(_nocomment(_PRECOMMIT_CFG.read_text(encoding="utf-8")))
 
 
+# ── 훅 게이트의 열쇠 — `tools/gatefast.py` 가 같이 쓴다(PLAN #210) ──────────────
+#: ★ 2026-11-09. `# ci-exempt:` 는 `verify.sh` 단계만 면제하던 갈래였다. 훅(`pre-push.gates`)이 도는 검사기도 로컬 게이트이므로 같은 선언으로 면제한다 —
+#:   그러려면 「죽은 면제」 판정(`verify.sh` 가 안 부르는 검사기를 면제했다)이 **훅이 부르는 것**도 산 것으로 봐야 한다. 열쇠를 읽는 자리를 **한 곳**에 둔다(`gatefast` 는 이것을 부른다).
+GATES = ROOT / ".githooks" / "pre-push.gates"
+_PYTEST_TARGET = re.compile(r"(tests/[A-Za-z0-9_./-]+\.py)")
+
+
+def gate_commands(path: Path = GATES) -> list[tuple[str, str]]:
+    """(이름, 명령) — **첫 두 열만** 읽는다. 셋째 열(훅 안 벽시계 초)이 있어도 명령에 안 섞인다."""
+    out = []
+    for ln in path.read_text(encoding="utf-8").splitlines():
+        if not ln.strip() or ln.startswith("#"):
+            continue
+        cols = ln.split("\t")
+        out.append((cols[0], cols[1] if len(cols) > 1 else ""))
+    return out
+
+
+def keys(cmd: str) -> list[str]:
+    """명령의 열쇠 — 검사기 경로(`tools/<검사기>.py` · `firelane.<모듈>`) 또는 pytest 가 가리킨 시험 파일. 없으면 빈 목록."""
+    ks = sorted(tokens(cmd))
+    targets = _PYTEST_TARGET.findall(cmd) if "pytest" in cmd else []
+    if targets:
+        ks = [k for k in ks if k != "pytest"] + targets      # 시험 파일을 가리킨 pytest 는 그 파일이 열쇠다(맨 `pytest` 는 열쇠가 못 된다)
+    return ks
+
+
+def hook_keys() -> set[str]:
+    return {k for _, c in gate_commands() for k in keys(c)}
+
+
 def ci_tokens() -> set[str]:
     out: set[str] = set()
     for p in sorted(WF.glob("*.yml")) + sorted(ACT.rglob("*.yml")):
@@ -368,8 +399,8 @@ def report(max_local: int | None) -> int:
     for t, why in sorted(ex.items()):
         if len(why) < MIN_REASON:
             dead.append(f"{t}: 사유가 너무 짧다 ({why!r}) — {MIN_REASON}자 이상")
-        elif t not in loc:
-            dead.append(f"{t}: verify.sh 가 안 부르는 검사기를 면제했다")
+        elif t not in loc and t not in hook_keys():
+            dead.append(f"{t}: verify.sh 도 훅(`pre-push.gates`)도 안 부르는 검사기를 면제했다")
         elif t in ci:
             dead.append(f"{t}: CI 가 이미 돈다 — 면제 선언을 지워라")
     if dead:

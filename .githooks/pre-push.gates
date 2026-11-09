@@ -1,4 +1,5 @@
-# 이름<TAB>명령 — 지금 초록인 게이트만(빨간 것은 풀린 뒤에 한 줄 더한다). 합쳐서 30초 안이어야 한다(PLAN #192 ② 실측 8코어 약 15초 · 2코어 20초 · 직렬 33초).
+# 이름<TAB>명령<TAB>초 — 지금 초록인 게이트만(빨간 것은 풀린 뒤에 한 줄 더한다). 합쳐서 30초 안이어야 한다(PLAN #192 ② 실측 8코어 약 15초 · 2코어 20초 · 직렬 33초).
+# ★★ 셋째 열(초)은 **훅 안에서 잰 벽시계**다 — 단독 초가 아니다(2026-11-08: deadcheck 단독 10.7초 · 훅 안 28~29초). 게이트가 병렬로 돌며 CPU 를 나눈 값이고 조건은 DECISIONS §665 가 정했다(훅 전체 벽시계 · 게이트 동시 · 8코어). `tools/gatetimes.py --measure --write` 가 쓴다 — 손으로 안 적고 훅은 읽고 버린다.
 deadcheck 래칫	uv run python tools/deadcheck.py --ratchet
 파일 길이 래칫	uv run python tools/testsizetable.py
 봉인 덮임	uv run python tools/sealcov.py
