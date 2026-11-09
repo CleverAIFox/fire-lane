@@ -4907,6 +4907,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `tests/test_tasktpl.py` | 지시문 틀이 **읽은 것**인가 — 불변량을 바꾸면 틀이 따라가고 의무 하나를 빼면 틀에서도 빠지며 손으로 고친 틀은 `--check` 가 운다 · 먼저 읽을 절이 없으면 닫힌 쪽 |
 | `tests/test_plan_row_refs.py` | PLAN 안의 `#N` 이 **빈 행을 맨몸으로 가리키지 않는가**(`plan_renumber.unresolved_row_refs` · PLAN #208) — 죽은 번호를 맨몸으로 적으면 걸리고 표시가 있거나 산 행이면 통과 · 줄 단위의 느슨함을 못 박는다 · 실제 PLAN 이 깨끗한가 · pre-push 가 그 도구를 도는가 |
 | `tests/test_processed_env.py` | **`FIRE_LANE_PROCESSED` 로 격리 재취입이 메인 `data/processed` 를 못 건드리는가**(PLAN #183) — 자식이 보는 산출 경로가 스크래치인지 먼저 단언하고 메인 해시가 전후로 같은지 문다 · 환경변수가 없으면 저장소 안 그대로다. 예전의 코드 통째 복사 레시피를 대체한다 |
+| `tests/test_lineage_last_writer.py` | **`lineage.verify` 가 파일을 마지막으로 쓴 단계의 기록과 대조하는가**(PLAN #212) — ㉮ 마지막 작성자 뒤에 남이 고치면 여전히 잡는다 · ㉯ 전량 직후 `--from segments` 가 선다 · 「마지막」은 기록 시각이고 같은 시각이면 단계 순서 · 읽을 수 없는 시각은 가장 이르다 · ingest 칸이 terrain 값으로 안 덮인다 · 이 기계의 실제 계보가 이제 통과한다 |
 | `tests/test_refcheck_paths.py` | 경로 표기 검사가 **무엇을 넘기는가** |
 
 ## 24. 저장소 안내 — 루트에서 내린 것
