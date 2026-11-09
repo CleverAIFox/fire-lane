@@ -56,7 +56,7 @@ class Obligation:
 #: 파일 단위로 도출한 의무. **검사가 정본이다** — 여기는 이름표뿐이다.
 OBLIGATIONS = (
     Obligation("MASTER §22·§23 등재", "tools/sealcov.py", "손으로 쓴 코드 파일(`.py` `.ts` `.tsx` `.js` `.sh` · 생성물 제외)",
-               "MASTER §22(화면) · §23(가장자리 · 검사)의 표에 그 파일을 백틱 경로로 지목하는 줄을 적는다"),
+               "어느 절의 **산문**이든 그 파일을 백틱 경로로 지목해야 `sealcov` 가 덮인 것으로 센다 — 관례의 자리는 MASTER §22(화면) · §23(가장자리 · 검사)의 표다"),
     Obligation("머리말 「부류」", "tools/toolclass.py", "`tools/` 의 도구(진입점이 아니면 `부류  몸통`)",
                "머리말에 `부류  조사|절차|생산|몸통` 한 줄을 적는다(verify · CI 가 부르면 관문이라 안 적는다)"),
     Obligation("머리말 「밖」", "tools/scopedecl.py", "`tools/` 의 도구 · `tests/test_*.py`",

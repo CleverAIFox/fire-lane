@@ -94,6 +94,8 @@ import ratchetstore  # 값을 도구 파일 밖에 둔 래칫(PLAN #198)
 
 ROOT = Path(__file__).resolve().parents[1]
 TOOLS = ROOT / "tools"
+#: ★ 2026-11-09 (PLAN #185 ②). 래칫 상수가 `src/firelane/` 모듈에 살면(`contract_verdict.py`) 선언 밖으로 샌다 — 같은 훑기가 그쪽도 본다.
+SRC = ROOT / "src" / "firelane"
 
 #: 이 도구가 아는 방향. 다른 낱말을 적으면 그 도구는 빨간불로 든다.
 DIRECTIONS = ("down", "up", "down-map")
@@ -120,7 +122,9 @@ def _load(p: Path):
 def owners() -> list[tuple[Path, object]]:
     """`RATCHETS` 를 선언한 도구들. **손목록이 아니다.**"""
     out = []
-    for p in sorted(TOOLS.glob("*.py")):
+    # 시험이 `TOOLS` 를 사본으로 갈아끼울 때는 실물 `src` 를 같이 읽지 않는다(사본 트리만 본다).
+    files = sorted(TOOLS.glob("*.py")) + (sorted(SRC.glob("*.py")) if TOOLS == ROOT / "tools" else [])
+    for p in files:
         if p.name == Path(__file__).name:
             continue
         m = _load(p)
@@ -264,7 +268,7 @@ def survey() -> list[dict]:
                         continue
                     rows.append({"tool": p.name, "name": name, "key": key,
                                  "dir": direction, "declared": at[0], "measured": got,
-                                 "at": at})
+                                 "at": at, "path": p})
                 continue
             if name not in vals:
                 rows.append({"tool": p.name, "name": name, "err":
@@ -282,7 +286,7 @@ def survey() -> list[dict]:
                              "최상위 정수 상수가 아니다 — `--write` 가 쓸 자리가 없다"})
                 continue
             rows.append({"tool": p.name, "name": name, "dir": direction,
-                         "declared": at[0], "measured": vals[name], "at": at})
+                         "declared": at[0], "measured": vals[name], "at": at, "path": p})
     return rows
 
 
@@ -347,7 +351,7 @@ def run(write: bool) -> int:
                 ratchetstore.write(r["tool"], r["name"], r["measured"])
                 continue
             # `at` 은 `survey()` 에서 이미 확인됐다 — 못 찾은 것은 `err` 로 빠진다.
-            by.setdefault(TOOLS / r["tool"], []).append((r["measured"], r["at"][1], r["at"][2]))
+            by.setdefault(r.get("path") or TOOLS / r["tool"], []).append((r["measured"], r["at"][1], r["at"][2]))
         for p, edits in by.items():
             _apply(p, edits)
         print(f"\n✓ {len(tight)}개를 조였다 — 커밋에 **왜 움직였는지**를 적어라")

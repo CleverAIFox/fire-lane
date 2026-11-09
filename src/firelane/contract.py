@@ -365,6 +365,7 @@ from firelane.contract_verdict import (
     CRS_DECLARED_RATCHET,
     NO_CONTRACT_RATCHET,
     declared_issues,
+    real_counts,
     real_verdict,
 )
 
@@ -432,8 +433,7 @@ def main() -> int:
     for r in reports:
         r.show()
 
-    nf = sum(1 for r in reports if r.worst == FAIL) + len(unknown)
-    nw = sum(1 for r in reports if r.worst == WARN)
+    nf, nw = real_counts(reports, len(unknown))
     print(f"\n{len(reports)}종 · 실패 {nf} · 경고 {nw}")
     if nf:
         print("★ 대장과 실물이 다르다. ingest 를 돌리기 전에 맞춰라.")

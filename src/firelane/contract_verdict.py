@@ -114,6 +114,28 @@ REAL_FAIL_RATCHET = 7
 REAL_WARN_RATCHET = 58
 
 
+#: ★ 2026-11-09 (PLAN #185 ②). 래칫 넷 중 **선언 갈래 둘**을 `tools/ratchet.py` 의 선언 안으로 들였다 — 이 행의 문제가 「선언 밖 래칫이 샌다」였다
+#:   (`ratchet --write` 가 못 올리고 못 조인다). 방향: 무계약은 늘면 우는 쪽(`down`) · `crs_native` 선언 수는 줄면 우는 쪽(`up`). 둘 다 레이크 없이 재서 CI 에서도 돈다.
+#:   ★ **실물 갈래 둘(`REAL_FAIL_RATCHET` · `REAL_WARN_RATCHET`)은 선언 밖에 남겼다** — 사유 둘: ① 레이크(raw)가 있어야 재는데 `tools/ratchet.py` 가 CI 에서
+#:   건너뛰는 길(`# ci-exempt:`)은 `tools/verify.sh` 의 **단계에 매달려** 있고 이 실물 갈래는 그 단계가 아니다 ② `REAL_WARN_RATCHET` 은 **일부러 느슨한 채**다 —
+#:   위 DECISIONS §657 이 「58 을 그대로 둔다」고 적었고 실측은 그보다 높다. 선언 안에 들이면 이 기계에서 `ratchet.py` 가 영구히 빨갛다(「느슨해진 쪽 0」을 못 지킨다).
+RATCHETS = {"NO_CONTRACT_RATCHET": "down", "CRS_DECLARED_RATCHET": "up"}
+
+
+def real_counts(reports: list, unknown: int = 0) -> tuple[int, int]:
+    """(실패, 경고) — 실물 갈래의 두 수. `contract.main` 이 쓰는 **셈의 자리**다(셈이 한 곳이어야 판정이 갈리지 않는다)."""
+    from firelane.contract_crs import FAIL, WARN
+    return (sum(1 for r in reports if r.worst == FAIL) + unknown, sum(1 for r in reports if r.worst == WARN))
+
+
+def ratchet_values() -> dict[str, int]:
+    """`tools/ratchet.py` 가 부르는 실측 — 선언 갈래 둘의 지금 값. **레이크를 안 읽는다**(실물 갈래는 안 잰다 — 위 사유)."""
+    from firelane import ledger as _led
+
+    _bad, _warn, no_contract, crs_n = declared_issues(_led.load().get("datasets", {}))
+    return {"NO_CONTRACT_RATCHET": no_contract, "CRS_DECLARED_RATCHET": crs_n}
+
+
 def real_verdict(nf: int, nw: int) -> tuple[int, list[str]]:
     """전수 갈래의 판정. **키를 짚어 부른 것에는 안 쓴다** — 그때는 정확히 그 종이다."""
     say: list[str] = []
