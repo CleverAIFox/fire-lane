@@ -1,33 +1,33 @@
 # 이름<TAB>명령<TAB>초 — 지금 초록인 게이트만(빨간 것은 풀린 뒤에 한 줄 더한다). 합쳐서 30초 안이어야 한다(PLAN #192 ② 실측 8코어 약 15초 · 2코어 20초 · 직렬 33초).
 # ★★ 셋째 열(초)은 **훅 안에서 잰 벽시계**다 — 단독 초가 아니다(2026-11-08: deadcheck 단독 10.7초 · 훅 안 28~29초). 게이트가 병렬로 돌며 CPU 를 나눈 값이고 조건은 DECISIONS §665 가 정했다(훅 전체 벽시계 · 게이트 동시 · 8코어). `tools/gatetimes.py --measure --write` 가 쓴다 — 손으로 안 적고 훅은 읽고 버린다.
-deadcheck 래칫	uv run python tools/deadcheck.py --ratchet
-파일 길이 래칫	uv run python tools/testsizetable.py
-봉인 덮임	uv run python tools/sealcov.py
-판정 상수 출처	uv run python tools/constbasis.py
-계보 대장 정합	uv run python -m firelane.datalog check
-문서 생성 블록	uv run python tools/docgen.py --check
-커밋 정책(추적 전체)	uv run python tools/commit_policy.py --tracked
-카나리아(합성 결함 쌍)	uv run python tools/canary.py
+deadcheck 래칫	uv run python tools/deadcheck.py --ratchet	24.3
+파일 길이 래칫	uv run python tools/testsizetable.py	0.1
+봉인 덮임	uv run python tools/sealcov.py	1.8
+판정 상수 출처	uv run python tools/constbasis.py	0.2
+계보 대장 정합	uv run python -m firelane.datalog check	4.2
+문서 생성 블록	uv run python tools/docgen.py --check	2.8
+커밋 정책(추적 전체)	uv run python tools/commit_policy.py --tracked	0.5
+카나리아(합성 결함 쌍)	uv run python tools/canary.py	19.7
 # ── Zm52 — 사람이 `fieldseal --write` 로 봉인해 지문이 초록이 되어 줄을 풀었다(`tests/test_fieldseal.py::test_when_the_seal_is_green_the_prepush_gate_must_be_on` 이 이 줄이 켜져 있는지 문다 · 0.1초) ──
-봉인 대조(data/field)	uv run python tools/fieldseal.py
+봉인 대조(data/field)	uv run python tools/fieldseal.py	0.5
 # ── PLAN #192 ② · DECISIONS §633 — 문서 정합 묶음. 11-04 의 날인 누락 푸시 둘(31c334bf · 9b374a16)은 `docseal check` 가 막을 자리였다.
 #    `문서 정합 도장` 은 날인이 필요한 판에는 빨강이다 — 의도다(영원히 빨간 게이트가 아니라 `docseal stamp` 한 줄로 풀리는 빨강). ──
-문서 정합 도장	uv run python tools/docseal.py check
-문서 ↔ 문서	uv run python tools/doc_fsck.py
-문서 말투	uv run python tools/tonecheck.py
-golden 게이트 해제 경로	uv run python tools/golden.py selftest
-golden 판정 불변(커밋본)	uv run python tools/golden.py check
-PLAN 번호·참조 정합	uv run python tools/plan_renumber.py
-PLAN 닫는 길	uv run python tools/planclose.py
-PLAN 이력 빚	uv run python tools/planwork.py
-문서 제목 무결	uv run python tools/docpatch.py check docs/MASTER.md docs/PLAN.md docs/DECISIONS.md
-리드미 대조	uv run python tools/readmecheck.py
-기획서 정본 대조	uv run python tools/proposalcheck.py
-기획서 화면 ↔ 정본	uv run python tools/build_proposal.py --check
-그림 ↔ 정본	uv run python tools/render_figures.py --check
+문서 정합 도장	uv run python tools/docseal.py check	16.7
+문서 ↔ 문서	uv run python tools/doc_fsck.py	4.3
+문서 말투	uv run python tools/tonecheck.py	16.0
+golden 게이트 해제 경로	uv run python tools/golden.py selftest	7.3
+golden 판정 불변(커밋본)	uv run python tools/golden.py check	2.2
+PLAN 번호·참조 정합	uv run python tools/plan_renumber.py	2.7
+PLAN 닫는 길	uv run python tools/planclose.py	0.7
+PLAN 이력 빚	uv run python tools/planwork.py	0.6
+문서 제목 무결	uv run python tools/docpatch.py check docs/MASTER.md docs/PLAN.md docs/DECISIONS.md	1.6
+리드미 대조	uv run python tools/readmecheck.py	0.5
+기획서 정본 대조	uv run python tools/proposalcheck.py	2.1
+기획서 화면 ↔ 정본	uv run python tools/build_proposal.py --check	0.7
+그림 ↔ 정본	uv run python tools/render_figures.py --check	0.6
 # ── PLAN #193 · DECISIONS §634 — 코드가 대장이 지목한 좌표 칸 이름을 직접 쓰지 않는가(AST · src/firelane). pytest 한 파일이라 시작이 약 2초 ──
-좌표 칸 리터럴(대장 coords)	uv run pytest tests/test_coord_literals.py -q -p no:cacheprovider
+좌표 칸 리터럴(대장 coords)	uv run pytest tests/test_coord_literals.py -q -p no:cacheprovider	6.6
 # ── PLAN #209 — 구조 규약을 무는 시험(test_layering · test_no_unbounded_waits · test_sizecheck …)이 어느 관문에도 없었다. 손 목록이 아니라 **실측 장부**(data/golden/testtimes.json)에서 예산 안에 드는 파일을 계산해 돈다.
 #    새 시험은 장부에 없어도 무조건 든다. 장부 갱신은 `tools/testpick.py --measure --write`.
 #    예산은 **훅 전체 벽시계 · 게이트 동시 · 8코어**(testpick 머리말 · PLAN #210) — `--load 60` 은 이 훅의 다른 게이트들이 쓰는 CPU-초다. ──
-시험 묶음(실측으로 고름)	uv run python tools/testpick.py --run --budget 28 --load 60
+시험 묶음(실측으로 고름)	uv run python tools/testpick.py --run --budget 28 --load 60	20.9
