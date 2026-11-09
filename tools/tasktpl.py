@@ -22,6 +22,13 @@ tasktpl.py — LLM 에게 주는 **작업 지시문 틀**을 저장소에서 읽
       상한 올리기        `ratchet.owners()` — 래칫 수. 느슨해지는 쪽을 `--write` 가 거부하는 것이 집행이다
       판정 폐포          `shardseal.code_closure()` — ingest 가 import 하는 모듈. 이 파일들이 판정을 움직인다
       푸시 · 도장        `pushready` 머리말의 「읽기만 한다」 줄과 그 축
+  PLAN 본문 금기        **시험이 PLAN 본문을 무는 규칙** — 새로 안 적는다(2026-11-09 사람이 정했다):
+      소속 없는 절 참조 · 빈 행 `#N`   `plan_renumber.unresolved_section_refs` · `unresolved_row_refs` 의 머리 문장
+      도구 선언으로 읽히는 `tools/…`    `tests/test_guards.py::test_tools_declared_in_docs_exist` 의 머리 문장과 정규식(AST 로 읽는다)
+      벽시계 수                        `tests/test_repo_numbers.py` 의 `_WALL` · `_ABOUT` · `_LIVE`(AST 로 읽는다 — 시험 모듈을 import 하지 않는다)
+      평어체                           `tests/test_doc_style.py` 의 `VOICE` · `ALLOW`
+      폐기값 수치                      `docnum_check.retired_pattern` 의 머리 문장
+      그 밖                            PLAN 을 읽는 시험 · 도구의 **이름만** 센다 — 그것이 본문 규칙을 무는지는 도구가 못 가린다(아래 출력이 그 사실을 적는다)
 
 IN    위 곳들 읽기 전용 · `--check` 의 PATH
 OUT   화면(기본) · `--write` 가 준 경로 한 파일. **기본 위치가 없다 — 틀을 저장소에 커밋하지 않는다**(커밋하면 그것이 사본이다 · 사람이 정했다).
@@ -34,6 +41,7 @@ PARAM READ_FIRST
 from __future__ import annotations
 
 import argparse
+import ast
 import re
 import sys
 from pathlib import Path
@@ -41,6 +49,7 @@ from pathlib import Path
 import docnum_check
 import fixable
 import obligations
+import plan_renumber
 import pushready
 import ratchet
 
@@ -97,6 +106,66 @@ def forbidden() -> list[str]:
     return L
 
 
+TESTS = ROOT / "tests"
+
+
+def _tree(path: Path) -> ast.Module:
+    return ast.parse(path.read_text(encoding="utf-8"))
+
+
+def _assigned(path: Path, name: str):
+    """모듈 상수 `name` 의 값 — 문자열 · 튜플 · `re.compile("…")` 의 첫 인자 · `{키: re.compile("…")}` 를 **import 없이** 읽는다. 못 찾으면 죽는다."""
+    for node in ast.walk(_tree(path)):
+        if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == name for t in node.targets):
+            v = node.value
+            if isinstance(v, ast.Call) and v.args and isinstance(v.args[0], ast.Constant):
+                return v.args[0].value
+            if isinstance(v, ast.Dict):
+                return {ast.literal_eval(k): ast.unparse(x) for k, x in zip(v.keys, v.values, strict=True)}
+            return ast.literal_eval(v)
+    raise LookupError(f"{path.name} 에 {name} 가 없다 — 이름이 바뀌었으면 틀이 읽을 곳을 잃었다")
+
+
+def _first(doc: str | None, paras: int = 1, cap: int = 330) -> str:
+    t = " ".join(" ".join((doc or "").strip().split("\n\n")[:paras]).split())
+    return t if len(t) <= cap else t[:cap] + "…"
+
+
+def _func_regexes(path: Path, func: str) -> list[str]:
+    """함수 몸통 안에서 `re.*` 에 넘긴 **문자열 인자**."""
+    for node in ast.walk(_tree(path)):
+        if isinstance(node, ast.FunctionDef) and node.name == func:
+            out = []
+            for c in ast.walk(node):
+                if isinstance(c, ast.Call) and isinstance(c.func, ast.Attribute) and isinstance(c.func.value, ast.Name) and c.func.value.id == "re":
+                    out += [a.value for a in c.args if isinstance(a, ast.Constant) and isinstance(a.value, str)]
+            return out
+    raise LookupError(f"{path.name} 에 {func} 가 없다")
+
+
+def plan_readers() -> tuple[list[str], list[str]]:
+    """PLAN.md 를 읽는 시험 · 도구 이름. **세기만 한다** — 본문 규칙을 무는지는 가리지 못한다."""
+    def has(p: Path) -> bool:
+        return "PLAN.md" in p.read_text(encoding="utf-8", errors="ignore")
+    return ([p.name for p in sorted(TESTS.glob("*.py")) if has(p)], [p.name for p in sorted((ROOT / "tools").glob("*.py")) if has(p)])
+
+
+def plan_rules() -> list[str]:
+    """PLAN 본문 금기 — **시험이 무는 것**을 그 시험 · 도구에서 읽어 채운다."""
+    rn, gd, doc = TESTS / "test_repo_numbers.py", TESTS / "test_guards.py", TESTS / "test_doc_style.py"
+    L = [f"- 절 참조 — {_first(plan_renumber.unresolved_section_refs.__doc__)}",
+         f"- 행 번호 — {_first(plan_renumber.unresolved_row_refs.__doc__)}",
+         f"- 도구 선언 — {_first(next(n for n in ast.walk(_tree(gd)) if isinstance(n, ast.FunctionDef) and n.name == 'test_tools_declared_in_docs_exist').body[0].value.value)} "
+         f"(정규식 {' · '.join(f'`{r}`' for r in _func_regexes(gd, 'test_tools_declared_in_docs_exist'))})",
+         f"- 벽시계 수 — 대상 {' · '.join(_assigned(rn, '_LIVE'))} · 수 꼴 `{_assigned(rn, '_WALL')}` · 줄에 {' · '.join(f'「{w}」' for w in _assigned(rn, '_ABOUT'))} 가 있으면 막는다",
+         f"- 평어체 — 검사 {' · '.join(_assigned(doc, 'VOICE'))} · 의도적 인용은 줄 끝 `{_assigned(doc, 'ALLOW')} 사유-->`",
+         f"- 폐기값 수치 — {_first(docnum_check.retired_pattern.__doc__, paras=2)}"]
+    tests, tools = plan_readers()
+    L.append(f"- 그 밖 — PLAN 을 읽는 시험 {len(tests)}개 · 도구 {len(tools)}개가 있다(이름만 센다: {' · '.join(tests)}). "
+             "이 가운데 어느 것이 본문 **규칙**을 무는지는 도구가 못 가린다 — 위 여섯 말고 더 있을 수 있다")
+    return L
+
+
 def render(verdicts: dict[str, int] | None = None) -> str:
     v = verdicts if verdicts is not None else docnum_check.verdicts()
     L = ["# 작업 지시문 틀 — 이 파일은 `tools/tasktpl.py` 가 찍는다. 손으로 고치지 않는다.", ""]
@@ -111,7 +180,8 @@ def render(verdicts: dict[str, int] | None = None) -> str:
     L += ["", "## 푸시 전 한 명령 — `uv run python tools/pushready.py`"] + [f"- {a}" for a in axes()]
     L += ["", "## 새 파일에 따라붙는 의무(`obligations --new` 가 이름으로 댄다)"]
     L += [f"- {o.name} — {o.applies}: {o.fix}" for o in obligations.OBLIGATIONS]
-    L += ["", "## 하지 말 것 — 정본은 저장소에 있다(`tools/tasktpl.py` 가 읽어 채운다)"] + forbidden() + [""]
+    L += ["", "## 하지 말 것 — 정본은 저장소에 있다(`tools/tasktpl.py` 가 읽어 채운다)"] + forbidden()
+    L += ["", "## PLAN 본문 금기 — 시험이 무는 것(사람이 쓴 PLAN 본문이 이 시험들에 걸렸다)"] + plan_rules() + [""]
     return "\n".join(L)
 
 

@@ -4864,7 +4864,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `tools/fetch_api.py` | 공공데이터포털 표준데이터 API 를 **같은 방법으로 다시 받는** 도구(`FIRE_LANE_DATA_GO_KR_KEY` · 지금은 키가 필요 없다 · PLAN 행 141(닫힘)). 호출은 `--run` 일 때만 |
 | `tools/ratchetstore.py` | **래칫 값을 도구 파일 밖에 두는 곳**(PLAN #198) — 값을 한 칸 조여도 그 도구를 지목한 도장이 안 죽게 한다. 값 파일은 `data/golden/` 아래 하나이고 **어느 절도 그 경로를 백틱으로 적지 않는다**(적으면 그 절의 지문에 값이 들어간다). 기준은 수다 — 값 한 번에 죽는 도장이 `MOVE_AT`(20) 이상인 도구만 옮긴다(`--rank` 가 잰다 · 읽기만 한다) |
 | `tools/obligations.py` | **새 파일에 따라붙는 등재 의무를 이름으로 댄다**(PLAN #199) — MASTER §22·§23 등재 · 머리말 「부류」 · 「밖」 중 무엇이 빠졌는지. **정본은 기존 검사**(`sealcov` · `toolclass` · `scopedecl`)이고 이 도구는 그 판정 함수를 부를 뿐이다(표를 새로 세우지 않는다). 추적 전의 새 파일은 「`git add` 가 먼저」만 댄다(거짓 초록 방지). 새 절 · 대장 의무는 **미도출**로 적어 둔다. 읽기만 한다 |
-| `tools/tasktpl.py` | **LLM 작업 지시문 틀을 저장소에서 읽어 찍는다**(PLAN #204) — 불변량 수(`docnum_check.verdicts`) · 푸시를 막는 관문(`pre-push.gates`) · `pushready` 축 · 새 파일 등재 의무(`obligations`)를 읽는다. 사본을 안 만든다. 금지 칸은 새로 적지 않고 기존 정본(`fixable.HUMAN_FIRST` · `ratchet.owners` · `shardseal.code_closure` · `pushready` 머리말)을 읽어 채운다. 기본 쓰기 위치가 없다 — 틀을 저장소에 커밋하지 않는다 |
+| `tools/tasktpl.py` | **LLM 작업 지시문 틀을 저장소에서 읽어 찍는다**(PLAN #204) — 불변량 수(`docnum_check.verdicts`) · 푸시를 막는 관문(`pre-push.gates`) · `pushready` 축 · 새 파일 등재 의무(`obligations`)를 읽는다. 사본을 안 만든다. 금지 칸은 새로 적지 않고 기존 정본(`fixable.HUMAN_FIRST` · `ratchet.owners` · `shardseal.code_closure` · `pushready` 머리말)을 읽어 채운다. 「PLAN 본문 금기」 칸은 시험의 상수와 도구의 머리 문장을 읽어 채운다. 기본 쓰기 위치가 없다 — 틀을 저장소에 커밋하지 않는다 |
 | `tools/dms_fix_inherit.py` | 부모 칸의 「하위 일곱」 같은 **수 낱말을 판정기가 세는 수로 다시 쓴다.** 수는 `dms.scan()` 의 `inherit` 행을 부모별로 센 것(`inherit_counts` 와 같은 규칙)이라 손으로 세지 않는다 — 손으로 센 수가 §648~§656 에서 여섯 번 틀렸다. **돌린 뒤 늘어난 절을 읽는 것은 사람 몫이다**(판정기가 우는 이유가 그것이다). 기본은 계획만 · `--write` 가 쓴다 |
 
 ### 23-3. 검사 — 무엇을 묻나
