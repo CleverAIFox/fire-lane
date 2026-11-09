@@ -166,10 +166,14 @@ def unmarked_plan_readers(tests: Path | None = None) -> list[str]:
 
 
 def plan_readers() -> tuple[list[str], list[str]]:
-    """PLAN.md 를 읽는 시험 · 도구 이름(세기)."""
+    """PLAN.md 를 읽는 시험 · 도구(와 `src`) 이름(세기).
+
+    ★ 2026-11-09. `src` 를 같이 훑는다 — `tools` · `tests` 만 훑으면 `deadcheck` ⑤ 「좁은 범위」가 운다(그 훅 게이트가 이 도구를 잡았다: 111개 파일이 대상 밖).
+    """
     def has(p: Path) -> bool:
         return "PLAN.md" in p.read_text(encoding="utf-8", errors="ignore")
-    return ([p.name for p in sorted(TESTS.glob("*.py")) if has(p)], [p.name for p in sorted((ROOT / "tools").glob("*.py")) if has(p)])
+    found = [(d, p) for d in (TESTS, ROOT / "tools", ROOT / "src") for p in sorted(d.rglob("*.py")) if has(p)]
+    return ([p.name for d, p in found if d == TESTS], [p.name for d, p in found if d != TESTS])
 
 
 def plan_rules() -> list[str]:
