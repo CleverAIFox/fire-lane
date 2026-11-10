@@ -278,3 +278,14 @@ def test_published_scope_basis_is_set_exactly_on_listed():
     assert {p["scope_basis"] for p in feats} <= {None, scopetier.ADDRESS, scopetier.ROAD}
     # `address` 는 본선 번지 행에서만 선다
     assert all(scopetier.street_address(p.get("nfa_access_token")) for p in feats if p["scope_basis"] == "address")
+
+
+def test_designations_returns_flags_and_basis_per_segment():
+    """`designations` 를 **이름으로** 부른다 — (지정인가, 근거) 두 목록이 구간 순서 그대로다."""
+    pytest.importorskip("geopandas", reason="환경skip(도구) — 건물 폴리곤 거리는 geopandas 가 잰다")
+    bld, near, far = _bld_fixture()
+    rows = [_row("거성마트 동구 지산로 37(지산1동) 일대(구, 섬들1길)", length=120.0)]
+    des, basis = scopetier.designations(["지산로", "지산로", "없는길", None], [near, far, near, near], rows, bld,
+                                        {"지산로": ["1"]})
+    assert des == [True, False, False, False]
+    assert basis == [scopetier.ADDRESS, None, None, None]
