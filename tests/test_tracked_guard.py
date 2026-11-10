@@ -89,3 +89,33 @@ def test_a_session_that_rewrites_a_tracked_file_fails_even_though_every_test_pas
 def test_a_session_that_writes_nothing_tracked_passes(repo: Path, plugin) -> None:
     r = _session(repo, "from pathlib import Path\n\ndef test_writes_an_untracked_artifact():\n    Path('artifact.csv').write_text('산출물\\n')\n")
     assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_a_session_whose_test_rewrites_a_tracked_file_and_puts_it_back_still_fails(repo: Path, plugin) -> None:
+    """★ 전후 지문이 **못 잡던** 것 — 고쳤다 되돌린다(`test_refcheck_paths` 의 모양). 앞뒤 해시는 같다. 쓰는 순간을 보는 감사 훅이 문다."""
+    body = ("from pathlib import Path\n\ndef test_probe_and_restore():\n    p = Path('tracked.txt')\n    keep = p.read_text()\n"
+            "    p.write_text(keep + 'probe')\n    p.write_text(keep)\n")
+    r = _session(repo, body)
+    out = r.stdout + r.stderr
+    assert "1 passed" in out, out
+    assert r.returncode != 0, "고쳤다 되돌린 세션이 통과했다 — 감사 훅이 안 문다\n" + out
+    assert "tracked.txt" in out and "제자리에서 쓰기로 열었다" in out and "test_probe_and_restore" in out, out
+
+
+def test_reading_and_writing_untracked_or_temp_files_is_quiet(repo: Path, plugin) -> None:
+    body = ("from pathlib import Path\n\ndef test_ok(tmp_path):\n    Path('tracked.txt').read_text()\n"
+            "    (tmp_path / 'x').write_text('a')\n    Path('artifact.csv').write_text('b')\n")
+    r = _session(repo, body)
+    assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_the_mirror_copies_only_what_is_asked_and_links_the_rest(tmp_path: Path) -> None:
+    src = tmp_path / "src"
+    (src / "a" / "b").mkdir(parents=True)
+    (src / "a" / "b" / "f.txt").write_text("원본", encoding="utf-8")
+    (src / "a" / "g.txt").write_text("옆", encoding="utf-8")
+    (src / "top.txt").write_text("위", encoding="utf-8")
+    m = G.mirror_tree(tmp_path / "m", replace={"a/b/f.txt": "바뀜"}, root=src)
+    assert (m / "a" / "b" / "f.txt").read_text(encoding="utf-8") == "바뀜" and not (m / "a" / "b" / "f.txt").is_symlink()
+    assert (m / "a" / "g.txt").is_symlink() and (m / "top.txt").is_symlink()
+    assert (src / "a" / "b" / "f.txt").read_text(encoding="utf-8") == "원본"       # 실물은 안 건드린다

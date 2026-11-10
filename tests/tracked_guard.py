@@ -19,7 +19,9 @@ from __future__ import annotations
 
 import functools
 import os
+import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -36,6 +38,39 @@ def local_env_names() -> tuple[str, ...]:
     got = tuple(x for x in r.stdout.split() if x.startswith("GIT_"))
     assert "GIT_DIR" in got, f"git 이 저장소 환경변수를 안 냈다: {r.stdout!r}"
     return got
+
+
+def mirror_tree(dest: Path, copy: tuple[str, ...] = (), replace: dict[str, str] | None = None, root: Path | None = None) -> Path:
+    """실물 저장소의 **거울**을 `dest` 에 짓는다 — 추적 파일을 제자리에서 고쳤다 되돌리는 시험의 자리다. (PLAN #219)
+
+    `copy` 에 든 경로(파일 · 디렉터리)는 **진짜 복사본**이고 나머지 최상위는 전부 심링크다(`.git` · `.venv` 는 뺀다). `replace` 의 `상대경로 → 본문` 은 복사본의 그 파일을 덮는다.
+    ★ 파일이 제 위치로 뿌리를 찾는 도구(`Path(__file__).resolve()`)는 **그 도구를 복사본으로 둬야** 거울 뿌리를 본다 — 심링크는 실물로 풀린다.
+    ★ 진짜 `docs/MASTER.md` · `src/.../width.py` · `.code_fingerprint` 를 고쳤다 되돌리면 병렬로 도는 다른 시험이 중간 상태를 읽는다(2026-11-10 64개 빨강 · 한 번은 0바이트)."""
+    root = ROOT if root is None else root       # 기본 인자로 묶으면 정의 시점에 굳는다(§571)
+    want = {tuple(Path(c).parts) for c in copy} | {tuple(Path(r).parts) for r in (replace or {})}
+
+    def build(src: Path, dst: Path, prefix: tuple[str, ...]) -> None:
+        dst.mkdir(parents=True, exist_ok=True)
+        for e in sorted(src.iterdir()):
+            parts = (*prefix, e.name)
+            if not prefix and e.name in (".git", ".venv"):
+                continue
+            if e.name == "__pycache__":
+                continue
+            if parts in want:
+                if e.is_dir():
+                    shutil.copytree(e, dst / e.name, ignore=shutil.ignore_patterns("__pycache__"))
+                else:
+                    shutil.copy2(e, dst / e.name)
+            elif any(w[: len(parts)] == parts for w in want) and e.is_dir():
+                build(e, dst / e.name, parts)
+            else:
+                (dst / e.name).symlink_to(e)
+
+    build(root, dest, ())
+    for rel, text in (replace or {}).items():
+        (dest / rel).write_text(text, encoding="utf-8")
+    return dest
 
 
 def _git(root: Path, *args: str) -> str:
@@ -68,21 +103,77 @@ def changed(before: dict[str, str], after: dict[str, str]) -> list[str]:
     return sorted(k for k in before.keys() | after.keys() if before.get(k) != after.get(k))
 
 
+_WRITES: dict[tuple[str, str], str] = {}     # (추적 파일, 시험) → 어떻게 썼나 — 세션 **도중**에 쓴 것(되돌려도 남는다)
+
+
+def _audit(event: str, args: tuple) -> None:
+    """★ **전후 지문이 못 잡는 것** — 고쳤다 되돌린 쓰기. 되돌리면 앞뒤 해시가 같아 위 비교는 초록이다(2026-11-10: `test_refcheck_paths` 가 진짜
+    `docs/MASTER.md` 를 제자리에서 고쳤다 되돌렸고 병렬로 읽는 시험 64개가 빨개졌다 · 한 번은 파일이 빈 채 남았다). 그래서 **쓰는 순간**을 본다.
+
+    파이썬 감사 훅(`open` 의 쓰기 모드 · `os.remove` · `os.rename` · `os.replace` · `shutil.copyfile` 의 도착)이 이 세션 **프로세스 안**의 쓰기를 본다 —
+    경로를 헬퍼로 조립해도 보인다(정적 스캔은 못 본다). **못 보는 것:** 자식 프로세스(`subprocess` 로 부른 도구)의 쓰기 · `dir_fd` 로 지우는 `rmtree` 의 내부."""
+    if not _STATE.get("audit"):
+        return
+    try:
+        if event == "open":
+            path, mode, flags = args
+            writing = (isinstance(mode, str) and any(c in mode for c in "wax+")) or (
+                isinstance(flags, int) and bool(flags & (os.O_WRONLY | os.O_RDWR | os.O_TRUNC | os.O_APPEND)))
+            if not writing:
+                return
+        elif event in ("os.remove", "os.rename", "os.replace"):
+            path = args[0]
+            fds = args[1:2] if event == "os.remove" else args[2:4]     # `os.remove(path, dir_fd)` · `os.rename(src, dst, src_dir_fd, dst_dir_fd)`
+            if any(fd is not None and fd != -1 for fd in fds):          # `rmtree` 가 열린 디렉터리 기준 상대 이름으로 지운다
+                return
+        elif event == "shutil.copyfile":
+            path = args[1]
+        else:
+            return
+        if not isinstance(path, (str, bytes, os.PathLike)):
+            return
+        rel = os.path.relpath(os.path.abspath(os.fsdecode(path)), str(_STATE["root"]))
+        if rel.startswith("..") or rel not in _STATE["tracked"] or rel in WRITE_ALLOW:
+            return
+        test = os.environ.get("PYTEST_CURRENT_TEST", "") or "(시험 밖 · 수집 · 세션)"
+        _WRITES.setdefault((rel, test.split(" ")[0]), event)
+    except Exception:       # 감사 훅은 시험을 죽이지 않는다 — 못 읽은 한 건이 세션을 깨면 안 된다
+        return
+
+
+WRITE_ALLOW: dict[str, str] = {}      # 추적 파일 → 사유. **비어 있다** — 시험이 추적 파일을 쓰기로 열 정당한 이유가 아직 없다(복사본 `mirror_tree` 에서 한다)
+
+
 def pytest_sessionstart(session) -> None:
     if hasattr(session.config, "workerinput"):          # xdist 일꾼
         return
     _STATE["before"] = snapshot()
+    _STATE["root"] = ROOT
+    _STATE["tracked"] = set(_git(ROOT, "ls-files", "-z").split("\0")) - {""}
+    _STATE["audit"] = True
+    if not _STATE.get("hooked"):
+        sys.addaudithook(_audit)           # 감사 훅은 뺄 수 없다 — `_STATE["audit"]` 가 켜고 끈다
+        _STATE["hooked"] = True
 
 
 def pytest_sessionfinish(session, exitstatus) -> None:
     if hasattr(session.config, "workerinput") or "before" not in _STATE:
         return
+    _STATE["audit"] = False
     bad = changed(_STATE["before"], snapshot())
+    tr = session.config.pluginmanager.get_plugin("terminalreporter")
+    say = tr.write_line if tr else print
+    if _WRITES:
+        say(f"✗ 시험이 추적 파일을 **제자리에서 쓰기로 열었다** — {len(_WRITES)}건 (되돌렸어도 병렬로 읽는 시험이 중간 상태를 본다 · 이 세션은 실패다)")
+        for (rel, test), ev in sorted(_WRITES.items())[:30]:
+            say(f"    {rel}  ← {test}  ({ev})")
+        say("  복사본에서 돌려라 — `tracked_guard.mirror_tree` 가 거울을 짓는다(`tests/test_refcheck_paths.py` · `test_doc_fsck.py` 가 본보기).")
+        _WRITES.clear()
+        session.exitstatus = 1
     if not bad:
         return
-    tr = session.config.pluginmanager.get_plugin("terminalreporter")
     lines = [f"✗ 시험이 추적 파일을 바꿨다 — {len(bad)}개 (시험은 초록이어도 이 세션은 실패다)"] + [f"    {n}" for n in bad[:30]]
     lines.append("  `git diff` 로 무엇이 바뀌었나 보고, 쓴 시험 · 도구를 찾아라. 임시 디렉터리에서 돌려야 하는 시험이면 그렇게 고쳐라(`tests/test_fix_door.py` 가 본보기다).")
     for ln in lines:
-        (tr.write_line if tr else print)(ln)
+        say(ln)
     session.exitstatus = 1

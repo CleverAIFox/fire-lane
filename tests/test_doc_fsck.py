@@ -19,6 +19,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from tracked_guard import mirror_tree
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -121,30 +122,25 @@ def test_a_generated_path_is_a_claim_not_a_silence():
     assert not generated.dead_claims(ROOT), "복원이 안 됐다"
 
 
-def test_a_generated_claim_does_not_silence_a_real_absence():
+def test_a_generated_claim_does_not_silence_a_real_absence(tmp_path, monkeypatch):
     """★ 넓힌 쪽의 반대편. 주장에 적히지 **않은** 없는 경로는 여전히 운다."""
-    probe = ROOT / "docs/MASTER.md"
-    original = probe.read_text(encoding="utf-8")
-    try:
-        probe.write_text(original + "\n\n<!-- web/__가짜생성물__.pdf -->\n",
-                         encoding="utf-8")
-        assert any("__가짜생성물__" in b for b in doc_fsck.check_paths()), (
-            "생성물 주장을 넣은 뒤 ② 가 다른 없는 경로를 놓친다")
-    finally:
-        probe.write_text(original, encoding="utf-8")
+    original = (ROOT / "docs/MASTER.md").read_text(encoding="utf-8")
+    base = doc_fsck.check_paths()
+    monkeypatch.setattr(doc_fsck, "ROOT", mirror_tree(tmp_path / "m", replace={"docs/MASTER.md": original + "\n\n<!-- web/__가짜생성물__.pdf -->\n"}))
+    got = doc_fsck.check_paths()
+    assert any("__가짜생성물__" in b for b in got), "생성물 주장을 넣은 뒤 ② 가 다른 없는 경로를 놓친다"
+    assert [b for b in got if "__가짜생성물__" not in b] == base, "거울이 실물과 다르다 — 프로브 밖의 결과가 갈렸다"
 
 
-def test_the_gate_actually_cries():
+def test_the_gate_actually_cries(tmp_path, monkeypatch):
     """★ 해제만 검사하면 항상 통과하는 검사를 만들게 된다(§69).
     없는 경로를 하나 심어 ② 가 우는지 본다."""
-    probe = ROOT / "docs/MASTER.md"
-    original = probe.read_text(encoding="utf-8")
-    try:
-        probe.write_text(original + "\n\n<!-- tools/__doc_fsck_probe__.py -->\n",
-                         encoding="utf-8")
-        assert doc_fsck.check_paths(), "없는 경로를 심었는데 ② 가 조용하다"
-    finally:
-        probe.write_text(original, encoding="utf-8")
+    original = (ROOT / "docs/MASTER.md").read_text(encoding="utf-8")
+    base = doc_fsck.check_paths()
+    monkeypatch.setattr(doc_fsck, "ROOT", mirror_tree(tmp_path / "m", replace={"docs/MASTER.md": original + "\n\n<!-- tools/__doc_fsck_probe__.py -->\n"}))
+    got = doc_fsck.check_paths()
+    assert [b for b in got if "__doc_fsck_probe__" not in b] == base, "거울이 실물과 다르다"
+    assert any("__doc_fsck_probe__" in b for b in got), "없는 경로를 심었는데 ② 가 조용하다"
 
 
 def test_elsewhere_points_at_committed_files():

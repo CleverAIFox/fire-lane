@@ -63,18 +63,38 @@ def selftest() -> int:
     if not _t:
         fails.append("과녁 중 이름이 적힌 시험을 가진 것이 하나도 없다 — 지문의 전제가 깨졌다")
     else:
-        _was = catch_print(_t)
-        _f = _q[0]
-        _orig = _f.read_bytes()
-        try:
-            _f.write_bytes(_orig + b"\n# \xec\xa7\x80\xeb\xac\xb8 \xec\xb9\xb4\xeb\x82\x98\xeb\xa6\xac\xec\x95\x84\n")
-            if catch_print(_t) == _was:
-                fails.append(f"시험 파일을 고쳤는데 {_t} 의 지문이 안 바뀐다 — "
-                             "장부가 안 낡는다(#159 ①)")
-        finally:
-            _f.write_bytes(_orig)
-        if catch_print(_t) != _was:
-            fails.append("되돌렸는데 지문이 안 돌아온다 — 지문이 결정적이지 않다")
+        # ★ 2026-11-10 (PLAN #219). **진짜 시험 파일을 고치지 않는다** — 종전에는 `_q[0]`(실제 `tests/test_*.py`)에 주석을 붙였다 떼어
+        #   병렬로 도는 다른 시험이 중간 상태의 지문을 읽을 수 있었다. 복사본 뿌리에서 같은 물음(시험 파일이 바뀌면 지문이 바뀌나)을 던진다.
+        import shutil  # noqa: PLC0415
+        import tempfile  # noqa: PLC0415
+        from pathlib import Path  # noqa: PLC0415
+
+        import mutatescope as _ms  # noqa: PLC0415
+        _sv = (_ms.ROOT, _ms.TOOLS, _ms.TESTS)
+        with tempfile.TemporaryDirectory() as _td:
+            _r = Path(_td)
+            (_r / "tools").mkdir()
+            (_r / "tests").mkdir()
+            _src = (_sv[1] / f"{_t}.py")
+            shutil.copy2(_src, _r / "tools" / _src.name)
+            for _m in local_imports(_src.read_text(encoding="utf-8")):
+                shutil.copy2(_sv[1] / f"{_m}.py", _r / "tools" / f"{_m}.py")
+            for _x in _q:
+                shutil.copy2(_x, _r / "tests" / _x.name)
+            _ms.ROOT, _ms.TOOLS, _ms.TESTS = _r, _r / "tools", _r / "tests"
+            try:
+                _f = _r / "tests" / _q[0].name
+                _was = catch_print(_t)
+                _orig = _f.read_bytes()
+                _f.write_bytes(_orig + b"\n# \xec\xa7\x80\xeb\xac\xb8 \xec\xb9\xb4\xeb\x82\x98\xeb\xa6\xac\xec\x95\x84\n")
+                if catch_print(_t) == _was:
+                    fails.append(f"시험 파일을 고쳤는데 {_t} 의 지문이 안 바뀐다 — "
+                                 "장부가 안 낡는다(#159 ①)")
+                _f.write_bytes(_orig)
+                if catch_print(_t) != _was:
+                    fails.append("되돌렸는데 지문이 안 돌아온다 — 지문이 결정적이지 않다")
+            finally:
+                _ms.ROOT, _ms.TOOLS, _ms.TESTS = _sv
 
     # ★ 2026-10-09 (§440-10). **선언을 옆집에 둔 관문도 과녁인가** — 양방향.
     if not _imports_ratchet("from sizetable import EXCEPTIONS\n", {"sizetable"}):
