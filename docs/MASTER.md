@@ -3271,7 +3271,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 3,085 전수 · **분모(blank) 0절** · 물림(inherit) 1,917절.
+★ **강제자 칸의 분모.** 절 3,088 전수 · **분모(blank) 0절** · 물림(inherit) 1,917절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -3618,7 +3618,7 @@ outputs:
 
 근거는 DECISIONS §173-3. 2026-09-17 기준 `authority` 칸이 있는 소스 21종 중 규칙에 맞는 것은 3종이다.
 
-강제자 — `tests/test_lake.py::test_authority_entries_name_their_institution`(칸 없음 래칫) · `::test_authority_entries_name_the_route_they_came_by`(받은 경로 래칫) · `::test_no_authority_goes_through_a_person`(상한 0) · `::test_the_split_covers_every_verdict`(가름이 전수인가). ★ 2026-10-10 (DECISIONS §453 · PLAN #55 ②) 래칫 하나(62)를 **둘로 갈랐다** — 고칠 수 있는 쪽(괄호 꼴 17)이 고칠 수 없는 쪽(칸 없음 45)에 숨고 있었다
+강제자 — `tests/test_lake.py::test_authority_entries_name_their_institution`(칸 없음 래칫) · `::test_authority_entries_name_the_route_they_came_by`(받은 경로 래칫) · `::test_no_authority_goes_through_a_person`(상한 0) · `::test_the_split_covers_every_verdict`(가름이 전수인가). ★ 2026-10-10 (DECISIONS §453 · PLAN #55(닫힘) ②) 래칫 하나(62)를 **둘로 갈랐다** — 고칠 수 있는 쪽(괄호 꼴 17)이 고칠 수 없는 쪽(칸 없음 45)에 숨고 있었다
 
 ★ `juso` 전자지도는 도로명주소법 시행령 제46조 **심사 승인** 데이터다 —
 승인 당사자의 사용과 제3자 재배포는 다르다. 퍼블릭 버킷·공개 저장소에
@@ -4840,7 +4840,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `src/firelane/publish_fleet.py` | 관내 차종과 제원을 내비가 먹을 꼴로 낸다 |
 | `src/firelane/valueprofile.py` | 표 자료(csv)의 **값의 성질**을 재서 대장 `schema.profile` 에 **집계만** 적는다 — 빈 셀 · 공백 문자열 · 좌표 칸의 센티넬(`0.0`) · 텍스트 없음(`미상`) · 좌표 범위. 표본값은 안 적는다. `--check` 는 커밋된 프로필과 실물을 대고 실물 방언이 `none:` 선언 안인지 본다(레이크가 있는 기계에서). 판정 폐포 밖이고 판정이 안 읽는다(DECISIONS §634) |
 | `src/firelane/measurecols.py` | **측정 절의 「쓴 칸」 머릿줄**을 기계가 강제한다 — DECISIONS 의 측정 절(§635 이후)이 읽은 `원천.칸` 을 역할과 함께 적게 하고, ① 칸이 대장에 실재하는가 ② `위치` 역할이 `coords:` 의 `not_for` 에 걸리지 않는가 ③ `시각` · `가르기` 칸이 「없음」을 가지면 `none:` 선언과 메모가 있는가 ④ 본문에서 뽑은 칸이 머릿줄에 다 있는가를 본다. 스크립트를 저장소에 안 들이는 일회성 측정을 선언 칸에 묶는다. 판정 폐포 밖(DECISIONS §637) |
-| `src/firelane/authority.py` | **대장 항목이 받은 경로를 적었는가**의 판정(PLAN #199 ④) — `bad`(칸 없음 · 받은 경로 괄호 없음 · 개인 경유) · `split`(사유별 갈래). 시험 안에 살던 판정을 꺼냈다 — `tests/test_lake.py` 의 래칫과 `tools/obligations.py`(새 대장 항목)가 **같은 한 벌**을 부른다 |
+| `src/firelane/authority.py` | **대장 항목이 받은 경로를 적었는가**의 판정(PLAN #199(닫힘) ④) — `bad`(칸 없음 · 받은 경로 괄호 없음 · 개인 경유) · `split`(사유별 갈래). 시험 안에 살던 판정을 꺼냈다 — `tests/test_lake.py` 의 래칫과 `tools/obligations.py`(새 대장 항목)가 **같은 한 벌**을 부른다 |
 | `src/firelane/extract_decl.py` | **추출 단계 선언의 모양과 이름** — 대장 `contract` 의 `normalize_columns`(`lower_strip` · `upper_strip` — 출력 칸 이름이 하류의 이름과 같은 쪽) · `filter`({column, equals} 또는 {column, **one_of**(이름이 바뀐 값 여럿 중 하나 · §649)} 하나 또는 그 **목록 = AND**) · `scope_max`(상한)가 읽는 갈래 · 정규화 뒤 칸 이름 · `schema.columns` 와 맞는지를 레이크 없이 가린다(`ledger_check` 가 부른다). 오타 하나로 필터가 조용히 안 걸리는 것을 막는다(DECISIONS §646) |
 | `src/firelane/read/extract.py` | **전국 원본에서 지역 파생본을 만드는 추출 단계** — `csv_table` · `csv_table_multi` 가 `normalize_columns` · `filter` 를 선언하면 `hits` 전부를 청크로 읽어 칸 이름만 정규화하고(값은 안 건드린다) 거르고 하나로 잇는다. 계보에 입력 파일별 sha · **바이트** · 필터 전 · 후 행 수를 남긴다. 0행 · `scope_min` 미달은 FAIL(★ 하한은 **과다**를 못 잡는다 — 「동구」가 여섯 광역시에 있어 단일 조건이 406,168행을 냈다 · 시도 조건 AND 로 고쳤다 · §647). `paths` · `source_dir`(`ingest --only <키> --extract-from <폴더>` — 전국본을 raw 에 안 올리고 제자리에서 읽는다) · `kept`(원본을 `status: missing` 으로 내린 항목의 지난 계보 · 산출물을 보존). 판정 폐포 밖 · `valueprofile` 이 추출 항목은 슬라이스를 읽는다(DECISIONS §646 · §647 · §648) |
 | `src/firelane/quiet_gdal.py` | GDAL 의 **알려진 무해 잡음만** 걷는다. 모르는 경고는 그대로 둔다 |
@@ -4862,9 +4862,9 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `tools/oneway_match.py` | **일방통행 두 목록(동구청 표 · 동부경찰서 hwpx)을 우리 구간에 대고 발행 변화를 계산하는 조사 도구**(읽기 전용 · 판정 불변 · DECISIONS §652). 두 목록을 행으로 읽고(병합 머리 3줄은 위치로 건너뛰며 머리글이 바뀌면 죽는다) 끝점 지번을 지적도 필지 중심으로 옮겨 같은 도로명 구간에 댄다 — **붙음 · 부분 · 밖 · 도로명 구간 없음 · 끝점 좌표 없음 · 끝점 지번 없음**을 사유별로 센다. `ow` 가 어떻게 바뀔지를 **계산만** 하고 `navi_graph.json` 을 안 쓴다. `--sensitivity` 는 `rules.ts` 의 역주행 배수(상수를 거기서 읽는다)를 바꿔 센터 → 노드 경로가 얼마나 바뀌나를 낸다 |
 | `tools/ortho_probe.py` | **정사영상으로 도로 폭을 읽을 수 있는가를 재는 조사 도구**(읽기 전용 · 판정 불변 · DECISIONS §654). 지점 · 구간 중점을 구간 방향으로 돌려 오려 1m 격자를 얹은 판독용 이미지를 만들고(**구간 벡터의 가장자리는 안 그린다** — 판독이 벡터에 끌리지 않게) `--montage` 로 여럿을 한 장에 모아 가림을 분류하게 한다. `--compare` 는 사람이 눈가림으로 읽은 값과 `naver_width_2610.csv` 의 오차를 낸다(읽은 값이 없는 지점은 오차를 안 만든다). **이 대조는 판독 대 참값이 아니라 화면 측정끼리의 일치**다 — 참값은 현장 줄자뿐이다 |
 | `tools/fetch_api.py` | 공공데이터포털 표준데이터 API 를 **같은 방법으로 다시 받는** 도구(`FIRE_LANE_DATA_GO_KR_KEY` · 지금은 키가 필요 없다 · PLAN 행 141(닫힘)). 호출은 `--run` 일 때만 |
-| `tools/ratchetstore.py` | **래칫 값을 도구 파일 밖에 두는 곳**(PLAN #198) — 값을 한 칸 조여도 그 도구를 지목한 도장이 안 죽게 한다. 값 파일은 `data/golden/` 아래 하나이고 **어느 절도 그 경로를 백틱으로 적지 않는다**(적으면 그 절의 지문에 값이 들어간다). 기준은 수다 — 값 한 번에 죽는 도장이 `MOVE_AT`(20) 이상인 도구만 옮긴다(`--rank` 가 잰다 · 읽기만 한다) |
-| `tools/obligations.py` | **새 파일에 따라붙는 등재 의무를 이름으로 댄다**(PLAN #199) — MASTER §22·§23 등재 · 머리말 「부류」 · 「밖」 중 무엇이 빠졌는지. **정본은 기존 검사**(`sealcov` · `toolclass` · `scopedecl`)이고 이 도구는 그 판정 함수를 부를 뿐이다(표를 새로 세우지 않는다). 추적 전의 새 파일은 「`git add` 가 먼저」만 댄다(거짓 초록 방지). 새 절 · 대장 의무는 **미도출**로 적어 둔다. 읽기만 한다 |
-| `tools/tasktpl.py` | **LLM 작업 지시문 틀을 저장소에서 읽어 찍는다**(PLAN #204) — 불변량 수(`docnum_check.verdicts`) · 푸시를 막는 관문(`pre-push.gates`) · `pushready` 축 · 새 파일 등재 의무(`obligations`)를 읽는다. 사본을 안 만든다. 금지 칸은 새로 적지 않고 기존 정본(`fixable.HUMAN_FIRST` · `ratchet.owners` · `shardseal.code_closure` · `pushready` 머리말)을 읽어 채운다. 기본 쓰기 위치가 없다 — 틀을 저장소에 커밋하지 않는다 |
+| `tools/ratchetstore.py` | **래칫 값을 도구 파일 밖에 두는 곳**(PLAN #198(닫힘)) — 값을 한 칸 조여도 그 도구를 지목한 도장이 안 죽게 한다. 값 파일은 `data/golden/` 아래 하나이고 **어느 절도 그 경로를 백틱으로 적지 않는다**(적으면 그 절의 지문에 값이 들어간다). 기준은 수다 — 값 한 번에 죽는 도장이 `MOVE_AT`(20) 이상인 도구만 옮긴다(`--rank` 가 잰다 · 읽기만 한다) |
+| `tools/obligations.py` | **새 파일에 따라붙는 등재 의무를 이름으로 댄다**(PLAN #199(닫힘)) — MASTER §22·§23 등재 · 머리말 「부류」 · 「밖」 중 무엇이 빠졌는지. **정본은 기존 검사**(`sealcov` · `toolclass` · `scopedecl`)이고 이 도구는 그 판정 함수를 부를 뿐이다(표를 새로 세우지 않는다). 추적 전의 새 파일은 「`git add` 가 먼저」만 댄다(거짓 초록 방지). 새 절 · 대장 의무는 **미도출**로 적어 둔다. 읽기만 한다 |
+| `tools/tasktpl.py` | **LLM 작업 지시문 틀을 저장소에서 읽어 찍는다**(PLAN #204(닫힘)) — 불변량 수(`docnum_check.verdicts`) · 푸시를 막는 관문(`pre-push.gates`) · `pushready` 축 · 새 파일 등재 의무(`obligations`)를 읽는다. 사본을 안 만든다. 금지 칸은 새로 적지 않고 기존 정본(`fixable.HUMAN_FIRST` · `ratchet.owners` · `shardseal.code_closure` · `pushready` 머리말)을 읽어 채운다. 「PLAN 본문 금기」 칸은 시험의 상수와 도구의 머리 문장 · PLAN 을 읽는 시험 머리말의 `PLAN 본문  규칙 …` 표지를 읽어 채운다. 기본 쓰기 위치가 없다 — 틀을 저장소에 커밋하지 않는다 |
 | `tools/dms_fix_inherit.py` | 부모 칸의 「하위 일곱」 같은 **수 낱말을 판정기가 세는 수로 다시 쓴다.** 수는 `dms.scan()` 의 `inherit` 행을 부모별로 센 것(`inherit_counts` 와 같은 규칙)이라 손으로 세지 않는다 — 손으로 센 수가 §648~§656 에서 여섯 번 틀렸다. **돌린 뒤 늘어난 절을 읽는 것은 사람 몫이다**(판정기가 우는 이유가 그것이다). 기본은 계획만 · `--write` 가 쓴다 |
 
 ### 23-3. 검사 — 무엇을 묻나
@@ -4900,13 +4900,19 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `tests/test_lakecheck_l5.py` | L5 가 norm 의 상류를 `_prep.json` 의 raw 경로 키(`lake.norm_owners`)로 판정하는지 — 형제 raw 가 있어도 **짝 없는 norm 은 잡힌다**(PLAN #197(닫힘)). 합성 레이크라 레이크 없는 기계에서도 돈다. 시험이라 「부류」 줄은 없다 |
 | `tests/test_pushready.py` | 「푸시해도 되는가」 한 명령(`tools/pushready.py` · PLAN #207 닫힘)이 **다섯 축(래칫 · 낡은 도장 · 도장 없음 · 커밋 안 된 변경 · 변이 장부)을 하나씩 막는가** — ㉣ 는 실제 git 저장소로 「도장만 찍고 커밋 안 함」을 만든다. 읽기 전용이고 합성 출력이라 2분짜리 실물을 안 돈다. 시험이라 「부류」 줄은 없다 |
 | `tests/test_ratchetstore.py` | 값을 밖에 둔 래칫이 **값만 움직이면 도장이 안 죽고 논리를 고치면 죽는가**(양성 대조 둘 · 실제 도장 지문으로) · 값 파일의 경로를 어느 문서 절도 백틱으로 안 적는가 · `ratchet --write` 가 값 파일에 쓰는가. 시험이라 「부류」 줄은 없다 |
-| `tests/test_git_env_scrub.py` | worktree 푸시가 물려준 `GIT_DIR` 이 본 저장소를 건드리지 못하는가(PLAN #200) — 훅 머리의 `unset` · `conftest` 의 픽스처 각각 + 막는 줄을 빼면 미끼 저장소가 오염되는 **양성 대조 둘**. 시험이라 「부류」 줄은 없다 |
+| `tests/test_git_env_scrub.py` | worktree 푸시가 물려준 `GIT_DIR` 이 본 저장소를 건드리지 못하는가(PLAN #200(닫힘)) — 훅 머리의 `unset` · `conftest` 의 픽스처 각각 + 막는 줄을 빼면 미끼 저장소가 오염되는 **양성 대조 둘**. 시험이라 「부류」 줄은 없다 |
 | `tests/gitenv_probe_case.py` | 위 시험이 **중첩 pytest 로** 돌리는 탐침 — `GIT_DIR` 을 물려받은 채 `tmp_path` 안에서 `git init` · `config` 를 부른다. 직접 모이지 않는다(`test_*.py` 가 아니다) |
 | `tests/test_obligations.py` | 합성 새 파일에서 **의무를 하나씩 빼면 표가 그 이름을 대는가**(양성 대조 · 다른 이름은 안 섞인다) · 추적 전 파일의 거짓 초록 · 실물에서 표의 수가 각 검사의 수와 같은가(두 번째 정본이 없다는 증거). 시험이라 「부류」 줄은 없다 |
 | `tests/test_testpick.py` | 푸시 전 시험 묶음(`tools/testpick.py` · PLAN #209 닫힘)을 **실측 장부에서 계산하는가** — 짧은 순 · 예산 · 새 시험은 무조건 · 장부가 비면 닫힌 쪽 · 실물 장부에서 구조 규약 시험(`test_layering` 등)이 묶음에 드는가. 시험을 돌리지 않는다(계산만). 시험이라 「부류」 줄은 없다 |
 | `tests/test_tasktpl.py` | 지시문 틀이 **읽은 것**인가 — 불변량을 바꾸면 틀이 따라가고 의무 하나를 빼면 틀에서도 빠지며 손으로 고친 틀은 `--check` 가 운다 · 먼저 읽을 절이 없으면 닫힌 쪽 |
-| `tests/test_plan_row_refs.py` | PLAN 안의 `#N` 이 **빈 행을 맨몸으로 가리키지 않는가**(`plan_renumber.unresolved_row_refs` · PLAN #208) — 죽은 번호를 맨몸으로 적으면 걸리고 표시가 있거나 산 행이면 통과 · 줄 단위의 느슨함을 못 박는다 · 실제 PLAN 이 깨끗한가 · pre-push 가 그 도구를 도는가 |
-| `tests/test_processed_env.py` | **`FIRE_LANE_PROCESSED` 로 격리 재취입이 메인 `data/processed` 를 못 건드리는가**(PLAN #183) — 자식이 보는 산출 경로가 스크래치인지 먼저 단언하고 메인 해시가 전후로 같은지 문다 · 환경변수가 없으면 저장소 안 그대로다. 예전의 코드 통째 복사 레시피를 대체한다 |
+| `tests/test_plan_row_refs.py` | PLAN 안의 `#N` 이 **빈 행을 맨몸으로 가리키지 않는가**(`plan_renumber.unresolved_row_refs` · PLAN #208(닫힘)) — 죽은 번호를 맨몸으로 적으면 걸리고 표시가 있거나 산 행이면 통과 · 줄 단위의 느슨함을 못 박는다 · 실제 PLAN 이 깨끗한가 · pre-push 가 그 도구를 도는가 |
+| `tests/test_processed_env.py` | **`FIRE_LANE_PROCESSED` 로 격리 재취입이 메인 `data/processed` 를 못 건드리는가**(PLAN #183(닫힘)) — 자식이 보는 산출 경로가 스크래치인지 먼저 단언하고 메인 해시가 전후로 같은지 문다 · 환경변수가 없으면 저장소 안 그대로다. 예전의 코드 통째 복사 레시피를 대체한다 |
+| `tests/test_lineage_last_writer.py` | **`lineage.verify` 가 파일을 마지막으로 쓴 단계의 기록과 대조하는가**(PLAN #212(닫힘)) — ㉮ 마지막 작성자 뒤에 남이 고치면 여전히 잡는다 · ㉯ 전량 직후 `--from segments` 가 선다 · 「마지막」은 기록 시각이고 같은 시각이면 단계 순서 · 읽을 수 없는 시각은 가장 이르다 · ingest 칸이 terrain 값으로 안 덮인다 · 이 기계의 실제 계보가 이제 통과한다 |
+| `tests/test_contract_verdict_ratchets.py` | **`contract_verdict` 의 래칫 둘이 `tools/ratchet.py` 의 선언 안에 있는가**(PLAN #185(닫힘) ②) — 훑기가 `src/firelane/` 의 그 모듈을 실제로 집는다 · 선언한 이름이 `ratchet_values()` 와 같다 · 방향이 판정과 맞다 · `TOOLS` 를 사본으로 갈아끼운 시험은 실물 `src` 를 안 읽는다 · `real_counts` 의 셈이 한 곳이다. 실물 갈래 둘은 안 본다(선언 밖에 남겼다) |
+| `tools/gatefast.py` | **`pre-push.gates` 의 게이트가 CI 빠른 잡(`contract-fast`)에 덮이는가**를 세 갈래로 센다(PLAN #210) — 덮인다(이름 · 인자 같음) · **인자가 다르다**(이름만 같음) · 안 덮인다. 훅 명령과 `contract.yml` 의 명령을 각자의 자리에서 읽어 맞대기만 한다(선언을 복사하지 않는다) · 면제는 `gate_parity.exemptions()` 를 부른다 |
+| `tests/test_gatefast.py` | `gatefast` 의 세 갈래가 갈리는가 — 이름만 같은 것을 덮인다에 넣지 않는다 · 면제는 검사기 경로로 붙는다 · 셋째 열이 생겨도 명령에 안 섞인다 · 실제 훅 24줄이 모두 열쇠를 가진다 |
+| `tools/gatetimes.py` | **`pre-push.gates` 셋째 열(훅 안에서 잰 벽시계 초)을 재고 쓴다**(PLAN #210) — 훅을 실제로 돌려 훅이 찍은 줄을 읽어 중앙값을 낸다 · 셋째 열만 다시 쓴다 · 빨간 게이트가 있거나 줄을 못 읽으면 안 쓴다 · **단독 초가 아니다**(§665 의 조건) · 사람이 손으로 돌린다(훅은 셋째 열을 읽고 버린다) |
+| `tests/test_gatetimes.py` | `gatetimes` 의 읽기 · 합치기 · 쓰기 — 훅이 찍는 줄 서식과 정규식이 맞는다 · 빨강 · 못 읽음이면 안 쓴다 · 셋째 열만 바뀌고 두 번 써도 같다 |
 | `tests/test_refcheck_paths.py` | 경로 표기 검사가 **무엇을 넘기는가** |
 
 ## 24. 저장소 안내 — 루트에서 내린 것

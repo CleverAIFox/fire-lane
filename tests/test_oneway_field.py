@@ -21,7 +21,7 @@ from pathlib import Path
 
 import pytest
 
-pytest.importorskip("geopandas", reason="레이크 없이도 도는 검사지만 gpd 는 필요하다")
+pytest.importorskip("geopandas", reason="환경skip(도구) — 레이크 없이도 도는 검사지만 geopandas 가 필요하다")
 
 import geopandas as gpd
 from shapely.geometry import LineString

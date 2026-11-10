@@ -25,6 +25,7 @@ test_crosswalk.py — 팀 문서 축이 `DECISIONS §83` 에 전건 등재됐는
 IN    docs/DECISIONS.md §83 · docs/PLAN.md §1
 OUT   없음 (검사)
 PARAM MISSING_M · MISSING_P — 결번 선언
+PLAN 본문  규칙 — 팀 문서 축이 인용하는 `PLAN §1 #nn` 은 실재해야 한다
 """
 from __future__ import annotations
 

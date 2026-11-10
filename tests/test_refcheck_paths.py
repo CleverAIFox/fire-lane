@@ -25,6 +25,7 @@ OUT   없음 (검사)
       그리고 `tools/*.sh` 여섯은 **예시 이름 목록의 대조 대상이 아니다** —
       그 목록은 `Path(m).stem` 으로 비교하고 셸 도구 이름(`fl`·`verify` …)은
       예시 낱말(`x`·`foo` …)과 겹치지 않는다.
+PLAN 본문  규칙 — 문서가 적은 경로 표기는 실재해야 한다
 """
 from __future__ import annotations
 

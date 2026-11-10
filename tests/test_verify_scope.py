@@ -19,6 +19,7 @@
     ② `--since` 는 `부분 실행` 안전장치를 켠다 — 봉인·수용이 불가능하다
     ③ 이 파일 — 선언이 떠 있거나, 없는 경로를 가리키거나,
        매칭이 죽으면 운다
+PLAN 본문  규칙 없음 — `docs/PLAN.md` 는 영향 범위 선언(`verify.sh --since`)에 넣는 경로 예시 문자열일 뿐 본문을 읽지 않는다
 """
 from __future__ import annotations
 

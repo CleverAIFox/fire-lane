@@ -24,6 +24,7 @@ PARAM 없음
          `tests/test_repo_numbers.py` 가 문서 넷 전부에서 본다.
       ③ **마크다운 렌더링은 안 본다.** 블록 표시가 화면에서 안 보이는지는
          사람이 발행물로 확인한다 — 이 저장소에 마크다운 변환기가 없다.
+PLAN 본문  규칙 — 생성 블록(`<!--gen-->`)은 실물과 같아야 하고 주입기가 살아 있어야 한다
 """
 from __future__ import annotations
 

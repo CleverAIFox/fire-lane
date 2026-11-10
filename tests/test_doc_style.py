@@ -28,6 +28,7 @@ DECISIONS 는 절 번호가 네 체계로 갈렸고, 그중 셋이 동일한 문
 IN    docs/*.md · README.md · data/golden/segments.fingerprint.json
 OUT   없음 (검사)
 PARAM 없음
+PLAN 본문  규칙 — 평어체 3인칭(경어 · 명령형 · 1인칭 단수 · 깨진 활용 금지) · 한 절의 `★` 다섯 이하 · `##` 번호 연속 · 허용 문서 넷 밖 `.md` 금지
 """
 from __future__ import annotations
 

@@ -17,6 +17,7 @@ R3 는 `test_seg_geom.py::test_params_are_not_redefined_in_segments` 가 본다.
 
 ★ 새 규칙을 MASTER 에 적을 때는 강제자를 같이 만들어라. 못 만들겠으면 그
   규칙은 규약이 아니라 권고다. 권고라고 적어라(§18-5 머리말).
+PLAN 본문  규칙 — MASTER 에 「남은 일」 목록을 두지 않는다(정본은 PLAN §1) · 끝난 일이 PLAN 의 남은 일에 남아 있으면 안 된다 · 같은 미결정이 두 문서에 있으면 안 된다
 """
 import ast
 import re

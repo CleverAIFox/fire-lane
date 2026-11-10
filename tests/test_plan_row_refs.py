@@ -5,6 +5,7 @@
 
 밖    **살아 있는 행의 안쪽**(`#69` 의 「`#5` 질의 ④」 — 그 행에 ④ 가 없다)은 안 본다 — 죽은 번호가 아니다. 사람이 읽는다(PLAN #208 행).
       `§N` 쪽은 `tests/test_declaration_sync.py` 가 든다.
+PLAN 본문  규칙 — `#N` 이 §1 에 없는 행이면 그 줄에 `닫힘` · `결번` 이 있어야 한다
 """
 from __future__ import annotations
 

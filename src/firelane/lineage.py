@@ -193,6 +193,35 @@ def record(processed: Path, root: Path, step, expand) -> None:
         encoding="utf-8")
 
 
+def _stamp(rec: dict, rank: int) -> tuple[datetime, int]:
+    """(기록 시각, 단계 순서). 시각을 못 읽으면 가장 이르다 — 읽을 수 없는 기록이 「가장 나중」이 되어 판정을 가져가지 못하게."""
+    try:
+        at = datetime.fromisoformat(str(rec.get("at")))
+    except ValueError:
+        at = datetime.min.replace(tzinfo=UTC)
+    return (at if at.tzinfo else at.replace(tzinfo=UTC), rank)
+
+
+def last_writer(lg: dict, key: str, order: list[str]) -> str | None:
+    """파일 `key` 를 **마지막으로 쓴 단계**의 이름. 기록에 그 파일을 낸 단계가 없으면 None.
+
+    ★ 2026-11-09 (PLAN #212). 「마지막」은 **기록 시각**이 정하고, 같은 시각이면 **파이프라인 단계 순서**가 정한다.
+      - 단계 순서만 쓰면 틀린다: `ingest` 가 `terrain` 뒤에 **다시 돌았을 때**(terrain 이 덧쓴 z 가 지워졌다) 순서는 여전히 terrain 을 마지막으로 가리킨다.
+        디스크는 ingest 의 새 산출인데 낡은 terrain 기록과 대조해 **엉뚱한 단계를 탓한다.**
+      - 시각만 쓰면 기록 시각이 초 단위라 같은 초에 두 단계가 같은 파일을 쓴 날 갈린다 — 그때만 단계 순서가 정한다(`mutates` 는 늘 뒤 단계가 덧쓴다).
+      - 시계가 거꾸로 가는 일(NTP 보정)은 못 막는다 — 같은 기계의 두 기록 사이에서는 드물다고 본다. 시각을 못 읽는 기록은 가장 이른 것으로 친다.
+    """
+    best: tuple[tuple[datetime, int], str] | None = None
+    for rank, name in enumerate(order):
+        rec = lg.get(name)
+        if not rec or key not in (rec.get("outputs") or {}):
+            continue
+        st = (_stamp(rec, rank), name)
+        if best is None or st[0] > best[0]:
+            best = st
+    return best[1] if best else None
+
+
 def verify(processed: Path, root: Path, step, expand, steps,
            fresh: set[str] | None = None) -> None:
     """단계 실행 **전**. 세 가지를 본다. 어긋나면 LineageError.
@@ -292,12 +321,17 @@ def verify(processed: Path, root: Path, step, expand, steps,
 
         # ② 입력 변경 — 상류가 쓴 것과 지금 디스크가 다른가
         if up:
-            was = lg[up].get("outputs", {}).get(k)
+            # ★ 2026-11-09 (PLAN #212 · 사람이 ㉡ 을 골랐다). 대조 상대는 「이 파일을 처음 만든 단계」가 아니라 **마지막으로 쓴 단계**다.
+            #   `terrain` 이 `ingest` 산출(`fire_station.geojson` · `_manifest.json`)에 z 를 덧쓰면 디스크는 terrain 의 기록과 같고
+            #   ingest 의 기록과는 **항상** 다르다 — 전량이 끝날 때마다 다음 `--from segments` 가 막혔다(복사본 실험으로 재현).
+            #   계보는 각 단계가 쓴 것을 **그대로 적는다**(안 고친다) — 바뀐 것은 대조 상대뿐이다. 마지막 작성자 뒤에 남이 고친 것은 그대로 잡는다.
+            owner = last_writer(lg, k, order) or up
+            was = lg[owner].get("outputs", {}).get(k)
             if was is not None:
                 if not _same(was, now):
                     problems.append(
                         f"  {k}\n"
-                        f"      {up} 가 쓴 것  {was}\n"
+                        f"      {owner} 가 쓴 것  {was}\n"
                         f"      지금 디스크    {now}")
                 # ★ 2026-08-22. 여기서 반드시 끝낸다.
                 #   종전에는 ② 가 **통과해도** ③ 으로 흘러갔다. ② 통과는

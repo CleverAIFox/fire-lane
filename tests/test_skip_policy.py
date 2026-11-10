@@ -109,9 +109,16 @@ def _skip_literals() -> list[tuple[str, int, str]]:
             fn = n.func
             name = fn.attr if isinstance(fn, ast.Attribute) else (
                 fn.id if isinstance(fn, ast.Name) else None)
-            if name in ("skip", "xfail") and not n.args:
+            # ★ 2026-11-10 — 같은 틈이 둘 더 있었다. `importorskip(…, reason=…)` 는
+            #   모듈이 없을 때 pytest 가 그 문장을 **그대로** skip 사유로 쓴다(기본
+            #   `could not import` 만 judge 가 면제한다). `skip(reason=…)` 는 인자가
+            #   없다며 건너뛰었다. 둘 다 사유가 **키워드**로 온다.
+            kwr = next((k.value for k in n.keywords if k.arg == "reason"), None)
+            if name in ("skip", "xfail") and not n.args and kwr is None:
                 continue
-            if name not in ("skip", "xfail", "skipif"):
+            if name == "importorskip" and kwr is None:
+                continue  # 기본 사유 `could not import …` — judge 가 면제한다
+            if name not in ("skip", "xfail", "skipif", "importorskip"):
                 continue
             # ★ 2026-09-28 (DECISIONS §279-3). `skipif` 는 사유가 **키워드**
             #   `reason=` 로 온다. 종전에는 이름 거르기에서 `skipif` 를 빼서
@@ -119,8 +126,8 @@ def _skip_literals() -> list[tuple[str, int, str]]:
             #   실제로 나야 보므로, 레이크·산출물이 있는 기계에서는 영원히
             #   안 타고 없는 기계에서 **처음 타면서 실패**한다 — 로컬 초록 ·
             #   CI 빨강, 이 저장소가 제일 나쁜 모양이라 적은 그것이다(§206).
-            if name == "skipif":
-                kw = next((k.value for k in n.keywords if k.arg == "reason"), None)
+            if name in ("skipif", "importorskip") or not n.args:
+                kw = kwr
                 if kw is None:
                     out.append((str(f.relative_to(ROOT)), n.lineno, "\x00"))
                     continue
@@ -145,8 +152,10 @@ def test_every_written_skip_reason_is_already_in_policy():
     assert len(rows) >= 10, (
         f"`pytest.skip` 자리를 {len(rows)}개만 찾았다 — AST 수집이 죽었다. "
         "실물은 열 곳이 넘는다")
-    bad = [f"  {f}:{ln}  {s[:60]!r}" for f, ln, s in rows
-           if not (s.startswith("환경skip(") or s.startswith("유예skip — "))]
+    # ★ 접두사 `환경skip(` 만 보면 `환경skip(계보)` 가 통과한다(2026-11-10, CI 빨강).
+    #   분류 셋을 judge 와 **같은 정규식**으로 본다.
+    ok = re.compile(sp.ENV.pattern + "|" + sp.DEFER.pattern)
+    bad = [f"  {f}:{ln}  {s[:60]!r}" for f, ln, s in rows if not ok.match(s)]
     assert not bad, (
         "정책 밖 사유가 **쓰여 있다**. 그 갈래가 타지는 기계에서 실패가 된다:\n"
         + "\n".join(bad) + "\n\n"
@@ -162,3 +171,11 @@ def test_the_static_scan_bites():
     assert call.args[0].value == "랜덤 미사용"
     assert not "랜덤 미사용".startswith("환경skip("), "판별 접두사가 바뀌었다"
     assert "환경skip(산출물) — x 가 없다".startswith("환경skip("), "정상 사유를 거른다"
+    # ★ 2026-11-10 — 접두사만 보던 시절의 틈. 분류 밖 괄호 · 키워드 사유를 **합성으로** 문다.
+    ok = re.compile(sp.ENV.pattern + "|" + sp.DEFER.pattern)
+    assert not ok.match("환경skip(계보) — x"), "분류 밖 괄호가 통과한다"
+    assert ok.match("환경skip(산출물) — x") and ok.match("환경skip(도구) — x")
+    import ast as _ast
+    for code in ('pytest.importorskip("m", reason="그냥 사유")', 'pytest.skip(reason="그냥 사유")'):
+        assert any(isinstance(n, _ast.Call) and any(k.arg == "reason" for k in n.keywords)
+                   for n in _ast.walk(_ast.parse(code))), code

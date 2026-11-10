@@ -549,7 +549,7 @@ backup_policy:
   #   벌이므로 한 벌 정책 밖이다. 방아쇠의 대상이 raw 임을 명시한다 —
   #   범위를 안 적은 방아쇠는 당겨졌는지 아닌지를 아무도 못 정한다.
   covers: [data/raw, data/retired]
-  # ★ 2026-11-09 (PLAN #55 ⑤ · 사람이 정했다). `data/retired` 를 더했다 — 대장 layers 에서 `backup: true` · `regenerable: false` 인데(184MB)
+  # ★ 2026-11-09 (PLAN 55번 행(닫힘) ⑤ · 사람이 정했다). `data/retired` 를 더했다 — 대장 layers 에서 `backup: true` · `regenerable: false` 인데(184MB)
   #   위 서술 어디에도 안 덮여 있었다. 덮지 않으면 `tools/sweep.py` 머리말의 「지운 것을 되돌리려면 제공기관에서 다시 내려받아야 하고
   #   어떤 자료는 그 판이 더는 없다」가 거짓말이 된다. **한 벌로 둔다는 결정이 retired 에도 미친다**는 뜻이다 — 위험을 알고 적는다.
   #   ★ 못 확인한 것: 방아쇠 둘째(재취득 불가 자산이 raw 에 편입)와 셋째(팀 인원)는 이 기계에서 확인하지 못했다. 첫째(raw 5GB)는 3.7GB 다.
@@ -801,7 +801,7 @@ layers:
       - 격리는 판단 보류지 폐기가 아니다. 재생성 불가라 백업 대상이다
       - ★ 2026-11-07 정정. 「연속지적도 970MB 가 여기 있다」는 옛 서술이다 — 2026-09-17 에
         폴더를 비우고 8건을 retired 로 옮겼다(§176-3). 이 층은 선언만 남았다 —
-        `paths.QUARANTINE` · `layers.BIND` · `acquire --quarantine` 이 아직 가리킨다(PLAN #55 ⑤)
+        `paths.QUARANTINE` · `layers.BIND` · `acquire --quarantine` 이 아직 가리킨다(PLAN 55번 행(닫힘) ⑤)
 
   golden:
     base: repo
@@ -1473,7 +1473,7 @@ datasets:
 
       ★ 굴절차 · 사다리차 · 구급차는 MAS 본편에 없다(4차종뿐).
       ★ 축거 · 최소회전반경은 여기에도 없다(2026-08-25 재확인, 212쪽 0건).
-    # ★ 2026-11-07 (PLAN #55 ③). 옛 항목 `nfa_mas_spec_2025`(retired)의 note · absent 를 합쳤다.
+    # ★ 2026-11-07 (PLAN 55번 행(닫힘) ③). 옛 항목 `nfa_mas_spec_2025`(retired)의 note · absent 를 합쳤다.
     #   그 항목의 hwp 가 이 hwp 와 **바이트가 같다**(sha256 9ec7d8d5… · 1,320,960 B).
     note: |
       ★ 본문 111,091자 전수 확인(2026-09-03, 옛 `nfa_mas_spec_2025` 가 읽은 같은 바이트) —
@@ -4602,7 +4602,7 @@ retired:
       nfa/nfa_mas_spec_kr_20260610.hwp: 9ec7d8d516e631a4c597c8495f8d14050b5b2040ff9ddeb8fac9d38cca8ab5a5
     what:      2025년 MAS 계약 차종별 제작규격 · 경쟁입찰 8종 제작규격(1,320,960 B). `mas_vehicle_spec` 의 hwp 와 같은 바이트
     reason: |
-      `safety/safety_mas_vehicle_spec_kr_20241111.hwp` 와 **바이트 동일** — sha256 9ec7d8d5… · 1,320,960 B 가 같다(PLAN #55 ③).
+      `safety/safety_mas_vehicle_spec_kr_20241111.hwp` 와 **바이트 동일** — sha256 9ec7d8d5… · 1,320,960 B 가 같다(PLAN 55번 행(닫힘) ③).
       같은 문서를 두 경로로 받아 두 항목이 됐고 출처 칸이 서로를 못 알아봤다.
       note · absent(「본문 111,091자 0건」)는 `mas_vehicle_spec` 로 합쳤다. 주인은 `mas_vehicle_spec` 이다.
       ★ **같은 바이트의 날짜가 서로 다른 이유는 아무도 모른다.** 이 항목은 `updated: 2026-06-10`(나라장터 공고게시일 — 문서 안에

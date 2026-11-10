@@ -4,6 +4,7 @@
 
 밖    **틀이 지시문으로서 좋은가는 안 본다.** 금지 칸은 **정본이 하나**인지만 본다 — 금지 문장을 틀이 따로 들고 있으면 아래 시험이 운다. `docnum_check.verdicts()` · `pushready.CHECKS` · `obligations.OBLIGATIONS` 가
       옳게 세는가는 각자의 시험이 든다 — 여기는 틀이 **그것을 읽는가**만 본다.
+PLAN 본문  규칙 없음 — 틀이 읽는 쪽(틀의 출처)을 검사할 뿐 PLAN 본문에 규칙을 걸지 않는다
 """
 from __future__ import annotations
 
@@ -78,3 +79,82 @@ def test_the_template_is_not_committed_anywhere_in_the_repository():
     hits = [p for p in T.ROOT.rglob("*") if p.is_file() and p.suffix in {".md", ".txt"} and ".venv" not in p.parts and "node_modules" not in p.parts
             and ".git" not in p.parts and marker in p.read_text(encoding="utf-8", errors="ignore")]
     assert not hits, f"틀이 저장소에 커밋돼 있다 — 사본이다: {hits}"
+
+
+def _synthetic_tests(tmp_path, wall=r"ZZ\d", about="가나"):
+    (tmp_path / "test_repo_numbers.py").write_text(
+        f'import re\n_LIVE = ("docs/X.md",)\n_WALL = re.compile(r"{wall}")\n_ABOUT = ("{about}",)\n', encoding="utf-8")
+    (tmp_path / "test_guards.py").write_text(
+        'import re\n\n\ndef test_tools_declared_in_docs_exist():\n    """합성 도구 선언 규칙."""\n    re.finditer(r"foo(\\d)", "x")\n', encoding="utf-8")
+    (tmp_path / "test_doc_style.py").write_text(
+        'import re\nVOICE = {"가짜체": re.compile("x")}\nALLOW = "<!--v"\n', encoding="utf-8")
+    return tmp_path
+
+
+def test_plan_body_rules_are_read_from_their_sources_not_written_in_the_template(tmp_path, monkeypatch):
+    """★ 양성 대조(PLAN #204) — 정본(시험의 상수)을 바꾸면 틀이 따라가고, 실물 값은 사라진다. 사본이면 실물 값이 그대로 남는다."""
+    monkeypatch.setattr(T, "TESTS", _synthetic_tests(tmp_path))
+    text = "\n".join(T.plan_rules())
+    assert "ZZ\\d" in text and "「가나」" in text and "docs/X.md" in text          # 합성 값이 나온다
+    assert "foo(\\d)" in text and "합성 도구 선언 규칙" in text and "가짜체" in text and "<!--v" in text
+    assert "전량" not in text and "경어체" not in text and "분\\s*\\d+" not in text    # 실물 값은 안 나온다 — 따로 든 사본이 없다
+
+
+def test_plan_body_rules_fail_closed_when_a_source_constant_is_renamed(tmp_path, monkeypatch):
+    d = _synthetic_tests(tmp_path)
+    (d / "test_repo_numbers.py").write_text('import re\n_LIVE = ("docs/X.md",)\n_ABOUT = ("가나",)\n', encoding="utf-8")   # _WALL 이 사라졌다
+    monkeypatch.setattr(T, "TESTS", d)
+    import pytest
+    with pytest.raises(LookupError, match="_WALL"):
+        T.plan_rules()
+
+
+def test_plan_readers_census_counts_files_that_read_plan():
+    tests, tools = T.plan_readers()
+    assert "test_doc_style.py" in tests and "test_repo_numbers.py" in tests and "plan_renumber.py" in tools
+    assert len(tests) == sum("PLAN.md" in p.read_text(encoding="utf-8", errors="ignore") for p in T.TESTS.glob("*.py"))
+
+
+def _reader(d, name, doc_marker=None, body='PLAN = "docs/PLAN.md"'):
+    head = '"""설명.\n' + (doc_marker + "\n" if doc_marker else "") + '"""\n'
+    (d / name).write_text(head + body + "\n", encoding="utf-8")
+
+
+def test_a_test_that_reads_plan_without_a_marker_is_named(tmp_path):
+    """★ 양성 대조(PLAN #204) — PLAN.md 를 읽는데 표지가 없는 시험은 이름으로 걸린다. 읽지 않는 시험 · 보조 모듈은 안 걸린다."""
+    _reader(tmp_path, "test_bare.py")                                              # 표지 없음 → 걸린다
+    _reader(tmp_path, "test_rule.py", "PLAN 본문  규칙 — 합성 규칙 문장")
+    _reader(tmp_path, "test_none.py", "PLAN 본문  규칙 없음 — 합성 사유")
+    _reader(tmp_path, "test_unrelated.py", body="X = 1")                           # PLAN 을 안 읽는다
+    _reader(tmp_path, "helper_not_a_test.py")                                      # 시험 모듈이 아니다(`skip_policy.py` 꼴)
+    assert T.unmarked_plan_readers(tmp_path) == ["test_bare.py"]
+
+
+def test_an_empty_marker_is_not_a_marker(tmp_path):
+    """문장 · 사유가 비면 표지가 아니다 — 달았다는 시늉이 의무를 채우지 못한다."""
+    _reader(tmp_path, "test_empty_rule.py", "PLAN 본문  규칙 — ")
+    _reader(tmp_path, "test_empty_none.py", "PLAN 본문  규칙 없음 —")
+    _reader(tmp_path, "test_wrong_word.py", "PLAN 본문  규칙이다 — 문장")
+    assert sorted(T.unmarked_plan_readers(tmp_path)) == ["test_empty_none.py", "test_empty_rule.py", "test_wrong_word.py"]
+
+
+def test_plan_rules_carry_the_marker_sentences_of_the_rule_tests_only(tmp_path, monkeypatch):
+    """틀은 `규칙` 표지의 문장을 **읽어** 싣는다 — 합성 표지를 바꾸면 틀이 따라가고 `규칙 없음` 은 안 실린다."""
+    d = _synthetic_tests(tmp_path)
+    _reader(d, "test_rule.py", "PLAN 본문  규칙 — 합성 규칙 문장")
+    _reader(d, "test_none.py", "PLAN 본문  규칙 없음 — 합성 사유")
+    monkeypatch.setattr(T, "TESTS", d)
+    out = "\n".join(T.plan_rules())
+    assert "test_rule.py — 합성 규칙 문장" in out and "합성 사유" not in out and "규칙 없음 1" in out and "표지 없음 0" in out
+
+
+def test_every_real_test_that_reads_plan_carries_a_marker():
+    """★ 전수 — 새로 PLAN.md 를 읽는 시험이 표지를 안 달면 여기서 이름으로 운다(`obligations --new` 가 푸시 전에 먼저 댄다)."""
+    assert T.unmarked_plan_readers() == [], f"PLAN 본문 표지가 없는 시험: {T.unmarked_plan_readers()}"
+    assert all(T.plan_marker(p)[0] in ("규칙", "규칙 없음") for p in T.plan_reader_tests())
+
+
+def test_the_real_plan_rules_name_all_six_known_bites():
+    out = "\n".join(T.plan_rules())
+    for w in ("절 참조", "행 번호", "도구 선언", "벽시계 수", "평어체", "폐기값 수치"):
+        assert w in out

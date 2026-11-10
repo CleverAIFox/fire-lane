@@ -24,6 +24,7 @@ OUT   없음 (검사)
       실형상은 교차부마다 다르고 정본은 `ngii1k_xsec_5186.gpkg` 다 —
       이 그림은 값이 아니라 규칙을 그리는 구조 그림이다(`fig_branch` 와 같다).
       그리고 배치(글자가 화면·도형을 넘는가)는 `test_figure_fit` 소관이다.
+PLAN 본문  규칙 — 그림을 고쳤으면 PLAN 표에서 그 행이 나가 있어야 한다 — 옛 문장이 남으면 운다
 """
 from __future__ import annotations
 

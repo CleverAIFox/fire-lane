@@ -432,7 +432,6 @@ step "엄격 린트 (CI 와 같은 인자)" bash -c '
 scope "pyproject.toml src/* tools/*"
 step "의존성 선언↔import (deptry)" uv run --no-sync --with deptry==0.25.1 deptry src tools
 
-
 # ── 5b. 저장소 위생 — CI 와 같은 것을 본다 ───────────────────
 # ★ 2026-08-23. 여기가 CI 검사 다섯을 안 돌고 있었다. README 는 "받자마자
 #   이것 하나면 된다" 고 하는데, verify.sh 초록불이어도 CI 는 빨간불이 될 수
@@ -1124,7 +1123,6 @@ step "vintage 정합" uv run python tools/vintage_check.py --max 0
 scope "$CODE_SCOPE"
 step "norm 계보 재현" uv run python -m firelane.prep --check --max 0
 
-
 # ── 배치가 세운 상태가 유지되는가 (B1/W4) ───────────────────────
 # ★ 적용 뒤 no-op 이 되는 배치 도구를 EXEMPT 로 재우면, 상태가 되돌아가도
 #   우는 곳이 없어진다. 지우는 대신 `--check` 를 달아 강제자로 승격했다.
@@ -1243,7 +1241,10 @@ step "문서 제목 무결"      uv run python tools/docpatch.py check \
 scope "README.md web/README.md src/firelane/README.md web/* src/firelane/pipeline.py"
 step "리드미 대조"        uv run python tools/readmecheck.py
 
-
+# ★ 2026-11-09 (PLAN #210). 아래 셋은 훅(`pre-push.gates`)이 돌고 CI `contract-fast` 에 이름이 없는 게이트다(`tools/gatefast.py` 의 「안 덮인다」) — 사유는 워크플로를 읽어 확인했다.
+# ci-exempt: tools/testpick.py 훅이 도는 묶음이다. CI 는 contract-tests 가 tests/test_*.py 전수를 돌므로 묶음(전수의 부분집합)을 또 돌 이유가 없다
+# ci-exempt: tests/test_coord_literals.py 훅이 이 시험 하나를 먼저 돈다. contract-tests 가 전수로 돌아 CI 에는 있고 contract-fast 에만 없다
+# ci-exempt: tools/testsizetable.py 같은 판정을 contract-fast 의 sizecheck.py 가 이 표(testsizetable.EXCEPTIONS)를 읽어 물고 표의 래칫은 contract-heavy 의 ratchet.py 가 문다
 # ── 결과 ─────────────────────────────────────────────────────
 echo
 # ── 부분 실행이면 전수가 아니다 ──────────────────────────────
@@ -1265,7 +1266,6 @@ if [ -n "$ONLY" ] || [ "$FAST" = "1" ] || [ -n "$SINCE" ]; then
 fi
 # ★ 2026-09-22 (DECISIONS §218-5). `부분 실행` 뒤에 둔다 — 그것도 분모에 든 단계다.
 evidence_check
-
 
 printf '%s══════════════════════════════════════════════%s\n' "$D" "$Z"
 # ★ printf 의 %-34s 는 글자 수로 센다. 한글은 화면에서 두 칸을 먹으므로
