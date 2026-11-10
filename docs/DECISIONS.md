@@ -47761,3 +47761,22 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 - **표 셋의 이동.** §10-1: `Zn` 행 삭제 · `Zo` 전건 · `Zp` 1 → 2 · `Zs` 25 → 30. §10-4: `Zn` 문단 삭제 · `Zp` · `Zs` 문단. §10-5: C 에서 `#93`(닫힘) · `#186`(닫힘) · `#214`(닫힘) 을, D 에서 `#18`(닫힘) 을 뺐다. 결번 대장에 네 번호를 올렸다. 열린 행 36 · 못 닫는 5 · 무조건 닫는 31.
 - **밖 문서의 맨몸 인용 14곳**(DECISIONS 12 · MASTER 2)을 `plan_renumber` 가 잡아서 인용 옆에 `(닫힘)` 만 끼웠다(선례: 「글자는 안 바꿨다」).
 
+## 684. `#216` · `#217` 을 세웠다 — `pushready` 가 훅 24게이트 중 직접 2 · 간접 7 만 보고, 표지 날짜의 안내가 수리 문을 숨긴다 (고치지 않았다 · 판정 불변)
+
+> 2026-11-10
+
+유병률  **`#216` 2회**(`#210` 이 「셋의 합집합의 포함 관계를 아무도 안 쟀다」로 처음 적었고 이날 `doc_fsck` 로 다시 났다) · **`#217` 1회**.
+
+강제자  없음 — 사유: 세우고 지나간다(고치지 않았다). 고치는 쪽의 강제자는 두 행의 도착 조건이 든다.
+
+**`#216`.** 2026-11-10 `pushready` 여덟 축이 전부 초록인데 훅이 「문서 ↔ 문서」(`doc_fsck ⑥` · 기획서 표지 날짜)로 빨갰다. 훅 24게이트(`pre-push.gates`)를 `gate_parity.keys` 의 열쇠로 `pushready` 가 부르는 검사기(`ratchet` · `docseal` · `mutate` · `testpick` · `obligations`)와 맞췄다.
+- **직접 같은 검사기 2:** `docseal check`(`pushready` 는 `--invalid-list`) · `testpick`(`pushready` 는 `--run`, 훅은 `--budget 28 --load 60 --jobs 6`). 인자가 달라 같은 것을 같은 조건으로 도는 것은 0 이다.
+- **`ratchet.py` 가 래칫 수로만 간접 읽는 것 7:** `testsizetable` · `sealcov` · `constbasis` · `canary` · `plan_renumber` · `planwork` · `proposalcheck`(`RATCHETS` 선언이 있는 도구). 통과 · 실패가 아니라 선언한 수만 본다.
+- **어느 경로로도 안 보는 것 15:** `deadcheck` · `datalog` · `docgen` · `commit_policy` · `fieldseal` · **`doc_fsck`** · `tonecheck` · `golden`(둘) · `planclose` · `docpatch` · `readmecheck` · `build_proposal --check` · `render_figures --check` · `test_coord_literals`.
+- `pushready` 의 축은 일곱이 아니라 **여덟**이다(`㉧` behind · `㉥` tests · `㉦` obligations · `㉠` ratchet · `㉤` mutate · `㉡` invalid seals · `㉢` unsealed · `㉣` dirty). 다만 이 수는 열쇠(검사기 경로) 단위의 대조이고, 같은 검사기를 다른 인자로 부르는 것이 같은 결과를 낸다는 뜻이 아니다. 간접 7 의 「덮임」은 가장 후하게 센 것이다.
+
+**`#217`.** 처음 근거(「표지 날짜를 사람이 손으로 치고 `docgen` 은 자동인데 이것만 수동」)를 `tools/build_proposal.py` · `tools/fix.sh` · `tools/docfsck/revised.py` 를 읽어 대 보니 **사실이 아니다.**
+- 수리 문(`fix.sh`)이 `--touch-today` 를 돌고 다음 줄에서 화면을 굽는다(DECISIONS §468-3 — 종전 「날짜는 사람이 안다」가 틀렸다고 고친 자리). `docgen` 도 같은 문이 부르는 사람이 여는 수리다. 둘 사이에 수동과 자동의 차이가 없다.
+- 사람이 손으로 두 줄을 치게 된 원인은 **안내문**이다. `doc_fsck ⑥`(`tools/docfsck/revised.py:135`)은 「고치는 법 — `build_proposal.py --touch <날짜> --write`」 한 줄만 찍는다. 화면을 다시 굽는 둘째 단계도, 한 번에 순서대로 도는 `bash tools/fix.sh` 도 말하지 않는다. 안내를 그대로 따르면 `web/proposal.html` 이 낡은 채 남는다.
+- **수동으로 둔 사유는 없다.** 훅 게이트가 읽기만 하는 것은 맞다(검사기가 자기를 고치면 검사가 아니다 — `fix.sh` 머리말). 그러나 그것이 안내문이 문을 가리키지 않을 사유는 아니다. 세울 때의 근거 전제를 바로잡아 행을 「안내가 한 단계를 말하지 않는다」로 세웠다.
+
