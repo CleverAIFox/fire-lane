@@ -195,14 +195,15 @@ def check_mutate(root: Path, run: Runner) -> Block | None:
 def check_tests(root: Path, run: Runner) -> Block | None:
     """`testpick --run` — 실측 장부에서 **계산한** 시험 묶음(PLAN #209). 손 목록이 아니다.
 
+    ★ **바뀐 파일에 닿는 시험을 상한 없이 전부 더한다**(`--no-cap` · PLAN #218 b). 훅은 30초를 지켜 이 연동을 끈다 — 느린 검사는 앞(여기)에, 빠른 그물은 뒤(훅)에 둔다(#216).
     ★ 훅(`--load 60`)보다 큰 묶음이다 — 여기는 남의 일이 없어 `test_layering` 같은 구조 규약 시험이 든다(2026-11-08 에 CI 만 물었다).
     """
-    rc, out = run([*_PY, "tools/testpick.py", "--run"], root)
+    rc, out = run([*_PY, "tools/testpick.py", "--run", "--no-cap"], root)
     if rc == 0:
         return None
     tail = [x for x in out.strip().splitlines() if x.strip()]
     return Block("㉥", "시험 묶음이 빨갛다(또는 장부가 없다)", tail[-8:],
-                 [" ".join([*_PY, "tools/testpick.py", "--run"]) + "   # 빨간 파일을 읽고 고친다 — 고친 뒤 래칫 · 도장을 다시 사슬로"])
+                 [" ".join([*_PY, "tools/testpick.py", "--run", "--no-cap"]) + "   # 빨간 파일을 읽고 고친다 — 고친 뒤 래칫 · 도장을 다시 사슬로"])
 
 
 # ── ㉦ 새 파일의 등재 의무 ───────────────────────────────────────

@@ -216,6 +216,22 @@ def test_changed_files_reads_the_range_and_falls_back_when_it_cannot(tmp_path):
     assert got == ["a.txt"] and any("못 읽" in n for n in notes)       # 범위를 못 읽으면 말한다 · 작업 트리는 본다
 
 
-def test_the_hook_hands_the_push_ranges_to_the_gates():
-    hook = (T.ROOT / ".githooks" / "pre-push").read_text(encoding="utf-8")
-    assert "FIRE_LANE_PUSH_RANGES" in hook and "$rsha..$lsha" in hook
+def test_the_hook_turns_the_touched_link_off_and_pushready_takes_all_of_it():
+    """b — 훅은 30초를 지키므로 연동을 끄고(`--no-touched`), `pushready` ㉥ 는 상한 없이 전부 든다(`--no-cap`). 같은 `select` 를 부른다(#216)."""
+    gate = next(ln for ln in (T.ROOT / ".githooks" / "pre-push.gates").read_text(encoding="utf-8").splitlines()
+                if "testpick.py" in ln and not ln.lstrip().startswith("#"))
+    assert "--no-touched" in gate
+    pr = (T.ROOT / "tools" / "pushready.py").read_text(encoding="utf-8")
+    assert '"tools/testpick.py", "--run", "--no-cap"' in pr
+
+
+def test_one_selector_serves_both_callers_and_only_the_arguments_differ():
+    files, led = T.test_files(), T.load_ledger()
+    texts = {n: (T.ROOT / "tests" / n).read_text(encoding="utf-8", errors="replace") for n in files}
+    ch = ["docs/MASTER.md", "sources.yaml"]
+    hook, _ = T.select(files, led, texts, ch, 28.0, 6, load=60.0, touched=False)
+    base, _ = T.pick(files, led, 28.0, 6, load=60.0)
+    ready, info = T.select(files, led, texts, ch, 28.0, 8, touched=True, cap=None)
+    assert hook == base                                         # 훅 = 종전 묶음
+    assert set(base) < set(ready) and not info["over"]          # pushready ⊃ 훅 · 상한에 걸려 빠진 것이 없다
+    assert {"test_fix_door.py", "test_ledger_accessor.py"} <= set(ready)

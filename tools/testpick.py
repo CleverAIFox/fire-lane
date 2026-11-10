@@ -33,7 +33,8 @@ testpick.py — 푸시 전에 도는 시험 묶음을 **실측으로** 고른다
       범위를 못 읽으면(원격 객체가 없다 등) `@{u}..HEAD`, 그것도 없으면 `origin/dev` 와의 merge-base 부터다. 못 읽으면 닫힌 쪽이 아니라 **「범위를 못 읽었다」를 출력에 적는다**.
     · 「그 파일에 닿는 시험」 = **정적 스캔**(`touching` · 순수 함수): 시험 파일 본문에 ① 그 경로 전체 ② 확장자 붙은 파일명(`PLAN.md`) ③ `.py` 면 import 한 모듈 이름이 나오는가.
       ★ **하한이다** — 경로를 헬퍼 · 상수 · 글롭으로 조립해 읽는 시험은 못 센다(그 시험은 안 든다). 못 센 것이 「닿지 않는다」는 뜻이 아니다.
-    · **파일당 상한**(`TOUCH_CAP` 초 · 장부 기준)을 넘는 시험은 못 든다 — **출력에 이름을 대고 「CI 몫」으로 적는다**(조용히 빼지 않는다).
+    · **훅은 이 연동을 끈다**(`--no-touched` · 30초를 지킨다), **`pushready` ㉥ 는 상한 없이 전부 든다**(`--no-cap`) — 같은 `select` 하나를 쓰고 갈리는 것은 인자뿐이다(#216).
+    · **파일당 상한**(`TOUCH_CAP` 초 · 장부 기준 · `--no-cap` 이 아니면)을 넘는 시험은 못 든다 — **출력에 이름을 대고 「CI 몫」으로 적는다**(조용히 빼지 않는다).
   `--files` 로 바뀐 파일을 직접 줄 수 있다(실측 · 시험용).
 
 부류  조사   `--measure` 는 사람이 손으로 돌린다. `--list` · `--run` 은 읽기 전용이다(장부도 안 쓴다)
@@ -180,6 +181,22 @@ def pick_touched(touch: dict[str, list[str]], ledger: dict[str, float], cap: flo
     return go, over
 
 
+def select(files: list[str], ledger: dict[str, float], texts: dict[str, str], changed: list[str], budget: float, jobs: int,
+           load: float = 0.0, touched: bool = True, cap: float | None = TOUCH_CAP) -> tuple[list[str], dict]:
+    """**하나뿐인 선택 함수**(PLAN #218 · #216) — 훅도 `pushready` 도 이것을 부른다. 갈리는 것은 인자뿐이다:
+    `touched`(바뀐 파일에 닿는 시험을 더하나) · `cap`(닿는 시험 하나의 상한 · `None` 이면 상한 없음) · `budget`/`load`(예산으로 고르는 몫).
+    훅은 `touched=False`(30초를 지킨다), `pushready` 는 `touched=True, cap=None`(시간 제약이 없다)이다. 두 도구가 다른 규칙을 쓰면 그것이 #216 의 재발이다."""
+    chosen, info = pick(files, ledger, budget, jobs, load=load)
+    info.update({"touch": {}, "forced": [], "over": {}})
+    if touched:
+        touch = touching(changed, texts)
+        go, over = pick_touched(touch, ledger, float("inf") if cap is None else cap)
+        info.update(touch=touch, forced=[n for n in go if n not in chosen], over=over)
+        chosen = sorted({*chosen, *go})
+        info["est"] += sum(ledger.get(n, 0.0) for n in info["forced"]) / min(jobs, EFF)
+    return chosen, info
+
+
 def bins(names: list[str], jobs: int, ledger: dict[str, float]) -> list[list[str]]:
     """가장 긴 것부터 가장 가벼운 통에 넣는다(LPT). 장부에 없는 파일은 중앙값으로 친다."""
     med = statistics.median(ledger.values()) if ledger else 1.0
@@ -246,6 +263,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--files", nargs="+", metavar="PATH", help="바뀐 파일을 직접 준다(실측 · 시험용 — git 을 안 본다)")
     ap.add_argument("--no-touched", action="store_true", help="바뀐 파일에 닿는 시험을 안 더한다(예전 동작 — 실측 대조용)")
     ap.add_argument("--cap", type=float, default=TOUCH_CAP, help="닿는 시험 하나의 상한(장부 초). 넘으면 CI 몫")
+    ap.add_argument("--no-cap", action="store_true", help="상한을 안 건다 — 닿는 시험을 전부 든다(시간 제약이 없는 pushready)")
     ap.add_argument("--jobs", type=int, default=os.cpu_count() or 2)
     a = ap.parse_args(argv)
     files = test_files()
@@ -284,7 +302,17 @@ def main(argv: list[str] | None = None) -> int:
         # ★ 장부가 비면 모든 파일이 「새 시험」이라 전부 든다 — 조용히 25분짜리 묶음이 된다. 닫힌 쪽으로 실패한다.
         print("✗ 장부가 없거나 비었다(data/golden/testtimes.json) — `tools/testpick.py --measure --write` 로 만든다", file=sys.stderr)
         return 1
-    chosen, info = pick(files, ledger, a.budget, a.jobs, load=a.load)
+    texts: dict[str, str] = {}
+    changed: list[str] = []
+    notes: list[str] = []
+    if not a.no_touched:
+        if a.files is not None:
+            changed, notes = sorted(a.files), ["--files 로 받았다"]
+        else:
+            changed, notes = changed_files(ROOT, a.range or os.environ.get("FIRE_LANE_PUSH_RANGES", "").split())
+        texts = {n: (ROOT / "tests" / n).read_text(encoding="utf-8", errors="replace") for n in files}
+    cap = None if a.no_cap else a.cap
+    chosen, info = select(files, ledger, texts, changed, a.budget, a.jobs, a.load, touched=not a.no_touched, cap=cap)
     print(f"묶음 {len(chosen)}/{len(files)}개 파일 · 추정 {info['est']:.1f}초(예산 {a.budget:g}초 · 병렬 {a.jobs} · 남의 일 {a.load:g}) · "
           f"장부 {info['known']}개 합 {info['total']:.0f}초", file=sys.stderr)
     if info["new"]:
@@ -292,23 +320,12 @@ def main(argv: list[str] | None = None) -> int:
               f"{' …' if len(info['new']) > 5 else ''}  → `--measure --write`", file=sys.stderr)
     if info["gone"]:
         print(f"  장부에만 있음(없어진 파일) {len(info['gone'])}개 → `--measure --write`", file=sys.stderr)
-    forced: list[str] = []
     if not a.no_touched:
-        if a.files is not None:
-            changed, notes = sorted(a.files), ["--files 로 받았다"]
-        else:
-            rgs = a.range or os.environ.get("FIRE_LANE_PUSH_RANGES", "").split()
-            changed, notes = changed_files(ROOT, rgs)
-        texts = {n: (ROOT / "tests" / n).read_text(encoding="utf-8", errors="replace") for n in files}
-        touch = touching(changed, texts)
-        go, over = pick_touched(touch, ledger, a.cap)
-        forced = [n for n in go if n not in chosen]
-        print(f"  바뀐 파일 {len(changed)}개({'; '.join(notes)}) → 닿는 시험 {len(touch)}개 · 예산 밖에서 더함 {len(forced)}개 "
+        print(f"  바뀐 파일 {len(changed)}개({'; '.join(notes)}) → 닿는 시험 {len(info['touch'])}개 · 예산 밖에서 더함 {len(info['forced'])}개 "
               f"(정적 스캔 — **하한**: 경로를 헬퍼로 조립해 읽는 시험은 못 센다)", file=sys.stderr)
-        for n, sec in over.items():
-            print(f"  ⚠ CI 몫 — {n} ({sec:.0f}초 > 상한 {a.cap:g}초): {', '.join(touch[n][:3])}{' …' if len(touch[n]) > 3 else ''} 에 닿지만 못 돈다", file=sys.stderr)
-        chosen = sorted({*chosen, *go})
-        info["est"] += sum(ledger.get(n, 0.0) for n in forced) / min(a.jobs, EFF)
+        for n, sec in info["over"].items():
+            t3 = info["touch"][n]
+            print(f"  ⚠ CI 몫 — {n} ({sec:.0f}초 > 상한 {a.cap:g}초): {', '.join(t3[:3])}{' …' if len(t3) > 3 else ''} 에 닿지만 못 돈다", file=sys.stderr)
     if a.list:
         print("\n".join(chosen))
         return 0
