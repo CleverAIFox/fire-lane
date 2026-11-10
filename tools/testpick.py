@@ -29,7 +29,7 @@ testpick.py — 푸시 전에 도는 시험 묶음을 **실측으로** 고른다
 
 ★ **바뀐 파일에 닿는 시험은 예산과 무관하게 든다**(PLAN #218). 실측으로 고른 묶음은 **정렬**일 뿐 입력(무엇이 바뀌었나)을 몰랐다 —
   문서만 고친 날에도 같은 묶음이 돌고, 고친 문서를 읽는 시험이 짧은 순 밖이면 안 돌았다. 그래서 예산으로 고른 묶음에 **더한다**:
-    · 바뀐 파일 = 푸시하는 커밋 범위(훅이 stdin 으로 아는 `원격..로컬` · env `FIRE_LANE_PUSH_RANGES`) ∪ 작업 트리의 추적 파일 변경.
+    · 바뀐 파일 = 푸시하는 커밋 범위(`--range` 로 주면 그것, 안 주면 `@{u}..HEAD`) ∪ 작업 트리의 추적 파일 변경.
       범위를 못 읽으면(원격 객체가 없다 등) `@{u}..HEAD`, 그것도 없으면 `origin/dev` 와의 merge-base 부터다. 못 읽으면 닫힌 쪽이 아니라 **「범위를 못 읽었다」를 출력에 적는다**.
     · 「그 파일에 닿는 시험」 = **정적 스캔**(`touching` · 순수 함수): 시험 파일 본문에 ① 그 경로 전체 ② 확장자 붙은 파일명(`PLAN.md`) ③ `.py` 면 import 한 모듈 이름이 나오는가.
       ★ **하한이다** — 경로를 헬퍼 · 상수 · 글롭으로 조립해 읽는 시험은 못 센다(그 시험은 안 든다). 못 센 것이 「닿지 않는다」는 뜻이 아니다.
@@ -116,7 +116,7 @@ def _git(args: list[str], root: Path) -> str | None:
 def changed_files(root: Path = ROOT, ranges: list[str] | None = None) -> tuple[list[str], list[str]]:
     """(바뀐 추적 파일, 설명). 기준 = 푸시하는 커밋 범위 ∪ 작업 트리. 범위를 못 읽으면 `@{u}..HEAD` → `origin/dev` merge-base.
 
-    훅은 stdin 으로 `원격 sha..로컬 sha` 를 안다 — 그것을 env 로 받는 쪽이 정확하다(`@{u}` 는 새 브랜치 · 다른 refspec 에서 틀린다)."""
+    범위를 직접 주지 않으면 `@{u}` 가 기준이라 새 브랜치 · 다른 refspec 에서는 틀릴 수 있다 — 그때는 출력에 그렇게 적힌다."""
     notes: list[str] = []
     out: set[str] = set()
     ok = 0
@@ -259,7 +259,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--only", nargs="+", metavar="FILE", help="--measure 가 이 파일들만 다시 잰다(나머지 장부 칸은 그대로 — 고친 시험 하나를 11분 안 들이고 갱신)")
     ap.add_argument("--budget", type=float, default=DEFAULT_BUDGET, help="벽시계 예산(초)")
     ap.add_argument("--load", type=float, default=0.0, help=f"같은 시간에 도는 남의 일(CPU-초). 훅 안에서는 {LOAD:g}")
-    ap.add_argument("--range", action="append", metavar="A..B", help="바뀐 파일의 커밋 범위(여럿 가능). 안 주면 env FIRE_LANE_PUSH_RANGES(공백 구분) → @{u}..HEAD")
+    ap.add_argument("--range", action="append", metavar="A..B", help="바뀐 파일의 커밋 범위(여럿 가능). 안 주면 @{u}..HEAD")
     ap.add_argument("--files", nargs="+", metavar="PATH", help="바뀐 파일을 직접 준다(실측 · 시험용 — git 을 안 본다)")
     ap.add_argument("--no-touched", action="store_true", help="바뀐 파일에 닿는 시험을 안 더한다(예전 동작 — 실측 대조용)")
     ap.add_argument("--cap", type=float, default=TOUCH_CAP, help="닿는 시험 하나의 상한(장부 초). 넘으면 CI 몫")
@@ -309,7 +309,7 @@ def main(argv: list[str] | None = None) -> int:
         if a.files is not None:
             changed, notes = sorted(a.files), ["--files 로 받았다"]
         else:
-            changed, notes = changed_files(ROOT, a.range or os.environ.get("FIRE_LANE_PUSH_RANGES", "").split())
+            changed, notes = changed_files(ROOT, a.range or [])
         texts = {n: (ROOT / "tests" / n).read_text(encoding="utf-8", errors="replace") for n in files}
     cap = None if a.no_cap else a.cap
     chosen, info = select(files, ledger, texts, changed, a.budget, a.jobs, a.load, touched=not a.no_touched, cap=cap)
