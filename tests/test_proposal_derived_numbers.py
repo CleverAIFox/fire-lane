@@ -54,3 +54,28 @@ def test_the_stale_values_are_gone() -> None:
     doc = _doc()
     for stale in ("400구간 · 17,181m", "전체 연장의 29%", "골목의 65%"):
         assert stale not in doc, f"낡은 값이 남았다: {stale}"
+
+
+def test_the_repair_door_reports_a_cover_date_repair_as_a_repair_not_as_nothing():
+    """PLAN #217 후속 — (★ 이 자리에 둔 이유: 이 파일은 변이 장부의 과녁 도구 이름을 안 든다 — `test_fix_door.py` 에 두면 장부 넷이 낡는다.)
+
+     문이 표지 날짜를 **고치고도** 「고칠 것이 없다 · 고침 0」으로 보고했다(`--touch-today` 의 `줄 N개 수정` 이 판별 정규식에 없었다).
+
+    실제로 낡은 표지를 주입해 문을 돌렸더니 날짜는 돌아오고 ⑥ 은 초록인데 요약이 「고침 0」이었다. 사람은 아무것도 안 움직였다고 읽는다.
+    판별은 **바뀐 줄이 1 이상일 때만** 고침이다 — `줄 0개 수정` 은 같은 문장 꼴이라 그대로여야 한다(날짜가 이미 오늘일 때도 「표지를 옮겼다」가 찍히므로 그 문장은 못 쓴다)."""
+    import re
+    import subprocess
+
+    body = (ROOT / "tools" / "fix.sh").read_text(encoding="utf-8")
+    pat = re.search(r"grep -qE '([^']*)'; then\s*\n\s*RESULTS\+=\(\"고침\"\)", body)
+    assert pat, "fix.sh 의 고침 판별 줄을 못 찾았다 — 이 시험을 고쳐라"
+    rx = pat.group(1)
+
+    def hit(text: str) -> bool:
+        return subprocess.run(["grep", "-qE", rx], input=text, text=True, timeout=30, check=False).returncode == 0
+
+    assert hit("  proposal.md  줄 1개 수정\n  ★ 표지를 옮겼다 — 화면을 다시 구워라\n"), "표지를 고친 줄을 고침으로 안 센다"
+    assert hit("  proposal.md  줄 12개 수정\n")
+    assert not hit("  proposal.md  줄 0개 수정\n  ★ 표지를 옮겼다 — 화면을 다시 구워라\n"), "날짜가 이미 오늘인데 고침으로 센다 — 거짓 보고다"
+    assert "proposal.md  줄 {n}개 {'수정' if write else '수정 예정'}" in (ROOT / "tools" / "build_proposal.py").read_text(encoding="utf-8"), \
+        "생산자의 문장이 바뀌었다 — 판별 정규식도 맞춰라"
