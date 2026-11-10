@@ -152,7 +152,7 @@ uv run python tools/docnum_check.py
 
 ★ **발행 범위는 위 표의 짝이다**(`scope_tier` · DECISIONS §613). 판정은 1,287구간 **전부** 하고 전부 발행한다 — 발행 범위는 구간을 하나도 안 떨구고 이름만 붙인다(`target` · `corridor` · `listed` · `reference`). 위 네 수는 1,287 기준이고, 그것을 발행 범위로 가르면 아래와 같다. 이름이 겹치지 않게 일러 둔다: `통행 불가 193` 의 「하한」은 개수가 확정이 아니라는 뜻이고(§2) 여기 「발행 범위」는 보여줄 구간의 범위다.
 <!--gen: scope_in scope_out v_blocked_in v_blocked_out-->
-발행 범위 안 758구간 · 발행 범위 밖 529구간이다. 통행 불가(`blocked`)는 발행 범위 안 `blocked` 74 이고 그중 발행 범위 밖 119 이다 — 「막힌 길」을 발행 범위 밖이라고 빼지 않는다.
+발행 범위 안 727구간 · 발행 범위 밖 560구간이다. 통행 불가(`blocked`)는 발행 범위 안 `blocked` 69 이고 그중 발행 범위 밖 124 이다 — 「막힌 길」을 발행 범위 밖이라고 빼지 않는다.
 <!--/gen-->
 
 ```
@@ -1792,6 +1792,7 @@ uv run python tools/serve.py              # 배포와 같은 배치(입구 · na
 | `struct_kind` · `struct_dist_m` | **입체 구조물**(터널 · 고가 · 교량 — 도로명주소 기타자료) 중 반경 50m 안에서 가장 가까운 것의 이름과 거리(m). 입력 범위 안만 적재돼 있어 null 은 「적재된 것 중에는 없다」다. **web 에만 있고 판정에 안 쓴다**(DECISIONS §563) |
 | `nfa_access_listed` · `nfa_access_width` · `nfa_access_len_m` · `nfa_access_hh` · `nfa_access_len_ratio` · `nfa_access_loose` · `nfa_access_token` | **소방서가 지정한 소방통로확보대상**(동부소방서 20구간)과의 도로명 **정확 일치**. 폭은 문자열 그대로, `len_ratio`(우리 연장 합 ÷ 소방서 구간거리)가 매칭 품질을 든다(0.5~2.0 밖이면 `loose`), `token` 은 소방서 지역명 원문. **web 에만 있고 판정에 안 쓴다**(DECISIONS §550) |
 | `scope_tier` | **발행 범위 분류** — `target`(동명동 안) · `corridor`(동 밖 · `route_usage > 0`) · `listed`(동 밖 · `route_usage == 0` · 소방서 표 지역명의 **주소부, 첫 괄호 앞**에 `road_name` 이 통째로 나온다) · `reference`(나머지). **구간을 하나도 안 떨군다** — 1,281구간 전부가 값 하나를 갖고 표출이 이 칸으로 고른다. `reference` 는 발행 범위에 안 든다. 판정에 안 쓴다. `nfa_access_listed`(지역명 어디서든)와 **다른 정의**다 — 괄호 안 설명 「(구, 지호로)」는 지정이 아니다(DECISIONS §613) |
+| `scope_basis` | **`listed` 의 근거**(PLAN #186) — `address`(소방서 **본선 번지 행**의 건물 폴리곤에서 `구간거리 ÷ 2` 안이라 걸렸다) · `road`(도로명뿐 — 번길 행이거나 번지의 건물을 못 찾아 본선 전체를 유지한 폴백 A). `listed` 가 아니면 `null`. 판정에 안 쓴다 |
 | `width_fail` | **폭을 못 낸 사유.** `no_xsec_attempted`(법선이 전부 평면교차부에 걸려 한 발도 못 쐈다) 등. `unknown_reason` 과 **다른 축**이다 — 저쪽은 회색의 사유, 이쪽은 폭이 빈 사유다(DECISIONS §436-3) |
 | `route_usage` | 최단경로 사용횟수. **통행 가능성이 아니다**(§3-10) |
 | `width_src` | 채택 소스. `ngii1k` · `ngii` · `silpok` 중 하나. 구간 단위 단일 소스 |

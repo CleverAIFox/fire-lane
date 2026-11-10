@@ -120,12 +120,19 @@ def main():
     #   지정(listed)은 소방서 표 지역명의 **주소부**에 도로명이 나오는 구간이다 — 위 `nfa_access_*` 와 다른 정의다(괄호 안 설명은 안 센다).
     #   판정 폐포 밖이라 여기서 싣는다(web 에만 있는 칸).
     from firelane import scopetier as _stier
-    _seg["scope_tier"] = _stier.columns(list(_seg["in_emd"]), list(_seg["route_usage"]),
-                                        list(_seg["road_name"]), _fa_rows)["scope_tier"]
+    # ★ 본선 번지 행(`지산로 37` 등)은 **번지 위치의 구간만** 건다(PLAN #186 · DECISIONS §629-6) — 건물 폴리곤(`RN_CD` + 건물번호)에서
+    #   소방서 행 `구간거리/2` 안. 건물이 0 이면 폴백 A(본선 전체 유지)이고 그 근거는 `scope_basis` = `road` 로 가른다.
+    _bld = gpd.read_file(P/"building_5186.gpkg", columns=["RN_CD", "BULD_MNNM", "BULD_SLNO"])
+    _rl = gpd.read_file(P/"road_link_5186.gpkg", columns=["RN", "RN_CD"], ignore_geometry=True).dropna()
+    _rn_cd = _rl.groupby("RN")["RN_CD"].agg(lambda x: sorted(set(map(str, x)))).to_dict()
+    _st_cols = _stier.columns(list(_seg["in_emd"]), list(_seg["route_usage"]), list(_seg["road_name"]), _fa_rows,
+                              list(_seg.to_crs(5186).geometry), _bld, _rn_cd)
+    _seg["scope_tier"] = _st_cols["scope_tier"]
+    _seg["scope_basis"] = _st_cols["scope_basis"]
 
     _cols = ["seg_uid","seg_id","seg_no","width_min_m","width_med_m","width_max_m","verdict",
              "midpoint_fallback","inherited","route_usage","length_m",
-             "run_length_m","nfa_designated","cctv_dist_m","cv_feasible","width_src","width_disagree_m","width_min_any_m","width_min_any_src","width_min_any_s_m","width_source_conflict_m","n_subphys","width_min_sym_m","width_min_sample_idx","n_poly","width_selection_reason","occ_pressure","occ_pressure_rank","width_cov","cv_reason","clear_min_m","clear_med_m","clear_max_m","clear_src","clear_cov","ecc_rel_med_m","ecc_rel_max_m","ecc_cov","struct_kind","struct_dist_m","nfa_access_listed","nfa_access_width","nfa_access_len_m","nfa_access_hh","nfa_access_len_ratio","nfa_access_loose","nfa_access_token","scope_tier","n_sample","n_try","road_name","seg_label","road_side","road_bt_m","in_emd","light_count","width_fail",
+             "run_length_m","nfa_designated","cctv_dist_m","cv_feasible","width_src","width_disagree_m","width_min_any_m","width_min_any_src","width_min_any_s_m","width_source_conflict_m","n_subphys","width_min_sym_m","width_min_sample_idx","n_poly","width_selection_reason","occ_pressure","occ_pressure_rank","width_cov","cv_reason","clear_min_m","clear_med_m","clear_max_m","clear_src","clear_cov","ecc_rel_med_m","ecc_rel_max_m","ecc_cov","struct_kind","struct_dist_m","nfa_access_listed","nfa_access_width","nfa_access_len_m","nfa_access_hh","nfa_access_len_ratio","nfa_access_loose","nfa_access_token","scope_tier","scope_basis","n_sample","n_try","road_name","seg_label","road_side","road_bt_m","in_emd","light_count","width_fail",
              "unknown_reason"]
     _cols += [c for c in ("z",) if c in _seg.columns]
     _seg[_cols + ["geometry"]].to_file(W/"segments.geojson", **PREC)
@@ -440,6 +447,7 @@ def main():
         "nfa_access_loose": "bool|null len_ratio 가 0.5~2.0 밖이다(매칭이 느슨해 비교가 안 된다). listed 가 false 면 null",
         "nfa_access_token": "str|null 매칭된 행의 소방서 지역명 **원문**. 매칭은 정확 일치다(본선 경양로는 「경양로 247번길 26」 골목 행에 안 걸린다) — 소방서가 본선을 지정했는지 번길을 지정했는지는 원문을 읽고 사람이 판단한다",
         "scope_tier": "str 발행 범위 분류 — target(동명동 안) · corridor(동 밖이고 route_usage>0) · listed(동 밖이고 route_usage==0이며 소방서 표 지역명의 **주소부**, 첫 괄호 앞에 road_name 이 통째로 나옴) · reference(나머지). ★ 구간을 하나도 안 떨군다 — 1,281구간 전부가 하나의 값을 갖고, 어디를 보여줄지는 표출이 이 칸으로 고른다. reference 는 발행 범위에 안 든다. 판정에 안 쓴다. nfa_access_listed(지역명 어디서든 걸림)와 다른 정의다 — 괄호 안 설명(구, 지호로)은 지정이 아니다",
+        "scope_basis": "str|null listed 인 구간의 근거 — address(소방서 본선 번지 행의 건물 폴리곤에서 구간거리÷2 안이라 걸렸다) · road(도로명뿐 — 번길 행이거나 번지의 건물을 못 찾아 본선 전체를 유지한 폴백). listed 가 아니면 null. 판정에 안 쓴다",
     })
     _sch["scope"] = "web — 표출용 사본. processed 전용 컬럼은 뺐다"
     _sch["dropped_from_processed"] = _dropped

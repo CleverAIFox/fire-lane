@@ -211,6 +211,8 @@ STEPS = [
                 P / "fire_station.geojson", P / "hydrant_point.geojson",
                 P / "cctv.geojson", P / "poi_store.geojson",
                 P / "building_5186.gpkg",
+                # ★ 2026-11-10 (PLAN #186). 본선 번지 행의 `RN` ↔ `RN_CD` — `scopetier` 가 번지의 건물을 찾는 열쇠다.
+                P / "road_link_5186.gpkg",
                 P / "route_vehicle.csv", P / "scope_5186.gpkg",
                 # ★ publish_basemap 의 SOURCES — road_area · sidewalk 의 재료
                 P / "ngii1k_5186.gpkg", P / "road_rw_5186.gpkg",

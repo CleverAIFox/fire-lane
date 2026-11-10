@@ -66,7 +66,8 @@
     "nfa_access_len_ratio": "float|null 우리 그 도로명의 연장 합 ÷ 소방서 구간거리. 매칭 품질이다 — 0.5~2.0 밖이면 매칭이 느슨하다(소방서는 간선의 좁은 일부만 지정한다)",
     "nfa_access_loose": "bool|null len_ratio 가 0.5~2.0 밖이다(매칭이 느슨해 비교가 안 된다). listed 가 false 면 null",
     "nfa_access_token": "str|null 매칭된 행의 소방서 지역명 **원문**. 매칭은 정확 일치다(본선 경양로는 「경양로 247번길 26」 골목 행에 안 걸린다) — 소방서가 본선을 지정했는지 번길을 지정했는지는 원문을 읽고 사람이 판단한다",
-    "scope_tier": "str 발행 범위 분류 — target(동명동 안) · corridor(동 밖이고 route_usage>0) · listed(동 밖이고 route_usage==0이며 소방서 표 지역명의 **주소부**, 첫 괄호 앞에 road_name 이 통째로 나옴) · reference(나머지). ★ 구간을 하나도 안 떨군다 — 1,281구간 전부가 하나의 값을 갖고, 어디를 보여줄지는 표출이 이 칸으로 고른다. reference 는 발행 범위에 안 든다. 판정에 안 쓴다. nfa_access_listed(지역명 어디서든 걸림)와 다른 정의다 — 괄호 안 설명(구, 지호로)은 지정이 아니다"
+    "scope_tier": "str 발행 범위 분류 — target(동명동 안) · corridor(동 밖이고 route_usage>0) · listed(동 밖이고 route_usage==0이며 소방서 표 지역명의 **주소부**, 첫 괄호 앞에 road_name 이 통째로 나옴) · reference(나머지). ★ 구간을 하나도 안 떨군다 — 1,281구간 전부가 하나의 값을 갖고, 어디를 보여줄지는 표출이 이 칸으로 고른다. reference 는 발행 범위에 안 든다. 판정에 안 쓴다. nfa_access_listed(지역명 어디서든 걸림)와 다른 정의다 — 괄호 안 설명(구, 지호로)은 지정이 아니다",
+    "scope_basis": "str|null listed 인 구간의 근거 — address(소방서 본선 번지 행의 건물 폴리곤에서 구간거리÷2 안이라 걸렸다) · road(도로명뿐 — 번길 행이거나 번지의 건물을 못 찾아 본선 전체를 유지한 폴백). listed 가 아니면 null. 판정에 안 쓴다"
   },
   "standard": "소방청 2025 화재현장 골든타임 확보 종합대책 (구간 100m) + 2026-08-06 현장 답사 (통과 하한 3.0m)",
   "params": {
