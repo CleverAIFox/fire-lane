@@ -1,7 +1,7 @@
 """
 fireaccess.py — 소방서가 지정한 **소방통로확보대상**(`fire_access`)을 구간 칸으로 싣는다. (Zm8 · DECISIONS §550)
 
-IN    `data/processed/fire_access.csv`(동부소방서 · 20구간 · 7,120m · 3,452세대) · 구간 표(`road_name` · `length_m`)
+IN    `data/processed/fire_access.csv`(동부소방서 · 원천 20행 · 고유 19구간 · 연번 1 · 19 가 같은 지정 — DECISIONS §682) · 구간 표(`road_name` · `length_m`)
 OUT   `nfa_access_listed` · `nfa_access_width` · `nfa_access_len_m` · `nfa_access_hh` · `nfa_access_len_ratio` · `nfa_access_loose` · `nfa_access_token`
 PARAM `RATIO_LO` · `RATIO_HI`
 밖    **판정을 안 한다.** 관문(`tests/test_fire_access_gate.py`)이 읽을 뿐이다 — 판정 폐포(`segments.py`) 밖이라 골든 코드 지문을 안 건드린다.

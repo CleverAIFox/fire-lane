@@ -205,7 +205,7 @@ def nfa_compare(g):
             _out = {
                 "as_of": _dt.now(_tz(_td(hours=9))).isoformat(timespec="seconds"),
                 "source": str(fa.name),
-                "ref": "동부소방서 소방통로확보대상 지역 현황 (20구간 7,120m)",
+                "ref": "동부소방서 소방통로확보대상 지역 현황 (원천 20행 · 고유 19구간 6,370m)",
                 "match_by": "도로명. 소방서 자료에 좌표가 없다",
                 "compare": ("구간 대표폭이므로 중앙값과 비교. 최솟값이면 -3~-7m 로 벌어진다. 정본 `dev_m` 은 도로 형상에 닿는 구간(이웃 도로 포함)의 "
                             "중앙값이고, 이름이 같은 구간만의 값은 `dev_name_m` · `name_only` 로 나란히 둔다"),
