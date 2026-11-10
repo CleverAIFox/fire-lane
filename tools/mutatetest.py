@@ -23,6 +23,11 @@ OUT   표준출력 · rc
 """
 from __future__ import annotations
 
+import shutil
+import tempfile
+from pathlib import Path
+
+import mutatescope as _ms
 from mutate import _ratchet_line, catchers, mutants, pick, sort_survivors
 from mutatescope import (
     TOOLS,
@@ -65,11 +70,6 @@ def selftest() -> int:
     else:
         # ★ 2026-11-10 (PLAN #219). **진짜 시험 파일을 고치지 않는다** — 종전에는 `_q[0]`(실제 `tests/test_*.py`)에 주석을 붙였다 떼어
         #   병렬로 도는 다른 시험이 중간 상태의 지문을 읽을 수 있었다. 복사본 뿌리에서 같은 물음(시험 파일이 바뀌면 지문이 바뀌나)을 던진다.
-        import shutil  # noqa: PLC0415
-        import tempfile  # noqa: PLC0415
-        from pathlib import Path  # noqa: PLC0415
-
-        import mutatescope as _ms  # noqa: PLC0415
         _sv = (_ms.ROOT, _ms.TOOLS, _ms.TESTS)
         with tempfile.TemporaryDirectory() as _td:
             _r = Path(_td)
