@@ -156,7 +156,7 @@ def test_the_real_local_lineage_now_passes_the_segments_check_if_it_exists():
     """이 기계에서 지금 막히던 실제 계보(`fire_station.geojson` 30976… ≠ 89aa…)가 이제 통과한다. CI 에는 그 파일이 없다."""
     lin = ROOT / "data" / "processed" / "_lineage.json"
     if not lin.is_file():
-        pytest.skip("환경skip(계보) — `_lineage.json` 은 .gitignore 라 CI 에 없다")
+        pytest.skip("환경skip(산출물) — `_lineage.json` 은 .gitignore 라 CI 에 없다")
     from firelane import lineage, pipeline
     step = next(s for s in pipeline.STEPS if s.name == "segments")
     try:

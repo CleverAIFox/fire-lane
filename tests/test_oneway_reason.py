@@ -39,7 +39,7 @@ ROOT = Path(__file__).resolve().parents[1]
 #   `geopandas` 가 없는 기계에서는 **이 파일째 건너뛴다**: `importorskip` 을
 #   모듈 꼭대기에 두면 그 아래 import 가 E402 를 내므로, `pytest.importorskip`
 #   대신 `pytestmark` 로 같은 일을 한다 — 억제 주석이 하나도 안 남는다.
-pytest.importorskip("geopandas", reason="레이크 없이도 도는 검사지만 gpd 는 필요하다")
+pytest.importorskip("geopandas", reason="환경skip(도구) — 레이크 없이도 도는 검사지만 geopandas 가 필요하다")
 
 import geopandas as gpd
 from shapely.geometry import LineString
