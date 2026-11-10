@@ -125,3 +125,30 @@ def test_the_sum_is_the_sum_of_the_rows() -> None:
     rows = sum(abs(float(r["dev_m"])) for r in seal["rows"])
     assert abs(rows - float(seal["abs_dev_sum_m"])) < 0.02, (
         f"봉인의 합 {seal['abs_dev_sum_m']} ≠ 행 절대값 합 {rows:.2f}")
+
+
+MAE = re.compile(r"MAE (\d+(?:\.\d+)?)m")
+
+
+def test_the_stated_mae_is_the_rows_mae() -> None:
+    """★ PLAN #93 — 지표는 합이 아니라 MAE 다. 서술한 MAE 가 봉인 **행**에서 나온 값인가.
+
+    옛 봉인 사본에는 `mae_m` 칸이 없으므로 행(`dev_m`)에서 다시 센다."""
+    seal = _seal()
+    a = [abs(float(r["dev_m"])) for r in seal["rows"]]
+    want = sum(a) / len(a)
+    stated = [float(x) for x in MAE.findall(MASTER.read_text(encoding="utf-8"))]
+    assert stated, "「MAE N m」 서술을 못 찾았다 — 표기가 바뀌었다"
+    assert any(abs(v - want) < 0.006 for v in stated), (
+        f"MASTER 가 든 MAE {stated} 에 봉인 행의 MAE {want:.2f} 가 없다")
+
+
+def test_summarize_is_mae_median_and_per_source() -> None:
+    from firelane.nfa_compare import summarize
+
+    rows = [{"dev_m": -3.0}, {"dev_m": 1.0}, {"dev_m": 2.0}]
+    got = summarize(rows, [("a", "s1", -3.0), ("b", "s1", 1.0), ("b", "s2", 2.0)])
+    assert got["abs_dev_sum_m"] == 6.0 and got["mae_m"] == 2.0 and got["median_abs_dev_m"] == 2.0
+    assert got["by_source"]["s1"] == {"n_pair": 2, "n_road": 2, "mae_m": 2.0, "median_abs_dev_m": 2.0}
+    assert got["by_source"]["s2"]["n_pair"] == 1
+    assert summarize([], [])["mae_m"] is None

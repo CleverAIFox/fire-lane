@@ -89,6 +89,33 @@ def _fire_access_csv():
     return sorted(hits)[-1]
 
 
+def summarize(rows: list[dict], by_src: list[tuple[str, str, float]]) -> dict:
+    """대조 집계 — **MAE · 중앙값**이 지표이고 합은 참고다 (PLAN #93).
+
+    절대편차 합은 표본 수에 비례해 커져 실행 간 · 소스 간 비교가 안 된다.
+    `rows` 는 도로 행(`dev_m`), `by_src` 는 `(도로, 폭 출처, 그 도로 안 그 출처의
+    편차)` — 편차의 정의는 도로 행과 같다(`width_min_m` 중앙값 − 소방서 폭).
+    """
+    from statistics import median
+
+    a = [abs(float(r["dev_m"])) for r in rows]
+    out = {
+        "abs_dev_sum_m": round(sum(a), 2),
+        "mae_m": round(sum(a) / len(a), 2) if a else None,
+        "median_abs_dev_m": round(float(median(a)), 2) if a else None,
+        "by_source": {},
+    }
+    for src in sorted({s for _, s, _ in by_src}):
+        d = [abs(x) for _, s, x in by_src if s == src]
+        out["by_source"][src] = {
+            "n_pair": len(d),
+            "n_road": len({r for r, s, _ in by_src if s == src}),
+            "mae_m": round(sum(d) / len(d), 2),
+            "median_abs_dev_m": round(float(median(d)), 2),
+        }
+    return out
+
+
 def nfa_compare(g):
     """소방서 지정 구간과 우리 폭을 도로명 단위로 대조하고 파일로 남긴다."""
     # ── 소방서 지정 구간 대조 ────────────────────────────────
@@ -116,6 +143,7 @@ def nfa_compare(g):
         #   경로 오류로 죽어 있던 것이 8/13, 터미널에만 있던 것이 8/17 이다.
         #   8/17 봉인 때 7.24m 를 문서에서 손으로 옮겨 적어야 했다.
         _nfa_rows = []
+        _by_src: list[tuple[str, str, float]] = []
         for r in rows:
             for rn in set(re.findall(r"[가-힣]+로\d*번?길", r["지역명"])):
                 sel = road[road.RN == rn]
@@ -145,12 +173,16 @@ def nfa_compare(g):
                     "n_seg": len(hit),
                     "verdict": {k: int(v) for k, v in hit.verdict.value_counts().items()},
                 })
+                # 폭 출처별 — 도로 행과 같은 정의를 그 출처의 구간만으로
+                for _src, _grp in hit.groupby("width_src"):
+                    _by_src.append((rn, str(_src), round(float(_grp.width_min_m.median()) - wf, 2)))
 
         if _nfa_rows:
             from datetime import datetime as _dt
             from datetime import timedelta as _td
             from datetime import timezone as _tz
-            _abs = round(sum(abs(x["dev_m"]) for x in _nfa_rows), 2)
+            _sm = summarize(_nfa_rows, _by_src)
+            _abs = _sm["abs_dev_sum_m"]
             _out = {
                 "as_of": _dt.now(_tz(_td(hours=9))).isoformat(timespec="seconds"),
                 "source": str(fa.name),
@@ -160,14 +192,18 @@ def nfa_compare(g):
                 "caveat": ("★ 이것은 검증이 아니라 적합(fit)일 수 있다. 12.6 → 7.24 로 "
                            "줄이는 과정에서 이 표를 게이트로 썼다. 게이트로 쓴 자료는 "
                            "그 순간부터 외부 검증 수단이 아니다. MASTER 4절 참조."),
-                "abs_dev_sum_m": _abs,
+                "abs_dev_sum_m": _abs,   # 참고 — 표본 수에 비례한다. 지표는 아래 둘
+                "mae_m": _sm["mae_m"],
+                "median_abs_dev_m": _sm["median_abs_dev_m"],
+                "by_source": _sm["by_source"],
                 "n_road": len(_nfa_rows),
                 "rows": sorted(_nfa_rows, key=lambda x: abs(x["dev_m"])),
             }
             # ★ 수가 그대로면 안 쓴다 — `as_of` 만 흔들려 봉인이 더러워진다(§445).
             from firelane.manifest import write_stable as _ws
             _ws(OUT / "nfa_compare.json", _out, tail="\n")
-            print(f"  절대편차 합 {_abs}m · {len(_nfa_rows)}구간"
+            print(f"  MAE {_sm['mae_m']}m · 절대편차 중앙 {_sm['median_abs_dev_m']}m"
+                  f" (합 {_abs}m 은 참고) · {len(_nfa_rows)}구간"
                   f"  → {(OUT / 'nfa_compare.json').name}")
         else:
             # 없으면 소리를 낸다. 조용한 결측을 만들지 않는다.
