@@ -152,3 +152,16 @@ def test_summarize_is_mae_median_and_per_source() -> None:
     assert got["by_source"]["s1"] == {"n_pair": 2, "n_road": 2, "mae_m": 2.0, "median_abs_dev_m": 2.0}
     assert got["by_source"]["s2"]["n_pair"] == 1
     assert summarize([], [])["mae_m"] is None
+
+
+def test_summarize_keeps_the_canonical_numbers_and_adds_name_only():
+    """★ PLAN #66(닫힘) — 이름 기준 값은 **나란히**일 뿐 정본(`dev_m`)을 안 바꾼다."""
+    from firelane.nfa_compare import summarize
+
+    rows = [{"dev_m": -3.0, "dev_name_m": -6.0}, {"dev_m": 1.0, "dev_name_m": 1.0}, {"dev_m": 2.0, "dev_name_m": None}]
+    got = summarize(rows, [("a", "s1", -3.0)], [("a", "s1", -6.0), ("b", "s1", 1.0)])
+    assert got["mae_m"] == 2.0 and got["abs_dev_sum_m"] == 6.0, "정본이 이름 기준 값에 끌려갔다"
+    n = got["name_only"]
+    assert n["n_road"] == 2 and n["mae_m"] == 3.5, "이름 기준은 값이 있는 도로만 센다"
+    assert n["by_source"]["s1"]["n_pair"] == 2
+    assert summarize([{"dev_m": 1.0}], [])["name_only"]["mae_m"] is None, "이름 기준이 비면 None"

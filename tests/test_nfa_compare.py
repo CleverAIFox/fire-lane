@@ -39,7 +39,7 @@ ROOT = Path(__file__).resolve().parent.parent
 #: 이 대조가 `g` 에서 실제로 읽는 칸. 셋뿐이다 —
 #: `geometry`(buffer·intersects) · `width_min_m`(dropna·median) · `verdict`(value_counts).
 # ★ 2026-11-10 (PLAN #93) — `width_src` 가 넷째다(폭 출처별 MAE). 왕복 검사가 같이 본다.
-READS = ("geometry", "width_min_m", "verdict", "width_src")
+READS = ("geometry", "width_min_m", "verdict", "width_src", "road_name")   # `road_name` — 이름 기준 값(PLAN #66(닫힘))
 
 
 def _imports(rel: str) -> set[str]:
@@ -209,6 +209,9 @@ def test_the_gpkg_round_trip_preserves_every_column_the_comparison_reads(tmp_pat
     # ②' width_src — 폭 출처별 분해가 읽는다. 문자열 그대로
     assert list(back.width_src) == list(synthetic.width_src), "width_src 가 변했다"
 
+    # ②'' road_name — 이름 기준 값이 읽는다. 결측은 빈 문자열로 같다
+    assert [x or "" for x in back.road_name.fillna("")] == [x or "" for x in synthetic.road_name.fillna("")], "road_name 이 변했다"
+
     # ③ geometry — 좌표를 **그대로**. 마지막 자리까지 본다
     for i, (x, y) in enumerate(zip(synthetic.geometry, back.geometry, strict=True)):
         assert list(x.coords) == list(y.coords), (
@@ -230,12 +233,13 @@ def test_the_comparison_operations_give_the_same_answer_after_the_round_trip(tmp
                None if not len(hit) else round(float(hit.width_min_m.median()), 10),
                {k: int(v) for k, v in hit.verdict.value_counts().items()},
                {str(k): round(float(gr.width_min_m.median()), 10)
-                for k, gr in hit.groupby("width_src")})
+                for k, gr in hit.groupby("width_src")},
+               len(hit[hit.road_name.fillna("").str.replace(" ", "") == "제봉로213번길"]))
         if name == "전":
             want = got
     assert got == want, (
         f"왕복 뒤 대조 연산의 답이 다르다:\n  전 {want}\n  후 {got}\n"
-        "  이 넷이 곧 `nfa_compare` 의 출력이다 — n_seg · ours_median_m · verdict 분포 · 출처별 중앙값.")
+        "  이 다섯이 곧 `nfa_compare` 의 출력이다 — n_seg · ours_median_m · verdict 분포 · 출처별 중앙값 · 이름 기준 구간 수.")
 
 
 def test_the_comparison_reads_only_those_three_columns():

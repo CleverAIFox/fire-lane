@@ -567,7 +567,7 @@ def main() -> int:
     if NFA.exists():
         d = json.loads(NFA.read_text(encoding="utf-8"))
         print(f"\n· 소방서 대조 MAE {d.get('mae_m')}m · 절대편차 중앙 {d.get('median_abs_dev_m')}m"
-              f" · 합 {d['abs_dev_sum_m']}m(참고) ({d['n_road']}구간)"
+              f" · 합 {d['abs_dev_sum_m']}m(참고) · 이름만 MAE {(d.get('name_only') or {}).get('mae_m')}m ({d['n_road']}구간)"
               f" — MASTER §4 서술과 대조할 것")
 
     if bad:
