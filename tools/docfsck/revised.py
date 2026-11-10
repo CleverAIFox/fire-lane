@@ -21,6 +21,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 
 
+# ★ PLAN #217 (2026-11-10). 안내가 **한 단계를 말하지 않았다** — 예전에는 `--touch <날짜> --write` 한 줄만 찍었고, 그 뒤에 화면(`web/proposal.html`)을 다시 구워야
+#   다음 관문이 안 운다는 것도 순서대로 도는 수리 문(`tools/fix.sh`)이 있다는 것도 말하지 않았다. 안내가 문을 가리키고, 손으로 칠 때의 두 걸음을 순서대로 적는다.
+#   **안내의 두 걸음이 `fix.sh` 의 실제 두 줄과 같은지 시험이 문다**(`tests/test_doc_fsck.py::test_the_cover_date_hint_names_the_same_door_as_fix_sh`).
+HAND_STEPS = ("uv run python tools/build_proposal.py --touch-today", "uv run python tools/build_proposal.py")
+FIX_HINT = ("고치는 법 — bash tools/fix.sh   (표지 날짜 → 화면 굽기를 이 순서로 도는 수리 문 · 다른 수리도 같이 돈다)\n"
+            f"      그 둘만 손으로 치려면 — {HAND_STEPS[0]}   그리고   {HAND_STEPS[1]}")
+
+
 def _git(*args: str, timeout: int = 10) -> tuple[int, str]:
     try:
         r = subprocess.run(["git", *args], cwd=ROOT, capture_output=True,
@@ -132,7 +140,7 @@ def _ready_one(f: Path, bases: tuple[str, ...]) -> list[str]:
             f"{' · '.join(shown) or '날짜 없음'} 만 든다.\n"
             f"      ★ 스쿼시가 파일의 커밋 날짜를 머지일로 바꾸므로 지금 초록이어도 "
             f"머지 뒤 ⑥ 이 운다.\n"
-            f"      고치는 법 — uv run python tools/build_proposal.py --touch {today} --write"]
+            f"      {FIX_HINT}"]
 
 
 def squash_day() -> str:

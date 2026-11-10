@@ -460,3 +460,17 @@ def test_the_deadline_table_is_empty_on_purpose():
     assert body.strip(), "표가 비었는데 사유도 없다 — 왜 비었는지 아무도 모른다"
     assert ("해소" in body or "이관" in body), \
         "표가 비었는데 어느 줄이 왜 사라졌는지 안 적혀 있다"
+
+
+def test_the_cover_date_hint_names_the_same_door_as_fix_sh():
+    """PLAN #217 — ⑥ 의 안내가 **수리 문과 같은 두 걸음**을 말한다(안내가 문을 숨기던 것). 안내를 바꾸거나 `fix.sh` 줄을 바꾸면 여기서 운다."""
+    from docfsck import revised
+
+    lines = [ln.strip() for ln in (ROOT / "tools" / "fix.sh").read_text(encoding="utf-8").splitlines() if ln.startswith("fix ")]
+    import re
+
+    cmds = [re.split(r'"\s+', ln, maxsplit=1)[1].strip() for ln in lines]      # `fix "이름"   명령` — 이름 뒤 공백 뭉치로 가른다
+    i = cmds.index(revised.HAND_STEPS[0])
+    assert cmds[i + 1] == revised.HAND_STEPS[1], "안내의 두 걸음이 fix.sh 의 연속한 두 줄이 아니다 — 굽기가 날짜 뒤에 안 온다"
+    assert "bash" in revised.FIX_HINT and "fix.sh" in revised.FIX_HINT and all(c in revised.FIX_HINT for c in revised.HAND_STEPS)
+    assert (ROOT / "tools" / "fix.sh").is_file()
