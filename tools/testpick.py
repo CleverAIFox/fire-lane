@@ -24,6 +24,9 @@ testpick.py — 푸시 전에 도는 시험 묶음을 **실측으로** 고른다
   ★ **그 조건에서 훅에 드는 묶음은 `test_layering`(장부 2.3초 · 짧은 순 187번째)을 못 품는다** — 품으려면 훅이 약 38초다. 훅은 예산 안의 짧은 쪽을,
   pushready 가 더 큰 쪽(`--budget 30 --load 0`)을 돈다.
 
+★ **훅 줄의 워커는 6 이다**(PLAN #214 · DECISIONS §679). 코어 8 에 게이트 24 가 동시에 뜨는데 묶음이 8워커로 코어를 채우면 단일 스레드 `deadcheck`(단독 약 11초)가 몫을 못 얻고
+  훅 안에서 24~30초에 끝났다. 훅 전체 벽시계가 5회 중앙 29.5초(최대 32.3)에서 24.8초(최대 26.6)로 줄었다. 고르는 파일은 같다 — `eff = min(jobs, EFF)` 라 6 · 8 이 같은 집합이다.
+
 부류  조사   `--measure` 는 사람이 손으로 돌린다. `--list` · `--run` 은 읽기 전용이다(장부도 안 쓴다)
 IN    `tests/test_*.py` 의 목록 · `data/golden/testtimes.json` · `--measure` 는 pytest `--durations=0` 의 파일별 합(setup+call+teardown)
 OUT   화면 · 종료 코드(`--run`: 빨간 파일이 있으면 1). `--measure --write` 만 장부 한 파일을 쓴다

@@ -118,3 +118,18 @@ def test_a_red_file_blocks_writing_the_ledger(tmp_path, monkeypatch):
     monkeypatch.setattr(T, "run_all", lambda names, jobs, ledger, root=T.ROOT: ({"test_a.py": 0.5}, {"test_a.py": "boom"}))
     assert T.main(["--measure", "--write"]) == 1
     assert led.read_text(encoding="utf-8") == before
+
+
+def test_the_hook_runs_the_bundle_with_six_workers_and_loses_no_file():
+    """PLAN #214 — 워커를 8 → 6 으로 줄인 것이 훅이 도는 **파일을 줄이지 않는다**(`eff = min(jobs, EFF)`).
+
+    훅 줄이 `--jobs 6` 을 적고 있고, 같은 조건(예산 · 남의 일)에서 6 · 8 이 같은 묶음을 고른다."""
+    gates = (T.ROOT / ".githooks" / "pre-push.gates").read_text(encoding="utf-8")
+    line = next(ln for ln in gates.splitlines() if "tools/testpick.py --run" in ln and not ln.startswith("#"))
+    args = line.split("\t")[1].split()
+    assert args[args.index("--jobs") + 1] == "6", "훅 줄의 워커가 6 이 아니다 — 실측(DECISIONS §679)을 거스른다"
+    budget, load = float(args[args.index("--budget") + 1]), float(args[args.index("--load") + 1])
+    files, ledger = T.test_files(), T.load_ledger()
+    six, _ = T.pick(files, ledger, budget, 6, load=load)
+    eight, _ = T.pick(files, ledger, budget, 8, load=load)
+    assert six == eight, "워커 6 과 8 이 다른 묶음을 고른다 — 6 은 검증 범위를 잃는다"
