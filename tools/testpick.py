@@ -64,6 +64,14 @@ EFF = 5.0                # 실효 병렬 수 — 코어 8개여도 통의 꼬리
 LOAD = 60.0              # CPU-초 — **같은 훅 안의 다른 게이트들이 쓰는 몫**. 훅 36.3초 − 단독 24.4초 = 11.9초 × EFF 에서 역산(`--load`)
 TOUCH_CAP = 40.0         # 초 — 바뀐 파일에 닿는 시험 하나의 상한(장부 초 · 8병렬 경합이 낀 값이라 단독의 약 3배). 넘으면 CI 몫이다(PLAN #218)
 PROC_TIMEOUT = 900        # 시한 없는 기다림은 빨강을 무한 대기로 바꾼다. 파일 하나의 상한(pytest 자체 시한은 시험당 300초)
+# ★ **재는 쪽만 시한이 다르다**(PLAN #214 재고 · 2026-11-11). `--measure` 는 **시험이 아니라 재는 것**이다 — 시험의 300초 시한은
+#   「이 시험이 멈췄는가」를 가리는 문턱이고, 재는 쪽은 「얼마나 걸리나」를 적는다. 장부 값이 이미 그 문턱에 붙은 시험(`test_fix_door` 304 ·
+#   `test_ratchet` 296 — 병렬 8 경합이 낀 값)은 부하가 조금만 늘어도 문턱을 넘어 재는 일 자체가 거부됐다(연속 두 번). 시한에 걸려 죽은 시험은
+#   **초를 못 적고 빨강으로 장부 쓰기를 막는다** — 그러면 장부가 영영 낡는다. 그래서 재는 길에서만 시험당 시한을 늘린다.
+#   **평소 시험의 300초(pyproject)와 `--run` 의 시한은 그대로다** — 시험을 느슨하게 한 것이 아니다. 늘려도 **초는 그대로 장부에 적힌다**
+#   (느려진 시험이 감춰지지 않는다 — 오히려 시한에 막혀 안 보이던 값이 보인다).
+MEASURE_TEST_TIMEOUT = 1200   # 초 — 재는 길의 시험당 시한
+MEASURE_PROC_TIMEOUT = 2400   # 초 — 재는 길의 통 하나 상한
 
 
 def test_files(root: Path = ROOT) -> list[str]:
@@ -213,16 +221,20 @@ _DUR = re.compile(r"^\s*([0-9.]+)s (?:setup|call|teardown)\s+(tests/\S+?\.py)::"
 _RED = re.compile(r"^(?:FAILED|ERROR) (tests/\S+?\.py)")
 
 
-def run_bin(names: list[str], root: Path = ROOT) -> tuple[int, str, dict[str, float], set[str]]:
-    """한 pytest 프로세스에 파일 여럿 — 시작 비용을 나눈다. (rc, 출력, 파일별 초(setup+call+teardown), 빨간 파일)"""
+def run_bin(names: list[str], root: Path = ROOT, measuring: bool = False) -> tuple[int, str, dict[str, float], set[str]]:
+    """한 pytest 프로세스에 파일 여럿 — 시작 비용을 나눈다. (rc, 출력, 파일별 초(setup+call+teardown), 빨간 파일)
+
+    `measuring` 이면 시험당 시한과 통 상한만 늘린다(머리의 ★ — 재는 것이지 시험이 아니다). 아니면 pyproject 의 300초 그대로다."""
+    extra = ["-o", f"timeout={MEASURE_TEST_TIMEOUT}"] if measuring else []
+    limit = MEASURE_PROC_TIMEOUT if measuring else PROC_TIMEOUT
     try:
         r = subprocess.run([sys.executable, "-m", "pytest", *[f"tests/{n}" for n in names], "-q", "-p", "no:cacheprovider",
-                            "--no-header", "-o", "addopts=", "--durations=0", "--durations-min=0", "-rfE"],
+                            "--no-header", "-o", "addopts=", *extra, "--durations=0", "--durations-min=0", "-rfE"],
                            cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace",
-                           timeout=PROC_TIMEOUT, stdin=subprocess.DEVNULL)
+                           timeout=limit, stdin=subprocess.DEVNULL)
         rc, out = r.returncode, (r.stdout or "") + (r.stderr or "")
     except subprocess.TimeoutExpired:
-        return 124, f"시한 {PROC_TIMEOUT}초 초과", {}, set(names)
+        return 124, f"시한 {limit}초 초과", {}, set(names)
     secs: dict[str, float] = {}
     for ln in out.splitlines():
         m = _DUR.match(ln)
@@ -235,11 +247,11 @@ def run_bin(names: list[str], root: Path = ROOT) -> tuple[int, str, dict[str, fl
     return rc, out, secs, red
 
 
-def run_all(names: list[str], jobs: int, ledger: dict[str, float], root: Path = ROOT) -> tuple[dict[str, float], dict[str, str]]:
+def run_all(names: list[str], jobs: int, ledger: dict[str, float], root: Path = ROOT, measuring: bool = False) -> tuple[dict[str, float], dict[str, str]]:
     """(파일별 초, 빨간 파일 → 그 파일이 든 통의 출력 꼬리)"""
     groups = bins(names, jobs, ledger)
     with ThreadPoolExecutor(max_workers=len(groups) or 1) as ex:
-        results = list(ex.map(lambda g: run_bin(g, root), groups))
+        results = list(ex.map(lambda g: run_bin(g, root, measuring), groups))
     secs: dict[str, float] = {}
     red: dict[str, str] = {}
     for _rc, out, sec, rd in results:
@@ -276,7 +288,7 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"✗ 없는 시험 파일: {', '.join(unknown)}", file=sys.stderr)
                 return 1
             files = sorted(a.only)
-        secs, red = run_all(files, a.jobs, load_ledger())
+        secs, red = run_all(files, a.jobs, load_ledger(), measuring=True)
         secs = {n: round(s, 2) for n, s in secs.items()}
         for n, o in sorted(red.items()):
             print(f"  ✗ {n}\n" + "\n".join("      " + x for x in o.splitlines()[-6:]), file=sys.stderr)

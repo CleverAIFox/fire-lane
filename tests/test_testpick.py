@@ -105,7 +105,7 @@ def test_measuring_only_some_files_overwrites_just_those_ledger_cells(tmp_path, 
     led.write_text(json.dumps({"seconds": {"test_a.py": 9.0, "test_b.py": 7.0, "test_gone.py": 1.0}}), encoding="utf-8")
     monkeypatch.setattr(T, "LEDGER", led)
     monkeypatch.setattr(T, "test_files", lambda root=T.ROOT: ["test_a.py", "test_b.py"])
-    monkeypatch.setattr(T, "run_all", lambda names, jobs, ledger, root=T.ROOT: ({"test_a.py": 0.5}, {}))
+    monkeypatch.setattr(T, "run_all", lambda names, jobs, ledger, root=T.ROOT, measuring=False: ({"test_a.py": 0.5}, {}))
     assert T.main(["--measure", "--write", "--only", "test_a.py"]) == 0
     assert json.loads(led.read_text(encoding="utf-8"))["seconds"] == {"test_a.py": 0.5, "test_b.py": 7.0}
 
@@ -117,7 +117,7 @@ def test_a_red_file_blocks_writing_the_ledger(tmp_path, monkeypatch):
     led.write_text(before, encoding="utf-8")
     monkeypatch.setattr(T, "LEDGER", led)
     monkeypatch.setattr(T, "test_files", lambda root=T.ROOT: ["test_a.py"])
-    monkeypatch.setattr(T, "run_all", lambda names, jobs, ledger, root=T.ROOT: ({"test_a.py": 0.5}, {"test_a.py": "boom"}))
+    monkeypatch.setattr(T, "run_all", lambda names, jobs, ledger, root=T.ROOT, measuring=False: ({"test_a.py": 0.5}, {"test_a.py": "boom"}))
     assert T.main(["--measure", "--write"]) == 1
     assert led.read_text(encoding="utf-8") == before
 
@@ -235,3 +235,33 @@ def test_one_selector_serves_both_callers_and_only_the_arguments_differ():
     assert hook == base                                         # 훅 = 종전 묶음
     assert set(base) < set(ready) and not info["over"]          # pushready ⊃ 훅 · 상한에 걸려 빠진 것이 없다
     assert {"test_fix_door.py", "test_ledger_accessor.py"} <= set(ready)
+
+
+def test_only_the_measuring_path_lengthens_the_per_test_timeout(monkeypatch):
+    """★ 재는 길만 시험당 시한이 길다(머리의 ★ — 재는 것이지 시험이 아니다). `--run` 쪽은 pyproject 의 300초 그대로다 — 느슨하게 한 것이 아니다."""
+    seen: list[list[str]] = []
+
+    class R:
+        returncode, stdout, stderr = 0, "", ""
+
+    def fake_run(cmd, **kw):
+        seen.append(cmd)
+        seen.append(kw["timeout"])
+        return R()
+
+    monkeypatch.setattr(T.subprocess, "run", fake_run)
+    T.run_bin(["test_a.py"], measuring=True)
+    T.run_bin(["test_a.py"])
+    m_cmd, m_lim, r_cmd, r_lim = seen
+    assert f"timeout={T.MEASURE_TEST_TIMEOUT}" in m_cmd and m_lim == T.MEASURE_PROC_TIMEOUT
+    assert not any(str(x).startswith("timeout=") for x in r_cmd) and r_lim == T.PROC_TIMEOUT
+    assert T.MEASURE_TEST_TIMEOUT > 300, "재는 길이 평소와 같으면 이 장치가 없는 것과 같다"
+
+
+def test_measure_asks_run_all_for_the_measuring_path(tmp_path, monkeypatch):
+    got = {}
+    monkeypatch.setattr(T, "LEDGER", tmp_path / "t.json")
+    monkeypatch.setattr(T, "test_files", lambda root=T.ROOT: ["test_a.py"])
+    monkeypatch.setattr(T, "run_all", lambda names, jobs, ledger, root=T.ROOT, measuring=False: (got.setdefault("m", measuring) and ({"test_a.py": 0.5}, {})) or ({"test_a.py": 0.5}, {}))
+    T.main(["--measure"])
+    assert got["m"] is True
