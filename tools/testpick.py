@@ -27,6 +27,15 @@ testpick.py — 푸시 전에 도는 시험 묶음을 **실측으로** 고른다
 ★ **훅 줄의 워커는 6 이다**(PLAN #214 · DECISIONS §679). 코어 8 에 게이트 24 가 동시에 뜨는데 묶음이 8워커로 코어를 채우면 단일 스레드 `deadcheck`(단독 약 11초)가 몫을 못 얻고
   훅 안에서 24~30초에 끝났다. 훅 전체 벽시계가 5회 중앙 29.5초(최대 32.3)에서 24.8초(최대 26.6)로 줄었다. 고르는 파일은 같다 — `eff = min(jobs, EFF)` 라 6 · 8 이 같은 집합이다.
 
+★ **바뀐 파일에 닿는 시험은 예산과 무관하게 든다**(PLAN #218). 실측으로 고른 묶음은 **정렬**일 뿐 입력(무엇이 바뀌었나)을 몰랐다 —
+  문서만 고친 날에도 같은 묶음이 돌고, 고친 문서를 읽는 시험이 짧은 순 밖이면 안 돌았다. 그래서 예산으로 고른 묶음에 **더한다**:
+    · 바뀐 파일 = 푸시하는 커밋 범위(훅이 stdin 으로 아는 `원격..로컬` · env `FIRE_LANE_PUSH_RANGES`) ∪ 작업 트리의 추적 파일 변경.
+      범위를 못 읽으면(원격 객체가 없다 등) `@{u}..HEAD`, 그것도 없으면 `origin/dev` 와의 merge-base 부터다. 못 읽으면 닫힌 쪽이 아니라 **「범위를 못 읽었다」를 출력에 적는다**.
+    · 「그 파일에 닿는 시험」 = **정적 스캔**(`touching` · 순수 함수): 시험 파일 본문에 ① 그 경로 전체 ② 확장자 붙은 파일명(`PLAN.md`) ③ `.py` 면 import 한 모듈 이름이 나오는가.
+      ★ **하한이다** — 경로를 헬퍼 · 상수 · 글롭으로 조립해 읽는 시험은 못 센다(그 시험은 안 든다). 못 센 것이 「닿지 않는다」는 뜻이 아니다.
+    · **파일당 상한**(`TOUCH_CAP` 초 · 장부 기준)을 넘는 시험은 못 든다 — **출력에 이름을 대고 「CI 몫」으로 적는다**(조용히 빼지 않는다).
+  `--files` 로 바뀐 파일을 직접 줄 수 있다(실측 · 시험용).
+
 부류  조사   `--measure` 는 사람이 손으로 돌린다. `--list` · `--run` 은 읽기 전용이다(장부도 안 쓴다)
 IN    `tests/test_*.py` 의 목록 · `data/golden/testtimes.json` · `--measure` 는 pytest `--durations=0` 의 파일별 합(setup+call+teardown)
 OUT   화면 · 종료 코드(`--run`: 빨간 파일이 있으면 1). `--measure --write` 만 장부 한 파일을 쓴다
@@ -52,6 +61,7 @@ DEFAULT_BUDGET = 28.0     # 초 — **훅 전체의 벽시계**(아래 ★ 조�
 STARTUP = 6.5            # 초 — 단독 실행의 고정 비용(통 시작 · 수집 · 마무리). 실측: 묶음 크기를 바꿔 잰 세 점의 절편
 EFF = 5.0                # 실효 병렬 수 — 코어 8개여도 통의 꼬리 · 입출력 · 수집이 겹쳐 **단독으로 4.7~5.3** 이다(실측)
 LOAD = 60.0              # CPU-초 — **같은 훅 안의 다른 게이트들이 쓰는 몫**. 훅 36.3초 − 단독 24.4초 = 11.9초 × EFF 에서 역산(`--load`)
+TOUCH_CAP = 40.0         # 초 — 바뀐 파일에 닿는 시험 하나의 상한(장부 초 · 8병렬 경합이 낀 값이라 단독의 약 3배). 넘으면 CI 몫이다(PLAN #218)
 PROC_TIMEOUT = 900        # 시한 없는 기다림은 빨강을 무한 대기로 바꾼다. 파일 하나의 상한(pytest 자체 시한은 시험당 300초)
 
 
@@ -91,6 +101,83 @@ def pick(files: list[str], ledger: dict[str, float], budget: float, jobs: int, s
         "new": sorted(new), "gone": gone, "skipped": skipped, "est": startup + (load + spent) / eff, "median": med,
         "total": sum(known.values()), "known": len(known),
     }
+
+
+def _git(args: list[str], root: Path) -> str | None:
+    try:
+        r = subprocess.run(["git", *args], cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace",
+                           stdin=subprocess.DEVNULL, timeout=60)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    return r.stdout if r.returncode == 0 else None
+
+
+def changed_files(root: Path = ROOT, ranges: list[str] | None = None) -> tuple[list[str], list[str]]:
+    """(바뀐 추적 파일, 설명). 기준 = 푸시하는 커밋 범위 ∪ 작업 트리. 범위를 못 읽으면 `@{u}..HEAD` → `origin/dev` merge-base.
+
+    훅은 stdin 으로 `원격 sha..로컬 sha` 를 안다 — 그것을 env 로 받는 쪽이 정확하다(`@{u}` 는 새 브랜치 · 다른 refspec 에서 틀린다)."""
+    notes: list[str] = []
+    out: set[str] = set()
+    ok = 0
+    for rg in ranges or []:
+        d = _git(["diff", "--name-only", "--no-renames", rg], root)
+        if d is None:
+            notes.append(f"범위 {rg} 를 못 읽었다")
+        else:
+            ok += 1
+            out.update(d.split())
+    if not ok:
+        for rg in ("@{u}..HEAD", None):
+            if rg is None:
+                mb = _git(["merge-base", "HEAD", "origin/dev"], root)
+                rg = f"{mb.strip()}..HEAD" if mb and mb.strip() else None
+            d = _git(["diff", "--name-only", "--no-renames", rg], root) if rg else None
+            if d is not None:
+                out.update(d.split())
+                ok += 1
+                notes.append(f"범위 {rg}")
+                break
+        if not ok:
+            notes.append("커밋 범위를 못 읽었다(@{u} · origin/dev 둘 다 없다) — 작업 트리 변경만 본다")
+    wt = _git(["diff", "--name-only", "--no-renames", "HEAD"], root)
+    if wt:
+        out.update(wt.split())
+    return sorted(out), notes
+
+
+def _mentions(text: str, path: str) -> bool:
+    """시험 본문이 `path` 를 가리키는가 — ① 경로 전체 ② 확장자 붙은 파일명 ③ `.py` 면 import 한 모듈 이름. **하한**이다."""
+    if re.search(r"(?<![\w.-])" + re.escape(path) + r"(?![\w-])", text):
+        return True
+    base = path.rsplit("/", 1)[-1]
+    if "." in base and re.search(r"(?<![\w.-])" + re.escape(base) + r"(?![\w-])", text):
+        return True
+    if base.endswith(".py"):
+        stem = base[:-3]
+        if stem == "__init__":
+            return False
+        pat = re.compile(r"^\s*(?:from|import)\s+[\w.]*\b" + re.escape(stem) + r"\b", re.M)
+        return bool(pat.search(text)) or f"-m firelane.{stem}" in text
+    return False
+
+
+def touching(changed: list[str], texts: dict[str, str]) -> dict[str, list[str]]:
+    """순수 함수 — 시험 파일 이름 → 그 시험이 (정적 스캔으로) 닿는 바뀐 파일들. 닿는 것이 없으면 키가 없다.
+
+    ★ 하한이다 — 헬퍼 · 글롭 · 조립한 경로로 읽는 시험은 못 센다. 바뀐 시험 파일은 그 자신에 닿는다."""
+    out: dict[str, list[str]] = {}
+    for name, text in texts.items():
+        hit = [c for c in changed if c == f"tests/{name}" or (c != f"tests/{name}" and not c.startswith("tests/test_") and _mentions(text, c))]
+        if hit:
+            out[name] = hit
+    return out
+
+
+def pick_touched(touch: dict[str, list[str]], ledger: dict[str, float], cap: float = TOUCH_CAP) -> tuple[list[str], dict[str, float]]:
+    """순수 함수 — (드는 것, 상한에 걸려 못 드는 것 → 장부 초). 장부에 없는 시험은 무조건 든다."""
+    go = sorted(n for n in touch if ledger.get(n, 0.0) <= cap)
+    over = {n: ledger[n] for n in sorted(touch) if ledger.get(n, 0.0) > cap}
+    return go, over
 
 
 def bins(names: list[str], jobs: int, ledger: dict[str, float]) -> list[list[str]]:
@@ -155,6 +242,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--only", nargs="+", metavar="FILE", help="--measure 가 이 파일들만 다시 잰다(나머지 장부 칸은 그대로 — 고친 시험 하나를 11분 안 들이고 갱신)")
     ap.add_argument("--budget", type=float, default=DEFAULT_BUDGET, help="벽시계 예산(초)")
     ap.add_argument("--load", type=float, default=0.0, help=f"같은 시간에 도는 남의 일(CPU-초). 훅 안에서는 {LOAD:g}")
+    ap.add_argument("--range", action="append", metavar="A..B", help="바뀐 파일의 커밋 범위(여럿 가능). 안 주면 env FIRE_LANE_PUSH_RANGES(공백 구분) → @{u}..HEAD")
+    ap.add_argument("--files", nargs="+", metavar="PATH", help="바뀐 파일을 직접 준다(실측 · 시험용 — git 을 안 본다)")
+    ap.add_argument("--no-touched", action="store_true", help="바뀐 파일에 닿는 시험을 안 더한다(예전 동작 — 실측 대조용)")
+    ap.add_argument("--cap", type=float, default=TOUCH_CAP, help="닿는 시험 하나의 상한(장부 초). 넘으면 CI 몫")
     ap.add_argument("--jobs", type=int, default=os.cpu_count() or 2)
     a = ap.parse_args(argv)
     files = test_files()
@@ -201,6 +292,23 @@ def main(argv: list[str] | None = None) -> int:
               f"{' …' if len(info['new']) > 5 else ''}  → `--measure --write`", file=sys.stderr)
     if info["gone"]:
         print(f"  장부에만 있음(없어진 파일) {len(info['gone'])}개 → `--measure --write`", file=sys.stderr)
+    forced: list[str] = []
+    if not a.no_touched:
+        if a.files is not None:
+            changed, notes = sorted(a.files), ["--files 로 받았다"]
+        else:
+            rgs = a.range or os.environ.get("FIRE_LANE_PUSH_RANGES", "").split()
+            changed, notes = changed_files(ROOT, rgs)
+        texts = {n: (ROOT / "tests" / n).read_text(encoding="utf-8", errors="replace") for n in files}
+        touch = touching(changed, texts)
+        go, over = pick_touched(touch, ledger, a.cap)
+        forced = [n for n in go if n not in chosen]
+        print(f"  바뀐 파일 {len(changed)}개({'; '.join(notes)}) → 닿는 시험 {len(touch)}개 · 예산 밖에서 더함 {len(forced)}개 "
+              f"(정적 스캔 — **하한**: 경로를 헬퍼로 조립해 읽는 시험은 못 센다)", file=sys.stderr)
+        for n, sec in over.items():
+            print(f"  ⚠ CI 몫 — {n} ({sec:.0f}초 > 상한 {a.cap:g}초): {', '.join(touch[n][:3])}{' …' if len(touch[n]) > 3 else ''} 에 닿지만 못 돈다", file=sys.stderr)
+        chosen = sorted({*chosen, *go})
+        info["est"] += sum(ledger.get(n, 0.0) for n in forced) / min(a.jobs, EFF)
     if a.list:
         print("\n".join(chosen))
         return 0

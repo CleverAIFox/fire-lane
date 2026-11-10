@@ -47,9 +47,11 @@ fi
 # 푸시할 브랜치가 없으면(삭제 · 태그만) 건너뛴다. stdin: <local ref> <local sha> <remote ref> <remote sha>
 run=0
 zero=0000000000000000000000000000000000000000
-while read -r _lref lsha rref _rsha; do
-    case "$rref" in refs/heads/*) [ "$lsha" != "$zero" ] && run=1 ;; esac
+ranges=""   # 푸시하는 커밋 범위 `원격sha..로컬sha` — 시험 묶음이 「바뀐 파일에 닿는 시험」을 고르는 입력이다(PLAN #218). 새 브랜치(원격 sha 0)는 범위를 안 준다 → testpick 이 `origin/dev` 기준으로 읽는다
+while read -r _lref lsha rref rsha; do
+    case "$rref" in refs/heads/*) [ "$lsha" != "$zero" ] && run=1 && [ "$rsha" != "$zero" ] && ranges="$ranges $rsha..$lsha" ;; esac
 done
+export FIRE_LANE_PUSH_RANGES="${ranges# }"
 if [ "$run" -eq 0 ]; then
     echo "pre-push — 푸시할 브랜치 갱신이 없다(삭제 · 태그). 건너뛴다."
     exit 0
