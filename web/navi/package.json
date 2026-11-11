@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "lint": "eslint .",
-    "glyphs": "node scripts/glyphs.mjs"
+    "glyphs": "node scripts/glyphs.mjs",
+    "smoke": "playwright test"
   },
   "dependencies": {
     "maplibre-gl": "^6.16.0",
@@ -19,6 +20,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.65.0",
     "@types/geojson": "^7946.0.16",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",

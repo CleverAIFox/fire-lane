@@ -81,6 +81,7 @@ gate_parity.py — **로컬 관문과 CI 가 같은 것을 보는가.** 3족의 
     pytest · ruff · pre-commit · gitleaks      외부 도구
     navi:typecheck                             web/navi 타입 검사
     navi:test                                  web/navi 단위 시험
+    navi:smoke                                 web/navi 브라우저 스모크 (CI 만)
 
 ★ 주석은 걷어낸다. 주석에 적힌 도구 이름은 **호출이 아니다** — 그것을 세면
   `web_manifest.py` 처럼 "CI 가 본다" 고 적어놓기만 한 것이 통과한다.
@@ -151,6 +152,8 @@ EXTERNAL: dict[str, tuple[str, str]] = {
     # ★ 2026-09-28 (§279-4). React 훅 규칙. 저장소에 eslint 가 없던 동안
     #   `eslint-disable-line` 28개가 **아무것도 안 막고** 있었다
     "navi:lint": (r"npm run\s+(?:-s\s+)?lint\b", "npm run -s lint"),
+    # ★ 2026-11-12 (DECISIONS §700 · PLAN #223). 브라우저 스모크 — 진짜 브라우저로 두 화면이 뜨는가 · 콘솔이 조용한가. CI 만 돈다
+    "navi:smoke": (r"npm run\s+(?:-s\s+)?smoke\b", "npm run smoke"),
     # ★ 2026-09-22 (DECISIONS §218-5). 의존성 선언 ↔ import. 잠금 밖 `--with` 로 얹는 외부 도구다
     "deptry": (r"\bdeptry\b", "uv run --with deptry==0.25.1 deptry src tools"),
 }

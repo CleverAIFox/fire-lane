@@ -810,23 +810,58 @@ jobs:
           echo "조각 $PART/4 — ${#files[@]}개 파일"
           uv run pytest "${files[@]}" -q
 
+  # ── 브라우저 스모크 (PLAN #223 · DECISIONS §700) ─────────────────────────────
+  # ★ 2026-11-12. 관제 뷰가 개발에서 **두 달 동안 흰 화면이 될 수 있었는데** vitest 546개는 초록이었다(DECISIONS §699) — 시험이 node 환경의
+  #   문자열 렌더라 번들 · 모듈 해시 · 서비스 워커 · 브라우저가 없다. 이 잡이 **진짜 브라우저(헤드리스 크로미움)로 두 화면을 열어** 「뜨는가」와
+  #   「콘솔이 조용한가」 둘만 묻는다(화면의 내용은 안 묻는다 — 고칠 때마다 시험이 울면 아무도 안 믿는다).
+  # ★ **CI 만 돈다 — 훅에 안 넣는다.** 브라우저 내려받기와 개발 서버 재시작 시험은 훅 예산(30초) 밖이다(`tools/gatefast.py` 의 LAYERS 에 「ci」).
+  # ★ 별도 잡이다 — 다른 잡의 시간을 안 늘리고(병렬) 브라우저 설치 실패가 다른 검사를 가리지 않는다. 집계 `contract-shared` 의 `needs` 에 든다.
+  contract-smoke:
+    name: contract-smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15      # ★ 상한이지 예상 시간이 아니다(사유는 `contract-fast` 머리). 실측은 로컬 1분 남짓
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - name: 내비 노드 — 배포 액션과 같은 판으로
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7
+        with:
+          node-version-file: web/navi/.nvmrc
+          cache: npm
+          cache-dependency-path: web/navi/package-lock.json
+      - name: 내비 설치 · 빌드 (빌드본 스모크가 읽는다)
+        run: |
+          cd web/navi
+          npm ci --no-audit --no-fund
+          npm run build
+      - name: 브라우저 — 헤드리스 크로미움(셸만)
+        # ★ `--only-shell` 이다 — 전체 크롬이 아니라 헤드리스 셸만 받는다(내려받기가 작다). `--with-deps` 는 러너에 없는 시스템 라이브러리를 깐다.
+        run: |
+          cd web/navi
+          npx playwright install --with-deps --only-shell chromium
+      # local-exempt: navi:smoke 브라우저 내려받기(헤드리스 크로미움)와 개발 서버 재시작 시험이라 훅 예산(30초) 밖이다 — 로컬에서는 `cd web/navi && npm run smoke` 로 사람이 돈다(DECISIONS §700)
+      - name: ★ 브라우저 스모크 — 두 화면이 뜨고 콘솔이 조용한가 (개발 서버 · 빌드본 · 재최적화)
+        run: |
+          cd web/navi
+          npm run smoke
+
   contract-shared:
     name: contract-shared
     # ★ **필수 체크의 이름.** 룰셋 · `ruleset_check` · `deploy.yml` 의 `gate` 가 이 이름을 안다. 위 셋이 **모두** 초록일 때만 초록이다.
-    needs: [contract-fast, contract-heavy, contract-tests]
+    needs: [contract-fast, contract-heavy, contract-tests, contract-smoke]
     if: ${{ always() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: ★ 셋 다 초록인가
+      - name: ★ 넷 다 초록인가
         env:
           FAST: ${{ needs.contract-fast.result }}
           HEAVY: ${{ needs.contract-heavy.result }}
           TESTS: ${{ needs.contract-tests.result }}
+          SMOKE: ${{ needs.contract-smoke.result }}
         run: |
-          echo "contract-fast=$FAST contract-heavy=$HEAVY contract-tests=$TESTS"
-          if [ "$FAST" != success ] || [ "$HEAVY" != success ] || [ "$TESTS" != success ]; then
-            echo "::error::contract-fast · contract-heavy · contract-tests 중 하나가 초록이 아니다 — 취소(cancelled)도 초록이 아니다"
+          echo "contract-fast=$FAST contract-heavy=$HEAVY contract-tests=$TESTS contract-smoke=$SMOKE"
+          if [ "$FAST" != success ] || [ "$HEAVY" != success ] || [ "$TESTS" != success ] || [ "$SMOKE" != success ]; then
+            echo "::error::contract-fast · contract-heavy · contract-tests · contract-smoke 중 하나가 초록이 아니다 — 취소(cancelled)도 초록이 아니다"
             exit 1
           fi
 

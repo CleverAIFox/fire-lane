@@ -66,6 +66,7 @@ _SLOW1 = "느리다 — 단독 20.5초"
 _SLOW2 = "느리다 — 단독 10.6초"
 _SLOW3 = "훅 예산 — 단독 3.8~4.9초(싼 37개 + 이 셋이면 훅 중앙 33.6초)"
 _NET = "망이 필요하다(패키지 내려받기 · GitHub API)"
+_SMOKE = "브라우저가 필요하다(헤드리스 크로미움 내려받기 · 개발 서버 재시작 시험) — 훅 예산(30초) 밖이다(DECISIONS §700)"
 _NPM = "npm · node_modules 가 필요하다(`npm ci` 는 망)"
 _PRECOMMIT = "다른 층이 이미 든다 — 커밋 훅이 같은 `pre-commit` 설정을 돈다(`--all-files` 전수는 느리다)"
 _CTX = "CI 문맥이 필요하다(PR 본문 · 기준 커밋 `$BASE`)"
@@ -81,6 +82,7 @@ LAYERS: dict[tuple[str, str], tuple[str, str]] = {
     ("firelane.jsonkeys", ""): ("ready", _BUDGET),
     ("firelane.ledger_check", ""): ("ready", _BUDGET),
     ("navi:lint", ""): ("ci", _NPM),
+    ("navi:smoke", ""): ("ci", _SMOKE),
     ("navi:test", ""): ("ci", _NPM),
     ("navi:typecheck", ""): ("ci", _NPM),
     ("pre-commit", "run --all-files --show-diff-on-failure"): ("ci", _PRECOMMIT),
@@ -208,7 +210,7 @@ def render_reverse(rep: dict[str, list]) -> str:
     return "\n".join(L)
 
 
-JOBS = ("contract-fast", "contract-heavy", "contract-tests", "contract-shared", "contract-strict")   # CI 의 다섯 잡 전부 — 하나만 읽으면 다른 잡의 검사가 층 표에서 숨는다(PLAN #216)
+JOBS = ("contract-fast", "contract-heavy", "contract-tests", "contract-smoke", "contract-shared", "contract-strict")   # CI 의 다섯 잡 전부 — 하나만 읽으면 다른 잡의 검사가 층 표에서 숨는다(PLAN #216)
 
 
 def _steps(workflow: Path, job: str) -> list[dict]:
