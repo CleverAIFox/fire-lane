@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shlex
 import sys
 from pathlib import Path
@@ -57,6 +58,8 @@ JOB = "contract-fast"
 # ★ 가른 기준은 셋이다 — 느린가 · **레이크가 필요한가**(55 전부 레이크 없이 돌아 같은 결과다 — 이 기계는 `FIRE_LANE_DATA` 가 붙어 있어 레이크 없이도 한 번 더 쟀다) · 망이 필요한가.
 # ★ **훅은 하나만 들었다**(`env_check`): 싼 37개를 한꺼번에 더하면 훅 30.2~33.3초(중앙 31.1)로 예산을 넘는다(5회 · 한가한 기계 · 한 개씩은 0.1~2.7초지만 CPU 가 합쳐진다).
 #   `env_check` 하나는 +0.7초(중앙)다 — 오늘 CI 가 이것 때문에 빨갰다(`FIRE_LANE_PUSH_RANGES`).
+# ★ 2026-11-11 (⓯-① · #216 닫음). **표의 열쇠를 (열쇠, 인자)로 바꾸고 CI 의 다섯 잡을 전부 읽는다** — 같은 `ruff` 가 기본 룰셋(fast)과 `.ruff-strict.toml`(strict)로 둘이고, 열쇠만 쓰면 둘째가 첫째 뒤에 숨었다.
+#   층이 하나 늘었다: `axis` = `pushready` 의 다른 축(㉠ · ㉥)이 같은 도구를 이미 돈다.
 # ★ 이 표가 **다시 안 열리게 하는 법** — 새 CI 검사는 이 표에 층을 안 적으면 `tests/test_gatefast.py` 가 빨갛다(미선언). 표에 적고 CI 에서 지워진 것도 빨갛다(죽은 선언).
 _BUDGET = "훅 예산 — 한 개씩은 싸지만(0.1~2.7초) 싼 37개를 한꺼번에 들이면 훅 30.2~33.3초(5회 · 중앙 31.1 · 예산 30)"
 _SLOW1 = "느리다 — 단독 20.5초"
@@ -66,83 +69,97 @@ _NET = "망이 필요하다(패키지 내려받기 · GitHub API)"
 _NPM = "npm · node_modules 가 필요하다(`npm ci` 는 망)"
 _PRECOMMIT = "다른 층이 이미 든다 — 커밋 훅이 같은 `pre-commit` 설정을 돈다(`--all-files` 전수는 느리다)"
 _CTX = "CI 문맥이 필요하다(PR 본문 · 기준 커밋 `$BASE`)"
-LAYERS: dict[str, tuple[str, str]] = {
-    "firelane.contract": ("ready", _BUDGET),
-    "firelane.jsonkeys": ("ready", _BUDGET),
-    "firelane.ledger_check": ("ready", _BUDGET),
-    "ruff": ("ready", _BUDGET),
-    "tests/test_contract.py": ("ready", _BUDGET),
-    "tests/test_ownership.py": ("ready", _BUDGET),
-    "tools/archcost.py": ("ready", _BUDGET),
-    "tools/argcheck.py": ("ready", _BUDGET),
-    "tools/colorsim.py": ("ready", _BUDGET),
-    "tools/countcheck.py": ("ready", _BUDGET),
-    "tools/depgroups_check.py": ("ready", _BUDGET),
-    "tools/dupcheck.py": ("ready", _SLOW3),
-    "tools/fixable.py": ("ready", _BUDGET),
-    "tools/fixture_recut.py": ("ready", _BUDGET),
-    "tools/gate_parity.py": ("ready", _BUDGET),
-    "tools/greycheck.py": ("ready", _BUDGET),
-    "tools/htmlfigs.py": ("ready", _BUDGET),
-    "tools/install_navi.py": ("ready", _BUDGET),
-    "tools/ledger_cross.py": ("ready", _BUDGET),
-    "tools/ledger_fields.py": ("ready", _BUDGET),
-    "tools/ledgercols.py": ("ready", _BUDGET),
-    "tools/localgeo.py": ("ready", _BUDGET),
-    "tools/mutate_guard.py": ("ready", _BUDGET),
-    "tools/navi_env.py": ("ready", _BUDGET),
-    "tools/navi_setup.py": ("ready", _BUDGET),
-    "tools/navicheck.py": ("ready", _BUDGET),
-    "tools/navicov.py": ("ready", _BUDGET),
-    "tools/naviweight.py": ("ready", _BUDGET),
-    "tools/pages_add_navi.py": ("ready", _BUDGET),
-    "tools/probeledger.py": ("ready", _BUDGET),
-    "tools/redoscheck.py": ("ready", _BUDGET),
-    "tools/scopecheck.py": ("ready", _BUDGET),
-    "tools/scopedecl.py": ("ready", _SLOW3),
-    "tools/segcontract.py": ("ready", _BUDGET),
-    "tools/selftests.py": ("ready", _SLOW1),
-    "tools/sizecheck.py": ("ready", _BUDGET),
-    "tools/srccov.py": ("ready", _SLOW2),
-    "tools/suppress.py": ("ready", _BUDGET),
-    "tools/svg_fit.py": ("ready", _BUDGET),
-    "tools/toolclass.py": ("ready", _BUDGET),
-    "tools/toolindex.py": ("ready", _BUDGET),
-    "tools/treecheck.py": ("ready", _SLOW3),
-    "tools/uicheck.py": ("ready", _BUDGET),
-    "tools/verdictsim.py": ("ready", _BUDGET),
-    "tools/web_manifest.py": ("ready", _BUDGET),
-    "deptry": ("ci", _NET),
-    "navi:lint": ("ci", _NPM),
-    "navi:test": ("ci", _NPM),
-    "navi:typecheck": ("ci", _NPM),
-    "pre-commit": ("ci", _PRECOMMIT),
-    "tools/actionpin.py": ("ci", _NET),
-    "tools/mergecheck.py": ("ci", _NET),
-    "tools/pr_body_check.py": ("ci", _CTX),
-    "tools/release_brief.py": ("ci", _CTX),
+_WRITES1 = "읽기 전용이 아니다 — `data/interim/lineage.mmd`(추적 밖 산출물)를 쓴다 · 0.6초"
+_WRITES2 = "느리고(단독 58초) 읽기 전용이 아니다 — `data/processed/clearance_cross.json` 을 쓴다"
+_AXIS_A = "㉠ 이 같은 도구(`tools/ratchet.py` 전수)를 이미 돈다"
+_AXIS_T = "㉥ 이 시험 묶음을 돈다 — CI 는 전수를 네 조각으로 나눠 돌고 ㉥ 은 그 부분집합(바뀐 파일에 닿는 것 + 예산 묶음)이다"
+_STRICT = "엄격 잡(`contract-strict`)의 검사 — 싸고(0.1~0.9초) 읽기만 한다. 훅 예산에 안 넣고 ㉨ 가 든다"
+LAYERS: dict[tuple[str, str], tuple[str, str]] = {
+    ("deptry", "src tools"): ("ci", _NET),
+    ("firelane.contract", "--declared"): ("ready", _BUDGET),
+    ("firelane.datalog", "graph"): ("ci", _WRITES1),
+    ("firelane.jsonkeys", ""): ("ready", _BUDGET),
+    ("firelane.ledger_check", ""): ("ready", _BUDGET),
+    ("navi:lint", ""): ("ci", _NPM),
+    ("navi:test", ""): ("ci", _NPM),
+    ("navi:typecheck", ""): ("ci", _NPM),
+    ("pre-commit", "run --all-files --show-diff-on-failure"): ("ci", _PRECOMMIT),
+    ("pytest", "${files[@]} -q"): ("axis", _AXIS_T),
+    ("ruff", "check $FILES --config .ruff-strict.toml"): ("ready", _STRICT),
+    ("ruff", "check src tools tests"): ("ready", _BUDGET),
+    ("tests/test_contract.py", "-v"): ("ready", _BUDGET),
+    ("tests/test_ownership.py", "-q"): ("ready", _BUDGET),
+    ("tools/actionpin.py", ""): ("ci", _NET),
+    ("tools/archcost.py", ""): ("ready", _BUDGET),
+    ("tools/argcheck.py", ""): ("ready", _BUDGET),
+    ("tools/clearance_cross.py", ""): ("ci", _WRITES2),
+    ("tools/colorsim.py", ""): ("ready", _BUDGET),
+    ("tools/countcheck.py", ""): ("ready", _BUDGET),
+    ("tools/depgroups_check.py", ""): ("ready", _BUDGET),
+    ("tools/docnum_check.py", ""): ("ready", _STRICT),
+    ("tools/dupcheck.py", "--min 40 --max 0"): ("ready", _SLOW3),
+    ("tools/fixable.py", ""): ("ready", _BUDGET),
+    ("tools/fixture_recut.py", "--check"): ("ready", _BUDGET),
+    ("tools/gate_parity.py", ""): ("ready", _BUDGET),
+    ("tools/greycheck.py", ""): ("ready", _BUDGET),
+    ("tools/htmlfigs.py", "--check"): ("ready", _BUDGET),
+    ("tools/install_navi.py", "--check"): ("ready", _BUDGET),
+    ("tools/ledger_cross.py", ""): ("ready", _BUDGET),
+    ("tools/ledger_fields.py", "--check"): ("ready", _BUDGET),
+    ("tools/ledgercols.py", ""): ("ready", _BUDGET),
+    ("tools/localgeo.py", ""): ("ready", _BUDGET),
+    ("tools/mergecheck.py", ""): ("ci", _NET),
+    ("tools/mutate_guard.py", "--pending"): ("ready", _BUDGET),
+    ("tools/navi_env.py", "--no-sync"): ("ready", _BUDGET),
+    ("tools/navi_setup.py", "--check"): ("ready", _BUDGET),
+    ("tools/navicheck.py", ""): ("ready", _BUDGET),
+    ("tools/navicov.py", ""): ("ready", _BUDGET),
+    ("tools/naviweight.py", ""): ("ready", _BUDGET),
+    ("tools/owned_paths.py", "--py-only"): ("ready", _STRICT),
+    ("tools/pages_add_navi.py", "--check"): ("ready", _BUDGET),
+    ("tools/pr_body_check.py", ""): ("ci", _CTX),
+    ("tools/probeledger.py", ""): ("ready", _BUDGET),
+    ("tools/ratchet.py", ""): ("axis", _AXIS_A),
+    ("tools/redoscheck.py", ""): ("ready", _BUDGET),
+    ("tools/release_brief.py", "--base $BASE --md"): ("ci", _CTX),
+    ("tools/scopecheck.py", ""): ("ready", _BUDGET),
+    ("tools/scopedecl.py", ""): ("ready", _SLOW3),
+    ("tools/segcontract.py", ""): ("ready", _BUDGET),
+    ("tools/selftests.py", ""): ("ready", _SLOW1),
+    ("tools/sizecheck.py", ""): ("ready", _BUDGET),
+    ("tools/srccov.py", ""): ("ready", _SLOW2),
+    ("tools/suppress.py", ""): ("ready", _BUDGET),
+    ("tools/svg_fit.py", ""): ("ready", _BUDGET),
+    ("tools/toolclass.py", ""): ("ready", _BUDGET),
+    ("tools/toolindex.py", "--check"): ("ready", _BUDGET),
+    ("tools/treecheck.py", ""): ("ready", _SLOW3),
+    ("tools/uicheck.py", "--split"): ("ready", _BUDGET),
+    ("tools/unusedcheck.py", ""): ("ready", _STRICT),
+    ("tools/verdictsim.py", ""): ("ready", _BUDGET),
+    ("tools/web_manifest.py", "--check"): ("ready", _BUDGET),
 }
-LAYER_KINDS = ("ready", "ci")
+LAYER_KINDS = ("ready", "ci", "axis")   # axis = `pushready` 의 다른 축이 같은 도구를 이미 돈다(사유의 첫 낱말이 그 축의 열쇠)
 
 
-def ci_keys(fast: list[str] | None = None) -> dict[str, str]:
-    """CI 빠른 잡의 열쇠 → 그 열쇠를 처음 부르는 명령(글자 그대로). 열쇠가 안 나오는 셸 조각 · `npm` 줄은 뺀다(센 것이 아니다)."""
-    fast = fast_commands() if fast is None else fast
-    out: dict[str, str] = {}
-    for c in fast:
-        ks = keys(c)
+def hook_entries(gates: list[tuple[str, str]] | None = None) -> set[tuple[str, str]]:
+    """훅 게이트의 (열쇠, 인자) 집합 — `pre-push.gates` 가 정본이다."""
+    gates = gate_commands() if gates is None else gates
+    out: set[tuple[str, str]] = set()
+    for _n, cmd in gates:
+        ks = keys(cmd)
         if ks:
-            out.setdefault(ks[0], c)
+            out.add((ks[0], " ".join(args_of(cmd, ks[0]))))
     return out
 
 
-def layer_report(fast: list[str] | None = None, hook: set[str] | None = None, layers: dict[str, tuple[str, str]] | None = None) -> dict[str, list[str]]:
-    """반대 방향 — CI → 훅 · ready · ci. 문제 목록: `미선언`(CI 에 있고 훅에도 표에도 없다) · `죽은 선언`(표에 있는데 CI 에 없다) · `훅과 겹친다`(훅에 있는데 표에도 있다) · `사유 부족` · `층 이름`."""
-    ck = ci_keys(fast)
-    hook = GP.hook_keys() if hook is None else hook
+def layer_report(ents: dict[tuple[str, str], dict] | None = None, hook: set[tuple[str, str]] | None = None,
+                 layers: dict[tuple[str, str], tuple[str, str]] | None = None) -> dict[str, list]:
+    """반대 방향 — CI(다섯 잡) → 훅 · ready · axis · ci. 문제: `미선언` · `죽은 선언` · `훅과 겹친다` · `사유 부족` · `층 이름`. 항목은 (열쇠, 인자)."""
+    ents = entries() if ents is None else ents
+    hook = hook_entries() if hook is None else hook
     layers = LAYERS if layers is None else layers
-    rep: dict[str, list[str]] = {"훅": sorted(k for k in ck if k in hook), "ready": [], "ci": [], "미선언": [], "죽은 선언": [], "훅과 겹친다": [], "사유 부족": [], "층 이름": []}
-    for k in sorted(ck):
+    rep: dict[str, list] = {"훅": sorted(k for k in ents if k in hook), "ready": [], "axis": [], "ci": [], "미선언": [], "죽은 선언": [], "훅과 겹친다": [], "사유 부족": [], "층 이름": []}
+    for k in sorted(ents):
         if k in hook:
             if k in layers:
                 rep["훅과 겹친다"].append(k)
@@ -157,43 +174,104 @@ def layer_report(fast: list[str] | None = None, hook: set[str] | None = None, la
             rep[layer].append(k)
         if len(why.strip()) < GP.MIN_REASON:
             rep["사유 부족"].append(k)
-    rep["죽은 선언"] = sorted(k for k in layers if k not in ck)
+    rep["죽은 선언"] = sorted(k for k in layers if k not in ents)
     return rep
 
 
-def ready_commands(fast: list[str] | None = None, layers: dict[str, tuple[str, str]] | None = None) -> list[tuple[str, str]]:
-    """`ready` 층의 (열쇠, 명령) — **명령은 CI 의 글자 그대로**다(`pushready` ㉨ 가 돈다). 사본이 아니라 CI 에서 도출한다."""
-    ck = ci_keys(fast)
+def ready_commands(ents: dict[tuple[str, str], dict] | None = None,
+                   layers: dict[tuple[str, str], tuple[str, str]] | None = None) -> list[tuple[tuple[str, str], str]]:
+    """`ready` 층의 ((열쇠, 인자), **단계 스크립트 전문**) — CI 의 글자 그대로다(`pushready` ㉨ 가 돈다). 사본이 아니라 CI 에서 도출한다."""
+    ents = entries() if ents is None else ents
     layers = LAYERS if layers is None else layers
-    return [(k, ck[k]) for k in sorted(layers) if layers[k][0] == "ready" and k in ck]
+    return [(k, ents[k]["script"]) for k in sorted(layers) if layers[k][0] == "ready" and k in ents]
 
 
-def render_reverse(rep: dict[str, list[str]]) -> str:
-    total = len(rep["훅"]) + len(rep["ready"]) + len(rep["ci"]) + len(rep["미선언"]) + len(rep["층 이름"])
-    L = [f"CI `{JOB}` 열쇠 {total} → 훅 {len(rep['훅'])} · pushready(ready) {len(rep['ready'])} · CI 만 {len(rep['ci'])} · **미선언 {len(rep['미선언'])}**"]
+def hook_vs_pushready() -> dict[str, list[str]]:
+    """훅 게이트 → `pushready`: ㉨ 가 도는 것(`돈다`)과 더 센 축이 대신하는 것(`대신`)을 센다 — 훅 24게이트 중 `pushready` 가 안 보던 15개가 0이 됐는지(PLAN #216).
+
+    `pushready` 를 **함수 안에서** 부른다 — 그쪽이 이 모듈을 import 하므로 위에서 부르면 순환이다."""
+    import pushready as PR
+    jobs, skipped = PR.mirror_commands()
+    return {"돈다": [j[1] for j in jobs if j[0] == "훅"], "대신": [f"{k} — {why}" for k, why in sorted(skipped.items())]}
+
+
+def fmt_id(k: tuple[str, str]) -> str:
+    return f"{k[0]} {k[1]}".strip()
+
+
+def render_reverse(rep: dict[str, list]) -> str:
+    total = sum(len(rep[k]) for k in ("훅", "ready", "axis", "ci", "미선언", "층 이름"))
+    L = [f"CI 다섯 잡의 검사 {total}(열쇠 · 인자) → 훅 {len(rep['훅'])} · pushready(ready) {len(rep['ready'])} · 다른 축이 든다(axis) {len(rep['axis'])} · CI 만 {len(rep['ci'])} · **미선언 {len(rep['미선언'])}**"]
     for k in ("미선언", "죽은 선언", "훅과 겹친다", "사유 부족", "층 이름"):
         if rep[k]:
-            L.append(f"  ✗ {k}: {', '.join(rep[k])}")
+            L.append(f"  ✗ {k}: {', '.join(fmt_id(x) for x in rep[k])}")
     return "\n".join(L)
 
 
-def fast_commands(workflow: Path = WORKFLOW, job: str = JOB) -> list[str]:
-    """`contract-fast` 잡의 `run:` 명령 줄들(`\\` 이음 · 줄머리 주석 정리)."""
-    steps = (yaml.safe_load(workflow.read_text(encoding="utf-8")).get("jobs", {}).get(job) or {}).get("steps", [])
+JOBS = ("contract-fast", "contract-heavy", "contract-tests", "contract-shared", "contract-strict")   # CI 의 다섯 잡 전부 — 하나만 읽으면 다른 잡의 검사가 층 표에서 숨는다(PLAN #216)
+
+
+def _steps(workflow: Path, job: str) -> list[dict]:
+    return (yaml.safe_load(workflow.read_text(encoding="utf-8")).get("jobs", {}).get(job) or {}).get("steps", [])
+
+
+def _logical_lines(run: str) -> list[str]:
+    """`run:` 한 덩어리의 명령 줄들(역슬래시 이음 · 줄머리 주석 정리)."""
     out: list[str] = []
-    for s in steps:
-        buf = ""
-        for ln in str(s.get("run", "")).splitlines():
-            ln = ln.strip()
-            if not ln or ln.startswith("#"):
-                continue
-            buf += (" " if buf else "") + ln.rstrip("\\").strip()
-            if not ln.endswith("\\"):
-                out.append(buf)
-                buf = ""
-        if buf:
+    buf = ""
+    for ln in str(run).splitlines():
+        ln = ln.strip()
+        if not ln or ln.startswith("#"):
+            continue
+        buf += (" " if buf else "") + ln.rstrip("\\").strip()
+        if not ln.endswith("\\"):
             out.append(buf)
+            buf = ""
+    if buf:
+        out.append(buf)
     return out
+
+
+def step_script(run: str) -> str:
+    """단계 하나의 `run:` 본문 — 주석 · 빈 줄을 뺀 **글자 그대로**(여러 줄이 변수를 주고받는 단계는 한 덩어리로 돌아야 한다: 엄격 린트의 `FILES=$(…)`)."""
+    return "\n".join(ln.rstrip() for ln in str(run).splitlines() if ln.strip() and not ln.strip().startswith("#"))
+
+
+def fast_commands(workflow: Path = WORKFLOW, job: str = JOB) -> list[str]:
+    """한 잡(기본 `contract-fast`)의 `run:` 명령 줄들."""
+    return [c for s in _steps(workflow, job) for c in _logical_lines(s.get("run", ""))]
+
+
+def all_commands(workflow: Path = WORKFLOW, jobs: tuple[str, ...] = JOBS) -> list[str]:
+    """다섯 잡 전부의 명령 줄들(훅 → CI 방향이 「아무 잡에든 있나」를 묻는다)."""
+    return [c for j in jobs for c in fast_commands(workflow, j)]
+
+
+def entries(workflow: Path = WORKFLOW, jobs: tuple[str, ...] = JOBS) -> dict[tuple[str, str], dict]:
+    """CI 의 검사 하나 = **(열쇠, 인자)**. 값은 처음 나온 잡 · 명령 줄 · 그 단계의 스크립트 전문.
+
+    ★ 열쇠 하나가 아니다 — 같은 `ruff` 가 `contract-fast` 에서는 기본 룰셋으로, `contract-strict` 에서는 `.ruff-strict.toml` 로 돈다(인자가 다르다).
+      열쇠만 키로 쓰면 둘째가 첫째 뒤에 숨는다(2026-11-11 PR 이 그것으로 빨갰다)."""
+    out: dict[tuple[str, str], dict] = {}
+    for j in jobs:
+        for st in _steps(workflow, j):
+            script = step_script(st.get("run", ""))
+            for cmd in _logical_lines(st.get("run", "")):
+                ks = keys(cmd)
+                if ks:
+                    out.setdefault((ks[0], " ".join(args_of(cmd, ks[0]))), {"job": j, "cmd": cmd, "script": script if _needs_step(cmd) else cmd})
+    return out
+
+
+_VAR = re.compile(r"\$[A-Za-z_{]")
+
+
+def _needs_step(cmd: str) -> bool:
+    """명령이 **같은 단계의 앞 줄이 준 셸 변수**를 쓰는가(`ruff check $FILES …` — `FILES=$(…)` 가 앞 줄에 있다). 그러면 단계 전문이 한 덩어리로 돌아야 한다.
+
+    ★ 아니면 **그 줄만** 돈다. 단계 전문을 늘 돌면 안 된다 — `navi_env` 줄은 같은 단계에 `npm ci` · `npm run build` 를 달고 있어(망 · 44초) 줄 하나를 돌리려고 내려받기까지 하게 된다
+      (2026-11-11 ㉨ 가 64초가 된 원인이었다). 변수 대입 줄(`N=$(…)`)은 자기 완결이라 줄 그대로 돈다."""
+    return bool(_VAR.search(cmd)) and not re.match(r"^[A-Za-z_]\w*=", cmd)
 
 
 def args_of(cmd: str, key: str) -> list[str]:
@@ -207,15 +285,28 @@ def args_of(cmd: str, key: str) -> list[str]:
     base = key.removeprefix("tools/")
     for i, t in enumerate(toks):
         if t.endswith(base) or t == key:
-            return toks[i + 1:]
-    return toks[toks.index(key.split(".")[-1]) + 1:] if key.split(".")[-1] in toks else []
+            return _trim(toks[i + 1:])
+    return _trim(toks[toks.index(key.split(".")[-1]) + 1:]) if key.split(".")[-1] in toks else []
+
+
+_SHELL_STOP = {"|", "||", "&&", ";", ")", ">", ">>", "2>&1"}
+
+
+def _trim(toks: list[str]) -> list[str]:
+    """인자에서 **셸 문법**을 뗀다 — 파이프 · 명령 치환의 닫는 괄호는 인자가 아니다(`owned_paths --py-only | wc -l)` 가 세 가지 인자로 갈렸다)."""
+    out: list[str] = []
+    for t in toks:
+        if t in _SHELL_STOP:
+            break
+        out.append(t.rstrip(")") if t.endswith(")") and "(" not in t else t)
+    return out
 
 
 def classify(gates: list[tuple[str, str]] | None = None, fast: list[str] | None = None,
              exempt: dict[str, str] | None = None) -> dict[str, dict]:
     """게이트 이름 → {`갈래`: 덮인다 · 인자가 다르다 · 안 덮인다 · 열쇠 없음, `열쇠`, `CI`(다른 인자 목록), `면제`(사유)}."""
     gates = gate_commands() if gates is None else gates
-    fast = fast_commands() if fast is None else fast
+    fast = all_commands() if fast is None else fast
     ex = GP.exemptions() if exempt is None else exempt
     out: dict[str, dict] = {}
     for name, cmd in gates:
@@ -265,7 +356,9 @@ def main(argv: list[str] | None = None) -> int:
         print(render_reverse(rep))
         return 1 if bad else 0
     res = classify()
-    print(json.dumps({"훅 → CI": res, "CI → 층": rep}, ensure_ascii=False, indent=1) if a.json else render(res) + "\n\n" + render_reverse(rep))
+    hp = hook_vs_pushready()
+    line = f"훅 {len(hp['돈다']) + len(hp['대신'])}게이트 → pushready: ㉨ 가 돈다 {len(hp['돈다'])} · 더 센 축이 대신한다 {len(hp['대신'])}(사유 있음) · 안 보는 것 0"
+    print(json.dumps({"훅 → CI": res, "CI → 층": rep, "훅 → pushready": hp}, ensure_ascii=False, indent=1) if a.json else render(res) + "\n\n" + render_reverse(rep) + "\n" + line)
     return 1 if bad else 0
 
 

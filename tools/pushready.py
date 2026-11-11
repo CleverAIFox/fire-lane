@@ -24,7 +24,7 @@ pushready.py — 「푸시해도 되는가」 **한 명령.**  (PLAN #207)
   ㉤ `mutate` — 변이 장부가 낡았는가(`ratchet_values()` 가 죽는가)
   ㉥ `testpick --run` — 실측으로 고른 시험 묶음(구조 규약 시험 포함 · PLAN #209)
   ㉦ `obligations --new` — 새 파일의 빠진 등재 의무를 이름으로(PLAN #199 · 훅이 아니라 여기 — 훅은 예산이 없다)
-  ㉨ **훅 게이트 전부**(시험 묶음 · 도장은 ㉥ · ㉡ 가 더 세게) + `gatefast` 의 `ready` 층(CI 빠른 잡 중 훅 예산에 못 든 45개) — **글자 그대로** 돈다(PLAN #216 · 병렬 4 · 둘 다 도출이라 사본이 없다 → pushready ≥ 훅)
+  ㉨ **훅 게이트 전부**(시험 묶음 · 도장은 ㉥ · ㉡ 가 더 세게) + `gatefast` 의 `ready` 층(CI **다섯 잡**의 검사 중 훅 예산에 못 든 것 · (열쇠, 인자) 단위) — **글자 그대로** 돈다(PLAN #216 · 병렬 4 · 둘 다 도출이라 사본이 없다 → pushready ≥ 훅)
   ㉧ 로컬이 **로컬에 있는 원격 추적 가지**(`@{u}`)보다 뒤인가 — 뒤면 받을 명령을 댄다(PLAN #211). `fetch` 는 **안 한다**(사람이 정했다: 읽기 전용이 정체성이다)
 ★ **몇 바퀴 남았나**(PLAN #220): 막는 것 목록 끝에 `forecast` 가 「이번에 치면 다음에 무엇이 또 낡는가」를 말한다 — 되먹임 변 다섯(`EDGES` · 실측 · 서술을 달았다)만으로 **확정 바퀴 · 가능한 바퀴**를 센다.
   모델이다: 고정점을 증명하지 않고, 가능한 자기 루프 때문에 상한(`LAP_CAP`)에서 자른다. 표본은 사람이 돈 다섯 바퀴 한 건이다. 이 도구는 여전히 **아무것도 안 친다**.
@@ -247,7 +247,11 @@ def mirror_commands() -> tuple[list[tuple[str, str, list[str]]], dict[str, str]]
             skipped[ks[0]] = HOOK_REPLACED[ks[0]]
             continue
         out.append(("훅", name, ["bash", "-c", cmd]))
-    out += [("ready", k, [*_LAKELESS, c]) for k, c in GF.ready_commands()]
+    seen: set[str] = set()
+    for k, script in GF.ready_commands():       # 한 단계가 열쇠 여럿을 들면(엄격 린트 = owned_paths + ruff) 그 스크립트를 **한 번만** 돈다
+        if script not in seen:
+            seen.add(script)
+            out.append(("ready", GF.fmt_id(k), [*_LAKELESS, script]))
     return out, skipped
 
 
@@ -261,7 +265,7 @@ def check_ci_mirror(root: Path, run: Runner) -> Block | None:
 
     import gatefast as GF
     rep = GF.layer_report()
-    detail = [f"층 선언표가 CI 와 어긋난다 — {k}: {', '.join(rep[k][:6])}" for k in ("미선언", "죽은 선언", "훅과 겹친다", "사유 부족", "층 이름") if rep[k]]
+    detail = [f"층 선언표가 CI 와 어긋난다 — {k}: {', '.join(GF.fmt_id(x) for x in rep[k][:6])}" for k in ("미선언", "죽은 선언", "훅과 겹친다", "사유 부족", "층 이름") if rep[k]]
     jobs, _skipped = mirror_commands()
     with ThreadPoolExecutor(max_workers=MIRROR_WORKERS) as ex:
         results = list(ex.map(lambda j: (j, run(j[2], root)), jobs))

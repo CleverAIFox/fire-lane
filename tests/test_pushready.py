@@ -281,7 +281,7 @@ def test_the_mirror_runs_every_hook_gate_and_every_ready_command_exactly_as_decl
     assert P.check_ci_mirror(ROOT, _all_commands(seen)) is None
     ran = {a[-1] for a in seen}
     hook = {c for _n, c in GP.gate_commands() if not (GP.keys(c) and GP.keys(c)[0] in P.HOOK_REPLACED)}
-    ready = {c for _k, c in GF.ready_commands()}
+    ready = {c for _k, c in GF.ready_commands()}          # 단계 스크립트 전문 — 한 단계가 열쇠 여럿을 들면 한 번만 돈다
     assert ran == hook | ready and len(ready) > 30 and len(hook) >= 20, "㉨ 가 도는 것이 선언(훅 파일 · CI)과 다르다 — 사본이 생겼다"
     assert all(a[:3] == ["env", "FIRE_LANE_DATA=", "FIRE_LANE_RAW="] for a in seen if a[0] == "env"), "ready 는 레이크 없이 돈다 — CI 빠른 잡과 같은 조건"
     assert all(a[:2] == ["bash", "-c"] for a in seen if a[0] == "bash"), "훅 게이트는 훅이 도는 꼴(`bash -c`)이다"
@@ -299,7 +299,8 @@ def test_pushready_is_no_weaker_than_the_hook_every_hook_gate_runs_or_is_replace
 
 def test_a_red_mirror_check_blocks_names_the_check_and_prints_its_own_command():
     import gatefast as GF
-    key, cmd = GF.ready_commands()[0]
+    (key, args), cmd = GF.ready_commands()[0]
+    key = GF.fmt_id((key, args))
 
     def run(argv, cwd):
         if argv[0] == "env" and argv[-1] == cmd:
@@ -325,7 +326,7 @@ def test_a_red_hook_gate_in_the_mirror_is_named_with_its_layer():
 
 def test_the_mirror_blocks_when_the_layer_table_drifts_from_ci(monkeypatch):
     import gatefast as GF
-    monkeypatch.setattr(GF, "LAYERS", {**GF.LAYERS, "tools/없는검사.py": ("ready", "사유가 있다 — 없는 검사")})
+    monkeypatch.setattr(GF, "LAYERS", {**GF.LAYERS, ("tools/없는검사.py", ""): ("ready", "사유가 있다 — 없는 검사")})
     b = P.check_ci_mirror(ROOT, _all_commands([]))
     assert b is not None and any("죽은 선언" in d and "없는검사" in d for d in b.detail)
 
@@ -333,3 +334,14 @@ def test_the_mirror_blocks_when_the_layer_table_drifts_from_ci(monkeypatch):
 def test_the_survey_includes_the_mirror_after_obligations_and_before_the_ratchet():
     keys = [k for k, _ in P.CHECKS]
     assert keys.index("㉦") < keys.index("㉨") < keys.index("㉠")
+
+
+def test_an_axis_layer_names_a_pushready_axis_that_really_exists_and_the_strict_checks_are_in_the_mirror():
+    import gatefast as GF
+    axes = {k for k, _ in P.CHECKS}
+    for k, (layer, why) in GF.LAYERS.items():
+        if layer == "axis":
+            assert why.split()[0] in axes, f"{GF.fmt_id(k)} 가 가리키는 축 {why.split()[0]!r} 이 pushready 에 없다"
+    scripts = " ".join(j[2][-1] for j in P.mirror_commands()[0])
+    for want in ("tools/docnum_check.py", "tools/unusedcheck.py", "tools/owned_paths.py", "--config .ruff-strict.toml"):
+        assert want in scripts, f"엄격 잡의 검사 {want} 가 ㉨ 에 안 든다"
