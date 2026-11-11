@@ -13,13 +13,26 @@
  * OUT   RouteOption — `ui/RouteCompare` 가 그대로 그리는 한 벌
  * 밖    둘 중 어느 것이 추천인지 고르지 않는다. 고르는 것은 `App.tsx` 다.
  */
-import { routeStats } from "../domain/compare";
+import { riskList, routeStats, type RiskItem } from "../domain/compare";
 import { hazardSummary, routeHazards } from "../domain/context";
 import { ruleSummary } from "../domain/rules";
 import { travelSeconds } from "../domain/speed";
 import type { RoutePlan } from "../domain/types";
 import type { RouteOption } from "./RouteCompare";
 import { fmtDur } from "./tokens";
+
+/** 카드에 올리는 경고 줄 수. 넘치면 「외 N곳」 으로 수만 말한다 — 지도를 가리는 것이 이 앱에서 제일 나쁘다 */
+export const RISK_LINES_MAX = 4;
+
+const RISK_KIND_TEXT: Record<RiskItem["kind"], string> = {
+  blocked: "통행 불가", needs_cv: "확인 필요", unknown: "폭을 모른다", tight: "여유 부족",
+};
+
+/** 경고 한 줄 — 거리 · 이름 · 종류 · 여유를 **실제 수로** 쓴다(0 으로 얼버무리지 않는다) */
+export function riskLine(r: RiskItem): string {
+  const margin = r.marginM != null ? ` · 여유 ${r.marginM >= 0 ? "+" : ""}${r.marginM.toFixed(1)}m` : "";
+  return `${r.atM}m 지점 ${r.label} · ${RISK_KIND_TEXT[r.kind]}${margin}`;
+}
 
 export function routeOption(
   p: RoutePlan, need: number, other: RoutePlan | null, rec: boolean,
@@ -49,5 +62,12 @@ export function routeOption(
     note: (rec ? recNote : "도착은 빠르지만 폭 측정 신뢰도가 낮은 구간이 포함됩니다.") + tail,
     rules: ruleSummary(p.rules),
     around: hazardSummary(routeHazards(p, ctx)),
+    risks: riskSummary(p, need),
   };
+}
+
+/** 카드에 올릴 경고 — 줄과 넘친 수. 경로에서 `edges` 만 읽는다(그래서 시험이 가짜 경로로 문다) */
+export function riskSummary(p: Pick<RoutePlan, "edges">, need: number): RouteOption["risks"] {
+  const all = riskList(p, need);
+  return { lines: all.slice(0, RISK_LINES_MAX).map(riskLine), more: Math.max(0, all.length - RISK_LINES_MAX) };
 }

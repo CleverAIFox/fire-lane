@@ -15,8 +15,9 @@ import { TUNING, edgeCost, requiredWidth, unknownIsNeverCheaper } from "../src/d
 import { CLEARANCE_SCALE, segmentReason, widthLine } from "../src/ui/clearanceMeaning";
 import { GRAY_REASON } from "../src/ui/verdictMeaning";
 import {
-  SAME_ROUTE_TITLE, compareKind, routeStats, sameRoute,
+  SAME_ROUTE_TITLE, compareKind, riskList, routeStats, sameRoute,
 } from "../src/domain/compare";
+import { RISK_LINES_MAX, riskLine, riskSummary } from "../src/ui/routeOption";
 import { buildAdjacency, findRoute } from "../src/domain/graph";
 import type { Fleet, GraphEdge, VehicleSpec } from "../src/domain/types";
 
@@ -263,4 +264,69 @@ test("모름은 막지 않는다 — 비싸게 칠 뿐이다", () => {
   }
   ok(!Number.isFinite(edgeCost(s, 40, null, "blocked", null, true)),
      "`blocked` 는 어느 모드에서도 막혀야 한다 — 그것만 판정이 확정이다");
+});
+
+
+// ── 5. 경로 위 경고 — 신고 주소를 고르면 **어디가** 위험한지 바로 말한다 (PLAN #78 ③) ──────────────────────────
+
+/** 구간 하나만 든 가짜 경로 — `riskList` 는 `edges` 만 읽는다 */
+function plan(...edges: Partial<GraphEdge>[]): { edges: GraphEdge[] } {
+  return { edges: edges.map((e, i) => ({ seg_uid: `S${i}`, verdict: "clear", width_min_m: 9, length_m: 100, ...e }) as GraphEdge) };
+}
+
+test("경로 위 경고 — 확인 필요 · 모름 · 통행 불가 · 여유 0.5m 미만만 올리고 순서는 경로 순서다", () => {
+  const p = plan(
+    { verdict: "clear", width_min_m: NEED + 4 },                         // 넉넉하다 — 안 올린다
+    { verdict: "needs_cv", width_min_m: NEED + 2, seg_label: "A로" },    // 확인 필요
+    { verdict: "clear", width_min_m: NEED + 0.2, seg_label: "B로" },     // 초록이지만 여유 0.2 — tight
+    { verdict: "unknown", width_min_m: null, seg_label: "C로" },
+    { verdict: "blocked", width_min_m: 2, seg_label: "D로" },
+  );
+  const r = riskList(p, NEED);
+  ok(r.map((x) => x.label).join() === "A로,B로,C로,D로", `뽑힌 것 ${r.map((x) => x.label)}`);
+  ok(r.map((x) => x.kind).join() === "needs_cv,tight,unknown,blocked", `종류 ${r.map((x) => x.kind)}`);
+  ok(r.map((x) => x.atM).join() === "100,200,300,400", `경로 앞에서 잰 거리가 어긋났다 ${r.map((x) => x.atM)}`);
+});
+
+test("경로 위 경고 — 폭을 모르는 초록은 tight 로 올리지 않는다(모름을 0 으로 읽지 않는다)", () => {
+  const r = riskList(plan({ verdict: "clear", width_min_m: null }), NEED);
+  ok(r.length === 0, "폭 값이 없는데 여유 부족으로 올렸다");
+});
+
+test("경로 위 경고 — 문장은 거리 · 이름 · 종류 · 여유를 **실제 수로** 쓴다", () => {
+  const [a, b, c] = riskList(plan(
+    { verdict: "needs_cv", width_min_m: NEED - 0.4, seg_label: "A로", length_m: 60 },
+    { verdict: "clear", width_min_m: NEED + 0.2, seg_label: "B로" },
+    { verdict: "unknown", width_min_m: null, seg_label: "C로" }), NEED);
+  const la = riskLine(a);
+  ok(la.includes("0m") && la.includes("A로") && la.includes("확인 필요") && la.includes("-0.4"), la);
+  const lb = riskLine(b);
+  ok(lb.includes("60m") && lb.includes("B로") && lb.includes("여유") && lb.includes("+0.2"), lb);
+  const lc = riskLine(c);
+  ok(lc.includes("C로") && lc.includes("폭을 모른다"), lc);
+});
+
+test("경로 위 경고 — 카드는 최대 몇 줄만 보이고 나머지는 「외 N곳」 수로 말한다", () => {
+  const many = plan(...Array.from({ length: RISK_LINES_MAX + 3 }, (_, i) => ({ verdict: "needs_cv" as const, seg_label: `R${i}` })));
+  const opt = riskSummary(many, NEED);
+  ok(opt.lines.length === RISK_LINES_MAX, `줄 수 ${opt.lines.length}`);
+  ok(opt.more === 3, `외 ${opt.more}`);
+  const none = riskSummary(plan({ verdict: "clear", width_min_m: NEED + 5 }), NEED);
+  ok(none.lines.length === 0 && none.more === 0, "위험이 없는데 줄을 냈다");
+});
+
+test("경로 위 경고 — 실제 발행물의 경로에서 병목 패널이 고르는 구간과 어긋나지 않는다(같은 정의)", () => {
+  const adj = buildAdjacency(graph, S, false, "safe");
+  const nodes = [...adj.keys()].sort((a, b) => a - b);
+  let checked = 0;
+  for (let i = 1; i < nodes.length && checked < 25; i += 11) {
+    const p = findRoute(graph, adj, nodes[0], nodes[i]);
+    if (!p) continue;
+    const r = riskList(p, NEED);
+    const first = p.edges.find((e) => e.verdict === "needs_cv" || (e.width_min_m != null && e.width_min_m - NEED < 0.5));
+    ok((r[0]?.segUid ?? null) === (first?.seg_uid ?? null) || r[0]?.kind === "unknown" || r[0]?.kind === "blocked",
+       "경고 첫 줄이 병목 패널의 정의(확인 필요 또는 여유 0.5m 미만)와 갈렸다");
+    checked++;
+  }
+  ok(checked >= 5, `경로를 ${checked}개만 봤다`);
 });

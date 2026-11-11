@@ -56,6 +56,8 @@ export interface RouteOption {
   note: string;
   /** 통행 규칙 요약(`domain/rules.ts ruleSummary`). 없으면 null */
   rules: string | null;
+  /** 경로 **위** 경고(PLAN #78 ③) — 어느 구간이 어떻게 위험한지. 줄은 `RISK_LINES_MAX` 까지 · 넘치면 `more` 수만 */
+  risks: { lines: string[]; more: number };
   /** 경로 주변 사정 요약(§216-3) — 과속방지턱 · 단속카메라 · 보호구역 시설. 없으면 null */
   around: string | null;
 }
@@ -167,6 +169,14 @@ function Diff({ o }: { o: RouteOption }) {
       <Row k="규칙 경고" v={`${o.ruleCount}건`} warn={o.ruleCount > 0} />
       <Row k="폭 확인 필요 구간"
            v={o.uncertainCount ? `${o.uncertainCount}개 · ${Math.round(o.uncertainM)}m` : "0개"} />
+      {/* ★ PLAN #78 ③ — 개수만이 아니라 **어디가** 위험한지. 두 카드가 같은 자리에 같은 모양으로 낸다 */}
+      {o.risks.lines.length > 0 && (
+        <div style={riskBox} aria-label="경로 위 경고">
+          <div style={{ fontWeight: 800, marginBottom: 2 }}>경로 위 경고</div>
+          {o.risks.lines.map((l) => <div key={l}>{l}</div>)}
+          {o.risks.more > 0 && <div style={{ color: C.panelSub }}>외 {o.risks.more}곳</div>}
+        </div>
+      )}
     </>
   );
 }
@@ -243,6 +253,10 @@ const band: CSSProperties = {
 const chipS: CSSProperties = {
   borderRadius: 8, padding: "3px 9px", fontSize: 12, fontWeight: 800, color: C.toneInk,
   background: "#fff",
+};
+const riskBox: CSSProperties = {
+  marginTop: 6, borderRadius: 8, padding: "6px 10px", fontSize: 12, lineHeight: 1.5,
+  color: "#7c2d12", background: "#fff7ed", border: "1px solid #fed7aa",
 };
 const note: CSSProperties = {
   marginTop: 8, borderRadius: 8, padding: "8px 10px", fontSize: 12, color: "#334155", lineHeight: 1.5,
