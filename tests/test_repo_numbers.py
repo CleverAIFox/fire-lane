@@ -232,8 +232,7 @@ def test_no_document_freezes_the_pipeline_wall_clock():
     bad = []
     for rel in _LIVE:
         p = ROOT / rel
-        if not p.is_file():
-            continue
+        assert p.is_file(), f"추적 파일 {rel} 이 없다 — 살아 있는 문서 목록에서 빠지면 그 문서는 아무도 안 본다(PLAN #215)"
         for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
             if "<!--stale-ok-->" in line or not _WALL.search(line):
                 continue

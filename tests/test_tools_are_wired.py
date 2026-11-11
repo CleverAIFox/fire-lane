@@ -191,6 +191,8 @@ def _scan() -> list[tuple[str, int, str]]:
     **적을 뿐** 부르지 않는다. 선언표(`DECLARATION_ONLY`)도 같은 사유로 뺀다.
     """
     files = [ROOT / r for r in CALLERS]
+    for r in CALLERS:
+        assert (ROOT / r).is_file(), f"호출자 {r} 이 없다 — 추적 파일이다. 아래 필터가 말없이 떨구면 그 호출자가 부르는 도구가 「아무도 안 부른다」로 센다(PLAN #215)"
     for d in (".github/workflows", "tests"):
         base = ROOT / d
         if base.exists():
@@ -200,8 +202,6 @@ def _scan() -> list[tuple[str, int, str]]:
              if p.is_file() and p.relative_to(ROOT).as_posix() not in DECLARATION_ONLY]
     out = []
     for p in files:
-        if not p.is_file():
-            continue
         src = p.read_text(encoding="utf-8", errors="ignore")
         doc = _docstring_lines(src) if p.suffix == ".py" else set()
         for i, line in enumerate(src.splitlines(), 1):
@@ -225,6 +225,8 @@ def _blanked() -> dict[str, str]:
     """
     out: dict[str, str] = {}
     files = [ROOT / r for r in CALLERS]
+    for r in CALLERS:
+        assert (ROOT / r).is_file(), f"호출자 {r} 이 없다 — 추적 파일이다. 아래 필터가 말없이 떨구면 그 호출자가 부르는 도구가 「아무도 안 부른다」로 센다(PLAN #215)"
     for d in (".github/workflows", "tests"):
         base = ROOT / d
         if base.exists():
@@ -233,8 +235,6 @@ def _blanked() -> dict[str, str]:
     files = [p for p in files
              if p.is_file() and p.relative_to(ROOT).as_posix() not in DECLARATION_ONLY]
     for p in files:
-        if not p.is_file():
-            continue
         src = p.read_text(encoding="utf-8", errors="ignore")
         doc = _docstring_lines(src) if p.suffix == ".py" else set()
         keep = []

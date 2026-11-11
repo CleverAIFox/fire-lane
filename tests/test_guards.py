@@ -596,8 +596,7 @@ def test_docs_point_at_the_real_package():
                "sources.yaml", "web/config.js", "web/README.md"]
     for rel in targets:
         p = ROOT / rel
-        if not p.exists():
-            continue
+        assert p.exists(), f"추적 파일 {rel} 이 없다 — 지웠거나 이름을 바꿨으면 이 시험의 목록을 고쳐라(PLAN #215)"
         for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
             if "src/etl" in line:
                 stale.append(f"{rel}:{i}  {line.strip()[:70]}")
@@ -928,7 +927,7 @@ def test_tools_declared_in_docs_exist():
                     r"tools/([\w_]+\.(?:py|sh|mjs))`?\s*(\(삭제됨\)|\(미구현\))?", ln):
                 name, marked = m
                 if marked or (ROOT / "tools" / name).exists():
-                    continue
+                    continue            # 조용한 갈래가 아니다 — 「있다」(또는 삭제됨 · 미구현 표기)가 통과 조건이고 없으면 아래가 `missing` 에 쌓는다(PLAN #215)
                 missing.append(f"{rel}:{i}  tools/{name}")
     assert not missing, (
         "문서가 가리키는데 없는 도구:\n  " + "\n  ".join(sorted(set(missing)))
@@ -1137,8 +1136,7 @@ def test_docs_call_the_entrypoint_through_uv():
     for rel in ("README.md", "docs/MASTER.md", "docs/PLAN.md",
                 "src/firelane/README.md", "src/firelane/pipeline.py"):
         p = ROOT / rel
-        if not p.exists():
-            continue
+        assert p.exists(), f"추적 파일 {rel} 이 없다 — 지웠거나 이름을 바꿨으면 이 시험의 목록을 고쳐라(PLAN #215)"
         for i, ln in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
             # 줄 맨 앞(들여쓰기 허용)에서 시작하는 실행 지시만 본다.
             if re.match(r"^\s*fire-lane(\s|$)", ln) and "uv run" not in ln:
@@ -1388,8 +1386,7 @@ def test_ci_installs_what_the_tests_import():
     need: dict[str, set[str]] = {}
     for name in CI_TESTS:
         f = ROOT / "tests" / name
-        if not f.exists():
-            continue
+        assert f.exists(), f"추적 파일 tests/{name} 이 없다 — CI 가 도는 시험 목록에서 빠지면 그 import 가 pip 대상인지 아무도 안 본다(PLAN #215)"
         tree = ast.parse(f.read_text(encoding="utf-8"))
         for n in ast.walk(tree):
             mods = []
@@ -1409,7 +1406,7 @@ def test_ci_installs_what_the_tests_import():
                 #   `tools/` 만 보던 탓에 `docparse` 가 **pip 대상**으로 세어졌다.
                 if ((ROOT / "tools" / f"{top}.py").exists()
                         or (ROOT / "tests" / f"{top}.py").exists()):
-                    continue
+                    continue            # 조용한 갈래가 아니다 — 내부 모듈이면 pip 대상이 아니고 아니면 아래가 `need` 에 쌓는다(PLAN #215)
                 need.setdefault(DIST.get(top, top).lower(), set()).add(name)
 
     missing = {k: sorted(v) for k, v in need.items() if k not in installed}
@@ -2291,8 +2288,7 @@ def test_strict_lint_args_have_one_home():
     bad = []
     for rel in (".github/workflows/contract.yml", "tools/verify.sh"):
         f = ROOT / rel
-        if not f.exists():
-            continue
+        assert f.exists(), f"추적 파일 {rel} 이 없다 — 두 곳을 대조하는 시험이 한 곳만 보고 통과한다(PLAN #215)"
         txt = f.read_text(encoding="utf-8")
         if "--config .ruff-strict.toml" not in txt:
             bad.append(f"{rel} 이 .ruff-strict.toml 를 안 읽는다")

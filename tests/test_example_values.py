@@ -72,8 +72,7 @@ def test_every_example_tag_passes_its_own_gate():
     bad = []
     for rel in SOURCES:
         p = ROOT / rel
-        if not p.is_file():
-            continue
+        assert p.is_file(), f"추적 파일 {rel} 이 없다 — 예시를 가르치는 파일이 빠지면 그 파일의 예시는 아무도 안 본다(PLAN #215)"
         for no, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
             for tag in TAGGED.findall(line):
                 if tag.startswith("$") or tag.startswith("<"):

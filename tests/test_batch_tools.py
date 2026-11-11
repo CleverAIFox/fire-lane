@@ -659,8 +659,7 @@ def _destructive_sites() -> list[tuple[str, int, str]]:
     out = []
     for rel in ("tools/fl.sh", "tools/merge_batch.sh", "tools/branch_tidy.sh"):
         p = ROOT / rel
-        if not p.is_file():
-            continue
+        assert p.is_file(), f"추적 파일 {rel} 이 없다 — 지웠거나 이름을 바꿨으면 이 시험의 목록을 고쳐라(PLAN #215)"
         for i, ln in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
             s = ln.split("#", 1)[0]
             if not any(d in s for d in DESTRUCTIVE):
@@ -743,8 +742,7 @@ def test_no_exit_code_read_after_assignment_under_set_e():
     bad = []
     for rel in ("tools/fl.sh", "tools/merge_batch.sh", "tools/branch_tidy.sh"):
         p = ROOT / rel
-        if not p.is_file():
-            continue
+        assert p.is_file(), f"추적 파일 {rel} 이 없다 — 지웠거나 이름을 바꿨으면 이 시험의 목록을 고쳐라(없다고 넘어가면 시험이 통과한 채 아무것도 안 잰다 · PLAN #215)"
         src = p.read_text(encoding="utf-8")
         if not re.search(r"^set -\w*e", src, re.M):
             continue
