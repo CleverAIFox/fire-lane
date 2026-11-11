@@ -24,7 +24,7 @@ import { fmtDur } from "./tokens";
 /** 카드에 올리는 경고 줄 수. 넘치면 「외 N곳」 으로 수만 말한다 — 지도를 가리는 것이 이 앱에서 제일 나쁘다 */
 export const RISK_LINES_MAX = 4;
 
-const RISK_KIND_TEXT: Record<RiskItem["kind"], string> = {
+export const RISK_KIND_TEXT: Record<RiskItem["kind"], string> = {
   blocked: "통행 불가", needs_cv: "확인 필요", unknown: "폭 모름", tight: "여유 부족",
 };
 

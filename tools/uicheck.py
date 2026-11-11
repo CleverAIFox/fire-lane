@@ -145,10 +145,10 @@ SHARED_LAYERS = 12
 # ★ 2026-11-07 (PLAN #73 진술 #1 · #3). 3435 → **3441. 올렸다 — 크기 래칫이고 기능이 늘어 커졌다(결함 상한이 아니다).** 접수 카드에 「자료 기준 YYYY-MM-DD」(+4자: 「자료 기준」의 한글 네 글자 —
 #   날짜 숫자는 세지 않는다)와 도로명 곁의 「지번」(+2자)이 들어왔다. 진술 #1(최신 데이터가 없음)은 자료 기준일이 안 보여서, #3(구 주소만 뜸)은 지번 표기가 없어서 생긴 것이다.
 #   `verify.sh` 1377 → 1380 과 같은 족이다 — 기능이 늘어 커졌다. 줄이려면 두 표기 중 하나를 걷어야 하고 그것은 두 진술을 되돌리는 일이라 안 했다. 되돌리는 조건: 두 표기를 걷을 때(3435).
-UI_TEXT = 3389
+UI_TEXT = 3385
 #: 주행 중 화면(`uidrive.DRIVE_FILES`)의 20자 넘는 말 · 24px 미만 글자 선언 수 — 현재 실측이 곧 상한이다(DECISIONS §702). 내려가는 쪽.
-DRIVE_LONG = 21
-DRIVE_SMALL_FONT = 33
+DRIVE_LONG = 6
+DRIVE_SMALL_FONT = 19
 
 #: `tools/ratchet.py` 가 **줄었을 때만** 이 수를 고쳐 적는다(§309).
 RATCHETS = {"SHARED_LAYERS": "down", "UI_TEXT": "down", "DRIVE_LONG": "down", "DRIVE_SMALL_FONT": "down"}

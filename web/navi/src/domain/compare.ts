@@ -167,22 +167,25 @@ export function isHeadsUp(e: Pick<GraphEdge, "verdict" | "width_min_m">, need: n
   return UNCERTAIN.has(e.verdict) || (e.width_min_m != null && e.width_min_m - need < tightMarginM);
 }
 
+/** 구간 하나의 위험 종류 — 위험이 아니면 null. **폭 모름이면 여유도 모른다** — 다른 소스의 폭 값이 붙어 있어도 여유를 만들지 않는다. */
+export function riskKind(e: Pick<GraphEdge, "verdict" | "width_min_m">, need: number, tightMarginM = 0.5): { kind: RiskKind; marginM: number | null } | null {
+  const w = e.width_min_m ?? null;
+  const margin = w != null && e.verdict !== "unknown" ? w - need : null;
+  if (e.verdict === "blocked") return { kind: "blocked", marginM: margin };
+  if (e.verdict === "needs_cv") return { kind: "needs_cv", marginM: margin };
+  if (e.verdict === "unknown") return { kind: "unknown", marginM: null };
+  return margin != null && margin < tightMarginM ? { kind: "tight", marginM: margin } : null;
+}
+
 export function riskList(p: Pick<RoutePlan, "edges">, need: number, tightMarginM = 0.5): RiskItem[] {
   const out: RiskItem[] = [];
   let acc = 0;
   for (const e of p.edges) {
-    const w = e.width_min_m ?? null;
-    // ★ 폭 모름이면 여유도 모른다 — 다른 소스의 폭 값이 붙어 있어도 여유를 만들지 않는다
-    const margin = w != null && e.verdict !== "unknown" ? w - need : null;
-    let kind: RiskKind | null = null;
-    if (e.verdict === "blocked") kind = "blocked";
-    else if (e.verdict === "needs_cv") kind = "needs_cv";
-    else if (e.verdict === "unknown") kind = "unknown";
-    else if (margin != null && margin < tightMarginM) kind = "tight";
-    if (kind) {
+    const r = riskKind(e, need, tightMarginM);
+    if (r) {
       out.push({
         segUid: e.seg_uid, label: e.seg_label ?? e.road_name ?? e.seg_uid, atM: Math.round(acc),
-        lengthM: e.length_m ?? 0, kind, widthM: w, marginM: margin,
+        lengthM: e.length_m ?? 0, kind: r.kind, widthM: e.width_min_m ?? null, marginM: r.marginM,
       });
     }
     acc += e.length_m ?? 0;

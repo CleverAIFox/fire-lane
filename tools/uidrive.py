@@ -31,8 +31,9 @@ _HANGUL = re.compile(r"[가-힣]")
 DRIVE_FILES = (
     "ui/TopBar.tsx", "ui/StatusCard.tsx", "ui/BottleneckPanel.tsx", "ui/RemainPill.tsx", "ui/MapControls.tsx",
     "ui/Legend.tsx", "ui/ShareChip.tsx", "domain/status.ts", "app/usePositionSource.ts",
-    # 병목 패널이 「왜 막히나 · 무엇을 하나」를 이 파일의 문장으로 띄운다(관제 `SegCard` 도 쓰지만 이 수는 주행 중 화면이 낸 말만 센다)
-    "ui/clearanceMeaning.ts",
+    # ★ 2026-11-12 (DECISIONS §703). `ui/clearanceMeaning.ts`(병목 패널의 사유 문장 · 15개가 20자를 넘는다)는 **뺐다** — 기본 화면이 더는 그 문장을 안 띄운다.
+    #   그 문장과 옛 몸통은 `ui/BottleneckDetail.tsx`(자세히 — 정차 중에 일부러 여는 상세)로 갔다. **둘은 이 수에 안 든다.** 단 지금은 달리는 중에도 열린다
+    #   (속도 신호로 안 잠갔다) — 그 잠금이 서기 전까지 이 분류는 사람의 선언이다(PLAN #224). 렌더된 수는 `scripts/glance.mjs` 가 「자세히 열림」을 따로 낸다.
 )
 #: 값이 들어갈 자리(`${…}` · `{road}`)가 화면에서 차지하는 글자 수의 근사 — 숫자 · 도로명이 이만큼이라 치고 길이를 잰다
 PLACEHOLDER_CHARS = 6

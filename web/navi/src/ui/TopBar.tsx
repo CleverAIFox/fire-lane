@@ -88,7 +88,7 @@ export function TopBar(p: TopBarProps) {
             {title}
           </div>
           {sub && (
-            <div style={{ fontSize: 23, color: C.topBarSub, marginTop: 6, whiteSpace: "nowrap",
+            <div style={{ fontSize: 24, color: C.topBarSub, marginTop: 6, whiteSpace: "nowrap",
                           overflow: "hidden", textOverflow: "ellipsis" }}>
               {sub}
             </div>
@@ -99,7 +99,7 @@ export function TopBar(p: TopBarProps) {
       {/* ── 마이크 ───────────────────────────────────────── */}
       <button style={roundBtn} onClick={p.onToggleVoice} aria-label="음성"
               title={p.voiceOn === false ? "음성 꺼짐" : "음성 안내"}>
-        <MicIcon off={p.voiceOn === false} />
+        <span style={disc}><MicIcon off={p.voiceOn === false} /></span>
       </button>
 
       {/* ── 모드 배지 ────────────────────────────────────── */}
@@ -151,7 +151,7 @@ export function TopBar(p: TopBarProps) {
 
       {/* ── 헤드셋 ───────────────────────────────────────── */}
       <button style={roundBtn} onClick={p.onHeadset} aria-label="무전·헤드셋">
-        <HeadsetIcon />
+        <span style={disc}><HeadsetIcon /></span>
       </button>
     </div>
   );
@@ -183,10 +183,14 @@ const bar: CSSProperties = {
   padding: "10px 22px", display: "flex", alignItems: "center", gap: 18,
   boxShadow: "0 4px 18px rgba(0,0,0,.25)",
 };
+/** 누르는 범위는 76×76(Android Auto 터치 타깃 · DECISIONS §702 · §703) — 보이는 동그라미는 그대로 64 이고 그 안에 가운데 둔다. */
 const roundBtn: CSSProperties = {
-  width: 64, height: 64, borderRadius: 999, border: "none", background: "#fff",
+  width: 76, height: 76, border: "none", background: "transparent", padding: 0, margin: "0 -6px",
   display: "grid", placeItems: "center", cursor: "pointer", flex: "0 0 auto",
-  boxShadow: "0 2px 8px rgba(0,0,0,.18)",
+};
+const disc: CSSProperties = {
+  width: 64, height: 64, borderRadius: 999, background: "#fff",
+  display: "grid", placeItems: "center", boxShadow: "0 2px 8px rgba(0,0,0,.18)",
 };
 const badge: CSSProperties = {
   flex: "0 0 auto", minWidth: 330, borderRadius: 16, padding: "10px 16px",

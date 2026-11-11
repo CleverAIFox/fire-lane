@@ -39,7 +39,7 @@ import { useScreens } from "./app/useScreens";
 import { useFleet } from "./app/useFleet";
 import { useShare } from "./app/useShare";
 import { useOpsUplink, type UnitSnapshot } from "./app/useOpsUplink";
-import { compareKind, compareMarks, isHeadsUp, sameRoute } from "./domain/compare";
+import { compareKind, compareMarks, isHeadsUp, riskKind, sameRoute } from "./domain/compare";
 import { cumulative, pointAlong } from "./domain/geo";
 import { requiredWidth } from "./domain/vehicle";
 import { STATUS, deriveStatus, type StatusKey } from "./domain/status";
@@ -268,7 +268,11 @@ export default function App() {
     const driven = n.driven ?? 0;
     let acc = 0;
     for (const x of n.plan.edges) { if (x.seg_uid === e.seg_uid) break; acc += x.length_m ?? 0; }
+    // ★ 「외 N곳」 — 이 구간 **뒤로** 남은 앞서 알릴 구간 수. 운전자가 「아직 몇 개 남았나」 는 알아야 한다(DECISIONS §703).
+    const rest = n.plan.edges.slice(n.plan.edges.findIndex((x) => x.seg_uid === e.seg_uid) + 1);
     return {
+      kind: riskKind(e, need)?.kind ?? "tight",
+      more: rest.filter((x) => isHeadsUp(x, need)).length,
       segUid: e.seg_uid,
       segLabel: e.seg_label ?? e.road_name ?? e.seg_uid,
       aheadM: Math.max(0, acc - driven),
