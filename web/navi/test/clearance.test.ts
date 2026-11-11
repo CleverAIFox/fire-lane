@@ -369,13 +369,20 @@ test("경로 카드 — 접혀 있을 때는 시간 · 최소폭 · 여유 · �
   for (const shown of ["최소폭", "여유", "확인 필요", "10분", "2.3km", "자세히"]) ok(h.includes(shown), `${shown} 이 안 보인다`);
   for (const folded of ["RISK구간", "RULES요약", "AROUND주변", "NOTE문장", "규칙 경고", "경로 주변", "통행 불가", "길이", "여유폭 ="])
     ok(!h.includes(folded), `접혀 있어야 할 ${folded} 가 카드에 나온다`);
-  ok(h.includes("빠른 경로 1분 20초 빠름 · 확인 필요 +7곳"), "두 경로의 비교가 수로 한 줄에 안 나온다");
+  ok(h.includes("빠른 경로가 1분 20초 빠르고 확인 필요가 7곳 많다"), "두 경로의 비교가 한 문장에 안 나온다");
+  ok(h.indexOf("빠른 경로가 1분 20초") < h.indexOf("안전 경로</b>"), "비교 문장이 카드보다 아래에 있다 — 고르는 데 필요한 것이 먼저여야 한다");
+  ok(!h.includes("폭으로만 본 안전이다"), "카드 밖에 떠 있는 고지가 남았다");
+  ok(h.includes("폭으로만 본 안전"), "고지가 안전 경로 카드에 안 붙었다");
+  ok(h.includes("대안") && h.includes("관제 지정") && !h.includes("안 간다"), "배지가 고른 것 · 대안을 말하지 않는다");
 });
 
 test("경로 카드 — 통행 불가는 0 이 아닐 때만 보이고 폭 모름이 있으면 최소폭이 그 구간을 뺀 수임을 단다", () => {
   ok(!html(opt({}), null).includes("통행 불가"), "0곳인데 통행 불가가 보인다");
   const h = html(opt({ blockedCount: 1, unknownCount: 2 }), null);
-  ok(h.includes("통행 불가") && h.includes("폭 모름 2곳은 뺀 수"), "0 이 아닌 값이 안 보인다");
+  ok(h.includes("통행 불가") && h.includes("<sup>*</sup>"), "0 이 아닌 값이 안 보이거나 최소폭에 각주 표지가 없다");
+  ok(!h.includes("폭 모름 2곳은 뺀 수"), "각주 풀이가 본문 한가운데 있다 — 접힌 쪽에 있어야 한다");
+  const d = renderToStaticMarkup(createElement(Details, { o: opt({ unknownCount: 2 }) }));
+  ok(d.includes("* 폭 모름 2곳은 뺀 수"), "접힌 쪽에 각주 풀이가 없다");
 });
 
 test("경로 카드 — 같은 경로면 카드 하나이고 비교 줄이 없다", () => {
@@ -384,6 +391,6 @@ test("경로 카드 — 같은 경로면 카드 하나이고 비교 줄이 없�
 });
 
 test("펼친 쪽에는 접힌 것이 전부 있다 — 구간 목록 · 규칙 경고 · 경로 주변 · 설명(지운 것이 아니다)", () => {
-  const h = renderToStaticMarkup(createElement(Details, { o: opt({}), title: null }));
+  const h = renderToStaticMarkup(createElement(Details, { o: opt({}) }));
   for (const t of ["RISK구간", "외 3곳", "RULES요약", "AROUND주변", "NOTE문장"]) ok(h.includes(t), `${t} 가 펼침에 없다`);
 });
