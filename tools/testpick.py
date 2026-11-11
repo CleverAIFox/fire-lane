@@ -33,6 +33,11 @@ testpick.py — 푸시 전에 도는 시험 묶음을 **실측으로** 고른다
       범위를 못 읽으면(원격 객체가 없다 등) `@{u}..HEAD`, 그것도 없으면 `origin/dev` 와의 merge-base 부터다. 못 읽으면 닫힌 쪽이 아니라 **「범위를 못 읽었다」를 출력에 적는다**.
     · 「그 파일에 닿는 시험」 = **정적 스캔**(`touching` · 순수 함수): 시험 파일 본문에 ① 그 경로 전체 ② 확장자 붙은 파일명(`PLAN.md`) ③ `.py` 면 import 한 모듈 이름이 나오는가.
       ★ **하한이다** — 경로를 헬퍼 · 상수 · 글롭으로 조립해 읽는 시험은 못 센다(그 시험은 안 든다). 못 센 것이 「닿지 않는다」는 뜻이 아니다.
+    · **실측이 정적 스캔을 보탠다**(PLAN #218 ②): `--measure-reads` 가 시험 파일마다 프로세스를 따로 돌며 파이썬 감사 훅(`tests/audit_site/fsaudit.py` — 쓰기를 보는 `#219` 와 **같은 훅**)이
+      **실제로 연 추적 파일**을 적는다(`data/golden/testreads.json`). 헬퍼 · 글롭 · 조립한 경로로 읽는 시험도 열면 잡히고 자식 프로세스의 읽기도 잡힌다.
+      `touching` 은 **정적 ∪ 실측**이다. ★ 그래도 **장부가 낡으면 하한이다** — 시험이 새 파일을 읽게 바뀐 뒤 다시 안 쟀으면 그 읽기는 없다.
+      **낡음은 도구가 말한다**(`reads_stale` — `testtimes` 의 「장부에 없음」 수법 + 잰 때의 시험 본문 지문): 새 시험은 **정적 스캔만**, 바뀐 시험은 **옛 실측 ∪ 정적 스캔**으로 떨어지고
+      그 사실과 개수를 출력이 적는다(조용히 하한으로 돌아가지 않는다). **배경 목록은 장부 파일이 든다**(`ambient` 키 — 코드에 안 박는다 · 시험이 장부의 실측과 맞는지 문다).
     · **훅은 이 연동을 끈다**(`--no-touched` · 30초를 지킨다), **`pushready` ㉥ 는 상한 없이 전부 든다**(`--no-cap`) — 같은 `select` 하나를 쓰고 갈리는 것은 인자뿐이다(#216).
     · **파일당 상한**(`TOUCH_CAP` 초 · 장부 기준 · `--no-cap` 이 아니면)을 넘는 시험은 못 든다 — **출력에 이름을 대고 「CI 몫」으로 적는다**(조용히 빼지 않는다).
   `--files` 로 바뀐 파일을 직접 줄 수 있다(실측 · 시험용).
@@ -58,6 +63,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 LEDGER = ROOT / "data" / "golden" / "testtimes.json"
+READS_LEDGER = ROOT / "data" / "golden" / "testreads.json"     # 시험 파일 → 실행 중 **실제로 연** 추적 파일들(`--measure-reads --write` 가 쓴다 · PLAN #218)
 DEFAULT_BUDGET = 28.0     # 초 — **훅 전체의 벽시계**(아래 ★ 조건) 30초에서 여유 2초를 뺀 값
 STARTUP = 6.5            # 초 — 단독 실행의 고정 비용(통 시작 · 수집 · 마무리). 실측: 묶음 크기를 바꿔 잰 세 점의 절편
 EFF = 5.0                # 실효 병렬 수 — 코어 8개여도 통의 꼬리 · 입출력 · 수집이 겹쳐 **단독으로 4.7~5.3** 이다(실측)
@@ -170,16 +176,73 @@ def _mentions(text: str, path: str) -> bool:
     return False
 
 
-def touching(changed: list[str], texts: dict[str, str]) -> dict[str, list[str]]:
-    """순수 함수 — 시험 파일 이름 → 그 시험이 (정적 스캔으로) 닿는 바뀐 파일들. 닿는 것이 없으면 키가 없다.
+def touching(changed: list[str], texts: dict[str, str], reads: dict[str, list[str]] | None = None) -> dict[str, list[str]]:
+    """순수 함수 — 시험 파일 이름 → 그 시험이 닿는 바뀐 파일들(**정적 스캔 ∪ 실측 읽기**). 닿는 것이 없으면 키가 없다.
 
-    ★ 하한이다 — 헬퍼 · 글롭 · 조립한 경로로 읽는 시험은 못 센다. 바뀐 시험 파일은 그 자신에 닿는다."""
+    ★ 정적 스캔은 하한이다 — 헬퍼 · 글롭 · 조립한 경로로 읽는 시험은 못 센다. `reads`(실측 장부)가 그것을 메운다 — 장부에 있는 시험만.
+    바뀐 시험 파일은 그 자신에 닿는다. 남의 시험 파일(`tests/test_*`)이 바뀐 것은 그 시험을 읽는 시험에 닿지 않는다."""
     out: dict[str, list[str]] = {}
     for name, text in texts.items():
-        hit = [c for c in changed if c == f"tests/{name}" or (c != f"tests/{name}" and not c.startswith("tests/test_") and _mentions(text, c))]
+        ran = set((reads or {}).get(name, ()))
+        hit = [c for c in changed if c == f"tests/{name}" or (c != f"tests/{name}" and not c.startswith("tests/test_") and (_mentions(text, c) or c in ran))]
         if hit:
             out[name] = hit
     return out
+
+
+AMBIENT_SHARE = 0.9      # 시험 파일의 이 비율 이상이 읽는 추적 파일은 **배경**이다 — conftest 가 import 하는 인프라(`firelane.paths` · `sources.yaml` 등)라 모든 시험이 읽는다
+
+
+def ambient(reads: dict[str, list[str]], share: float = AMBIENT_SHARE) -> list[str]:
+    """거의 모든 시험이 읽는 파일 — 순수 함수. 이것을 닿음으로 세면 아무 파일이나 바꿔도 전수가 돈다(그 변경은 어느 시험을 고르는 신호가 못 된다)."""
+    if not reads:
+        return []
+    count: dict[str, int] = {}
+    for v in reads.values():
+        for p in set(v):
+            count[p] = count.get(p, 0) + 1
+    return sorted(p for p, k in count.items() if k >= share * len(reads))
+
+
+def _read_reads_file(path: Path | None = None) -> dict:
+    try:
+        d = json.loads((READS_LEDGER if path is None else path).read_text(encoding="utf-8"))
+        return d if isinstance(d.get("reads"), dict) else {}
+    except (OSError, ValueError, AttributeError, TypeError):
+        return {}
+
+
+def ledger_ambient(path: Path | None = None) -> list[str]:
+    """장부 **파일에 적힌** 배경 목록(`--measure-reads --write` 가 적는다) — 코드에 박지 않는다. 시험이 이 목록이 장부의 실측과 맞는지 문다."""
+    return list(_read_reads_file(path).get("ambient", []))
+
+
+def load_reads(path: Path | None = None, drop_ambient: bool = True) -> dict[str, list[str]]:
+    """실측 읽기 장부. 없거나 깨졌으면 빈 장부(= 정적 스캔만). **배경 파일은 뺀다** — 장부 파일이 적은 목록(`ledger_ambient`)이다."""
+    d = _read_reads_file(path)
+    out = {k: list(v) for k, v in d.get("reads", {}).items()}
+    if drop_ambient:
+        amb = set(d.get("ambient", [])) if "ambient" in d else set(ambient(out))
+        out = {k: [p for p in v if p not in amb] for k, v in out.items()}
+    return out
+
+
+def test_hash(name: str, root: Path = ROOT) -> str:
+    """시험 파일의 지문 — 읽기 장부가 **어느 본문을 재고 적었나**. 본문이 바뀌면 그 장부 칸은 낡았다."""
+    import hashlib
+    return hashlib.sha1((root / "tests" / name).read_bytes()).hexdigest()[:16]
+
+
+def reads_stale(files: list[str], path: Path | None = None, root: Path = ROOT) -> tuple[list[str], list[str], list[str]]:
+    """(새 시험 · 바뀐 시험 · 없어진 시험) — `testtimes` 가 「장부에 없음 · 없어진 파일」을 말하는 수법에 **본문 지문**을 더했다.
+
+    새 시험 = 장부에 칸이 없다 · 바뀐 시험 = 장부가 잰 뒤로 본문이 달라졌다(지문 불일치 · 지문이 안 적힌 옛 칸도 낡은 것이다)."""
+    d = _read_reads_file(path)
+    reads, hashes = d.get("reads", {}), d.get("hashes", {})
+    new = sorted(n for n in files if n not in reads)
+    changed = sorted(n for n in files if n in reads and hashes.get(n) != test_hash(n, root))
+    gone = sorted(n for n in reads if n not in files)
+    return new, changed, gone
 
 
 def pick_touched(touch: dict[str, list[str]], ledger: dict[str, float], cap: float = TOUCH_CAP) -> tuple[list[str], dict[str, float]]:
@@ -190,14 +253,14 @@ def pick_touched(touch: dict[str, list[str]], ledger: dict[str, float], cap: flo
 
 
 def select(files: list[str], ledger: dict[str, float], texts: dict[str, str], changed: list[str], budget: float, jobs: int,
-           load: float = 0.0, touched: bool = True, cap: float | None = TOUCH_CAP) -> tuple[list[str], dict]:
+           load: float = 0.0, touched: bool = True, cap: float | None = TOUCH_CAP, reads: dict[str, list[str]] | None = None) -> tuple[list[str], dict]:
     """**하나뿐인 선택 함수**(PLAN #218 · #216) — 훅도 `pushready` 도 이것을 부른다. 갈리는 것은 인자뿐이다:
     `touched`(바뀐 파일에 닿는 시험을 더하나) · `cap`(닿는 시험 하나의 상한 · `None` 이면 상한 없음) · `budget`/`load`(예산으로 고르는 몫).
     훅은 `touched=False`(30초를 지킨다), `pushready` 는 `touched=True, cap=None`(시간 제약이 없다)이다. 두 도구가 다른 규칙을 쓰면 그것이 #216 의 재발이다."""
     chosen, info = pick(files, ledger, budget, jobs, load=load)
     info.update({"touch": {}, "forced": [], "over": {}})
     if touched:
-        touch = touching(changed, texts)
+        touch = touching(changed, texts, reads)
         go, over = pick_touched(touch, ledger, float("inf") if cap is None else cap)
         info.update(touch=touch, forced=[n for n in go if n not in chosen], over=over)
         chosen = sorted({*chosen, *go})
@@ -247,6 +310,31 @@ def run_bin(names: list[str], root: Path = ROOT, measuring: bool = False) -> tup
     return rc, out, secs, red
 
 
+def run_reads(name: str, root: Path = ROOT, out_dir: Path | None = None) -> tuple[int, str, list[str]]:
+    """시험 파일 **하나를 자기 프로세스에서** 돌려 그 시험이 연 추적 파일을 얻는다. (rc, 출력 꼬리, 읽은 파일들)
+
+    ★ 파일마다 프로세스가 따로여야 한다 — 이미 import 된 모듈은 다시 안 읽혀서 한 프로세스에 여럿이면 뒤 파일의 읽기가 샌다(`fsaudit` 머리말).
+    ★ 훅은 `tests/tracked_guard.py` 의 세션 훅이 켠다. 이 길은 `FIRE_LANE_READS_OUT` 만 더한다 — 시험을 느슨하게 하지 않는다."""
+    import tempfile
+    d = out_dir or Path(tempfile.mkdtemp(prefix="fl-reads-"))
+    dest = d / f"{name}.json"
+    env = {**os.environ, "FIRE_LANE_READS_OUT": str(dest)}
+    try:
+        r = subprocess.run([sys.executable, "-m", "pytest", f"tests/{name}", "-q", "-p", "no:cacheprovider", "--no-header", "-o", "addopts=",
+                            "-o", f"timeout={MEASURE_TEST_TIMEOUT}", "-rfE"],
+                           cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace",
+                           timeout=MEASURE_PROC_TIMEOUT, stdin=subprocess.DEVNULL, env=env)
+    except subprocess.TimeoutExpired:
+        return 124, f"시한 {MEASURE_PROC_TIMEOUT}초 초과", []
+    out = (r.stdout or "") + (r.stderr or "")
+    try:
+        got = json.loads(dest.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return (r.returncode if r.returncode not in (0, 5) else 1), out[-800:], []
+    reads = sorted({p for k, v in got.items() if k == name for p in v if p != f"tests/{name}"})
+    return (0 if r.returncode in (0, 5) else r.returncode), out[-800:], reads
+
+
 def run_all(names: list[str], jobs: int, ledger: dict[str, float], root: Path = ROOT, measuring: bool = False) -> tuple[dict[str, float], dict[str, str]]:
     """(파일별 초, 빨간 파일 → 그 파일이 든 통의 출력 꼬리)"""
     groups = bins(names, jobs, ledger)
@@ -265,6 +353,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="testpick", description=__doc__.split("──")[0], formatter_class=argparse.RawTextHelpFormatter)
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--measure", action="store_true", help="모든 시험 파일을 돌려 파일별 초를 잰다(pytest --durations=0)")
+    g.add_argument("--measure-reads", action="store_true", help="시험 파일마다 따로 돌며 **실제로 연 추적 파일**을 잰다(PLAN #218 · 감사 훅 · 느리다 · 사람이 가끔)")
     g.add_argument("--list", action="store_true", help="고른 묶음을 낸다")
     g.add_argument("--run", action="store_true", help="고른 묶음을 병렬로 돌린다")
     ap.add_argument("--write", action="store_true", help="--measure 결과를 장부에 쓴다")
@@ -275,10 +364,40 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--files", nargs="+", metavar="PATH", help="바뀐 파일을 직접 준다(실측 · 시험용 — git 을 안 본다)")
     ap.add_argument("--no-touched", action="store_true", help="바뀐 파일에 닿는 시험을 안 더한다(예전 동작 — 실측 대조용)")
     ap.add_argument("--cap", type=float, default=TOUCH_CAP, help="닿는 시험 하나의 상한(장부 초). 넘으면 CI 몫")
+    ap.add_argument("--no-reads", action="store_true", help="실측 읽기 장부를 안 쓴다(정적 스캔만 — 대조용)")
     ap.add_argument("--no-cap", action="store_true", help="상한을 안 건다 — 닿는 시험을 전부 든다(시간 제약이 없는 pushready)")
     ap.add_argument("--jobs", type=int, default=os.cpu_count() or 2)
     a = ap.parse_args(argv)
     files = test_files()
+
+    if a.measure_reads:
+        names = sorted(a.only) if a.only else files
+        unknown = [n for n in names if n not in files]
+        if unknown:
+            print(f"✗ 없는 시험 파일: {', '.join(unknown)}", file=sys.stderr)
+            return 1
+        t = time.monotonic()
+        with ThreadPoolExecutor(max_workers=max(1, a.jobs)) as ex:
+            results = list(ex.map(lambda n: (n, *run_reads(n)), names))
+        red = {n: tail for n, rc, tail, _ in results if rc != 0}
+        reads = {n: r for n, rc, _, r in results if rc == 0}
+        for n, o in sorted(red.items()):
+            print(f"  ✗ {n}\n" + "\n".join("      " + x for x in o.splitlines()[-6:]), file=sys.stderr)
+        print(f"{len(reads)}/{len(names)}개 파일 · 읽은 추적 파일 합 {sum(map(len, reads.values()))}개 · 벽시계 {time.monotonic() - t:.0f}초 (병렬 {a.jobs}) · 빨강 {len(red)}")
+        if a.write and red:
+            print("✗ 빨간 파일이 있어 읽기 장부를 안 썼다 — 빨강을 고치거나 흔들림인지 가린 뒤 다시 잰다", file=sys.stderr)
+            return 1
+        if a.write:
+            old = _read_reads_file()
+            hashes = {n: test_hash(n) for n in reads}
+            if a.only:      # 일부만 쟀다 — 나머지 칸은 그대로 두고 잰 칸만 덮는다(없어진 파일은 버린다)
+                reads = {**{k: v for k, v in old.get("reads", {}).items() if k in files}, **reads}
+                hashes = {**{k: v for k, v in old.get("hashes", {}).items() if k in files}, **hashes}
+            READS_LEDGER.write_text(json.dumps({"_": "tools/testpick.py --measure-reads --write 가 쓴다. 손으로 고치지 않는다. 시험 파일 → 실행 중 연 추적 파일(감사 훅) · hashes = 잰 때의 시험 본문 지문(낡음 판정) · ambient = 거의 모든 시험이 읽어 닿음으로 안 세는 배경 파일.",
+                                                "ambient": ambient(reads), "hashes": dict(sorted(hashes.items())),
+                                                "reads": dict(sorted(reads.items()))}, ensure_ascii=False, indent=0) + "\n", encoding="utf-8")
+            print(f"읽기 장부 {READS_LEDGER} 를 썼다")
+        return 1 if red else 0
 
     if a.measure:
         t = time.monotonic()
@@ -324,7 +443,8 @@ def main(argv: list[str] | None = None) -> int:
             changed, notes = changed_files(ROOT, a.range or [])
         texts = {n: (ROOT / "tests" / n).read_text(encoding="utf-8", errors="replace") for n in files}
     cap = None if a.no_cap else a.cap
-    chosen, info = select(files, ledger, texts, changed, a.budget, a.jobs, a.load, touched=not a.no_touched, cap=cap)
+    reads = {} if a.no_reads else load_reads()
+    chosen, info = select(files, ledger, texts, changed, a.budget, a.jobs, a.load, touched=not a.no_touched, cap=cap, reads=reads)
     print(f"묶음 {len(chosen)}/{len(files)}개 파일 · 추정 {info['est']:.1f}초(예산 {a.budget:g}초 · 병렬 {a.jobs} · 남의 일 {a.load:g}) · "
           f"장부 {info['known']}개 합 {info['total']:.0f}초", file=sys.stderr)
     if info["new"]:
@@ -334,7 +454,19 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  장부에만 있음(없어진 파일) {len(info['gone'])}개 → `--measure --write`", file=sys.stderr)
     if not a.no_touched:
         print(f"  바뀐 파일 {len(changed)}개({'; '.join(notes)}) → 닿는 시험 {len(info['touch'])}개 · 예산 밖에서 더함 {len(info['forced'])}개 "
-              f"(정적 스캔 — **하한**: 경로를 헬퍼로 조립해 읽는 시험은 못 센다)", file=sys.stderr)
+              f"(정적 스캔 ∪ 실측 읽기 {sum(1 for n in files if n in reads)}/{len(files)}개 파일 — 장부에 없거나 낡은 시험은 **하한**)", file=sys.stderr)
+        if not a.no_reads:
+            new_r, chg_r, gone_r = reads_stale(files)
+            if new_r or chg_r or gone_r:
+                print(f"  ⚠ 읽기 장부가 낡았다 — 새 시험 {len(new_r)} · 바뀐 시험 {len(chg_r)} · 없어진 시험 {len(gone_r)}: "
+                      f"{', '.join((new_r + chg_r + gone_r)[:4])}{' …' if len(new_r + chg_r + gone_r) > 4 else ''}", file=sys.stderr)
+                if new_r:
+                    print(f"    → 새 시험 {len(new_r)}개는 **정적 스캔만**으로 닿음을 센다(하한 — 헬퍼 · 글롭으로 읽는 파일은 못 센다)", file=sys.stderr)
+                if chg_r:
+                    print(f"    → 바뀐 시험 {len(chg_r)}개는 **옛 실측 ∪ 정적 스캔**이다(본문이 바뀐 뒤 새로 읽게 된 파일은 못 센다)", file=sys.stderr)
+                print("    → `uv run python tools/testpick.py --measure-reads --write --only <파일…>` 로 다시 잰다", file=sys.stderr)
+        if reads:
+            print(f"  배경으로 뺀 파일 {len(ledger_ambient() or ambient(load_reads(drop_ambient=False)))}개(시험 {AMBIENT_SHARE:.0%} 이상이 읽는다 — conftest 인프라): 실측으로는 안 센다", file=sys.stderr)
         for n, sec in info["over"].items():
             t3 = info["touch"][n]
             print(f"  ⚠ CI 몫 — {n} ({sec:.0f}초 > 상한 {a.cap:g}초): {', '.join(t3[:3])}{' …' if len(t3) > 3 else ''} 에 닿지만 못 돈다", file=sys.stderr)

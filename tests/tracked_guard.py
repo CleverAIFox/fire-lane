@@ -22,10 +22,12 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-_STATE: dict[str, dict[str, str]] = {}
+_STATE: dict[str, Any] = {}
 
 
 @functools.lru_cache(maxsize=1)
@@ -103,45 +105,68 @@ def changed(before: dict[str, str], after: dict[str, str]) -> list[str]:
     return sorted(k for k in before.keys() | after.keys() if before.get(k) != after.get(k))
 
 
-_WRITES: dict[tuple[str, str], str] = {}     # (추적 파일, 시험) → 어떻게 썼나 — 세션 **도중**에 쓴 것(되돌려도 남는다)
+_WRITES: dict[tuple[str, str], str] = {}     # (추적 파일, 시험) → 어떻게 썼나 — 세션 **도중**에 쓴 것(되돌려도 남는다). 자식의 쓰기는 `… · 자식` 으로 적힌다
+READS: dict[str, set[str]] = {}               # 시험 파일 → 그 시험이 연 추적 파일들(세션 · 수집 중 읽기는 `fsaudit.SESSION` 칸)
+
+_AUDIT_SITE = str(Path(__file__).resolve().parent / "audit_site")
 
 
-def _audit(event: str, args: tuple) -> None:
-    """★ **전후 지문이 못 잡는 것** — 고쳤다 되돌린 쓰기. 되돌리면 앞뒤 해시가 같아 위 비교는 초록이다(2026-11-10: `test_refcheck_paths` 가 진짜
-    `docs/MASTER.md` 를 제자리에서 고쳤다 되돌렸고 병렬로 읽는 시험 64개가 빨개졌다 · 한 번은 파일이 빈 채 남았다). 그래서 **쓰는 순간**을 본다.
+def _load_fsaudit():
+    """파이썬 감사 훅 한 벌 — 읽기(#218) · 쓰기(#219) · 자식 프로세스(#219 ①)가 같은 이벤트다. 경로로 연다(`sys.path` 를 안 만진다 — `test_layering`)."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("fsaudit", Path(_AUDIT_SITE) / "fsaudit.py")
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["fsaudit"] = mod
+    spec.loader.exec_module(mod)
+    return mod
 
-    파이썬 감사 훅(`open` 의 쓰기 모드 · `os.remove` · `os.rename` · `os.replace` · `shutil.copyfile` 의 도착)이 이 세션 **프로세스 안**의 쓰기를 본다 —
-    경로를 헬퍼로 조립해도 보인다(정적 스캔은 못 본다). **못 보는 것:** 자식 프로세스(`subprocess` 로 부른 도구)의 쓰기 · `dir_fd` 로 지우는 `rmtree` 의 내부."""
-    if not _STATE.get("audit"):
-        return
-    try:
-        if event == "open":
-            path, mode, flags = args
-            writing = (isinstance(mode, str) and any(c in mode for c in "wax+")) or (
-                isinstance(flags, int) and bool(flags & (os.O_WRONLY | os.O_RDWR | os.O_TRUNC | os.O_APPEND)))
-            if not writing:
-                return
-        elif event in ("os.remove", "os.rename", "os.replace"):
-            path = args[0]
-            fds = args[1:2] if event == "os.remove" else args[2:4]     # `os.remove(path, dir_fd)` · `os.rename(src, dst, src_dir_fd, dst_dir_fd)`
-            if any(fd is not None and fd != -1 for fd in fds):          # `rmtree` 가 열린 디렉터리 기준 상대 이름으로 지운다
-                return
-        elif event == "shutil.copyfile":
-            path = args[1]
-        else:
-            return
-        if not isinstance(path, (str, bytes, os.PathLike)):
-            return
-        rel = os.path.relpath(os.path.abspath(os.fsdecode(path)), str(_STATE["root"]))
-        if rel.startswith("..") or rel not in _STATE["tracked"] or rel in WRITE_ALLOW:
-            return
-        test = os.environ.get("PYTEST_CURRENT_TEST", "") or "(시험 밖 · 수집 · 세션)"
-        _WRITES.setdefault((rel, test.split(" ")[0]), event)
-    except Exception:       # 감사 훅은 시험을 죽이지 않는다 — 못 읽은 한 건이 세션을 깨면 안 된다
-        return
+
+fsaudit = sys.modules.get("fsaudit") or _load_fsaudit()
+
+
+def _sink(kind: str, rel: str, test: str, event: str) -> None:
+    """부모 프로세스의 감사 이벤트 → 쓰기는 `_WRITES`(시험 id 로) · 읽기는 `READS`(시험 파일로)."""
+    if kind == "w":
+        _WRITES.setdefault((rel, test.split(" ")[0] or "(시험 밖 · 수집 · 세션)"), event)
+    else:
+        READS.setdefault(fsaudit.test_file_of(test), set()).add(rel)
+
+
+def _parent_test() -> str:
+    """지금 도는 시험 id. 수집 중이면 수집하는 모듈(그 모듈의 import 가 읽는 것이 그 시험 파일 몫이다)."""
+    # ★ 수집 중이면 환경변수보다 **먼저** 본다 — 중첩 세션은 바깥 시험의 `PYTEST_CURRENT_TEST` 를 물려받아 그것이 낡은 채 남는다.
+    return _STATE.get("collecting") or os.environ.get("PYTEST_CURRENT_TEST", "")
+
+
+def pytest_collectstart(collector) -> None:
+    """수집 중 모듈 import 가 읽는 파일을 그 시험 파일에 붙인다(모듈 첫 줄의 `import firelane.x` 도 읽기다)."""
+    if type(collector).__name__ == "Module" and not hasattr(collector.config, "workerinput"):
+        _STATE["collecting"] = str(collector.path.name)
+
+
+def pytest_runtest_logstart(nodeid, location) -> None:
+    _STATE["collecting"] = ""
+
+
+def pytest_collection_finish(session) -> None:
+    _STATE["collecting"] = ""
 
 
 WRITE_ALLOW: dict[str, str] = {}      # 추적 파일 → 사유. **비어 있다** — 시험이 추적 파일을 쓰기로 열 정당한 이유가 아직 없다(복사본 `mirror_tree` 에서 한다)
+
+
+def _drain_children() -> None:
+    """자식 프로세스가 로그에 적은 것을 부모의 표로 합친다."""
+    d = _STATE.get("audit_dir")
+    if not d:
+        return
+    for kind, rel, test, event in fsaudit.read_log(d):               
+        if kind == "w":
+            if rel not in WRITE_ALLOW:
+                _WRITES.setdefault((rel, test), f"{event} · 자식")
+        else:
+            READS.setdefault(test, set()).add(rel)
 
 
 def pytest_sessionstart(session) -> None:
@@ -152,14 +177,28 @@ def pytest_sessionstart(session) -> None:
     _STATE["tracked"] = set(_git(ROOT, "ls-files", "-z").split("\0")) - {""}
     _STATE["audit"] = True
     if not _STATE.get("hooked"):
-        sys.addaudithook(_audit)           # 감사 훅은 뺄 수 없다 — `_STATE["audit"]` 가 켜고 끈다
+        hook = fsaudit.make_hook(str(ROOT), _STATE["tracked"], lambda *a: _STATE.get("audit") and _sink(*a), _parent_test)
+        sys.addaudithook(hook)             # 감사 훅은 뺄 수 없다 — `_STATE["audit"]` 가 켜고 끈다
         _STATE["hooked"] = True
+    # ★ 자식 프로세스에 훅을 물린다(#219 ①) — 이 세션이 띄우는 파이썬 전부가 `sitecustomize` 로 같은 훅을 달고 로그에 적는다.
+    #   중첩 세션(시험 안에서 도는 pytest)은 **자기 디렉터리를 새로** 만든다 — 바깥 로그에 안쪽 저장소 이름이 섞이지 않는다.
+    audit_dir = tempfile.mkdtemp(prefix="fl-audit-")
+    fsaudit.prepare(audit_dir, str(ROOT), _STATE["tracked"])
+    _STATE["audit_dir"] = audit_dir
+    os.environ["FIRE_LANE_AUDIT_DIR"] = audit_dir
+    os.environ["PYTHONPATH"] = os.pathsep.join(x for x in (_AUDIT_SITE, os.environ.get("PYTHONPATH", "")) if x)
 
 
 def pytest_sessionfinish(session, exitstatus) -> None:
     if hasattr(session.config, "workerinput") or "before" not in _STATE:
         return
     _STATE["audit"] = False
+    _drain_children()
+    out_path = os.environ.get("FIRE_LANE_READS_OUT")      # 읽기 실측 길(`testpick --measure-reads`)만 켠다 — 평소엔 안 쓴다
+    if out_path:
+        import json
+        Path(out_path).write_text(json.dumps({k: sorted(v) for k, v in sorted(READS.items())}, ensure_ascii=False), encoding="utf-8")
+    shutil.rmtree(_STATE.pop("audit_dir", ""), ignore_errors=True)
     bad = changed(_STATE["before"], snapshot())
     tr = session.config.pluginmanager.get_plugin("terminalreporter")
     say = tr.write_line if tr else print

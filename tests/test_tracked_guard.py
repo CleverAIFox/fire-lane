@@ -74,7 +74,8 @@ def plugin(tmp_path_factory, monkeypatch) -> None:
         "g.ROOT = Path.cwd()\n"
         "_s = g.snapshot\n"
         "g.snapshot = lambda root=None: _s(g.ROOT)\n"
-        "pytest_sessionstart = g.pytest_sessionstart\npytest_sessionfinish = g.pytest_sessionfinish\n", encoding="utf-8")
+        "pytest_sessionstart = g.pytest_sessionstart\npytest_sessionfinish = g.pytest_sessionfinish\n"
+        "pytest_collectstart = g.pytest_collectstart\npytest_collection_finish = g.pytest_collection_finish\npytest_runtest_logstart = g.pytest_runtest_logstart\n", encoding="utf-8")
     monkeypatch.setenv("PYTHONPATH", os.pathsep.join([str(d), os.environ.get("PYTHONPATH", "")]))
 
 
@@ -119,3 +120,64 @@ def test_the_mirror_copies_only_what_is_asked_and_links_the_rest(tmp_path: Path)
     assert (m / "a" / "b" / "f.txt").read_text(encoding="utf-8") == "바뀜" and not (m / "a" / "b" / "f.txt").is_symlink()
     assert (m / "a" / "g.txt").is_symlink() and (m / "top.txt").is_symlink()
     assert (src / "a" / "b" / "f.txt").read_text(encoding="utf-8") == "원본"       # 실물은 안 건드린다
+
+
+# ── #219 ① 자식 프로세스의 쓰기 · #218 읽기 실측 — 같은 감사 훅이 프로세스 경계를 넘는다 ─────────────────────────────
+
+_CHILD_WRITE = ("import subprocess, sys\n\ndef test_child_writes():\n"
+                "    subprocess.run([sys.executable, '-c', \"open('tracked.txt', 'a').write('자식')\"], check=True)\n")
+
+
+def test_a_child_process_that_writes_a_tracked_file_fails_the_session(repo: Path, plugin) -> None:
+    """★ 종전 감사 훅은 **이 프로세스 안**만 봤다 — `subprocess` 로 부른 도구가 추적 파일에 쓰면 되돌려도 안 보였다. `sitecustomize` 가 훅을 물려준다."""
+    r = _session(repo, _CHILD_WRITE)
+    out = r.stdout + r.stderr
+    assert "1 passed" in out, out
+    assert r.returncode != 0, "자식의 쓰기가 세션을 안 깼다 — 훅이 프로세스 경계를 못 넘는다\n" + out
+    assert "tracked.txt" in out and "test_x.py" in out and "자식" in out, out
+
+
+def test_a_grandchild_is_seen_too(repo: Path, plugin) -> None:
+    """수리 문 모양 — 셸이 파이썬을 부르고 그 파이썬이 또 파이썬을 부른다(`bash fix.sh` → `uv run python` → 도구). 환경이 줄줄이 물려진다."""
+    body = ("import subprocess, sys\n\ndef test_chain():\n"
+            "    inner = \"import subprocess,sys;subprocess.run([sys.executable,'-c',\\\"open('tracked.txt','a').write('x')\\\"],check=True)\"\n"
+            "    subprocess.run(['bash', '-c', 'exec \"$0\" -c \"$1\"', sys.executable, inner], check=True)\n")
+    r = _session(repo, body)
+    assert r.returncode != 0 and "tracked.txt" in r.stdout + r.stderr, r.stdout + r.stderr
+
+
+def test_a_child_that_only_reads_or_writes_elsewhere_is_quiet(repo: Path, plugin) -> None:
+    body = ("import subprocess, sys\n\ndef test_ok(tmp_path):\n"
+            "    code = \"import sys;open('tracked.txt').read();open(sys.argv[1],'w').write('a')\"\n"
+            "    subprocess.run([sys.executable, '-c', code, str(tmp_path / 'o')], check=True)\n")
+    r = _session(repo, body)
+    assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_reads_are_recorded_per_test_file_including_children_and_the_import_at_collection(repo: Path, plugin, tmp_path: Path) -> None:
+    """읽기 실측 — 시험 파일 → 연 추적 파일. 수집 중 import 가 읽은 것 · 시험 중 직접 읽은 것 · 자식이 읽은 것이 다 그 파일 몫이다."""
+    (repo / "helper_mod.py").write_text("X = 1\n", encoding="utf-8")
+    _git(repo, "add", "helper_mod.py")
+    _git(repo, "commit", "-q", "-m", "h")
+    body = ("import subprocess, sys\nimport helper_mod\nfrom pathlib import Path\n\ndef test_reads():\n"
+            "    Path('tracked.txt').read_text()\n"
+            "    subprocess.run([sys.executable, '-c', \"open('other.txt').read()\"], check=True)\n")
+    out = tmp_path / "reads.json"
+    (repo / "test_x.py").write_text(body, encoding="utf-8")
+    _git(repo, "add", "test_x.py")
+    _git(repo, "commit", "-q", "-m", "t")
+    env = {**os.environ, "FIRE_LANE_READS_OUT": str(out), "PYTHONPATH": os.pathsep.join([str(TESTS), os.environ.get("PYTHONPATH", "")])}
+    r = subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "-p", "tg_for_test", "test_x.py"],
+                       cwd=repo, env=env, capture_output=True, text=True, timeout=120, check=False)
+    assert r.returncode == 0, r.stdout + r.stderr
+    import json
+    got = set(json.loads(out.read_text(encoding="utf-8"))["test_x.py"])
+    assert {"tracked.txt", "other.txt", "helper_mod.py"} <= got, got
+
+
+def test_the_audit_is_off_without_a_session(tmp_path: Path) -> None:
+    """환경에 감사 디렉터리가 없으면 `sitecustomize` 는 아무것도 안 한다 — 훅을 안 달고 로그도 안 만든다."""
+    env = {k: v for k, v in os.environ.items() if k != "FIRE_LANE_AUDIT_DIR"}
+    env["PYTHONPATH"] = str(TESTS / "audit_site")
+    r = subprocess.run([sys.executable, "-c", "import sys; print(len(sys.audit.__doc__ or ''))"], env=env, capture_output=True, text=True, timeout=30, check=False)
+    assert r.returncode == 0, r.stderr

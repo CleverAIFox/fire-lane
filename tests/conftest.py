@@ -14,6 +14,9 @@ import pytest
 import skip_policy as sp
 from tracked_guard import (  # noqa: F401  세션 앞뒤 추적 파일 지문(Zm39 · §580)
     local_env_names,
+    pytest_collection_finish,
+    pytest_collectstart,
+    pytest_runtest_logstart,
     pytest_sessionfinish,
     pytest_sessionstart,
 )

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 
 import testpick as T  # `pyproject` 의 `pythonpath` 가 tools 를 얹는다
 
@@ -265,3 +266,124 @@ def test_measure_asks_run_all_for_the_measuring_path(tmp_path, monkeypatch):
     monkeypatch.setattr(T, "run_all", lambda names, jobs, ledger, root=T.ROOT, measuring=False: (got.setdefault("m", measuring) and ({"test_a.py": 0.5}, {})) or ({"test_a.py": 0.5}, {}))
     T.main(["--measure"])
     assert got["m"] is True
+
+
+# ── #218 ② 읽기 실측이 정적 스캔의 하한을 메운다 ────────────────────────────────────────
+
+def test_a_measured_read_touches_a_test_whose_path_the_static_scan_cannot_see():
+    texts = {"test_h.py": "p = doc_path('plan')", "test_o.py": "x = 1"}
+    assert T.touching(["docs/PLAN.md"], texts) == {}
+    got = T.touching(["docs/PLAN.md"], texts, {"test_h.py": ["docs/PLAN.md"]})
+    assert got == {"test_h.py": ["docs/PLAN.md"]}, "실측으로 읽은 시험이 안 닿는다 — 정적 스캔의 하한이 안 메워졌다"
+
+
+def test_a_measured_read_of_another_test_file_does_not_touch():
+    texts = {"test_a.py": "x = 1"}
+    assert T.touching(["tests/test_b.py"], texts, {"test_a.py": ["tests/test_b.py"]}) == {}
+
+
+def test_files_nearly_every_test_reads_are_ambient_and_dropped(tmp_path):
+    reads = {f"test_{i}.py": ["src/infra.py", f"docs/d{i}.md"] for i in range(10)}
+    assert T.ambient(reads) == ["src/infra.py"]
+    f = tmp_path / "r.json"
+    f.write_text(json.dumps({"reads": reads}), encoding="utf-8")
+    assert "src/infra.py" not in T.load_reads(f)["test_0.py"] and "src/infra.py" in T.load_reads(f, drop_ambient=False)["test_0.py"]
+
+
+def test_a_missing_or_broken_reads_ledger_reads_as_empty_so_only_the_static_scan_remains(tmp_path):
+    assert T.load_reads(tmp_path / "none.json") == {}
+    (tmp_path / "bad.json").write_text("{", encoding="utf-8")
+    assert T.load_reads(tmp_path / "bad.json") == {}
+
+
+def test_the_real_reads_ledger_names_only_real_test_files_and_sorted_reads():
+    d = json.loads(T.READS_LEDGER.read_text(encoding="utf-8"))["reads"]
+    assert set(d) <= set(T.test_files()), f"없어진 시험이 읽기 장부에 남았다: {sorted(set(d) - set(T.test_files()))[:3]}"
+    assert d and all(v == sorted(v) for v in d.values())
+
+
+def test_measure_reads_runs_one_process_per_file_and_writes_the_ledger(monkeypatch, tmp_path):
+    calls: list[str] = []
+    monkeypatch.setattr(T, "test_files", lambda root=T.ROOT: ["test_a.py", "test_b.py"])
+    monkeypatch.setattr(T, "run_reads", lambda n, *a, **k: (calls.append(n) or (0, "", ["docs/x.md"])))
+    monkeypatch.setattr(T, "READS_LEDGER", tmp_path / "r.json")
+    monkeypatch.setattr(T, "test_hash", lambda n, root=T.ROOT: "h")
+    assert T.main(["--measure-reads", "--write", "--jobs", "2"]) == 0
+    assert sorted(calls) == ["test_a.py", "test_b.py"]
+    assert json.loads((tmp_path / "r.json").read_text(encoding="utf-8"))["reads"] == {"test_a.py": ["docs/x.md"], "test_b.py": ["docs/x.md"]}
+
+
+def test_a_red_file_blocks_writing_the_reads_ledger(monkeypatch, tmp_path):
+    monkeypatch.setattr(T, "test_files", lambda root=T.ROOT: ["test_a.py"])
+    monkeypatch.setattr(T, "run_reads", lambda n, *a, **k: (1, "빨강", []))
+    monkeypatch.setattr(T, "READS_LEDGER", tmp_path / "r.json")
+    assert T.main(["--measure-reads", "--write"]) == 1
+    assert not (tmp_path / "r.json").exists()
+
+
+# ── #218 ⑥ 읽기 장부의 낡음을 도구가 말한다 · 배경 목록은 장부 파일이 든다 ──────────────────
+
+def _tests_dir(tmp_path, names):
+    (tmp_path / "tests").mkdir(exist_ok=True)
+    for n, body in names.items():
+        (tmp_path / "tests" / n).write_text(body, encoding="utf-8")
+    return tmp_path
+
+
+def test_a_new_test_and_a_changed_test_and_a_gone_test_are_each_named_as_stale(tmp_path):
+    root = _tests_dir(tmp_path, {"test_a.py": "1", "test_b.py": "2", "test_c.py": "3"})
+    led = tmp_path / "r.json"
+    led.write_text(json.dumps({"reads": {"test_a.py": [], "test_b.py": [], "test_old.py": []},
+                               "hashes": {"test_a.py": T.test_hash("test_a.py", root), "test_b.py": "0000"}}), encoding="utf-8")
+    new, changed, gone = T.reads_stale(["test_a.py", "test_b.py", "test_c.py"], led, root)
+    assert (new, changed, gone) == (["test_c.py"], ["test_b.py"], ["test_old.py"])
+
+
+def test_an_old_cell_without_a_hash_counts_as_stale_not_fresh(tmp_path):
+    root = _tests_dir(tmp_path, {"test_a.py": "1"})
+    led = tmp_path / "r.json"
+    led.write_text(json.dumps({"reads": {"test_a.py": []}}), encoding="utf-8")
+    assert T.reads_stale(["test_a.py"], led, root)[1] == ["test_a.py"]
+
+
+def test_the_stale_reads_ledger_says_what_it_fell_back_to_and_never_falls_back_silently(tmp_path, capsys, monkeypatch):
+    _tests_dir(tmp_path, {"test_new.py": "x", "test_ch.py": "y"})
+    monkeypatch.setattr(T, "ROOT", tmp_path)
+    led = tmp_path / "r.json"
+    led.write_text(json.dumps({"reads": {"test_ch.py": ["docs/a.md"]}, "hashes": {"test_ch.py": "0000"}, "ambient": []}), encoding="utf-8")
+    monkeypatch.setattr(T, "READS_LEDGER", led)
+    monkeypatch.setattr(T, "test_files", lambda root_=T.ROOT: ["test_new.py", "test_ch.py"])
+    monkeypatch.setattr(T, "test_hash", lambda n, root_=T.ROOT: "ffff")
+    monkeypatch.setattr(T, "load_ledger", lambda path=None: {"test_new.py": 1.0, "test_ch.py": 1.0})
+    T.main(["--list", "--files", "docs/a.md"])
+    err = capsys.readouterr().err
+    assert "읽기 장부가 낡았다" in err and "새 시험 1" in err and "바뀐 시험 1" in err
+    assert "정적 스캔만" in err and "옛 실측 ∪ 정적 스캔" in err and "--measure-reads --write --only" in err
+
+
+def test_the_ambient_list_lives_in_the_ledger_file_and_matches_the_measured_reads():
+    """배경 목록은 코드가 아니라 **장부 파일**이 든다 — 그리고 그 목록이 실측과 어긋나면(시험이 늘어 배경이 바뀌었다) 운다."""
+    d = json.loads(T.READS_LEDGER.read_text(encoding="utf-8"))
+    assert d.get("ambient"), "장부 파일에 배경 목록이 없다 — `--measure-reads --write` 가 적는다"
+    assert d["ambient"] == T.ambient(d["reads"]), "장부의 배경 목록이 실측과 다르다 — 다시 잰다"
+    tracked = set(subprocess.run(["git", "ls-files"], cwd=T.ROOT, capture_output=True, text=True, check=True, timeout=30).stdout.split("\n"))
+    assert set(d["ambient"]) <= tracked, f"추적에 없는 배경 파일: {sorted(set(d['ambient']) - tracked)}"
+
+
+def test_load_reads_drops_exactly_the_ambient_the_file_lists(tmp_path):
+    led = tmp_path / "r.json"
+    led.write_text(json.dumps({"ambient": ["a.py"], "reads": {"test_x.py": ["a.py", "b.py"], "test_y.py": ["a.py"]}}), encoding="utf-8")
+    assert T.load_reads(led) == {"test_x.py": ["b.py"], "test_y.py": []}
+    assert T.load_reads(led, drop_ambient=False)["test_y.py"] == ["a.py"]
+
+
+def test_measure_reads_only_overwrites_the_measured_cells_and_their_hashes(monkeypatch, tmp_path):
+    led = tmp_path / "r.json"
+    led.write_text(json.dumps({"ambient": [], "hashes": {"test_a.py": "old", "test_b.py": "keep"}, "reads": {"test_a.py": ["x"], "test_b.py": ["y"]}}), encoding="utf-8")
+    monkeypatch.setattr(T, "READS_LEDGER", led)
+    monkeypatch.setattr(T, "test_files", lambda root=T.ROOT: ["test_a.py", "test_b.py"])
+    monkeypatch.setattr(T, "run_reads", lambda n, *a, **k: (0, "", ["z"]))
+    monkeypatch.setattr(T, "test_hash", lambda n, root=T.ROOT: "new")
+    assert T.main(["--measure-reads", "--write", "--only", "test_a.py"]) == 0
+    d = json.loads(led.read_text(encoding="utf-8"))
+    assert d["reads"] == {"test_a.py": ["z"], "test_b.py": ["y"]} and d["hashes"] == {"test_a.py": "new", "test_b.py": "keep"}
