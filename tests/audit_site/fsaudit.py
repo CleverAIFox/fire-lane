@@ -15,6 +15,7 @@ from __future__ import annotations
 import os
 import sys
 from collections.abc import Callable
+from pathlib import Path
 
 SESSION = "(세션)"          # 시험도 수집도 아닌 때의 읽기 — 어느 시험 몫도 아니다(conftest · 플러그인)
 _busy = False
@@ -41,13 +42,16 @@ def rel_of(path: object, root: str) -> str | None:
     """`root` 아래의 상대 경로. 밖이거나 경로가 아니면 None."""
     if not isinstance(path, (str, bytes, os.PathLike)):
         return None
-    rel = os.path.relpath(os.path.abspath(os.fsdecode(path)), root)
+    # ★ `Path.resolve()` 로 바꾸지 않는다 — 그것은 **심링크를 따라간다.** 거울 트리(`tracked_guard.mirror_tree`)는 최상위를 심링크로 걸어 두므로 따라가면 거울 안의 읽기 · 쓰기가
+    #   실물 저장소의 것으로 세어진다(뿌리 밖 → 뿌리 안). `os.path.relpath` 는 두 인자를 스스로 절대화하고(`abspath` · 심링크를 안 따라간다) 그것이 이 함수가 원하는 뜻이다.
+    #   그리고 이 함수는 **훅의 뜨거운 길**이다(프로세스마다 열기 이벤트마다) — 시스템 호출을 더하는 `resolve()` 는 값이 아니라 비용이다.
+    rel = os.path.relpath(os.fsdecode(path), root)
     if rel.startswith(".."):
         return None
-    head, tail = os.path.split(rel)
-    if tail.endswith(".pyc") and os.path.basename(head) == "__pycache__":
+    p = Path(rel)         # 이름만 가르는 순수 연산이다 — 입출력이 없으니 훅이 제 이벤트를 부르지 않는다
+    if p.suffix == ".pyc" and p.parent.name == "__pycache__":
         # 바이트코드 캐시가 유효하면 인터프리터는 `.py` 를 **안 연다**(`.pyc` 만 연다) — 캐시 파일을 원본 소스로 되돌려 읽기로 센다
-        return os.path.join(os.path.dirname(head), tail.split(".")[0] + ".py")
+        return str(p.parent.parent / (p.name.split(".")[0] + ".py"))
     return rel
 
 
@@ -84,23 +88,21 @@ def make_hook(root: str, tracked: set[str], sink: Callable[[str, str, str, str],
 
 def prepare(audit_dir: str, root: str, tracked: set[str]) -> None:
     """자식이 읽을 것을 적어 둔다 — 뿌리 · 추적 파일 목록 · 빈 로그. 부모(세션 시작)가 부른다."""
-    os.makedirs(audit_dir, exist_ok=True)
-    with open(os.path.join(audit_dir, "root.txt"), "w", encoding="utf-8") as f:
-        f.write(root)
-    with open(os.path.join(audit_dir, "tracked.txt"), "w", encoding="utf-8") as f:
-        f.write("\0".join(sorted(tracked)))
-    open(os.path.join(audit_dir, "log"), "w", encoding="utf-8").close()
+    d = Path(audit_dir)
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "root.txt").write_text(root, encoding="utf-8")
+    (d / "tracked.txt").write_text("\0".join(sorted(tracked)), encoding="utf-8")
+    (d / "log").write_text("", encoding="utf-8")
 
 
 def read_log(audit_dir: str) -> list[tuple[str, str, str, str]]:
     """자식들이 쓴 줄 → (종류, 경로, 시험 파일, 이벤트)."""
     out = []
     try:
-        with open(os.path.join(audit_dir, "log"), encoding="utf-8", errors="replace") as f:
-            for ln in f:
-                p = ln.rstrip("\n").split("\t")
-                if len(p) == 4:
-                    out.append((p[0], p[1], p[2], p[3]))
+        for ln in (Path(audit_dir) / "log").read_text(encoding="utf-8", errors="replace").splitlines():
+            p = ln.split("\t")
+            if len(p) == 4:
+                out.append((p[0], p[1], p[2], p[3]))
     except OSError:
         pass
     return out
@@ -112,11 +114,9 @@ def install_child() -> None:
     if not d:
         return
     try:
-        with open(os.path.join(d, "root.txt"), encoding="utf-8") as f:
-            root = f.read()
-        with open(os.path.join(d, "tracked.txt"), encoding="utf-8") as f:
-            tracked = {x for x in f.read().split("\0") if x}
-        log = os.path.join(d, "log")
+        root = (Path(d) / "root.txt").read_text(encoding="utf-8")
+        tracked = {x for x in (Path(d) / "tracked.txt").read_text(encoding="utf-8").split("\0") if x}
+        log = Path(d) / "log"
     except OSError:
         return
     seen: set[tuple[str, str, str]] = set()
@@ -126,6 +126,6 @@ def install_child() -> None:
         if key in seen:
             return
         seen.add(key)
-        with open(log, "a", encoding="utf-8") as f:            # 한 줄을 닫을 때 한 번에 쓴다 — 병렬 자식이 섞여도 줄이 안 찢어진다
+        with log.open("a", encoding="utf-8") as f:            # 한 줄을 닫을 때 한 번에 쓴다 — 병렬 자식이 섞여도 줄이 안 찢어진다
             f.write(f"{kind}\t{rel}\t{test}\t{event}\n".replace("\r", " "))
     sys.addaudithook(make_hook(root, tracked, sink))

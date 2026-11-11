@@ -230,7 +230,7 @@ def load_reads(path: Path | None = None, drop_ambient: bool = True) -> dict[str,
 def test_hash(name: str, root: Path = ROOT) -> str:
     """시험 파일의 지문 — 읽기 장부가 **어느 본문을 재고 적었나**. 본문이 바뀌면 그 장부 칸은 낡았다."""
     import hashlib
-    return hashlib.sha1((root / "tests" / name).read_bytes()).hexdigest()[:16]
+    return hashlib.sha1((root / "tests" / name).read_bytes(), usedforsecurity=False).hexdigest()[:16]    # 보안이 아니라 **지문**이다 — 같은 값이라 읽기 장부가 안 낡는다
 
 
 def reads_stale(files: list[str], path: Path | None = None, root: Path = ROOT) -> tuple[list[str], list[str], list[str]]:
