@@ -11,7 +11,8 @@
     "test": "vitest run",
     "lint": "eslint .",
     "glyphs": "node scripts/glyphs.mjs",
-    "smoke": "playwright test"
+    "smoke": "playwright test",
+    "glance": "node scripts/glance.mjs"
   },
   "dependencies": {
     "maplibre-gl": "^6.16.0",
