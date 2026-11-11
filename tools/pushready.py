@@ -24,7 +24,7 @@ pushready.py — 「푸시해도 되는가」 **한 명령.**  (PLAN #207)
   ㉤ `mutate` — 변이 장부가 낡았는가(`ratchet_values()` 가 죽는가)
   ㉥ `testpick --run` — 실측으로 고른 시험 묶음(구조 규약 시험 포함 · PLAN #209)
   ㉦ `obligations --new` — 새 파일의 빠진 등재 의무를 이름으로(PLAN #199 · 훅이 아니라 여기 — 훅은 예산이 없다)
-  ㉨ `gatefast` 의 `ready` 층 — CI 빠른 잡에는 있고 훅 예산에 못 든 검사 45개를 **CI 의 명령 글자 그대로** 돈다(PLAN #216 · 층 표는 `tools/gatefast.py` · 병렬 4)
+  ㉨ **훅 게이트 전부**(시험 묶음 · 도장은 ㉥ · ㉡ 가 더 세게) + `gatefast` 의 `ready` 층(CI 빠른 잡 중 훅 예산에 못 든 45개) — **글자 그대로** 돈다(PLAN #216 · 병렬 4 · 둘 다 도출이라 사본이 없다 → pushready ≥ 훅)
   ㉧ 로컬이 **로컬에 있는 원격 추적 가지**(`@{u}`)보다 뒤인가 — 뒤면 받을 명령을 댄다(PLAN #211). `fetch` 는 **안 한다**(사람이 정했다: 읽기 전용이 정체성이다)
 ★ **몇 바퀴 남았나**(PLAN #220): 막는 것 목록 끝에 `forecast` 가 「이번에 치면 다음에 무엇이 또 낡는가」를 말한다 — 되먹임 변 다섯(`EDGES` · 실측 · 서술을 달았다)만으로 **확정 바퀴 · 가능한 바퀴**를 센다.
   모델이다: 고정점을 증명하지 않고, 가능한 자기 루프 때문에 상한(`LAP_CAP`)에서 자른다. 표본은 사람이 돈 다섯 바퀴 한 건이다. 이 도구는 여전히 **아무것도 안 친다**.
@@ -224,33 +224,56 @@ def check_obligations(root: Path, run: Runner) -> Block | None:
                  [" ".join([*_PY, "tools/obligations.py", "--new"]) + "   # 빠진 의무를 이름으로 댄다 — 적은 뒤 다시"])
 
 
-# ── ㉨ CI 빠른 잡의 검사 중 훅에 못 든 것 ────────────────────────
+# ── ㉨ 훅 게이트 전부 + CI 빠른 잡 중 훅에 못 든 것 ───────────────
 MIRROR_WORKERS = 4
 #: CI 빠른 잡은 **레이크 없이** 돈다 — 이 기계의 `FIRE_LANE_DATA` 가 결과를 바꾸지 않게 같은 조건으로 돈다(`env` 로 비운다 · 55 전부 같은 결과였다).
 _LAKELESS = ["env", "FIRE_LANE_DATA=", "FIRE_LANE_RAW=", "bash", "-c"]
+#: 훅 게이트 중 ㉨ 가 **안 도는** 것 — 이미 더 센 축이 있다. 키는 `gate_parity.keys` 의 검사기 열쇠, 값은 사유. 훅에서 사라진 열쇠가 여기 남으면 시험이 운다.
+HOOK_REPLACED: dict[str, str] = {
+    "tools/testpick.py": "㉥ 가 같은 선택 함수로 더 큰 묶음을 돈다(`--no-cap` · 바뀐 파일에 닿는 시험 전부)",
+    "tools/docseal.py": "㉡ · ㉢ 가 같은 판정(`docseal check`)을 사람이 칠 명령과 함께 낸다",
+}
+
+
+def mirror_commands() -> tuple[list[tuple[str, str, list[str]]], dict[str, str]]:
+    """㉨ 가 돌 것 — (층, 이름, argv 앞머리)와 훅에서 빠진 것(사유). **둘 다 도출한다**: 훅은 `pre-push.gates`, ready 는 CI(`tools/gatefast.py` 의 층 표) — 사본이 없다."""
+    import gate_parity as GP
+    import gatefast as GF
+    out: list[tuple[str, str, list[str]]] = []
+    skipped: dict[str, str] = {}
+    for name, cmd in GP.gate_commands():
+        ks = GP.keys(cmd)
+        if ks and ks[0] in HOOK_REPLACED:
+            skipped[ks[0]] = HOOK_REPLACED[ks[0]]
+            continue
+        out.append(("훅", name, ["bash", "-c", cmd]))
+    out += [("ready", k, [*_LAKELESS, c]) for k, c in GF.ready_commands()]
+    return out, skipped
 
 
 def check_ci_mirror(root: Path, run: Runner) -> Block | None:
-    """`gatefast` 의 `ready` 층 — 푸시 전에 막되 훅 예산에 못 든 CI 빠른 잡 검사를 **CI 의 명령 글자 그대로** 돈다(PLAN #216 · 사본이 없다: 표는 `tools/gatefast.py`).
+    """**훅 게이트 전부**(`pre-push.gates` — 시험 묶음 · 도장은 더 센 ㉥ · ㉡ 가 맡는다)와 **CI 빠른 잡 중 훅 예산에 못 든 검사**(`gatefast` 의 `ready` 층)를 **글자 그대로** 돈다. (PLAN #216)
 
+    ★ 이것으로 **pushready ≥ 훅**이다 — 종전에는 훅 24게이트 중 15개를 어느 경로로도 안 봐서 먼저 보는 도구가 나중 도구보다 약했다. 두 목록 모두 도출이라 사본이 없다.
     ★ 층 표가 CI 와 어긋나도(미선언 · 죽은 선언) 여기서 막는다 — 새 CI 검사가 층 없이 들어오면 이 행이 다시 열린다.
-    ★ 병렬 `MIRROR_WORKERS` 로 돈다(검사 45개 · 직렬 합 약 66초). 읽기 전용 검사만 든다(돌고 나서 트리가 안 바뀐 것을 실측했다)."""
+    ★ 병렬 `MIRROR_WORKERS` 로 돈다. 읽기 전용 검사만 든다(CI 빠른 잡 45개는 돌고 나서 트리가 안 바뀐 것을 실측했다)."""
     from concurrent.futures import ThreadPoolExecutor
 
     import gatefast as GF
     rep = GF.layer_report()
     detail = [f"층 선언표가 CI 와 어긋난다 — {k}: {', '.join(rep[k][:6])}" for k in ("미선언", "죽은 선언", "훅과 겹친다", "사유 부족", "층 이름") if rep[k]]
-    cmds = GF.ready_commands()
+    jobs, _skipped = mirror_commands()
     with ThreadPoolExecutor(max_workers=MIRROR_WORKERS) as ex:
-        results = list(ex.map(lambda kc: (kc, run([*_LAKELESS, kc[1]], root)), cmds))
-    red = [(kc, out) for kc, (rc, out) in results if rc != 0]
-    for (k, _c), out in red[:10]:
+        results = list(ex.map(lambda j: (j, run(j[2], root)), jobs))
+    red = [(j, out) for j, (rc, out) in results if rc != 0]
+    for (layer, name, _argv), out in red[:10]:
         last = [x for x in out.strip().splitlines() if x.strip()][-1:] or ["(출력 없음)"]
-        detail.append(f"{k} — {last[0][:150]}")
+        detail.append(f"[{layer}] {name} — {last[0][:150]}")
     if not detail:
         return None
-    what = f"CI 빠른 잡 검사 {len(red)}개가 빨갛다(훅에 못 든 {len(cmds)}개 중)" if red else "층 선언표가 CI 와 어긋난다"
-    return Block("㉨", what, detail, [*[c for (_k, c), _o in red[:6]], "# 층 선언표는 tools/gatefast.py 의 LAYERS — 새 CI 검사는 거기에 층을 적는다"])
+    n_hook = sum(1 for j in jobs if j[0] == "훅")
+    what = f"훅 게이트 · CI 빠른 잡 검사 {len(red)}개가 빨갛다(훅 {n_hook} + ready {len(jobs) - n_hook} 중)" if red else "층 선언표가 CI 와 어긋난다"
+    return Block("㉨", what, detail, [*[j[2][-1] for j, _o in red[:6]], "# 층 선언표는 tools/gatefast.py 의 LAYERS — 새 CI 검사는 거기에 층을 적는다"])
 
 
 # ── ㉧ 로컬이 원격 추적 가지보다 뒤인가 ──────────────────────────

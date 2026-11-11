@@ -34,7 +34,7 @@ def _runner(**over):
 
     def run(argv: list[str], cwd: Path) -> tuple[int, str]:
         s = " ".join(argv)
-        if argv[0] == "env":                         # ㉨ — CI 빠른 잡의 명령을 레이크 없이 돈다
+        if argv[0] in ("env", "bash"):               # ㉨ — 훅 게이트(`bash -c`)와 CI 빠른 잡 명령(레이크 없이 `env … bash -c`)
             return table["mirror"]
         if "rev-list" in s:
             return table["behind"]
@@ -263,44 +263,73 @@ def test_the_forecast_is_pure_and_the_rendered_report_carries_it_without_running
     assert "몇 바퀴" not in P.render([]), "막는 것이 없으면 바퀴 절은 안 낸다 — 초록 출력은 그대로다"
 
 
-# ── #216 ㉨ CI 빠른 잡 미러 — 훅 예산에 못 든 검사를 CI 의 명령 글자 그대로 돈다 ──────────────────
+# ── #216 ㉨ 미러 — 훅 게이트 전부 + CI 빠른 잡 중 훅 예산에 못 든 것을 글자 그대로 돈다 ──────────────────
 
-def test_the_ci_mirror_runs_every_ready_command_exactly_as_ci_spells_it_without_a_lake():
-    import gatefast as GF
-    seen: list[list[str]] = []
-
+def _all_commands(run_log):
     def run(argv, cwd):
-        if argv[0] == "env":
-            seen.append(argv)
+        if argv[0] in ("env", "bash"):
+            run_log.append(argv)
             return 0, ""
         return _runner()(argv, cwd)
-
-    assert P.check_ci_mirror(ROOT, run) is None
-    want = {c for _k, c in GF.ready_commands()}
-    assert {a[-1] for a in seen} == want and len(want) > 30, "ready 층 명령이 CI 의 글자와 다르다 — 사본이 생겼다"
-    assert all(a[:3] == ["env", "FIRE_LANE_DATA=", "FIRE_LANE_RAW="] for a in seen), "레이크 없이 돌지 않았다 — CI 빠른 잡과 조건이 다르다"
+    return run
 
 
-def test_a_red_ci_mirror_check_blocks_names_the_check_and_prints_its_own_command():
+def test_the_mirror_runs_every_hook_gate_and_every_ready_command_exactly_as_declared():
+    import gate_parity as GP
+    import gatefast as GF
+    seen: list[list[str]] = []
+    assert P.check_ci_mirror(ROOT, _all_commands(seen)) is None
+    ran = {a[-1] for a in seen}
+    hook = {c for _n, c in GP.gate_commands() if not (GP.keys(c) and GP.keys(c)[0] in P.HOOK_REPLACED)}
+    ready = {c for _k, c in GF.ready_commands()}
+    assert ran == hook | ready and len(ready) > 30 and len(hook) >= 20, "㉨ 가 도는 것이 선언(훅 파일 · CI)과 다르다 — 사본이 생겼다"
+    assert all(a[:3] == ["env", "FIRE_LANE_DATA=", "FIRE_LANE_RAW="] for a in seen if a[0] == "env"), "ready 는 레이크 없이 돈다 — CI 빠른 잡과 같은 조건"
+    assert all(a[:2] == ["bash", "-c"] for a in seen if a[0] == "bash"), "훅 게이트는 훅이 도는 꼴(`bash -c`)이다"
+
+
+def test_pushready_is_no_weaker_than_the_hook_every_hook_gate_runs_or_is_replaced_with_a_reason():
+    """#216 의 본체 — 먼저 보는 도구가 나중 도구보다 약하면 거짓 안심을 준다. 훅 게이트는 전부 돌거나 **사유와 함께** 더 센 축으로 대체된다."""
+    import gate_parity as GP
+    hook_keys = {GP.keys(c)[0] for _n, c in GP.gate_commands() if GP.keys(c)}
+    jobs, skipped = P.mirror_commands()
+    assert set(skipped) == set(P.HOOK_REPLACED) and set(P.HOOK_REPLACED) <= hook_keys, "대체 표에 훅에 없는 열쇠가 남았다(죽은 대체)"
+    assert all(len(why) >= 5 for why in P.HOOK_REPLACED.values())
+    assert sum(1 for j in jobs if j[0] == "훅") + len(skipped) == len(GP.gate_commands()), "훅 게이트가 돌지도 대체되지도 않고 샜다"
+
+
+def test_a_red_mirror_check_blocks_names_the_check_and_prints_its_own_command():
     import gatefast as GF
     key, cmd = GF.ready_commands()[0]
 
     def run(argv, cwd):
         if argv[0] == "env" and argv[-1] == cmd:
             return 1, "검사가 빨갛다 — 이유 하나\n"
-        return _runner()(argv, cwd)
+        return _runner()(argv, cwd) if argv[0] not in ("bash",) else (0, "")
 
     b = P.check_ci_mirror(ROOT, run)
     assert b is not None and b.key == "㉨" and any(key in d for d in b.detail) and cmd in b.cmds
 
 
-def test_the_ci_mirror_blocks_when_the_layer_table_drifts_from_ci(monkeypatch):
+def test_a_red_hook_gate_in_the_mirror_is_named_with_its_layer():
+    import gate_parity as GP
+    name, cmd = next((n, c) for n, c in GP.gate_commands() if "deadcheck" in c)
+
+    def run(argv, cwd):
+        if argv[0] == "bash" and argv[-1] == cmd:
+            return 1, "deadcheck 가 빨갛다\n"
+        return (0, "") if argv[0] in ("bash", "env") else _runner()(argv, cwd)
+
+    b = P.check_ci_mirror(ROOT, run)
+    assert b is not None and any(d.startswith("[훅] " + name) for d in b.detail)
+
+
+def test_the_mirror_blocks_when_the_layer_table_drifts_from_ci(monkeypatch):
     import gatefast as GF
     monkeypatch.setattr(GF, "LAYERS", {**GF.LAYERS, "tools/없는검사.py": ("ready", "사유가 있다 — 없는 검사")})
-    b = P.check_ci_mirror(ROOT, _runner())
+    b = P.check_ci_mirror(ROOT, _all_commands([]))
     assert b is not None and any("죽은 선언" in d and "없는검사" in d for d in b.detail)
 
 
-def test_the_survey_includes_the_ci_mirror_after_obligations_and_before_the_ratchet():
+def test_the_survey_includes_the_mirror_after_obligations_and_before_the_ratchet():
     keys = [k for k, _ in P.CHECKS]
     assert keys.index("㉦") < keys.index("㉨") < keys.index("㉠")
