@@ -3,7 +3,7 @@
 감사가 손으로 센 수가 틀린 것을 지적했다(「열린 59」가 실제 45). 그래서 배분은 표 하나로 두고 이 시험이 셈을 한다 —
 ① 배분 표의 행 번호 + 외부 회신 + 미배분이 §1 의 행 집합과 **정확히 같다**(빠짐 · 겹침 · 유령 번호 없음)
 ② 전건 관계가 실재하는 구획만 가리키고 **순환하지 않는다**
-③ 재잠금 횟수가 선언대로다(A 1회 · B 2회 · 나머지 0)
+③ 재잠금 횟수가 선언대로다(A 1회 · B 2회 · D 1회 · 나머지 0)
 ④ (Zm28) 0판이 없다 · A 의 전건은 없음 · F 의 전건은 A(§655) · A 행이 완료/남은/보류를 가른다 · F 행이 「판정 불변」과 「E 를 다시 돈다」를 못 박는다
 
 IN    docs/PLAN.md
@@ -87,7 +87,7 @@ def test_prerequisites_exist_and_are_acyclic() -> None:
 
 def test_relock_counts_are_as_declared() -> None:
     b = blocks()
-    assert {k: v["relock"] for k, v in b.items() if k in "ABCDEF"} == {"A": 1, "B": 2, "C": 0, "D": 0, "E": 0, "F": 0}
+    assert {k: v["relock"] for k, v in b.items() if k in "ABCDEF"} == {"A": 1, "B": 2, "C": 0, "D": 1, "E": 0, "F": 0}
 
 
 def test_there_is_no_block_zero() -> None:

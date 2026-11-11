@@ -22,11 +22,11 @@ SIZES = {"지명": 2, "편심만": 3, "escape만": 3, "둘다멀쩡": 3, "둘다
 def _data():
     rows = []
     for i in range(600):
-        rows.append({"seg_id": f"DM{i:05d}", "road_name": "가로", "length_m": 30.0 + i % 7, "ecc_rel_med_m": (i % 10) / 10,
+        rows.append({"seg_id": f"DM{i:05d}", "seg_uid": f"UID{i:05d}", "road_name": "가로", "length_m": 30.0 + i % 7, "ecc_rel_med_m": (i % 10) / 10,
                      "road_bt_m": 8.0, "width_min_m": 7.4 + (i % 3) * 0.1, "width_med_m": 7.8, "width_min_sample_idx": 0,
                      "width_max_m": None, "n_sample": 10, "cctv_dist_m": 5.0, "width_min_any_m": 7.5, "width_min_sym_m": 7.5,
                      "clear_med_m": 5.0 if i % 5 == 0 else 20.0, "verdict": "clear"})
-    rows += [{**rows[0], "seg_id": n} for n in E.NAMED]
+    rows += [{**rows[0], "seg_id": n, "seg_uid": f"UID-{n}"} for n in E.NAMED]
     samples = {r["seg_id"]: [{"seg_id": r["seg_id"], "s_m": "1.0", "w_m": "5.0",
                               "w_rule": "escape" if (int(r["seg_id"][2:]) // 3) % 2 else "carve"} for _ in range(4)] for r in rows}
     mids = {r["seg_id"]: (35.1, 126.9) for r in rows}
@@ -212,3 +212,42 @@ def test_main_writes_only_to_the_patched_paths_and_never_to_the_real_ones(tmp_pa
     monkeypatch.setattr(E, "_midpoints", lambda: mids)
     assert E.main([]) == 0 and c.exists() and k.exists()
     assert snap() == before, "시험이 진짜 data/field/evalset_2610.* 를 덮어썼다"
+
+
+# ── PLAN #190 — 채점은 구간을 seg_uid 로만 찾는다 · 키의 seg_id 가 낡아도 묶음이 맞는다 ─────────────────────────────
+
+def _filled(table):
+    return [{**r, "w_full_m": "6.0", "w_narrow_m": "5.0", "narrow_s_m": "2.0", "note": "합성"} for r in table]
+
+
+def test_score_groups_by_seg_uid_so_a_republish_that_shifts_every_seg_id_does_not_change_the_groups(capsys) -> None:
+    """★ 재발행하면 순번 seg_id 가 밀린다. 표(채워진 행)도 키(`groups`)도 옛 seg_id 를 들고 있어도 seg_uid 로 찾으면 같은 구간 · 같은 묶음이다."""
+    rows, samples, mids = _data()
+    table, key = E.build(rows, samples, sizes=SIZES, mids=mids)
+    plain = E.score(rows, samples, _filled(table), key)
+    shifted = [{**r, "seg_id": "ZZ" + r["seg_id"]} for r in rows]                        # 발행본의 번호가 전부 바뀌었다 — seg_uid 는 그대로다
+    samples2 = {("ZZ" + k): [{**x, "seg_id": "ZZ" + k} for x in v] for k, v in samples.items()}
+    out = E.score(shifted, samples2, _filled(table), key)                                # 표 · 키는 옛 seg_id 그대로
+    for q in ("Q1", "Q2", "Q3"):
+        assert out[q] == plain[q], f"{q}: seg_id 가 밀렸는데 채점이 달라졌다 — 구간을 seg_id 로 찾고 있다"
+    assert "표의 seg_id 칸이 낡았다" in capsys.readouterr().err, "낡은 보조 칸을 알리지 않았다"
+
+
+def test_score_refuses_a_row_without_seg_uid_and_a_dead_seg_uid_and_a_key_without_uids() -> None:
+    rows, samples, mids = _data()
+    table, key = E.build(rows, samples, sizes=SIZES, mids=mids)
+    nouid = [{**r, "seg_uid": ""} if i == 0 else r for i, r in enumerate(_filled(table))]
+    with pytest.raises(SystemExit, match="seg_uid 가 없다"):
+        E.score(rows, samples, nouid, key)
+    dead = [{**r, "seg_uid": "UID-없는구간"} if i == 0 else r for i, r in enumerate(_filled(table))]
+    with pytest.raises(SystemExit, match="발행본에 없다"):
+        E.score(rows, samples, dead, key)
+    with pytest.raises(SystemExit, match="`uids` 칸"):
+        E.score(rows, samples, _filled(table), {**key, "uids": {}})
+
+
+def test_score_never_looks_a_segment_up_by_seg_id() -> None:
+    """회귀 — 구간 찾기가 `by_id[...]` 로 돌아가면 이 줄이 우는 것이 아니라 위 시험이 운다. 여기서는 글자로도 못박는다."""
+    body = (ROOT / "tools/evalset.py").read_text(encoding="utf-8")
+    body = body[body.index("def score("):body.index("def selftest(")]
+    assert "by_id[" not in body and "by_id =" not in body, "score 가 seg_id 로 구간을 찾는다(재발행하면 밀린다)"

@@ -4760,7 +4760,7 @@ outputs:
     # ★ 2026-09-06. 또 하나. `publish_navi` 가 내비용 그래프를 낸다 —
     #   같은 병이 두 번째다(손대장이라 읽는 쪽이 늘어도 아무도 안 적는다).
     - src/firelane/publish_navi.py
-    # ★ 2026-09-25 (PLAN §1 행 94(닫힘) · #120). 평가지표 산출기와 그 게이트.
+    # ★ 2026-09-25 (PLAN §1 행 94(닫힘) · 행 120(닫힘)). 평가지표 산출기와 그 게이트.
     - tools/evalgate.py
     - tools/evalgen.py
     - tests/test_evalgen.py
@@ -5098,7 +5098,7 @@ outputs:
     path: data/processed/eval.json
     inputs: [segments, route_vehicle]
     consumers: [tests/test_evalgen.py]
-    what: 평가지표 E-1 · E-3 과 #120 시나리오 역산. 재현성 게이트 보고를 함께 든다
+    what: 평가지표 E-1 · E-3 과 행 120(닫힘) 시나리오 역산. 재현성 게이트 보고를 함께 든다
     note: |
       ★ PLAN §1 행 94(닫힘). **지표는 값이 아니라 실행이다** — 터미널에만 있는 숫자는
         소실된다. 문서에 손으로 옮겨 적힌 값 대신 이 파일이 정본이다.
