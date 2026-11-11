@@ -53,6 +53,7 @@ from __future__ import annotations
 import csv
 import json
 import random
+import sys
 from pathlib import Path
 
 from evalgen import SEED
@@ -214,34 +215,47 @@ def _err(vals: list[float]) -> dict:
 
 
 def score(rows: list[dict], samples_by: dict[str, list[dict]], filled: list[dict], key: dict) -> dict:
-    """Q1~Q6. `key` 는 호출자가 채점 시점에 연다."""
-    by_id = {r["seg_id"]: r for r in rows}
+    """Q1~Q6. `key` 는 호출자가 채점 시점에 연다.
+
+    ★ 2026-11-12 (PLAN #190). **구간은 `seg_uid` 로만 찾는다.** 종전에는 `seg_id` 로 찾고 `seg_uid` 는 맞나 확인만 했고, 키의 묶음(`groups`)은 `seg_id` 를 키로 들어
+      재발행 뒤 키가 낡으면 **조용히 다른 묶음에 들 수 있었다**(표의 `seg_id` 는 막혔는데 키의 `seg_id` 는 안 막혔다). 키가 든 `uids`(`seg_id` → `seg_uid`)로 묶음을
+      `seg_uid` 로 옮겨 쓴다 — 키 파일의 `seg_id` 키는 몰라도 된다. `seg_id` 는 사람이 읽는 보조 칸이라 어긋나도 채점은 맞고 알림만 낸다
+      (어긋남 자체는 `tests/test_seg_uid_first_class.py` 가 CI 전에 잡는다)."""
     by_uid = {r["seg_uid"]: r for r in rows if r.get("seg_uid")}
-    grp = {s: g for g, ss in key["groups"].items() for s in ss}
+    uid_of = key.get("uids") or {}
+    grp: dict[str, str] = {}
+    for g, ss in key["groups"].items():
+        for sid in ss:
+            u = uid_of.get(sid)
+            if not u:
+                raise SystemExit(f"★ 키가 {sid} 의 seg_uid 를 안 든다(`uids` 칸) — 키를 쓴 판이 낡았다. 채점하지 않는다. "
+                                 "사람이 DECISIONS §621-1 의 (가) 순서(seg_uid 로 seg_id 를 다시 매핑)로 키를 고친다 — 채워진 표는 건드리지 않는다.")
+            grp[u] = g
     res: dict = {"Q1": {}, "Q2": {}, "Q3": {}, "Q6": {}}
     e1: dict[str, list[float]] = {}
     e2: dict[str, list[float]] = {}
     e3: dict[str, list[float]] = {}
     for r in filled:
-        # ★ Zm27. 표에 seg_uid 가 있으면 **그것으로** 구간을 찾는다. seg_id 는 재발행하면 밀린다 — 밀렸으면 여기서 멈춘다.
         s = r["seg_id"]
-        if r.get("seg_uid"):
-            if r["seg_uid"] not in by_uid:
-                raise SystemExit(f"★ {s} 의 seg_uid {r['seg_uid']} 가 지금 발행본에 없다 — 재발행으로 구간이 바뀌었다. 채점하지 않는다.")
-            if by_uid[r["seg_uid"]]["seg_id"] != s:
-                raise SystemExit(f"★ {s} 가 지금은 다른 구간이다(seg_uid 가 {by_uid[r['seg_uid']]['seg_id']} 를 가리킨다). 채점하지 않는다.")
-        p, g = by_id[s], grp.get(s, "?")
+        uid = r.get("seg_uid")
+        if not uid:
+            raise SystemExit(f"★ {s} 행에 seg_uid 가 없다 — seg_id 로는 구간을 찾지 않는다(재발행하면 밀린다). 채점하지 않는다.")
+        if uid not in by_uid:
+            raise SystemExit(f"★ {s} 의 seg_uid {uid} 가 지금 발행본에 없다 — 재발행으로 구간이 바뀌었다. 채점하지 않는다.")
+        p, g = by_uid[uid], grp.get(uid, "?")
+        if p["seg_id"] != s:
+            print(f"  · {s} 는 지금 {p['seg_id']} 다(seg_uid 로 찾았다 — 표의 seg_id 칸이 낡았다)", file=sys.stderr)
         wf, wn, ns = num(r.get("w_full_m")), num(r.get("w_narrow_m")), num(r.get("narrow_s_m"))
         if wf is not None and p.get("width_med_m") is not None:
             e1.setdefault(g, []).append(p["width_med_m"] - wf)
         if wn is not None and p.get("width_min_m") is not None:
             e2.setdefault(g, []).append(p["width_min_m"] - wn)
         idx = p.get("width_min_sample_idx")
-        rows_s = samples_by.get(s, [])
+        rows_s = samples_by.get(p["seg_id"], [])        # 표본도 seg_uid 로 찾은 구간의 현재 seg_id 로 본다
         if ns is not None and idx is not None and 0 <= int(idx) < len(rows_s):
             e3.setdefault(g, []).append(abs(float(rows_s[int(idx)]["s_m"]) - ns))
         if g == "지명":
-            res["Q6"][s] = r.get("note", "")
+            res["Q6"][p["seg_id"]] = r.get("note", "")
     for name, e in (("Q1", e1), ("Q2", e2), ("Q3", e3)):
         res[name] = {g: _err(v) for g, v in sorted(e.items())}
         res[name]["전체"] = _err([x for v in e.values() for x in v])
