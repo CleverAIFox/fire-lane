@@ -32,3 +32,6 @@ PLAN 이력 빚	uv run python tools/planwork.py	0.7
 #    새 시험은 장부에 없어도 무조건 든다. 장부 갱신은 `tools/testpick.py --measure --write`.
 #    예산은 **훅 전체 벽시계 · 게이트 동시 · 8코어**(testpick 머리말 · PLAN #210) — `--load 60` 은 이 훅의 다른 게이트들이 쓰는 CPU-초다. ──
 시험 묶음(실측으로 고름)	uv run python tools/testpick.py --run --budget 28 --load 60 --jobs 6 --no-touched	23.0
+# ── PLAN #216 · 세 층 정합 — CI 빠른 잡에는 있고 훅에 없던 검사 55 중 **하나만** 들었다(나머지는 `tools/gatefast.py` 의 층 선언표 · `pushready` ㉨). 싼 37개를 다 넣으면 훅 중앙 31.1초로 예산을 넘는다.
+#    `env_check` 는 반드시 넣는다 — 2026-11-11 `FIRE_LANE_PUSH_RANGES`(paths.py 밖의 os.environ 독자)가 로컬에서 안 잡히고 CI 에서만 빨갰다. 같은 날 이것을 다시 안 지키는 줄이 하나 더 났다(testpick). ──
+환경변수 선언 ↔ 실물	uv run python tools/env_check.py	1.3

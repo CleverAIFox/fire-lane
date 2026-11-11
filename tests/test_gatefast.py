@@ -111,3 +111,42 @@ def test_an_exemption_does_not_change_the_kind_it_is_counted_apart():
     assert res["a"]["갈래"] == "안 덮인다" and res["a"]["면제"] == "의도" and res["b"]["면제"] is None
     head = F.render(res).splitlines()[0]
     assert "안 덮인다 2" in head and "면제 1" in head and "사유 없음 1" in head
+
+
+# ── #216 반대 방향 — CI → 훅 · ready · ci, 그리고 층 선언표(단일 선언) ─────────────────────────────
+
+LAYERS = {"tools/b.py": ("ready", "훅 예산 — 합치면 넘는다"), "tools/n.py": ("ci", "망이 필요하다")}
+FAST2 = ["uv run python tools/a.py", "uv run python tools/b.py", "uv run python tools/n.py"]
+
+
+def test_the_reverse_direction_sorts_ci_checks_into_hook_ready_and_ci_only():
+    rep = F.layer_report(FAST2, {"tools/a.py"}, LAYERS)
+    assert (rep["훅"], rep["ready"], rep["ci"]) == (["tools/a.py"], ["tools/b.py"], ["tools/n.py"])
+    assert not any(rep[k] for k in ("미선언", "죽은 선언", "훅과 겹친다", "사유 부족", "층 이름"))
+
+
+def test_a_new_ci_check_without_a_layer_is_undeclared_so_the_row_cannot_silently_reopen():
+    rep = F.layer_report([*FAST2, "uv run python tools/new.py"], {"tools/a.py"}, LAYERS)
+    assert rep["미선언"] == ["tools/new.py"]
+
+
+def test_a_table_entry_that_ci_dropped_is_a_dead_declaration_and_one_that_the_hook_took_is_an_overlap():
+    rep = F.layer_report(["uv run python tools/a.py", "uv run python tools/b.py"], {"tools/a.py", "tools/b.py"}, LAYERS)
+    assert rep["죽은 선언"] == ["tools/n.py"] and rep["훅과 겹친다"] == ["tools/b.py"]
+
+
+def test_a_short_reason_or_an_unknown_layer_name_is_caught():
+    rep = F.layer_report(FAST2, {"tools/a.py"}, {"tools/b.py": ("ready", "네"), "tools/n.py": ("몰라", "사유가 충분히 길다")})
+    assert rep["사유 부족"] == ["tools/b.py"] and rep["층 이름"] == ["tools/n.py"]
+
+
+def test_ready_commands_are_ci_s_own_text_not_a_copy():
+    assert F.ready_commands(FAST2, LAYERS) == [("tools/b.py", "uv run python tools/b.py")]
+
+
+def test_the_real_tree_every_ci_fast_check_has_a_layer_and_the_table_has_no_dead_entry():
+    """★ 이 시험이 `#216` 이 다시 안 열리게 하는 이음매다 — CI 빠른 잡에 검사를 더하고 층을 안 적으면 여기서 빨개진다(CI `contract-tests` 가 전수로 돈다)."""
+    rep = F.layer_report()
+    bad = {k: v for k, v in rep.items() if k in ("미선언", "죽은 선언", "훅과 겹친다", "사유 부족", "층 이름") and v}
+    assert not bad, f"층 선언표(tools/gatefast.py LAYERS)가 CI 와 어긋난다: {bad}"
+    assert "tools/env_check.py" in rep["훅"], "env_check 는 훅에 든다 — 2026-11-11 CI 가 이것 때문에 빨갰다"

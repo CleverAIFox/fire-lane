@@ -23,6 +23,7 @@ GREEN = {
     "tests": (0, "✓ 시험 묶음 198개 파일 · 빨강 0 · 25.0초\n"),
     "upstream": (0, "origin/part/infra\n"),
     "behind": (0, "3\t0\n"),
+    "mirror": (0, "✓\n"),
     "obligations": (0, "새 파일이 없다 — 추적 안 된 것도 스테이징한 새 것도 없다\n"),
 }
 
@@ -33,6 +34,8 @@ def _runner(**over):
 
     def run(argv: list[str], cwd: Path) -> tuple[int, str]:
         s = " ".join(argv)
+        if argv[0] == "env":                         # ㉨ — CI 빠른 잡의 명령을 레이크 없이 돈다
+            return table["mirror"]
         if "rev-list" in s:
             return table["behind"]
         if "rev-parse" in s:
@@ -258,3 +261,46 @@ def test_the_forecast_is_pure_and_the_rendered_report_carries_it_without_running
     out = P.render([_blk("㉠", [WRITE]), _blk("㉡")])
     assert "몇 바퀴 남았나" in out and "치지 않는다" in out
     assert "몇 바퀴" not in P.render([]), "막는 것이 없으면 바퀴 절은 안 낸다 — 초록 출력은 그대로다"
+
+
+# ── #216 ㉨ CI 빠른 잡 미러 — 훅 예산에 못 든 검사를 CI 의 명령 글자 그대로 돈다 ──────────────────
+
+def test_the_ci_mirror_runs_every_ready_command_exactly_as_ci_spells_it_without_a_lake():
+    import gatefast as GF
+    seen: list[list[str]] = []
+
+    def run(argv, cwd):
+        if argv[0] == "env":
+            seen.append(argv)
+            return 0, ""
+        return _runner()(argv, cwd)
+
+    assert P.check_ci_mirror(ROOT, run) is None
+    want = {c for _k, c in GF.ready_commands()}
+    assert {a[-1] for a in seen} == want and len(want) > 30, "ready 층 명령이 CI 의 글자와 다르다 — 사본이 생겼다"
+    assert all(a[:3] == ["env", "FIRE_LANE_DATA=", "FIRE_LANE_RAW="] for a in seen), "레이크 없이 돌지 않았다 — CI 빠른 잡과 조건이 다르다"
+
+
+def test_a_red_ci_mirror_check_blocks_names_the_check_and_prints_its_own_command():
+    import gatefast as GF
+    key, cmd = GF.ready_commands()[0]
+
+    def run(argv, cwd):
+        if argv[0] == "env" and argv[-1] == cmd:
+            return 1, "검사가 빨갛다 — 이유 하나\n"
+        return _runner()(argv, cwd)
+
+    b = P.check_ci_mirror(ROOT, run)
+    assert b is not None and b.key == "㉨" and any(key in d for d in b.detail) and cmd in b.cmds
+
+
+def test_the_ci_mirror_blocks_when_the_layer_table_drifts_from_ci(monkeypatch):
+    import gatefast as GF
+    monkeypatch.setattr(GF, "LAYERS", {**GF.LAYERS, "tools/없는검사.py": ("ready", "사유가 있다 — 없는 검사")})
+    b = P.check_ci_mirror(ROOT, _runner())
+    assert b is not None and any("죽은 선언" in d and "없는검사" in d for d in b.detail)
+
+
+def test_the_survey_includes_the_ci_mirror_after_obligations_and_before_the_ratchet():
+    keys = [k for k, _ in P.CHECKS]
+    assert keys.index("㉦") < keys.index("㉨") < keys.index("㉠")

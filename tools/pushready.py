@@ -24,10 +24,11 @@ pushready.py — 「푸시해도 되는가」 **한 명령.**  (PLAN #207)
   ㉤ `mutate` — 변이 장부가 낡았는가(`ratchet_values()` 가 죽는가)
   ㉥ `testpick --run` — 실측으로 고른 시험 묶음(구조 규약 시험 포함 · PLAN #209)
   ㉦ `obligations --new` — 새 파일의 빠진 등재 의무를 이름으로(PLAN #199 · 훅이 아니라 여기 — 훅은 예산이 없다)
+  ㉨ `gatefast` 의 `ready` 층 — CI 빠른 잡에는 있고 훅 예산에 못 든 검사 45개를 **CI 의 명령 글자 그대로** 돈다(PLAN #216 · 층 표는 `tools/gatefast.py` · 병렬 4)
   ㉧ 로컬이 **로컬에 있는 원격 추적 가지**(`@{u}`)보다 뒤인가 — 뒤면 받을 명령을 댄다(PLAN #211). `fetch` 는 **안 한다**(사람이 정했다: 읽기 전용이 정체성이다)
 ★ **몇 바퀴 남았나**(PLAN #220): 막는 것 목록 끝에 `forecast` 가 「이번에 치면 다음에 무엇이 또 낡는가」를 말한다 — 되먹임 변 다섯(`EDGES` · 실측 · 서술을 달았다)만으로 **확정 바퀴 · 가능한 바퀴**를 센다.
   모델이다: 고정점을 증명하지 않고, 가능한 자기 루프 때문에 상한(`LAP_CAP`)에서 자른다. 표본은 사람이 돈 다섯 바퀴 한 건이다. 이 도구는 여전히 **아무것도 안 친다**.
-순서는 사슬이다 — **받기 → 시험 → 등재 의무 → 래칫 → 변이 장부 → 문서 도장 → 커밋.** 목록은 그 순서로 낸다(받으면 트리가 바뀌어 뒤의 것이 다 낡으므로 ㉧ 이 맨 앞이다).
+순서는 사슬이다 — **받기 → 시험 → 등재 의무 → CI 미러 → 래칫 → 변이 장부 → 문서 도장 → 커밋.** 목록은 그 순서로 낸다(받으면 트리가 바뀌어 뒤의 것이 다 낡으므로 ㉧ 이 맨 앞이다).
 
 부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398 — 아직 어느 관문에도 안 올렸다: 2분이 예산 30초에 안 든다)
 IN    `tools/ratchet.py` · `tools/docseal.py` · `tools/mutate.py` 의 출력과 종료 코드 · `git status --porcelain`
@@ -223,6 +224,35 @@ def check_obligations(root: Path, run: Runner) -> Block | None:
                  [" ".join([*_PY, "tools/obligations.py", "--new"]) + "   # 빠진 의무를 이름으로 댄다 — 적은 뒤 다시"])
 
 
+# ── ㉨ CI 빠른 잡의 검사 중 훅에 못 든 것 ────────────────────────
+MIRROR_WORKERS = 4
+#: CI 빠른 잡은 **레이크 없이** 돈다 — 이 기계의 `FIRE_LANE_DATA` 가 결과를 바꾸지 않게 같은 조건으로 돈다(`env` 로 비운다 · 55 전부 같은 결과였다).
+_LAKELESS = ["env", "FIRE_LANE_DATA=", "FIRE_LANE_RAW=", "bash", "-c"]
+
+
+def check_ci_mirror(root: Path, run: Runner) -> Block | None:
+    """`gatefast` 의 `ready` 층 — 푸시 전에 막되 훅 예산에 못 든 CI 빠른 잡 검사를 **CI 의 명령 글자 그대로** 돈다(PLAN #216 · 사본이 없다: 표는 `tools/gatefast.py`).
+
+    ★ 층 표가 CI 와 어긋나도(미선언 · 죽은 선언) 여기서 막는다 — 새 CI 검사가 층 없이 들어오면 이 행이 다시 열린다.
+    ★ 병렬 `MIRROR_WORKERS` 로 돈다(검사 45개 · 직렬 합 약 66초). 읽기 전용 검사만 든다(돌고 나서 트리가 안 바뀐 것을 실측했다)."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    import gatefast as GF
+    rep = GF.layer_report()
+    detail = [f"층 선언표가 CI 와 어긋난다 — {k}: {', '.join(rep[k][:6])}" for k in ("미선언", "죽은 선언", "훅과 겹친다", "사유 부족", "층 이름") if rep[k]]
+    cmds = GF.ready_commands()
+    with ThreadPoolExecutor(max_workers=MIRROR_WORKERS) as ex:
+        results = list(ex.map(lambda kc: (kc, run([*_LAKELESS, kc[1]], root)), cmds))
+    red = [(kc, out) for kc, (rc, out) in results if rc != 0]
+    for (k, _c), out in red[:10]:
+        last = [x for x in out.strip().splitlines() if x.strip()][-1:] or ["(출력 없음)"]
+        detail.append(f"{k} — {last[0][:150]}")
+    if not detail:
+        return None
+    what = f"CI 빠른 잡 검사 {len(red)}개가 빨갛다(훅에 못 든 {len(cmds)}개 중)" if red else "층 선언표가 CI 와 어긋난다"
+    return Block("㉨", what, detail, [*[c for (_k, c), _o in red[:6]], "# 층 선언표는 tools/gatefast.py 의 LAYERS — 새 CI 검사는 거기에 층을 적는다"])
+
+
 # ── ㉧ 로컬이 원격 추적 가지보다 뒤인가 ──────────────────────────
 #: ★ 한계를 **출력에 적는다** — 이 축은 네트워크를 안 타므로 마지막 `git fetch` 이후의 일은 못 본다.
 BEHIND_LIMIT = "마지막 `git fetch` 이후의 뒤처짐은 못 본다. 정확히 보려면 `git fetch` 를 먼저 쳐라."
@@ -338,7 +368,7 @@ def forecast(blocks: list[Block]) -> Forecast:
 
 #: 사슬 순서 — 래칫 → 변이 장부 → 문서 도장 → 커밋. **싼 것을 앞에 두지 않는다**(사람이 칠 순서가 목록 순서다).
 CHECKS: list[tuple[str, Callable[[Path, Runner], Block | None]]] = [
-    ("㉧", check_behind), ("㉥", check_tests), ("㉦", check_obligations), ("㉠", check_ratchet), ("㉤", check_mutate), ("㉡", check_invalid_seals),
+    ("㉧", check_behind), ("㉥", check_tests), ("㉦", check_obligations), ("㉨", check_ci_mirror), ("㉠", check_ratchet), ("㉤", check_mutate), ("㉡", check_invalid_seals),
     ("㉢", check_unsealed), ("㉣", check_dirty),
 ]
 
@@ -358,10 +388,10 @@ def survey(root: Path = ROOT, run: Runner = real_run, *, log: Callable[[str], No
 def render(blocks: list[Block], notes: list[str] | None = None) -> str:
     tail = [f"  · {n}" for n in notes or []]
     if not blocks:
-        return "\n".join(["✓ 푸시 가능 — 원격 대비 · 시험 묶음 · 새 파일 등재 · 래칫 · 변이 장부 · 도장(낡음 · 없음) · 커밋 일곱 축이 막지 않는다.",
+        return "\n".join(["✓ 푸시 가능 — 원격 대비 · 시험 묶음 · 새 파일 등재 · CI 빠른 잡 미러 · 래칫 · 변이 장부 · 도장(낡음 · 없음) · 커밋 여덟 축이 막지 않는다.",
                           "  (전수 pytest 는 안 돌았다 — 이 도구는 그 대신이 아니다.)",
                           f"  ★ {BEHIND_LIMIT}", *tail])
-    L = [f"✗ 푸시 불가 — 막는 것 {len(blocks)}가지 (사슬 순서: 받기 → 시험 → 등재 의무 → 래칫 → 변이 장부 → 문서 도장 → 커밋)\n"]
+    L = [f"✗ 푸시 불가 — 막는 것 {len(blocks)}가지 (사슬 순서: 받기 → 시험 → 등재 의무 → CI 미러 → 래칫 → 변이 장부 → 문서 도장 → 커밋)\n"]
     for b in blocks:
         L.append(f"  {b.key} {b.what}")
         L += [f"      {d}" for d in b.detail]
