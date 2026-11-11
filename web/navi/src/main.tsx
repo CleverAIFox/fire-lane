@@ -35,7 +35,17 @@ createRoot(document.getElementById("root")!).render(
 //   실패는 삼킨다 — 서비스 워커가 없다고 내비가 안 뜨면 그것이 더 나쁘다
 //   (http 로 열었거나, 브라우저가 막았거나, 사설 모드다).
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {});
-  });
+  if (import.meta.env.DEV) {
+    // ★ 2026-11-12 (DECISIONS §699). 개발 서버에서는 워커를 **달지 않고, 달려 있던 것은 떼고 캐시를 비운다** — 옛 배포본이나
+    //   옛 개발 세션이 남긴 워커가 개발 모듈을 캐시 먼저로 내줘서 React 가 두 벌이 되고 관제가 흰 화면이 됐다.
+    navigator.serviceWorker.getRegistrations()
+      .then((rs) => Promise.all(rs.map((r) => r.unregister())))
+      .then(() => caches.keys())
+      .then((ks) => Promise.all(ks.filter((k) => k.startsWith("fl-")).map((k) => caches.delete(k))))
+      .catch(() => {});
+  } else {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {});
+    });
+  }
 }

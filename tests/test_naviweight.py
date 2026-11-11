@@ -200,3 +200,20 @@ def test_a_red_test_name_is_recorded():
     assert dms._failed_names("1958 passed in 500s") == [], "초록인데 이름을 만든다"
     src = (ROOT / "tools" / "dms.py").read_text(encoding="utf-8")
     assert '"red": _failed_names(txt)' in src, "봉인이 그 이름을 안 담는다"
+
+
+def test_the_service_worker_never_caches_the_dev_server():
+    """★ 개발 서버의 모듈은 **판이 바뀌어도 이름이 안 바뀐다**(`?v=` 의존 해시는 재최적화 때 바뀐다). 캐시 먼저로 잡으면 옛 모듈과 새 모듈이 한 화면에서 섞여
+    React 가 두 벌이 되고 관제가 흰 화면이 된다(`Invalid hook call` · DECISIONS §699 · 실제 브라우저로 재현했다)."""
+    sw = (NAVI / "public" / "sw.js").read_text(encoding="utf-8")
+    assert "DEV_URL" in sw and "node_modules" in sw and "searchParams.has(\"v\")" in sw, "개발 서버 자원을 거르는 줄이 없다"
+    assert sw.index("DEV_URL.test") < sw.index("caches.open"), "거르는 줄이 캐시를 여는 줄보다 뒤에 있다 — 이미 잡은 뒤다"
+    assert 'const V = "fl-v1"' not in sw, "캐시 이름을 안 올렸다 — 옛 개발 모듈을 쥔 캐시가 활성화 때 안 지워진다"
+
+
+def test_dev_unregisters_the_service_worker_instead_of_registering_it():
+    src = (NAVI / "src" / "main.tsx").read_text(encoding="utf-8")
+    tail = src.split('"serviceWorker" in navigator', 1)[1]
+    assert "import.meta.env.DEV" in tail and "unregister" in tail and "caches.delete" in tail, (
+        "개발에서 옛 워커를 떼고 캐시를 비우지 않는다 — 옛 세션이 남긴 워커가 개발 모듈을 계속 내준다")
+    assert tail.index("import.meta.env.DEV") < tail.index("register(`"), "등록이 개발 분기보다 앞에 있다"
