@@ -37,6 +37,7 @@ import re
 from pathlib import Path
 
 import docparse
+import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 # ★ 2026-09-02. 종전에는 루트 README 만 봤다. **README 는 하나가 아니다** —
@@ -69,9 +70,13 @@ def _lines(p: Path) -> list[tuple[int, str]]:
 # ★ 2026-08-24. `|` 를 더한다. 표 행의 셀 끝(`… 씁니다 |`)이 종결 위치인데
 #   종전 패턴이 이를 인식하지 못했다. MASTER §11 필드표 두 곳이 통과했다.
 _END = r"(?=[.·|]|\*\*|$|\s*<)"
+# ★ 2026-11-11 (PLAN #216 · ⓮B-ⓕ). **`ㅂ니다` 는 글자가 아니다.** 「합니다」 · 「됩니다」 · 「갑니다」 의 `ㅂ` 은 앞 글자의 **받침**이라 `ㅂ니다` 라는 문자열이 없다 —
+#   옛 식(`습니다|입니다|ㅂ니다|…`)은 「습니다」 · 「입니다」 만 걸고 가장 흔한 경어체 「합니다」 를 못 잡았다(문서에 심어도 조용했다). 한글 음절의 종성 번호(0xAC00 + (초성×21+중성)×28 + 종성)가 17(ㅂ)인
+#   음절 399개를 식에 넣는다 — 낱자 `ㅂ` 은 그대로 둔다.
+_JONG_B = "".join(chr(0xAC00 + (c * 21 + j) * 28 + 17) for c in range(19) for j in range(21))
 VOICE = {
     "경어체": re.compile(
-        r"(?:습니다|입니다|ㅂ니다|십시오|하세요|주세요|보세요|어요)" + _END),
+        r"(?:[" + _JONG_B + r"]|ㅂ)니다" + _END + r"|(?:십시오|하세요|주세요|보세요|어요)" + _END),
     # ★ 1인칭 단수만 검사한다. "우리"는 허용한다 — 이 문서의 화자는
     #   개인이 아니라 프로젝트이고, "우리 산출값 대 소방서 기록" 같은
     #   대조에서 3인칭으로 바꾸면 주체가 불분명해진다. §0 의 1인칭 금지는
@@ -146,19 +151,48 @@ def test_star_density():
           "  그 절이 여러 가지를 한다는 뜻이다(MASTER §0-3).")
 
 
-def test_docs_are_plain_third_person():
+def voice_violations(docs: list[Path]) -> list[str]:
+    """산문 줄에서 `VOICE` 의 어느 식에든 걸리는 줄 — 시험 본체와 카나리아가 같은 함수를 쓴다."""
     bad: list[str] = []
-    for p in DOCS:
+    for p in docs:
         for n, line in _lines(p):
             for tag, rx in VOICE.items():
                 if m := rx.search(line):
                     bad.append(f"  {p.name}:{n}  [{tag}] "
                                f"…{line.strip()[:60]}…  ← {m.group(0)!r}")
+    return bad
+
+
+def test_docs_are_plain_third_person():
+    bad = voice_violations(DOCS)
     assert not bad, (
         "MASTER §0 — 평어체 3인칭. 경어·명령형·1인칭을 쓰지 않는다.\n"
         f"위반 {len(bad)}건\n" + "\n".join(bad[:40])
         + ("\n  …" if len(bad) > 40 else "")
         + f"\n\n의도적 인용이면 줄 끝에 {ALLOW} 사유--> 를 붙인다.")
+
+
+@pytest.mark.parametrize("line", ["이렇게 합니다.", "그렇게 됩니다.", "곧 갑니다.", "이것입니다.", "좋습니다.", "해 주세요.", "봐 주세요.", "없어요.",
+                                   "표 셀 끝 합니다 |".replace(" |", "|")])
+def test_canary_every_honorific_ending_is_caught_including_the_jongseong_b_ones(line):
+    """★ 카나리아 — 「합니다」를 심으면 울어야 한다. 옛 식은 「합니다」 · 「됩니다」 · 「갑니다」 앞에서 조용했다(그게 이 결함의 정체였다)."""
+    assert VOICE["경어체"].search(line), f"경어체 어미를 못 잡는다: {line!r}"
+
+
+@pytest.mark.parametrize("line", ["이렇게 한다.", "그렇게 된다.", "곧 간다.", "큰 니다리가 있다.", "합니다리 형 이름", "ㅂ 은 받침이다."])
+def test_canary_plain_endings_and_look_alikes_are_not_caught(line):
+    """반대 방향 — 평어체와 닮은 글자(`니다리` · 받침 설명)는 안 문다. 식이 시끄러워 사람이 끄지 않게 한다."""
+    assert not VOICE["경어체"].search(line), f"평어체를 경어체로 잘못 잡는다: {line!r}"
+
+
+def test_canary_a_planted_honorific_sentence_fails_the_real_scan_and_a_plain_one_passes(tmp_path):
+    """종단 카나리아 — 시험 본체가 쓰는 `voice_violations` 를 임시 문서에 돌린다. 「합니다」가 있으면 위반이 나오고 없으면 비다."""
+    bad = tmp_path / "bad.md"
+    bad.write_text("# 제목\n\n이 도구는 이렇게 합니다.\n", encoding="utf-8")
+    ok = tmp_path / "ok.md"
+    ok.write_text("# 제목\n\n이 도구는 이렇게 한다.\n", encoding="utf-8")
+    assert voice_violations([bad]) and "경어체" in voice_violations([bad])[0]
+    assert voice_violations([ok]) == []
 
 
 # 18-3b 처럼 하위 절에 글자를 붙이는 표기를 허용한다(§18-1a · §18-2a).
