@@ -39,7 +39,7 @@ import { useScreens } from "./app/useScreens";
 import { useFleet } from "./app/useFleet";
 import { useShare } from "./app/useShare";
 import { useOpsUplink, type UnitSnapshot } from "./app/useOpsUplink";
-import { compareKind, compareMarks, sameRoute } from "./domain/compare";
+import { compareKind, compareMarks, isHeadsUp, sameRoute } from "./domain/compare";
 import { cumulative, pointAlong } from "./domain/geo";
 import { requiredWidth } from "./domain/vehicle";
 import { STATUS, deriveStatus, type StatusKey } from "./domain/status";
@@ -254,8 +254,7 @@ export default function App() {
     for (const e of n.plan.edges) {
       const L = e.length_m ?? 0;
       if (acc + L >= driven && acc - driven <= BOTTLENECK_AHEAD_M) {
-        const tight = e.width_min_m != null && e.width_min_m - need < 0.5;
-        if (e.verdict === "needs_cv" || tight) return e;
+        if (isHeadsUp(e, need)) return e;
       }
       acc += L;
       if (acc - driven > BOTTLENECK_AHEAD_M) break;

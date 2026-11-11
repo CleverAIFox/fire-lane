@@ -28,9 +28,9 @@ const RISK_KIND_TEXT: Record<RiskItem["kind"], string> = {
   blocked: "통행 불가", needs_cv: "확인 필요", unknown: "폭 모름", tight: "여유 부족",
 };
 
-/** 경고 한 줄 — 거리 · 이름 · 종류 · 여유를 **실제 수로** 쓴다(0 으로 얼버무리지 않는다) */
+/** 경고 한 줄 — 거리 · 이름 · 종류 · 여유를 **실제 수로** 쓴다. **폭 모름이면 여유 수를 안 쓴다** — 모르는 수를 쓰면 보는 사람이 믿는다 */
 export function riskLine(r: RiskItem): string {
-  const margin = r.marginM != null ? ` · 여유 ${r.marginM >= 0 ? "+" : ""}${r.marginM.toFixed(1)}m` : "";
+  const margin = r.kind !== "unknown" && r.marginM != null ? ` · 여유 ${r.marginM >= 0 ? "+" : ""}${r.marginM.toFixed(1)}m` : "";
   return `${r.atM}m ${r.label} · ${RISK_KIND_TEXT[r.kind]}${margin}`;
 }
 
@@ -53,6 +53,7 @@ export function routeOption(
   return {
     title: rec ? "안전 경로" : "빠른 경로", recommended: rec, sec, lengthM: st.lengthM,
     uncertainCount: st.uncertainCount,
+    unknownCount: p.edges.filter((e) => e.verdict === "unknown").length,
     uncertainM: st.uncertainM,
     minWidthM: st.minWidthM,
     requiredM: need,

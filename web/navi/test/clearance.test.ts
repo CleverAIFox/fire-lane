@@ -330,3 +330,60 @@ test("경로 위 경고 — 실제 발행물의 경로에서 병목 패널이 �
   }
   ok(checked >= 5, `경로를 ${checked}개만 봤다`);
 });
+
+// ── 6. 경로 카드를 줄인다 — 폭 모름이면 여유를 안 쓴다 · 앞서 알릴 구간의 정의 하나 · 카드는 네 줄 + 접힘 ──────
+import { renderToStaticMarkup } from "react-dom/server";
+import { createElement } from "react";
+import { isHeadsUp } from "../src/domain/compare";
+import { Details, RouteBrief } from "../src/ui/RouteCompare";
+import type { RouteOption } from "../src/ui/RouteCompare";
+
+test("폭 모름이면 여유 수를 안 쓴다 — 다른 소스의 폭 값이 붙어 있어도(모르는 수를 믿게 하지 않는다)", () => {
+  const [u] = riskList(plan({ verdict: "unknown", width_min_m: NEED + 2.4, seg_label: "U로" }), NEED);
+  ok(u.kind === "unknown" && u.marginM === null, "unknown 인데 여유 수가 만들어졌다");
+  const line = riskLine(u);
+  ok(line.includes("폭 모름") && !line.includes("여유") && !/[+-]\d/.test(line), line);
+});
+
+test("앞서 알릴 구간의 정의는 하나다 — 확인 필요 · 폭 모름 · 여유 0.5m 미만(병목 패널과 카드가 같이 쓴다)", () => {
+  ok(isHeadsUp({ verdict: "needs_cv", width_min_m: 9 }, NEED), "needs_cv");
+  ok(isHeadsUp({ verdict: "unknown", width_min_m: null }, NEED), "unknown 은 앞서 알려야 한다");
+  ok(isHeadsUp({ verdict: "clear", width_min_m: NEED + 0.2 }, NEED), "여유 부족");
+  ok(!isHeadsUp({ verdict: "clear", width_min_m: NEED + 0.9 }, NEED), "넉넉한 초록");
+  ok(!isHeadsUp({ verdict: "clear", width_min_m: null }, NEED), "폭 값 없는 초록을 위험으로 올렸다");
+});
+
+function opt(over: Partial<RouteOption>): RouteOption {
+  return {
+    title: "안전 경로", recommended: true, sec: 600, lengthM: 2290, uncertainCount: 7, uncertainM: 100,
+    unknownCount: 0, minWidthM: 3.1, requiredM: 2.6, blockedCount: 0, ruleCount: 2, deltaSec: 0,
+    note: "NOTE문장", rules: "RULES요약", around: "AROUND주변",
+    risks: { lines: ["0m RISK구간 · 확인 필요 · 여유 +0.5m"], more: 3 }, ...over,
+  };
+}
+const html = (safe: RouteOption, fast: RouteOption | null, same = false) =>
+  renderToStaticMarkup(createElement(RouteBrief, { safe, fast, same, chosen: "safe", fromOrder: true, onConfirm: () => {} }));
+
+test("경로 카드 — 접혀 있을 때는 시간 · 최소폭 · 여유 · 확인 필요만 보이고 나머지는 접혀 있다(지우지 않았다)", () => {
+  const h = html(opt({}), opt({ title: "빠른 경로", recommended: false, sec: 520, uncertainCount: 14 }));
+  for (const shown of ["최소폭", "여유", "확인 필요", "10분", "2.3km", "자세히"]) ok(h.includes(shown), `${shown} 이 안 보인다`);
+  for (const folded of ["RISK구간", "RULES요약", "AROUND주변", "NOTE문장", "규칙 경고", "경로 주변", "통행 불가", "길이", "여유폭 ="])
+    ok(!h.includes(folded), `접혀 있어야 할 ${folded} 가 카드에 나온다`);
+  ok(h.includes("빠른 경로 1분 20초 빠름 · 확인 필요 +7곳"), "두 경로의 비교가 수로 한 줄에 안 나온다");
+});
+
+test("경로 카드 — 통행 불가는 0 이 아닐 때만 보이고 폭 모름이 있으면 최소폭이 그 구간을 뺀 수임을 단다", () => {
+  ok(!html(opt({}), null).includes("통행 불가"), "0곳인데 통행 불가가 보인다");
+  const h = html(opt({ blockedCount: 1, unknownCount: 2 }), null);
+  ok(h.includes("통행 불가") && h.includes("폭 모름 2곳은 뺀 수"), "0 이 아닌 값이 안 보인다");
+});
+
+test("경로 카드 — 같은 경로면 카드 하나이고 비교 줄이 없다", () => {
+  const h = html(opt({}), null, true);
+  ok(!h.includes("빠른 경로") && !h.includes("둘째 경로 없음"), "같은 경로인데 비교 문구가 나온다");
+});
+
+test("펼친 쪽에는 접힌 것이 전부 있다 — 구간 목록 · 규칙 경고 · 경로 주변 · 설명(지운 것이 아니다)", () => {
+  const h = renderToStaticMarkup(createElement(Details, { o: opt({}), title: null }));
+  for (const t of ["RISK구간", "외 3곳", "RULES요약", "AROUND주변", "NOTE문장"]) ok(h.includes(t), `${t} 가 펼침에 없다`);
+});

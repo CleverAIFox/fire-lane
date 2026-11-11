@@ -159,12 +159,21 @@ export interface RiskItem {
   marginM: number | null;
 }
 
+/**
+ * **앞서 알릴 구간인가** — 확인 필요 · 폭 모름(`UNCERTAIN`) 또는 여유가 `tightMarginM` 미만.
+ * 병목 패널(안내 중 앞 400m)이 이 정의를 쓴다 — 출발 전 카드는 구간 목록을 접고, **그 구간에 가까워질 때** 패널이 말한다.
+ */
+export function isHeadsUp(e: Pick<GraphEdge, "verdict" | "width_min_m">, need: number, tightMarginM = 0.5): boolean {
+  return UNCERTAIN.has(e.verdict) || (e.width_min_m != null && e.width_min_m - need < tightMarginM);
+}
+
 export function riskList(p: Pick<RoutePlan, "edges">, need: number, tightMarginM = 0.5): RiskItem[] {
   const out: RiskItem[] = [];
   let acc = 0;
   for (const e of p.edges) {
     const w = e.width_min_m ?? null;
-    const margin = w != null ? w - need : null;
+    // ★ 폭 모름이면 여유도 모른다 — 다른 소스의 폭 값이 붙어 있어도 여유를 만들지 않는다
+    const margin = w != null && e.verdict !== "unknown" ? w - need : null;
     let kind: RiskKind | null = null;
     if (e.verdict === "blocked") kind = "blocked";
     else if (e.verdict === "needs_cv") kind = "needs_cv";
