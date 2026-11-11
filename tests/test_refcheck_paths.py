@@ -105,19 +105,18 @@ def test_plan_row_23_is_closed_and_its_number_is_reserved():
         "결번 대장에 #23 이 없다 — 번호를 다시 쓰면 밖의 인용이 다른 행을 가리킨다")
 
 
-def test_refcheck_still_fails_on_a_real_dead_reference():
-    """★ 빈 그물인가. **없는 경로**를 넣으면 실제로 우는가."""
-    doc = ROOT / "docs" / "MASTER.md"
-    keep = doc.read_text(encoding="utf-8")
-    try:
-        doc.write_text(keep + "\n\n`tools/zq7_absent.py` 가 이것을 든다.\n",
-                       encoding="utf-8")
-        warn = [m for lv, w, m in refcheck.check()
-                if lv == refcheck.WARN and w in DOCS]
-        assert any("zq7_absent" in m for m in warn), (
-            f"합성 죽은 참조를 못 잡았다 — 프로브가 죽었다: {warn}")
-    finally:
-        doc.write_text(keep, encoding="utf-8")
+def test_refcheck_still_fails_on_a_real_dead_reference(tmp_path, monkeypatch):
+    """★ 빈 그물인가. **없는 경로**를 넣으면 실제로 우는가.
+
+    ★ 진짜 `docs/MASTER.md` 를 제자리에서 고쳤다 되돌리면 병렬로 도는 다른 시험(문서를 읽는 시험 수십 개)이 중간 상태를 읽고 빨갛다 —
+      2026-11-10 pushready ㉥ 가 닿는 시험을 전부 들이자 처음 드러났고 한 번은 파일이 **빈 채로 남았다**. 그래서 복사본에서 잰다(프로브의 힘은 같다)."""
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    keep = (ROOT / "docs" / "MASTER.md").read_text(encoding="utf-8")
+    (docs / "MASTER.md").write_text(keep + "\n\n`tools/zq7_absent.py` 가 이것을 든다.\n", encoding="utf-8")
+    monkeypatch.setattr(refcheck, "ROOT", tmp_path)
+    warn = [m for lv, w, m in refcheck.check() if lv == refcheck.WARN and w in DOCS]
+    assert any("zq7_absent" in m for m in warn), f"합성 죽은 참조를 못 잡았다 — 프로브가 죽었다: {warn}"
 
 
 def test_module_runs_as_a_script():

@@ -92,7 +92,7 @@ from pathlib import Path
 #   그 파일을 들이므로 거꾸로 들이면 순환이다. 정본은 하나이고 여기는 읽는다.
 from firelane import ledger as _led
 from firelane import paths as _paths
-from firelane.contract_crs import FAIL, OK, WARN
+from firelane.contract_crs import ABSENT, FAIL, OK, WARN
 from firelane.encoding import CANDIDATES_REPORT
 from firelane.extract_decl import HOLD, held, hold_hits
 from firelane.paths import ROOT
@@ -112,6 +112,8 @@ class Report:
             return FAIL
         if any(l == WARN for l, _ in self.lines):
             return WARN
+        if any(l == ABSENT for l, _ in self.lines):
+            return ABSENT
         return OK
 
     def show(self) -> None:
@@ -229,7 +231,7 @@ def check_one(key: str, e: dict, raw: Path, bbox: tuple | None) -> Report:
         # ★ 2026-11-07. 입력을 `landing/_hold` 에서 읽는 항목(§647)은 그 입력이 **거기 있는지**를 한 줄로 든다 — 없으면 경고 문구가 그것을 말한다.
         n = len(_led.globs(e)) if held(e) else 0
         got = len(hold_hits(e, _paths.LANDING / HOLD)) if n else 0
-        r.add(WARN, f"결손 선언됨 — {why}" + (f"\n  ★ 제자리 입력 `landing/{HOLD}` {got}/{n}" + ("" if got == n else " — **입력이 모자란다**") if n else ""))
+        r.add(ABSENT, f"결손 선언됨 — {why}" + (f"\n  ★ 제자리 입력 `landing/{HOLD}` {got}/{n}" + ("" if got == n else " — **입력이 모자란다**") if n else ""))
         return r
     if lvl == "awaiting":
         r.add(WARN, f"아직 raw 에 없다 — {why}")
@@ -364,6 +366,7 @@ def check_one(key: str, e: dict, raw: Path, bbox: tuple | None) -> Report:
 from firelane.contract_verdict import (
     CRS_DECLARED_RATCHET,
     NO_CONTRACT_RATCHET,
+    absent_count,
     declared_issues,
     real_counts,
     real_verdict,
@@ -403,8 +406,113 @@ def cmd_declared(ds: dict) -> int:
     return rc
 
 
-def main() -> int:
+# ── 실물 갈래의 래칫 ──────────────────────────────────────────
+#: 실측 2026-10-05, 레이크 있는 기계(Zd 전수 verify [64/99]). **75종 · 실패 8 · 경고 54.**
+#:
+#: ★ 이 수를 왜 래칫으로 두는가. 이 단계를 F 에서 `verify.sh` 에 처음 붙였고,
+#:   처음 켜자마자 빨갰다. 그 빨간불은 **이 배치가 만든 회귀가 아니라 원래
+#:   그랬던 것을 처음 재서 본 것**이다. 고치려면 대장 72종을 실물과 하나씩
+#:   맞춰야 하고 그것은 한 배치의 일이 아니다.
+#:
+#: ★ 그런데 영구히 빨간 관문은 **꺼진 관문보다 나쁘다.** 사람이 그 빨강을
+#:   풍경으로 만들고, 그 옆에서 진짜 회귀가 지나간다(§69 와 같은 자리).
+#:   그래서 「지금 값」을 기록하고 **늘면 울게** 한다. 이 저장소가
+#:   `suppress` · `gate_parity` · 커버리지에서 이미 쓰는 규약이다.
+#:
+#: ★ 래칫은 **목표가 아니다.** 8 과 51 은 갚아야 할 빚이고 PLAN 이 그 줄을 든다.
+#:   줄면 기록을 조이라고 운다 — 느슨해진 래칫은 초록으로 위장한다.
+#: ★ 2026-11-07 (DECISIONS §657). 8 → **7.** 레이크 기계의 실측이 7 이고 관문이 조이라고 울었다. 조이는 쪽이라 판정 폐포 밖이다. 경고 쪽(58)은 안 건드린다 — 아래.
+REAL_FAIL_RATCHET = 7
+#: ★ 2026-10-05 — 51 → 54 (DECISIONS §398-8). `raw_only` PDF 셋이 대장에 올라
+#:   각각 「contract 블록 없음」 경고를 낸다. **같은 원인이 래칫 둘을 움직이는데
+#:   하나만 적었다** — `NO_CONTRACT_RATCHET` 만 올려서 레이크 있는 기계가
+#:   「이 배치가 늘렸다」로 빨갰다. 셋은 바닥이다(위 머리말).
+#: ★ 2026-10-07 — 54 → 59 (DECISIONS §427 · §428 · §429). 다섯이 움직인다 —
+#:     `vworld_uq153` · `vworld_uq164` · `eais_roadledger_dm`  실패 → 경고 (§427)
+#:     `juso_adrdc`                                           새 항목 · awaiting (§428)
+#:     `nfa_bldgcomm_guide`                                   새 항목 · 무계약 PDF (§429)
+#:   즉 실패 11 → **8**(= `REAL_FAIL_RATCHET`) · 경고 54 → **59**.
+#:   ★ 같은 원인이 래칫 둘을 움직이므로 둘을 같이 적는다(바로 위 §398-8 이 하나만
+#:     적어 당한 그것). 그리고 **항목을 더할 때마다 이 수를 다시 센다** — 처음에
+#:     57 로 적고 `juso_adrdc` 를 더하면서 안 고쳤다가 §429 에서 같이 잡았다.
+#:   ★ **반입되면 내려간다.** `awaiting` 을 지우는 판이 이 수를 조인다.
+#:
+#: ★ 2026-10-08 (DECISIONS §433). 59 → **57.** 그 판이 왔다 — 다섯이 전부
+#:   반입됐고 `awaiting` 다섯 줄을 지웠다. 사람이 **재서** 보낸 수로 갈랐다 —
+#:
+#:     vworld_uq153        awaiting → `.prj` 7변수 경고   ±0
+#:     vworld_uq164        awaiting → 없음                −1
+#:     juso_adrdc          awaiting → 없음                −1
+#:     nfa_bldgcomm_guide  awaiting → 무계약 PDF 경고      ±0
+#:     eais_roadledger_dm  awaiting → 컬럼 추가 경고       ±0
+#:
+#: ★ **실패는 안 움직인다(8 그대로).** 지우자마자 실측은 9 였다 —
+#:   `vworld_uq153` 이 「선언 5174 인데 `.prj` 는 …」로 떨어졌다. 읽어 보니
+#:   `.prj` 가 **스스로 5174 라고 적고** 다른 것은 `TOWGS84` 하나였다.
+#:   관문이 옳은 선언을 틀렸다고 운 것이고, 그것을 고쳤다(`_datum_shift_only`).
+#:   **실패 9 를 받아적었으면 그 결함이 래칫 안에 숨었다.**
+#:
+#: ★ 2026-10-13 (DECISIONS §515). 57 → **60.** 새 항목 셋이 각각 경고 하나를
+#:   낸다(`awaiting` 하나 = 경고 하나 · 위 §433 표가 그 단가를 쟀다).
+#:   **같은 원인이 래칫 둘을 움직이므로 둘을 같이 적는다** — §398-8 이 하나만
+#:   적어 당한 그것이고, `NO_CONTRACT_RATCHET` 도 같이 40 → 43 이다.
+#: ★ **이 수는 레이크 있는 기계에서만 재진다.** 짜는 쪽은 단가(+1/항목)로
+#:   더했다. 실측이 다르면 관문이 정확한 수를 찍으니 그 수로 고친다 —
+#:   §429 가 「항목을 더할 때마다 다시 센다」로 적은 그 자리다.
+#: ★ **반입되면 내려간다.** `awaiting` 셋을 지우는 판이 이 수를 조인다.
+#:
+#: ★ 2026-11-02. 59 → **58.** 실물을 raw 에 넣은 판(`vworld_uq153` 등)이 경고 하나를 걷었다.
+#:   조이는 쪽이라 판정 폐포 밖이고 재잠금이 따라오지 않는다. 실패 쪽(8)은 건드리지 않는다.
+#:
+#: ★ 2026-11-07 (DECISIONS §657). **58 을 그대로 둔다 — 실측은 67 이고 관문이 「이 배치가 늘렸다」로 운다.** 내역 아홉은 §657-8 이 든다 —
+#:   이 배치(§647 ~ §649)가 `nfa_*` 다섯을 `status: missing` 으로 내려 5 · §602 의 결손 선언 둘(`eais_roadledger_dm` · `vworld_uq164`) · 11-04 `a5a3467e` 의 `.prj` 없음 둘(`building_connector` · `building_entrance`).
+#: ★ 2026-11-10 (PLAN #213 · DECISIONS §686). 58 → **56.** **「결손 선언됨」 열을 경고에서 뺐다** — 별도 등급 `ABSENT`(`contract_crs.ABSENT` · 「결손」).
+#:   열은 `nfa_*` 다섯(`status: missing` · 입력은 `landing/_hold`)과 §602 의 다섯(`eais_roadledger_dm` · `hydrantdevice_rule` · `nfa_rapidresponse` · `roadtraffic_act` · `vworld_uq164`) —
+#:   **가르는 기준은 하나**다: 대장이 「이 항목의 파일을 raw 에 안 올렸다」고 선언했느냐(`status: missing` + `missing_why`). 입력이 제자리에 있느냐는 다른 축이고 문구(`제자리 입력 4/4`)로 붙는다.
+#:   경고는 66 → **56** 이다(실측). 올린 것이 아니라 **세는 칸이 갈린 것**이고 래칫은 **조였다**(58 → 56). `REAL_FAIL_RATCHET` 은 7 = 실측 7 이다.
+#:   ★ 이 수는 실물 갈래라 레이크가 있어야 재진다 — 이제 `RATCHETS` 선언 안이고(`ratchet_values()` 가 레이크 있을 때만 낸다 · `LAKE_ONLY`), 레이크 없는 기계는 사유와 함께 건너뛴다.
+REAL_WARN_RATCHET = 56
+
+#: ★ 2026-11-10 (PLAN #213 · DECISIONS §686). 실물 갈래의 래칫 둘은 **여기(`contract.py`)가 집이다** — 셈을 하는 쪽이라 `contract_verdict` 가 부르면 순환이 된다(`test_layering`).
+#:   방향은 둘 다 `down`(늘면 울고 · 줄여도 기록을 안 내리면 운다). 레이크가 있어야 재므로 `ratchet_values()` 가 레이크 없는 기계에서는 **이름을 안 낸다**(0 으로 쓰면 조용히 초록이다) —
+#:   `LAKE_ONLY` 가 그 이름을 선언하고 `tools/ratchet.py` 가 **사유와 함께 건너뛴다**(선언 없는 이름은 그대로 빨강 · 재어 본 래칫이 하나도 없으면 빈 그물로 우는 규칙은 그대로다).
+RATCHETS = {"REAL_FAIL_RATCHET": "down", "REAL_WARN_RATCHET": "down"}
+LAKE_ONLY = {"REAL_FAIL_RATCHET": "취입 계약 실물 — raw(레이크)가 있어야 재진다(`contract.real_measure`)",
+             "REAL_WARN_RATCHET": "취입 계약 실물 — raw(레이크)가 있어야 재진다(`contract.real_measure`)"}
+
+
+def _load_ds() -> tuple[dict, tuple | None]:
+    """(대장 `datasets`, 한반도 bbox) — `main` 과 `real_measure` 가 같은 자리에서 읽는다."""
     import yaml
+    y = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
+    bbox = y.get("bbox_4326")
+    return y.get("datasets", {}), (tuple(bbox) if bbox and len(bbox) == 4 else None)
+
+
+def real_measure() -> tuple[int, int, int]:
+    """실물 갈래의 세 수 **(실패, 경고, 결손)** — 전 종. **레이크가 있어야 한다**(없으면 `FileNotFoundError`).
+
+    ★ `tools/ratchet.py` 가 `contract_verdict.ratchet_values()` 로 부른다 — 래칫 둘(`REAL_FAIL_RATCHET` · `REAL_WARN_RATCHET`)을 이 셈에서 읽는다.
+      셈은 `main` 과 같은 함수(`real_counts` · `absent_count`)다 — 한 곳이어야 판정이 갈리지 않는다."""
+    from firelane.paths import RAW
+    if not (Path(RAW) / "gjcity").is_dir():
+        raise FileNotFoundError(f"레이크가 없다({RAW}/gjcity) — 실물 갈래는 raw 가 있어야 잰다")
+    ds, bbox = _load_ds()
+    reports = [check_one(k, ds[k] or {}, Path(RAW), bbox) for k in sorted(ds)]
+    nf, nw = real_counts(reports)
+    return nf, nw, absent_count(reports)
+
+
+def ratchet_values() -> dict[str, int]:
+    """`tools/ratchet.py` 가 부르는 실측 — **레이크가 있을 때만** 낸다. 없으면 빈 표다(`LAKE_ONLY` 가 그 이름을 선언했다 — 0 으로 쓰지 않는다)."""
+    try:
+        nf, nw, _na = real_measure()
+    except FileNotFoundError:
+        return {}
+    return {"REAL_FAIL_RATCHET": nf, "REAL_WARN_RATCHET": nw}
+
+
+def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("keys", nargs="*")
     ap.add_argument("--strict", action="store_true")
@@ -413,10 +521,7 @@ def main() -> int:
     a = ap.parse_args()
 
     from firelane.paths import RAW
-    y = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
-    ds = y.get("datasets", {})
-    bbox = y.get("bbox_4326")
-    bbox = tuple(bbox) if bbox and len(bbox) == 4 else None
+    ds, bbox = _load_ds()
 
     if a.declared:
         if a.keys:
@@ -434,7 +539,8 @@ def main() -> int:
         r.show()
 
     nf, nw = real_counts(reports, len(unknown))
-    print(f"\n{len(reports)}종 · 실패 {nf} · 경고 {nw}")
+    na = absent_count(reports)
+    print(f"\n{len(reports)}종 · 실패 {nf} · 경고 {nw} · 결손 선언 {na}")
     if nf:
         print("★ 대장과 실물이 다르다. ingest 를 돌리기 전에 맞춰라.")
         print("  실물이 옳으면 대장을 고친다 — 코드가 대장을 따르는 것이지")
@@ -443,8 +549,8 @@ def main() -> int:
     # ★ 키를 짚어 부른 것은 **정확히 그 종의 판정**이다. 래칫을 끼우면
     #   「내가 고친 그 한 종이 여전히 깨졌다」가 초록으로 나온다.
     if a.keys or a.strict:
-        return 1 if (nf or (a.strict and nw)) else 0
-    rc, say = real_verdict(nf, nw)
+        return 1 if (nf or (a.strict and (nw or na))) else 0
+    rc, say = real_verdict(nf, nw, REAL_FAIL_RATCHET, REAL_WARN_RATCHET)
     print()
     for line in say:
         print(line)

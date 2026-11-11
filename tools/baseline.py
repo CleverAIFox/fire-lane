@@ -94,6 +94,10 @@ def nfa_delta(old: dict, new: dict) -> dict:
     return {
         "abs_old": old.get("abs_dev_sum_m"),
         "abs_new": new.get("abs_dev_sum_m"),
+        "mae_old": old.get("mae_m"),     # 옛 봉인에는 없다 — None
+        "mae_new": new.get("mae_m"),
+        "med_old": old.get("median_abs_dev_m"),
+        "med_new": new.get("median_abs_dev_m"),
         "only_old": sorted(o.keys() - n.keys()),
         "only_new": sorted(n.keys() - o.keys()),
         "rows": rows,
@@ -239,7 +243,7 @@ def cmd_freeze(args) -> int:
         f"""blocked {t['verdict']['blocked']} · unknown {t['verdict']['unknown']}
 총연장     {t['length_total_m']:,}m
 동명동     {t['in_emd']}
-소방서대조  절대편차 합 {nfa.get('abs_dev_sum_m')}m ({len(nfa.get('rows') or [])}도로명, 적합값)
+소방서대조  MAE {nfa.get('mae_m')}m · 중앙 {nfa.get('median_abs_dev_m')}m · 합 {nfa.get('abs_dev_sum_m')}m ({len(nfa.get('rows') or [])}도로명, 적합값)
 ```
 
 ## 대조
@@ -362,7 +366,8 @@ def cmd_diff(args) -> int:
         return 0
     old_n = json.loads(op.read_text(encoding="utf-8"))
     dl = nfa_delta(old_n, json.loads(np_.read_text(encoding="utf-8")))
-    print(f"\n  소방서 대조  절대편차 합 {dl['abs_old']}m → {dl['abs_new']}m")
+    print(f"\n  소방서 대조  MAE {dl['mae_old']} → {dl['mae_new']}m · 중앙 {dl['med_old']} → "
+          f"{dl['med_new']}m   (절대편차 합 {dl['abs_old']} → {dl['abs_new']}m · 참고)")
     for r in dl["rows"]:
         f = lambda v: "   —  " if v is None else f"{v:+6.2f}"
         print(f"    {r['road']:14s} {f(r['old_dev_m'])} → {f(r['new_dev_m'])}   "

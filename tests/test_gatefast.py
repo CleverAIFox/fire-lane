@@ -111,3 +111,74 @@ def test_an_exemption_does_not_change_the_kind_it_is_counted_apart():
     assert res["a"]["갈래"] == "안 덮인다" and res["a"]["면제"] == "의도" and res["b"]["면제"] is None
     head = F.render(res).splitlines()[0]
     assert "안 덮인다 2" in head and "면제 1" in head and "사유 없음 1" in head
+
+
+# ── #216 반대 방향 — CI → 훅 · ready · ci, 그리고 층 선언표(단일 선언) ─────────────────────────────
+
+LAYERS = {"tools/b.py": ("ready", "훅 예산 — 합치면 넘는다"), "tools/n.py": ("ci", "망이 필요하다")}
+FAST2 = ["uv run python tools/a.py", "uv run python tools/b.py", "uv run python tools/n.py"]
+
+
+def test_the_reverse_direction_sorts_ci_checks_into_hook_ready_and_ci_only():
+    rep = F.layer_report(FAST2, {"tools/a.py"}, LAYERS)
+    assert (rep["훅"], rep["ready"], rep["ci"]) == (["tools/a.py"], ["tools/b.py"], ["tools/n.py"])
+    assert not any(rep[k] for k in ("미선언", "죽은 선언", "훅과 겹친다", "사유 부족", "층 이름"))
+
+
+def test_a_new_ci_check_without_a_layer_is_undeclared_so_the_row_cannot_silently_reopen():
+    rep = F.layer_report([*FAST2, "uv run python tools/new.py"], {"tools/a.py"}, LAYERS)
+    assert rep["미선언"] == ["tools/new.py"]
+
+
+def test_a_table_entry_that_ci_dropped_is_a_dead_declaration_and_one_that_the_hook_took_is_an_overlap():
+    rep = F.layer_report(["uv run python tools/a.py", "uv run python tools/b.py"], {"tools/a.py", "tools/b.py"}, LAYERS)
+    assert rep["죽은 선언"] == ["tools/n.py"] and rep["훅과 겹친다"] == ["tools/b.py"]
+
+
+def test_a_short_reason_or_an_unknown_layer_name_is_caught():
+    rep = F.layer_report(FAST2, {"tools/a.py"}, {"tools/b.py": ("ready", "네"), "tools/n.py": ("몰라", "사유가 충분히 길다")})
+    assert rep["사유 부족"] == ["tools/b.py"] and rep["층 이름"] == ["tools/n.py"]
+
+
+def test_ready_commands_are_ci_s_own_text_not_a_copy():
+    assert F.ready_commands(FAST2, LAYERS) == [("tools/b.py", "uv run python tools/b.py")]
+
+
+def test_the_real_tree_every_ci_fast_check_has_a_layer_and_the_table_has_no_dead_entry():
+    """★ 이 시험이 `#216` 이 다시 안 열리게 하는 이음매다 — CI 빠른 잡에 검사를 더하고 층을 안 적으면 여기서 빨개진다(CI `contract-tests` 가 전수로 돈다)."""
+    rep = F.layer_report()
+    bad = {k: v for k, v in rep.items() if k in ("미선언", "죽은 선언", "훅과 겹친다", "사유 부족", "층 이름") and v}
+    assert not bad, f"층 선언표(tools/gatefast.py LAYERS)가 CI 와 어긋난다: {bad}"
+    assert "tools/env_check.py" in rep["훅"], "env_check 는 훅에 든다 — 2026-11-11 CI 가 이것 때문에 빨갰다"
+
+
+# ── #216 · 2026-11-11 — env_check 가 훅에 **실제로 들어 있고 실제로 무는가**(같은 결함으로 CI 가 하루에 두 번 빨갰다) ──────────────
+
+def _env_check_gate() -> tuple[str, str]:
+    import gate_parity as GP
+    hits = [(n, c) for n, c in GP.gate_commands() if "tools/env_check.py" in GP.keys(c)]
+    assert len(hits) == 1, f"훅에 env_check 게이트가 {len(hits)}개다 — 하나여야 한다(없으면 `paths.py` 밖의 os.environ 독자가 CI 에서만 빨갛다)"
+    return hits[0]
+
+
+def test_env_check_is_a_hook_gate_with_the_same_command_as_ci_and_is_not_in_the_layer_table():
+    name, _cmd = _env_check_gate()
+    assert F.classify()[name]["갈래"] == "덮인다", "훅의 env_check 가 CI 와 인자까지 같지 않다 — 로컬 초록이 CI 초록이 아니다"
+    assert "tools/env_check.py" not in F.LAYERS, "훅으로 올린 검사는 층 표에 있으면 안 된다(훅과 겹친다) — 올렸으면 표에서 뺀다"
+    assert "tools/env_check.py" in F.layer_report()["훅"]
+
+
+def test_the_hook_s_own_env_check_command_goes_red_on_a_reader_outside_paths_py(tmp_path):
+    """훅 파일의 **그 명령 그대로** 돌려 본다 — 선언만 있고 안 무는 게이트(이름만 있는 줄)를 막는다. 거울에 결함을 심는다."""
+    import subprocess
+    import sys
+
+    from tracked_guard import mirror_tree
+    _name, cmd = _env_check_gate()
+    argv = cmd.replace("uv run python", "", 1).split()
+    root = F.ROOT
+    clean = subprocess.run([sys.executable, *argv], cwd=root, capture_output=True, text=True, timeout=120, check=False)
+    assert clean.returncode == 0, "실물에서 env_check 가 이미 빨갛다:\n" + clean.stdout + clean.stderr
+    m = mirror_tree(tmp_path / "m", copy=("tools",), replace={"tools/zz_env_probe.py": "import os\nX = os.environ.get('HOME')\n"})
+    bad = subprocess.run([sys.executable, *argv], cwd=m, capture_output=True, text=True, timeout=120, check=False)
+    assert bad.returncode != 0 and "zz_env_probe.py" in bad.stdout + bad.stderr, "훅의 env_check 가 심은 결함을 못 문다\n" + bad.stdout + bad.stderr

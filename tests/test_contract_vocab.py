@@ -191,16 +191,16 @@ def test_the_declared_mode_needs_no_lake():
 #   `tools/srccov.py` 가 「시험이 이름으로도 안 부른다」로 셌다(§493).
 def test_real_verdict_fails_when_the_count_grew():
     """★ 늘면 **이 배치가 늘렸다**. 종료가 1 이어야 관문이 산다."""
-    from firelane.contract_verdict import (
+    from firelane.contract import (  # 집이 `contract.py` 다(PLAN #213 — 순환을 피해 옮겼다)
         REAL_FAIL_RATCHET,
         REAL_WARN_RATCHET,
-        real_verdict,
     )
+    from firelane.contract_verdict import real_verdict
 
-    rc, say = real_verdict(REAL_FAIL_RATCHET + 1, REAL_WARN_RATCHET)
+    rc, say = real_verdict(REAL_FAIL_RATCHET + 1, REAL_WARN_RATCHET, REAL_FAIL_RATCHET, REAL_WARN_RATCHET)
     assert rc == 1
     assert any("늘었다" in s for s in say), say
-    rc, say = real_verdict(REAL_FAIL_RATCHET, REAL_WARN_RATCHET + 1)
+    rc, say = real_verdict(REAL_FAIL_RATCHET, REAL_WARN_RATCHET + 1, REAL_FAIL_RATCHET, REAL_WARN_RATCHET)
     assert rc == 1, "경고 쪽은 안 문다"
 
 
@@ -211,7 +211,7 @@ def test_real_verdict_asks_to_tighten_when_the_count_shrank():
     """
     from firelane.contract_verdict import real_verdict
 
-    rc, say = real_verdict(0, 0)
+    rc, say = real_verdict(0, 0, 7, 56)
     assert rc == 0
     assert sum("조여라" in s for s in say) == 2, say
     assert any("REAL_FAIL_RATCHET" in s for s in say), "고칠 상수 이름을 안 말한다"
@@ -219,13 +219,13 @@ def test_real_verdict_asks_to_tighten_when_the_count_shrank():
 
 def test_real_verdict_calls_the_standing_count_a_debt():
     """같으면 초록이지만 **빚이라고 적는다** — 「통과」로만 적으면 잊는다."""
-    from firelane.contract_verdict import (
+    from firelane.contract import (  # 집이 `contract.py` 다(PLAN #213 — 순환을 피해 옮겼다)
         REAL_FAIL_RATCHET,
         REAL_WARN_RATCHET,
-        real_verdict,
     )
+    from firelane.contract_verdict import real_verdict
 
-    rc, say = real_verdict(REAL_FAIL_RATCHET, REAL_WARN_RATCHET)
+    rc, say = real_verdict(REAL_FAIL_RATCHET, REAL_WARN_RATCHET, REAL_FAIL_RATCHET, REAL_WARN_RATCHET)
     assert rc == 0
     assert all("빚" in s for s in say), say
 
@@ -234,5 +234,5 @@ def test_the_two_ratchets_are_counted_separately():
     """★ 실패와 경고를 **한 수로 합치지 않는다** — 합치면 한쪽이 가려진다."""
     from firelane.contract_verdict import real_verdict
 
-    _, say = real_verdict(3, 7)
+    _, say = real_verdict(3, 7, 7, 56)
     assert any("실패 3" in s for s in say) and any("경고 7" in s for s in say), say

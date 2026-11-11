@@ -566,7 +566,8 @@ def main() -> int:
     # 검사로 못 가른다. 값만 띄우고 판단은 사람이 한다.
     if NFA.exists():
         d = json.loads(NFA.read_text(encoding="utf-8"))
-        print(f"\n· 소방서 대조 절대편차 합 {d['abs_dev_sum_m']}m ({d['n_road']}구간)"
+        print(f"\n· 소방서 대조 MAE {d.get('mae_m')}m · 절대편차 중앙 {d.get('median_abs_dev_m')}m"
+              f" · 합 {d['abs_dev_sum_m']}m(참고) · 이름만 MAE {(d.get('name_only') or {}).get('mae_m')}m ({d['n_road']}구간)"
               f" — MASTER §4 서술과 대조할 것")
 
     if bad:

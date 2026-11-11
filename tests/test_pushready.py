@@ -23,6 +23,7 @@ GREEN = {
     "tests": (0, "✓ 시험 묶음 198개 파일 · 빨강 0 · 25.0초\n"),
     "upstream": (0, "origin/part/infra\n"),
     "behind": (0, "3\t0\n"),
+    "mirror": (0, "✓\n"),
     "obligations": (0, "새 파일이 없다 — 추적 안 된 것도 스테이징한 새 것도 없다\n"),
 }
 
@@ -33,6 +34,8 @@ def _runner(**over):
 
     def run(argv: list[str], cwd: Path) -> tuple[int, str]:
         s = " ".join(argv)
+        if argv[0] in ("env", "bash"):               # ㉨ — 훅 게이트(`bash -c`)와 CI 빠른 잡 명령(레이크 없이 `env … bash -c`)
+            return table["mirror"]
         if "rev-list" in s:
             return table["behind"]
         if "rev-parse" in s:
@@ -209,3 +212,124 @@ def test_behind_blocks_first_in_survey_and_green_output_states_the_limit():
     b = P.survey(ROOT, _runner(behind=(0, "2\t5\n")))
     assert [x.key for x in b] == ["㉧"] and "5 커밋 뒤" in b[0].what
     assert "마지막 `git fetch` 이후" in P.render([], [])
+
+
+# ── #220 몇 바퀴 남았나 — 되먹임 변으로 바퀴 수를 말한다(읽기 전용 · 모델) ──────────────────
+
+def _blk(key: str, cmds: list[str] | None = None) -> P.Block:
+    return P.Block(key, "x", [], cmds or [])
+
+
+WRITE = "uv run python tools/ratchet.py --write   # 조이는 쪽만 쓴다"
+
+
+def test_only_a_stale_stamp_is_one_lap_and_moves_nothing_back():
+    f = P.forecast([_blk("㉡")])
+    assert (f.sure, f.most, f.capped) == (1, 1, False)
+
+
+def test_an_unsealed_stamp_tightens_the_ratchet_so_it_is_two_laps_and_says_why():
+    f = P.forecast([_blk("㉢")])
+    assert f.sure == 2, "도장 없는 절을 찍으면 UNSEALED 가 조여져 래칫을 다시 쳐야 한다 — 확정 2바퀴"
+    assert any("UNSEALED" in x for x in f.lines)
+
+
+def test_ratchet_then_ledger_then_stamp_is_one_sure_lap_but_can_come_back_without_a_fixed_point_claim():
+    f = P.forecast([_blk("㉠", [WRITE]), _blk("㉤"), _blk("㉡")])
+    assert f.sure == 1 and f.capped and f.most == P.LAP_CAP
+    text = "\n".join(f.lines)
+    assert "래칫이 `data/golden/mutation.json` 을 읽는다" in text and "제 래칫 상수를 맨 끝에 적는다" in text
+    assert "고정점은 증명 안 됨" in text and "5바퀴" in text
+
+
+def test_a_loosened_ratchet_that_only_a_human_fixes_writes_no_constant_so_it_pulls_nothing_forward():
+    f = P.forecast([_blk("㉠", ["# 느슨해진 쪽은 손으로"])])
+    assert (f.sure, f.most) == (1, 1)
+
+
+def test_nothing_blocking_in_the_chain_is_zero_laps():
+    assert P.forecast([_blk("㉣")]).sure == 0 and P.forecast([]).sure == 0
+
+
+def test_every_edge_connects_chain_steps_and_names_its_evidence():
+    for a, b, sure, why in P.EDGES:
+        assert a in P.ORDER and b in P.ORDER and isinstance(sure, bool)
+        assert "실측" in why or "서술" in why, f"{a}→{b} 에 근거(실측 · 서술)가 없다"
+
+
+def test_the_forecast_is_pure_and_the_rendered_report_carries_it_without_running_anything(capsys):
+    out = P.render([_blk("㉠", [WRITE]), _blk("㉡")])
+    assert "몇 바퀴 남았나" in out and "치지 않는다" in out
+    assert "몇 바퀴" not in P.render([]), "막는 것이 없으면 바퀴 절은 안 낸다 — 초록 출력은 그대로다"
+
+
+# ── #216 ㉨ 미러 — 훅 게이트 전부 + CI 빠른 잡 중 훅 예산에 못 든 것을 글자 그대로 돈다 ──────────────────
+
+def _all_commands(run_log):
+    def run(argv, cwd):
+        if argv[0] in ("env", "bash"):
+            run_log.append(argv)
+            return 0, ""
+        return _runner()(argv, cwd)
+    return run
+
+
+def test_the_mirror_runs_every_hook_gate_and_every_ready_command_exactly_as_declared():
+    import gate_parity as GP
+    import gatefast as GF
+    seen: list[list[str]] = []
+    assert P.check_ci_mirror(ROOT, _all_commands(seen)) is None
+    ran = {a[-1] for a in seen}
+    hook = {c for _n, c in GP.gate_commands() if not (GP.keys(c) and GP.keys(c)[0] in P.HOOK_REPLACED)}
+    ready = {c for _k, c in GF.ready_commands()}
+    assert ran == hook | ready and len(ready) > 30 and len(hook) >= 20, "㉨ 가 도는 것이 선언(훅 파일 · CI)과 다르다 — 사본이 생겼다"
+    assert all(a[:3] == ["env", "FIRE_LANE_DATA=", "FIRE_LANE_RAW="] for a in seen if a[0] == "env"), "ready 는 레이크 없이 돈다 — CI 빠른 잡과 같은 조건"
+    assert all(a[:2] == ["bash", "-c"] for a in seen if a[0] == "bash"), "훅 게이트는 훅이 도는 꼴(`bash -c`)이다"
+
+
+def test_pushready_is_no_weaker_than_the_hook_every_hook_gate_runs_or_is_replaced_with_a_reason():
+    """#216 의 본체 — 먼저 보는 도구가 나중 도구보다 약하면 거짓 안심을 준다. 훅 게이트는 전부 돌거나 **사유와 함께** 더 센 축으로 대체된다."""
+    import gate_parity as GP
+    hook_keys = {GP.keys(c)[0] for _n, c in GP.gate_commands() if GP.keys(c)}
+    jobs, skipped = P.mirror_commands()
+    assert set(skipped) == set(P.HOOK_REPLACED) and set(P.HOOK_REPLACED) <= hook_keys, "대체 표에 훅에 없는 열쇠가 남았다(죽은 대체)"
+    assert all(len(why) >= 5 for why in P.HOOK_REPLACED.values())
+    assert sum(1 for j in jobs if j[0] == "훅") + len(skipped) == len(GP.gate_commands()), "훅 게이트가 돌지도 대체되지도 않고 샜다"
+
+
+def test_a_red_mirror_check_blocks_names_the_check_and_prints_its_own_command():
+    import gatefast as GF
+    key, cmd = GF.ready_commands()[0]
+
+    def run(argv, cwd):
+        if argv[0] == "env" and argv[-1] == cmd:
+            return 1, "검사가 빨갛다 — 이유 하나\n"
+        return _runner()(argv, cwd) if argv[0] not in ("bash",) else (0, "")
+
+    b = P.check_ci_mirror(ROOT, run)
+    assert b is not None and b.key == "㉨" and any(key in d for d in b.detail) and cmd in b.cmds
+
+
+def test_a_red_hook_gate_in_the_mirror_is_named_with_its_layer():
+    import gate_parity as GP
+    name, cmd = next((n, c) for n, c in GP.gate_commands() if "deadcheck" in c)
+
+    def run(argv, cwd):
+        if argv[0] == "bash" and argv[-1] == cmd:
+            return 1, "deadcheck 가 빨갛다\n"
+        return (0, "") if argv[0] in ("bash", "env") else _runner()(argv, cwd)
+
+    b = P.check_ci_mirror(ROOT, run)
+    assert b is not None and any(d.startswith("[훅] " + name) for d in b.detail)
+
+
+def test_the_mirror_blocks_when_the_layer_table_drifts_from_ci(monkeypatch):
+    import gatefast as GF
+    monkeypatch.setattr(GF, "LAYERS", {**GF.LAYERS, "tools/없는검사.py": ("ready", "사유가 있다 — 없는 검사")})
+    b = P.check_ci_mirror(ROOT, _all_commands([]))
+    assert b is not None and any("죽은 선언" in d and "없는검사" in d for d in b.detail)
+
+
+def test_the_survey_includes_the_mirror_after_obligations_and_before_the_ratchet():
+    keys = [k for k, _ in P.CHECKS]
+    assert keys.index("㉦") < keys.index("㉨") < keys.index("㉠")

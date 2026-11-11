@@ -16,8 +16,7 @@ contract_verdict.py — **수를 세고 래칫과 댄다.** 선언만 보는 갈
 
 IN    `sources.yaml::datasets` (선언만)
 OUT   없음 — `(bad, warn, no_contract, crs_n)` 과 `(rc, 할 말)`
-PARAM `NO_CONTRACT_RATCHET` · `CRS_DECLARED_RATCHET` · `REAL_FAIL_RATCHET` ·
-      `REAL_WARN_RATCHET`
+PARAM `NO_CONTRACT_RATCHET` · `CRS_DECLARED_RATCHET` (실물 갈래 둘은 `contract.py` 가 든다 — PLAN #213)
 밖    **실물을 안 본다.** 레이크 없이 돌고, 그래서 CI 에서도 돈다. 실물
       갈래(`check_one`)는 `contract.py` 가 들고 그쪽은 레이크를 요구한다.
 """
@@ -51,74 +50,13 @@ NO_CONTRACT_RATCHET = 37
 #: ★ 2026-10-06 (§419). 35 → 37. V-World SHP 둘 — `raw_only` 라도 `.prj` 에 근거가 있으면 적는다.
 CRS_DECLARED_RATCHET = 41
 
-# ── 실물 갈래의 래칫 ──────────────────────────────────────────
-#: 실측 2026-10-05, 레이크 있는 기계(Zd 전수 verify [64/99]). **75종 · 실패 8 · 경고 54.**
-#:
-#: ★ 이 수를 왜 래칫으로 두는가. 이 단계를 F 에서 `verify.sh` 에 처음 붙였고,
-#:   처음 켜자마자 빨갰다. 그 빨간불은 **이 배치가 만든 회귀가 아니라 원래
-#:   그랬던 것을 처음 재서 본 것**이다. 고치려면 대장 72종을 실물과 하나씩
-#:   맞춰야 하고 그것은 한 배치의 일이 아니다.
-#:
-#: ★ 그런데 영구히 빨간 관문은 **꺼진 관문보다 나쁘다.** 사람이 그 빨강을
-#:   풍경으로 만들고, 그 옆에서 진짜 회귀가 지나간다(§69 와 같은 자리).
-#:   그래서 「지금 값」을 기록하고 **늘면 울게** 한다. 이 저장소가
-#:   `suppress` · `gate_parity` · 커버리지에서 이미 쓰는 규약이다.
-#:
-#: ★ 래칫은 **목표가 아니다.** 8 과 51 은 갚아야 할 빚이고 PLAN 이 그 줄을 든다.
-#:   줄면 기록을 조이라고 운다 — 느슨해진 래칫은 초록으로 위장한다.
-#: ★ 2026-11-07 (DECISIONS §657). 8 → **7.** 레이크 기계의 실측이 7 이고 관문이 조이라고 울었다. 조이는 쪽이라 판정 폐포 밖이다. 경고 쪽(58)은 안 건드린다 — 아래.
-REAL_FAIL_RATCHET = 7
-#: ★ 2026-10-05 — 51 → 54 (DECISIONS §398-8). `raw_only` PDF 셋이 대장에 올라
-#:   각각 「contract 블록 없음」 경고를 낸다. **같은 원인이 래칫 둘을 움직이는데
-#:   하나만 적었다** — `NO_CONTRACT_RATCHET` 만 올려서 레이크 있는 기계가
-#:   「이 배치가 늘렸다」로 빨갰다. 셋은 바닥이다(위 머리말).
-#: ★ 2026-10-07 — 54 → 59 (DECISIONS §427 · §428 · §429). 다섯이 움직인다 —
-#:     `vworld_uq153` · `vworld_uq164` · `eais_roadledger_dm`  실패 → 경고 (§427)
-#:     `juso_adrdc`                                           새 항목 · awaiting (§428)
-#:     `nfa_bldgcomm_guide`                                   새 항목 · 무계약 PDF (§429)
-#:   즉 실패 11 → **8**(= `REAL_FAIL_RATCHET`) · 경고 54 → **59**.
-#:   ★ 같은 원인이 래칫 둘을 움직이므로 둘을 같이 적는다(바로 위 §398-8 이 하나만
-#:     적어 당한 그것). 그리고 **항목을 더할 때마다 이 수를 다시 센다** — 처음에
-#:     57 로 적고 `juso_adrdc` 를 더하면서 안 고쳤다가 §429 에서 같이 잡았다.
-#:   ★ **반입되면 내려간다.** `awaiting` 을 지우는 판이 이 수를 조인다.
-#:
-#: ★ 2026-10-08 (DECISIONS §433). 59 → **57.** 그 판이 왔다 — 다섯이 전부
-#:   반입됐고 `awaiting` 다섯 줄을 지웠다. 사람이 **재서** 보낸 수로 갈랐다 —
-#:
-#:     vworld_uq153        awaiting → `.prj` 7변수 경고   ±0
-#:     vworld_uq164        awaiting → 없음                −1
-#:     juso_adrdc          awaiting → 없음                −1
-#:     nfa_bldgcomm_guide  awaiting → 무계약 PDF 경고      ±0
-#:     eais_roadledger_dm  awaiting → 컬럼 추가 경고       ±0
-#:
-#: ★ **실패는 안 움직인다(8 그대로).** 지우자마자 실측은 9 였다 —
-#:   `vworld_uq153` 이 「선언 5174 인데 `.prj` 는 …」로 떨어졌다. 읽어 보니
-#:   `.prj` 가 **스스로 5174 라고 적고** 다른 것은 `TOWGS84` 하나였다.
-#:   관문이 옳은 선언을 틀렸다고 운 것이고, 그것을 고쳤다(`_datum_shift_only`).
-#:   **실패 9 를 받아적었으면 그 결함이 래칫 안에 숨었다.**
-#:
-#: ★ 2026-10-13 (DECISIONS §515). 57 → **60.** 새 항목 셋이 각각 경고 하나를
-#:   낸다(`awaiting` 하나 = 경고 하나 · 위 §433 표가 그 단가를 쟀다).
-#:   **같은 원인이 래칫 둘을 움직이므로 둘을 같이 적는다** — §398-8 이 하나만
-#:   적어 당한 그것이고, `NO_CONTRACT_RATCHET` 도 같이 40 → 43 이다.
-#: ★ **이 수는 레이크 있는 기계에서만 재진다.** 짜는 쪽은 단가(+1/항목)로
-#:   더했다. 실측이 다르면 관문이 정확한 수를 찍으니 그 수로 고친다 —
-#:   §429 가 「항목을 더할 때마다 다시 센다」로 적은 그 자리다.
-#: ★ **반입되면 내려간다.** `awaiting` 셋을 지우는 판이 이 수를 조인다.
-#:
-#: ★ 2026-11-02. 59 → **58.** 실물을 raw 에 넣은 판(`vworld_uq153` 등)이 경고 하나를 걷었다.
-#:   조이는 쪽이라 판정 폐포 밖이고 재잠금이 따라오지 않는다. 실패 쪽(8)은 건드리지 않는다.
-#:
-#: ★ 2026-11-07 (DECISIONS §657). **58 을 그대로 둔다 — 실측은 67 이고 관문이 「이 배치가 늘렸다」로 운다.** 내역 아홉은 §657-8 이 든다 —
-#:   이 배치(§647 ~ §649)가 `nfa_*` 다섯을 `status: missing` 으로 내려 5 · §602 의 결손 선언 둘(`eais_roadledger_dm` · `vworld_uq164`) · 11-04 `a5a3467e` 의 `.prj` 없음 둘(`building_connector` · `building_entrance`).
-REAL_WARN_RATCHET = 58
 
 
 #: ★ 2026-11-09 (PLAN #185 ②). 래칫 넷 중 **선언 갈래 둘**을 `tools/ratchet.py` 의 선언 안으로 들였다 — 이 행의 문제가 「선언 밖 래칫이 샌다」였다
 #:   (`ratchet --write` 가 못 올리고 못 조인다). 방향: 무계약은 늘면 우는 쪽(`down`) · `crs_native` 선언 수는 줄면 우는 쪽(`up`). 둘 다 레이크 없이 재서 CI 에서도 돈다.
-#:   ★ **실물 갈래 둘(`REAL_FAIL_RATCHET` · `REAL_WARN_RATCHET`)은 선언 밖에 남겼다** — 사유 둘: ① 레이크(raw)가 있어야 재는데 `tools/ratchet.py` 가 CI 에서
-#:   건너뛰는 길(`# ci-exempt:`)은 `tools/verify.sh` 의 **단계에 매달려** 있고 이 실물 갈래는 그 단계가 아니다 ② `REAL_WARN_RATCHET` 은 **일부러 느슨한 채**다 —
-#:   위 DECISIONS §657 이 「58 을 그대로 둔다」고 적었고 실측은 그보다 높다. 선언 안에 들이면 이 기계에서 `ratchet.py` 가 영구히 빨갛다(「느슨해진 쪽 0」을 못 지킨다).
+#: ★ 2026-11-10 (PLAN #213 · DECISIONS §686). **실물 갈래 둘(`REAL_FAIL_RATCHET` · `REAL_WARN_RATCHET`)도 선언 안으로 들였다 — 집은 `contract.py` 다.** 이 모듈이 그 수를 재려면 `contract` 를 불러야 하고
+#:   `contract` 가 이 모듈을 부르므로 순환이다(`tests/test_layering.py::test_순환_의존이_없다` 가 늦은 import 도 센다). 그래서 실물 갈래의 상수 · `RATCHETS` · 실측은 **셈을 하는 쪽**(`contract.py`)이 든다.
+#:   이 모듈은 판정(`real_verdict`)과 셈(`real_counts` · `absent_count`)만 순수 함수로 든다 — 래칫 값은 **인자**로 받는다.
 RATCHETS = {"NO_CONTRACT_RATCHET": "down", "CRS_DECLARED_RATCHET": "up"}
 
 
@@ -128,20 +66,26 @@ def real_counts(reports: list, unknown: int = 0) -> tuple[int, int]:
     return (sum(1 for r in reports if r.worst == FAIL) + unknown, sum(1 for r in reports if r.worst == WARN))
 
 
+def absent_count(reports: list) -> int:
+    """결손 선언 수 — `ABSENT` 등급(대장이 「raw 에 안 올렸다」고 선언한 것). **경고에 안 센다**(`real_counts` 의 둘째 수와 겹치지 않는다)."""
+    from firelane.contract_crs import ABSENT
+    return sum(1 for r in reports if r.worst == ABSENT)
+
+
 def ratchet_values() -> dict[str, int]:
-    """`tools/ratchet.py` 가 부르는 실측 — 선언 갈래 둘의 지금 값. **레이크를 안 읽는다**(실물 갈래는 안 잰다 — 위 사유)."""
+    """`tools/ratchet.py` 가 부르는 실측 — 선언 갈래 둘의 지금 값. **레이크를 안 읽는다.** 실물 갈래 둘은 `contract.ratchet_values()` 가 든다(순환을 피해 거기 있다)."""
     from firelane import ledger as _led
 
     _bad, _warn, no_contract, crs_n = declared_issues(_led.load().get("datasets", {}))
     return {"NO_CONTRACT_RATCHET": no_contract, "CRS_DECLARED_RATCHET": crs_n}
 
 
-def real_verdict(nf: int, nw: int) -> tuple[int, list[str]]:
-    """전수 갈래의 판정. **키를 짚어 부른 것에는 안 쓴다** — 그때는 정확히 그 종이다."""
+def real_verdict(nf: int, nw: int, fail_ratchet: int, warn_ratchet: int) -> tuple[int, list[str]]:
+    """전수 갈래의 판정. **키를 짚어 부른 것에는 안 쓴다** — 그때는 정확히 그 종이다. 래칫 값은 **인자**다(집이 `contract.py` 라 여기서 못 읽는다 — 순환)."""
     say: list[str] = []
     rc = 0
-    for what, got, rat, name in (("실패", nf, REAL_FAIL_RATCHET, "REAL_FAIL_RATCHET"),
-                                 ("경고", nw, REAL_WARN_RATCHET, "REAL_WARN_RATCHET")):
+    for what, got, rat, name in (("실패", nf, fail_ratchet, "REAL_FAIL_RATCHET"),
+                                 ("경고", nw, warn_ratchet, "REAL_WARN_RATCHET")):
         if got > rat:
             say.append(f"✗ {what} {got} — 기록 {rat} 보다 늘었다. **이 배치가 늘렸다**")
             rc = 1

@@ -19,6 +19,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from tracked_guard import mirror_tree
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -121,30 +122,25 @@ def test_a_generated_path_is_a_claim_not_a_silence():
     assert not generated.dead_claims(ROOT), "복원이 안 됐다"
 
 
-def test_a_generated_claim_does_not_silence_a_real_absence():
+def test_a_generated_claim_does_not_silence_a_real_absence(tmp_path, monkeypatch):
     """★ 넓힌 쪽의 반대편. 주장에 적히지 **않은** 없는 경로는 여전히 운다."""
-    probe = ROOT / "docs/MASTER.md"
-    original = probe.read_text(encoding="utf-8")
-    try:
-        probe.write_text(original + "\n\n<!-- web/__가짜생성물__.pdf -->\n",
-                         encoding="utf-8")
-        assert any("__가짜생성물__" in b for b in doc_fsck.check_paths()), (
-            "생성물 주장을 넣은 뒤 ② 가 다른 없는 경로를 놓친다")
-    finally:
-        probe.write_text(original, encoding="utf-8")
+    original = (ROOT / "docs/MASTER.md").read_text(encoding="utf-8")
+    base = doc_fsck.check_paths()
+    monkeypatch.setattr(doc_fsck, "ROOT", mirror_tree(tmp_path / "m", replace={"docs/MASTER.md": original + "\n\n<!-- web/__가짜생성물__.pdf -->\n"}))
+    got = doc_fsck.check_paths()
+    assert any("__가짜생성물__" in b for b in got), "생성물 주장을 넣은 뒤 ② 가 다른 없는 경로를 놓친다"
+    assert [b for b in got if "__가짜생성물__" not in b] == base, "거울이 실물과 다르다 — 프로브 밖의 결과가 갈렸다"
 
 
-def test_the_gate_actually_cries():
+def test_the_gate_actually_cries(tmp_path, monkeypatch):
     """★ 해제만 검사하면 항상 통과하는 검사를 만들게 된다(§69).
     없는 경로를 하나 심어 ② 가 우는지 본다."""
-    probe = ROOT / "docs/MASTER.md"
-    original = probe.read_text(encoding="utf-8")
-    try:
-        probe.write_text(original + "\n\n<!-- tools/__doc_fsck_probe__.py -->\n",
-                         encoding="utf-8")
-        assert doc_fsck.check_paths(), "없는 경로를 심었는데 ② 가 조용하다"
-    finally:
-        probe.write_text(original, encoding="utf-8")
+    original = (ROOT / "docs/MASTER.md").read_text(encoding="utf-8")
+    base = doc_fsck.check_paths()
+    monkeypatch.setattr(doc_fsck, "ROOT", mirror_tree(tmp_path / "m", replace={"docs/MASTER.md": original + "\n\n<!-- tools/__doc_fsck_probe__.py -->\n"}))
+    got = doc_fsck.check_paths()
+    assert [b for b in got if "__doc_fsck_probe__" not in b] == base, "거울이 실물과 다르다"
+    assert any("__doc_fsck_probe__" in b for b in got), "없는 경로를 심었는데 ② 가 조용하다"
 
 
 def test_elsewhere_points_at_committed_files():
@@ -464,3 +460,17 @@ def test_the_deadline_table_is_empty_on_purpose():
     assert body.strip(), "표가 비었는데 사유도 없다 — 왜 비었는지 아무도 모른다"
     assert ("해소" in body or "이관" in body), \
         "표가 비었는데 어느 줄이 왜 사라졌는지 안 적혀 있다"
+
+
+def test_the_cover_date_hint_names_the_same_door_as_fix_sh():
+    """PLAN #217 — ⑥ 의 안내가 **수리 문과 같은 두 걸음**을 말한다(안내가 문을 숨기던 것). 안내를 바꾸거나 `fix.sh` 줄을 바꾸면 여기서 운다."""
+    from docfsck import revised
+
+    lines = [ln.strip() for ln in (ROOT / "tools" / "fix.sh").read_text(encoding="utf-8").splitlines() if ln.startswith("fix ")]
+    import re
+
+    cmds = [re.split(r'"\s+', ln, maxsplit=1)[1].strip() for ln in lines]      # `fix "이름"   명령` — 이름 뒤 공백 뭉치로 가른다
+    i = cmds.index(revised.HAND_STEPS[0])
+    assert cmds[i + 1] == revised.HAND_STEPS[1], "안내의 두 걸음이 fix.sh 의 연속한 두 줄이 아니다 — 굽기가 날짜 뒤에 안 온다"
+    assert "bash" in revised.FIX_HINT and "fix.sh" in revised.FIX_HINT and all(c in revised.FIX_HINT for c in revised.HAND_STEPS)
+    assert (ROOT / "tools" / "fix.sh").is_file()

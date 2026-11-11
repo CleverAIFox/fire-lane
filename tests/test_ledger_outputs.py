@@ -126,7 +126,7 @@ def actual_files() -> list[Path]:
         return []
     out = []
     for p in sorted(PROCESSED.rglob("*")):
-        if not p.is_file():
+        if not p.is_file():  # silent-ok: rglob 이 낸 항목 중 디렉터리를 거른다 — 없는 파일이 아니다
             continue
         if p.name in META or any(s in p.name for s in SKIP_SUFFIX):
             continue

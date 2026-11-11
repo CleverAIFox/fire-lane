@@ -33,6 +33,8 @@ ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / "web" / "data" / "segments.geojson"
 PROC = ROOT / "data" / "processed" / "segments.geojson"
 FIRE = ROOT / "data" / "processed" / "fire_access.csv"
+BLD = ROOT / "data" / "processed" / "building_5186.gpkg"
+RLINK = ROOT / "data" / "processed" / "road_link_5186.gpkg"
 
 
 def _published() -> list[dict]:
@@ -129,12 +131,33 @@ def test_published_scope_tier_equals_the_definition_recomputed():
     assert all("scope_tier" in p for p in feats), "발행물에 scope_tier 가 없다 — publish 를 다시 돌려야 한다"
     assert {p["scope_tier"] for p in feats} <= set(scopetier.TIERS), "정의 밖의 값이 있다"
     rows = fireaccess.load(FIRE) if FIRE.exists() else None
-    arows = scopetier.address_rows(rows) if rows else None
     bad = []
+    import importlib.util
+    if rows and BLD.exists() and RLINK.exists() and importlib.util.find_spec("geopandas"):
+        # ★ PLAN #186 — 본선 번지 행은 **번지 위치로 좁힌다**. 건물이 있는 기계는 새 정의로 정확히 다시 계산한다.
+        import geopandas as gpd
+        seg = gpd.read_file(WEB).to_crs(5186)
+        bld = gpd.read_file(BLD, columns=["RN_CD", "BULD_MNNM", "BULD_SLNO"])
+        rl = gpd.read_file(RLINK, columns=["RN", "RN_CD"], ignore_geometry=True).dropna()
+        rn_cd = rl.groupby("RN")["RN_CD"].agg(lambda x: sorted(set(map(str, x)))).to_dict()
+        got = scopetier.columns(list(seg["in_emd"]), list(seg["route_usage"]), list(seg["road_name"]), rows,
+                                list(seg.geometry), bld, rn_cd)
+        for uid, t, b, wt, wb in zip(seg["seg_uid"], seg["scope_tier"], seg["scope_basis"],
+                                     got["scope_tier"], got["scope_basis"], strict=True):
+            b = None if b != b else b
+            if (t, b) != (wt, wb):
+                bad.append((uid, (t, b), (wt, wb)))
+        assert not bad, f"scope_tier · scope_basis 가 정의와 다르다 {len(bad)}건 — 예: {bad[:3]}"
+        return
+    arows = scopetier.address_rows(rows) if rows else None
     for p in feats:
-        if arows is not None:
+        if arows is not None and not (BLD.exists() and RLINK.exists()):
+            # 건물이 없는 기계 — 본선 번지로 **좁혀진** 구간은 이 근사가 못 본다. 필요조건만 댄다(아래 근거 시험이 나머지를 문다).
             want = scopetier.tier(p["in_emd"], p["route_usage"], scopetier.is_designated(p.get("road_name"), arows))
-            if p["scope_tier"] != want:
+            if p["scope_tier"] == "listed" and want != "listed":
+                bad.append((p["seg_uid"], p["scope_tier"], want))
+            if p["scope_tier"] == "reference" and want == "listed" and not scopetier.street_address(
+                    p.get("nfa_access_token")):
                 bad.append((p["seg_uid"], p["scope_tier"], want))
             continue
         # 표 없는 기계 — 기본 두 갈래는 정확히, 지정은 필요조건으로 댄다
@@ -150,7 +173,8 @@ def test_published_scope_tier_equals_the_definition_recomputed():
             tok = scopetier.address_part(p.get("nfa_access_token") or "")
             if not (p["nfa_access_listed"] and p.get("road_name") and p["road_name"].replace(" ", "") in tok.replace(" ", "")):
                 bad.append((p["seg_uid"], "listed 인데 근거가 없다", p.get("road_name")))
-        if not want and p["scope_tier"] == "reference" and p["nfa_access_listed"] and p.get("road_name"):
+        if (not want and p["scope_tier"] == "reference" and p["nfa_access_listed"] and p.get("road_name")
+                and not scopetier.street_address(p.get("nfa_access_token"))):   # 번지 행은 좁혀서 reference 가 될 수 있다
             tok = scopetier.address_part(p.get("nfa_access_token") or "")
             if p["road_name"].replace(" ", "") in tok.replace(" ", ""):
                 bad.append((p["seg_uid"], "reference 인데 주소부에 나온다", p.get("road_name")))
@@ -192,3 +216,76 @@ def test_the_matcher_is_alive_not_silently_dead():
     # 지정은 항상 동 밖 · 경로 미사용 안에서만 선다
     assert all((not p["in_emd"]) and not (p["route_usage"] or 0) > 0
                for p in feats if p["scope_tier"] == "listed")
+
+
+# ── PLAN #186 — 본선 번지 행은 번지 위치의 구간만 건다 ─────────────────
+
+def test_street_address_parses_only_main_road_lots():
+    p = scopetier.street_address
+    assert p("계림동 동구 경양로 333외(산수동)(구, 신작2길)") == ("경양로", 333, None)
+    assert p("남도예식장 동구 중앙로 283-1외(계림동) (구, 대림 2길)") == ("중앙로", 283, 1)
+    assert p("삼성홈플러스 : 무등로 314 외(계림동)") == ("무등로", 314, None)
+    assert p("거성마트옆길 동구 지산로 37(지산1동) 일대(구, 섬들1길)") == ("지산로", 37, None)
+    # 번길 · `5가` · 번지 없음 · 괄호 안 설명은 번지가 아니다
+    assert p("동구 제봉로 184번길 10(대인동) 일대") is None
+    assert p("동구 중앙로272번길 41-1 외(계림동)") is None
+    assert p("충장로 5가 일대: 동구 충장로 5가") is None
+    assert p("조대후문 : 동구 필문대로289번길(서석동) 일대(구, 지산5길)") is None
+    assert p("남광주 시장 일대(구, 지산로 9)") is None, "괄호 안은 설명이다"
+
+
+def _bld_fixture():
+    import geopandas as gpd
+    from shapely.geometry import LineString, box
+    bld = gpd.GeoDataFrame({"RN_CD": ["1"], "BULD_MNNM": [37], "BULD_SLNO": [0]},
+                           geometry=[box(0, 0, 10, 10)], crs=5186)
+    near, far = LineString([(20, 5), (40, 5)]), LineString([(300, 5), (320, 5)])
+    return bld, near, far
+
+
+def test_a_main_road_lot_row_keeps_only_segments_near_the_building():
+    pytest.importorskip("geopandas", reason="환경skip(도구) — 건물 폴리곤 거리는 geopandas 가 잰다")
+    bld, near, far = _bld_fixture()
+    rows = [_row("거성마트 동구 지산로 37(지산1동) 일대(구, 섬들1길)", length=120.0)]   # 반경 60m
+    got = scopetier.columns([False, False], [0, 0], ["지산로", "지산로"], rows, [near, far], bld, {"지산로": ["1"]})
+    assert got["scope_tier"] == ["listed", "reference"]
+    assert got["scope_basis"] == ["address", None]
+
+
+def test_zero_buildings_falls_back_to_the_whole_road_and_says_so():
+    """폴백 A — 번지의 건물을 못 찾으면 본선 전체를 유지한다(지정을 없애지 않는다). 근거는 `road` 다."""
+    pytest.importorskip("geopandas", reason="환경skip(도구) — 건물 폴리곤 거리는 geopandas 가 잰다")
+    bld, near, far = _bld_fixture()
+    rows = [_row("계림동 동구 경양로 333외(산수동)(구, 신작2길)", length=230.0)]
+    got = scopetier.columns([False, False], [0, 0], ["경양로", "경양로"], rows, [near, far], bld, {"경양로": ["9"]})
+    assert got["scope_tier"] == ["listed", "listed"] and got["scope_basis"] == ["road", "road"]
+
+
+def test_a_numberless_row_and_corridor_segments_are_unchanged():
+    pytest.importorskip("geopandas", reason="환경skip(도구) — 건물 폴리곤 거리는 geopandas 가 잰다")
+    bld, near, far = _bld_fixture()
+    rows = [_row("대인시장 : 제봉로184번길 10(대인동) 일대(구, 지호로)")]
+    got = scopetier.columns([False, True, False], [0, 0, 3], ["제봉로184번길", "제봉로184번길", "제봉로184번길"], rows,
+                            [near, far, far], bld, {})
+    assert got["scope_tier"] == ["listed", "target", "corridor"]
+    assert got["scope_basis"] == ["road", None, None], "근거는 listed 에만 있다"
+
+
+def test_published_scope_basis_is_set_exactly_on_listed():
+    feats = _published()
+    assert all("scope_basis" in p for p in feats), "발행물에 scope_basis 가 없다 — publish 를 다시 돌려야 한다"
+    assert all((p["scope_basis"] is not None) == (p["scope_tier"] == "listed") for p in feats)
+    assert {p["scope_basis"] for p in feats} <= {None, scopetier.ADDRESS, scopetier.ROAD}
+    # `address` 는 본선 번지 행에서만 선다
+    assert all(scopetier.street_address(p.get("nfa_access_token")) for p in feats if p["scope_basis"] == "address")
+
+
+def test_designations_returns_flags_and_basis_per_segment():
+    """`designations` 를 **이름으로** 부른다 — (지정인가, 근거) 두 목록이 구간 순서 그대로다."""
+    pytest.importorskip("geopandas", reason="환경skip(도구) — 건물 폴리곤 거리는 geopandas 가 잰다")
+    bld, near, far = _bld_fixture()
+    rows = [_row("거성마트 동구 지산로 37(지산1동) 일대(구, 섬들1길)", length=120.0)]
+    des, basis = scopetier.designations(["지산로", "지산로", "없는길", None], [near, far, near, near], rows, bld,
+                                        {"지산로": ["1"]})
+    assert des == [True, False, False, False]
+    assert basis == [scopetier.ADDRESS, None, None, None]

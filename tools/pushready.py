@@ -24,8 +24,11 @@ pushready.py — 「푸시해도 되는가」 **한 명령.**  (PLAN #207)
   ㉤ `mutate` — 변이 장부가 낡았는가(`ratchet_values()` 가 죽는가)
   ㉥ `testpick --run` — 실측으로 고른 시험 묶음(구조 규약 시험 포함 · PLAN #209)
   ㉦ `obligations --new` — 새 파일의 빠진 등재 의무를 이름으로(PLAN #199 · 훅이 아니라 여기 — 훅은 예산이 없다)
+  ㉨ **훅 게이트 전부**(시험 묶음 · 도장은 ㉥ · ㉡ 가 더 세게) + `gatefast` 의 `ready` 층(CI 빠른 잡 중 훅 예산에 못 든 45개) — **글자 그대로** 돈다(PLAN #216 · 병렬 4 · 둘 다 도출이라 사본이 없다 → pushready ≥ 훅)
   ㉧ 로컬이 **로컬에 있는 원격 추적 가지**(`@{u}`)보다 뒤인가 — 뒤면 받을 명령을 댄다(PLAN #211). `fetch` 는 **안 한다**(사람이 정했다: 읽기 전용이 정체성이다)
-순서는 사슬이다 — **받기 → 시험 → 등재 의무 → 래칫 → 변이 장부 → 문서 도장 → 커밋.** 목록은 그 순서로 낸다(받으면 트리가 바뀌어 뒤의 것이 다 낡으므로 ㉧ 이 맨 앞이다).
+★ **몇 바퀴 남았나**(PLAN #220): 막는 것 목록 끝에 `forecast` 가 「이번에 치면 다음에 무엇이 또 낡는가」를 말한다 — 되먹임 변 다섯(`EDGES` · 실측 · 서술을 달았다)만으로 **확정 바퀴 · 가능한 바퀴**를 센다.
+  모델이다: 고정점을 증명하지 않고, 가능한 자기 루프 때문에 상한(`LAP_CAP`)에서 자른다. 표본은 사람이 돈 다섯 바퀴 한 건이다. 이 도구는 여전히 **아무것도 안 친다**.
+순서는 사슬이다 — **받기 → 시험 → 등재 의무 → CI 미러 → 래칫 → 변이 장부 → 문서 도장 → 커밋.** 목록은 그 순서로 낸다(받으면 트리가 바뀌어 뒤의 것이 다 낡으므로 ㉧ 이 맨 앞이다).
 
 부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398 — 아직 어느 관문에도 안 올렸다: 2분이 예산 30초에 안 든다)
 IN    `tools/ratchet.py` · `tools/docseal.py` · `tools/mutate.py` 의 출력과 종료 코드 · `git status --porcelain`
@@ -195,14 +198,15 @@ def check_mutate(root: Path, run: Runner) -> Block | None:
 def check_tests(root: Path, run: Runner) -> Block | None:
     """`testpick --run` — 실측 장부에서 **계산한** 시험 묶음(PLAN #209). 손 목록이 아니다.
 
+    ★ **바뀐 파일에 닿는 시험을 상한 없이 전부 더한다**(`--no-cap` · PLAN #218 b). 훅은 30초를 지켜 이 연동을 끈다 — 느린 검사는 앞(여기)에, 빠른 그물은 뒤(훅)에 둔다(#216).
     ★ 훅(`--load 60`)보다 큰 묶음이다 — 여기는 남의 일이 없어 `test_layering` 같은 구조 규약 시험이 든다(2026-11-08 에 CI 만 물었다).
     """
-    rc, out = run([*_PY, "tools/testpick.py", "--run"], root)
+    rc, out = run([*_PY, "tools/testpick.py", "--run", "--no-cap"], root)
     if rc == 0:
         return None
     tail = [x for x in out.strip().splitlines() if x.strip()]
     return Block("㉥", "시험 묶음이 빨갛다(또는 장부가 없다)", tail[-8:],
-                 [" ".join([*_PY, "tools/testpick.py", "--run"]) + "   # 빨간 파일을 읽고 고친다 — 고친 뒤 래칫 · 도장을 다시 사슬로"])
+                 [" ".join([*_PY, "tools/testpick.py", "--run", "--no-cap"]) + "   # 빨간 파일을 읽고 고친다 — 고친 뒤 래칫 · 도장을 다시 사슬로"])
 
 
 # ── ㉦ 새 파일의 등재 의무 ───────────────────────────────────────
@@ -218,6 +222,58 @@ def check_obligations(root: Path, run: Runner) -> Block | None:
     tail = [x.rstrip() for x in out.strip().splitlines() if x.strip()]
     return Block("㉦", "새 파일의 등재 의무가 빠졌다", tail[:14] + ([f"… 그리고 {len(tail) - 14}줄 더"] if len(tail) > 14 else []),
                  [" ".join([*_PY, "tools/obligations.py", "--new"]) + "   # 빠진 의무를 이름으로 댄다 — 적은 뒤 다시"])
+
+
+# ── ㉨ 훅 게이트 전부 + CI 빠른 잡 중 훅에 못 든 것 ───────────────
+MIRROR_WORKERS = 4
+#: CI 빠른 잡은 **레이크 없이** 돈다 — 이 기계의 `FIRE_LANE_DATA` 가 결과를 바꾸지 않게 같은 조건으로 돈다(`env` 로 비운다 · 55 전부 같은 결과였다).
+_LAKELESS = ["env", "FIRE_LANE_DATA=", "FIRE_LANE_RAW=", "bash", "-c"]
+#: 훅 게이트 중 ㉨ 가 **안 도는** 것 — 이미 더 센 축이 있다. 키는 `gate_parity.keys` 의 검사기 열쇠, 값은 사유. 훅에서 사라진 열쇠가 여기 남으면 시험이 운다.
+HOOK_REPLACED: dict[str, str] = {
+    "tools/testpick.py": "㉥ 가 같은 선택 함수로 더 큰 묶음을 돈다(`--no-cap` · 바뀐 파일에 닿는 시험 전부)",
+    "tools/docseal.py": "㉡ · ㉢ 가 같은 판정(`docseal check`)을 사람이 칠 명령과 함께 낸다",
+}
+
+
+def mirror_commands() -> tuple[list[tuple[str, str, list[str]]], dict[str, str]]:
+    """㉨ 가 돌 것 — (층, 이름, argv 앞머리)와 훅에서 빠진 것(사유). **둘 다 도출한다**: 훅은 `pre-push.gates`, ready 는 CI(`tools/gatefast.py` 의 층 표) — 사본이 없다."""
+    import gate_parity as GP
+    import gatefast as GF
+    out: list[tuple[str, str, list[str]]] = []
+    skipped: dict[str, str] = {}
+    for name, cmd in GP.gate_commands():
+        ks = GP.keys(cmd)
+        if ks and ks[0] in HOOK_REPLACED:
+            skipped[ks[0]] = HOOK_REPLACED[ks[0]]
+            continue
+        out.append(("훅", name, ["bash", "-c", cmd]))
+    out += [("ready", k, [*_LAKELESS, c]) for k, c in GF.ready_commands()]
+    return out, skipped
+
+
+def check_ci_mirror(root: Path, run: Runner) -> Block | None:
+    """**훅 게이트 전부**(`pre-push.gates` — 시험 묶음 · 도장은 더 센 ㉥ · ㉡ 가 맡는다)와 **CI 빠른 잡 중 훅 예산에 못 든 검사**(`gatefast` 의 `ready` 층)를 **글자 그대로** 돈다. (PLAN #216)
+
+    ★ 이것으로 **pushready ≥ 훅**이다 — 종전에는 훅 24게이트 중 15개를 어느 경로로도 안 봐서 먼저 보는 도구가 나중 도구보다 약했다. 두 목록 모두 도출이라 사본이 없다.
+    ★ 층 표가 CI 와 어긋나도(미선언 · 죽은 선언) 여기서 막는다 — 새 CI 검사가 층 없이 들어오면 이 행이 다시 열린다.
+    ★ 병렬 `MIRROR_WORKERS` 로 돈다. 읽기 전용 검사만 든다(CI 빠른 잡 45개는 돌고 나서 트리가 안 바뀐 것을 실측했다)."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    import gatefast as GF
+    rep = GF.layer_report()
+    detail = [f"층 선언표가 CI 와 어긋난다 — {k}: {', '.join(rep[k][:6])}" for k in ("미선언", "죽은 선언", "훅과 겹친다", "사유 부족", "층 이름") if rep[k]]
+    jobs, _skipped = mirror_commands()
+    with ThreadPoolExecutor(max_workers=MIRROR_WORKERS) as ex:
+        results = list(ex.map(lambda j: (j, run(j[2], root)), jobs))
+    red = [(j, out) for j, (rc, out) in results if rc != 0]
+    for (layer, name, _argv), out in red[:10]:
+        last = [x for x in out.strip().splitlines() if x.strip()][-1:] or ["(출력 없음)"]
+        detail.append(f"[{layer}] {name} — {last[0][:150]}")
+    if not detail:
+        return None
+    n_hook = sum(1 for j in jobs if j[0] == "훅")
+    what = f"훅 게이트 · CI 빠른 잡 검사 {len(red)}개가 빨갛다(훅 {n_hook} + ready {len(jobs) - n_hook} 중)" if red else "층 선언표가 CI 와 어긋난다"
+    return Block("㉨", what, detail, [*[j[2][-1] for j, _o in red[:6]], "# 층 선언표는 tools/gatefast.py 의 LAYERS — 새 CI 검사는 거기에 층을 적는다"])
 
 
 # ── ㉧ 로컬이 원격 추적 가지보다 뒤인가 ──────────────────────────
@@ -258,9 +314,84 @@ def notes(root: Path = ROOT, run: Runner = real_run) -> list[str]:
     return []
 
 
+# ── 몇 바퀴 남았나 (PLAN #220) ───────────────────────────────────
+#: **되먹임 그래프**(2026-11-11 · `#220` 의 실측). 사슬은 래칫(㉠) → 변이 장부(㉤) → 문서 도장(㉡ · ㉢) 순서인데, 뒤가 앞이 읽는 것을 **쓰는** 변이 있어 위상 정렬이 안 된다.
+#: 각 변은 `(from, to, 확정인가, 앞으로 가는가, 사유)` 다. **앞으로 가는 변**(순서에서 to 가 뒤)은 같은 바퀴에서 풀리고, **뒤로 가는 변**은 바퀴를 늘린다.
+#: 근거 — `실측`: 감사 훅으로 읽기 · 쓰기를 쟀다(`fix.sh` 를 복사본에서 돌려 래칫이 `data/golden/{mutation,docseal}.json` 을 읽는 것까지) · `서술`: 도구 머리말만 근거다(그 도구는 사람 몫이라 안 돌렸다).
+EDGES: list[tuple[str, str, bool, str]] = [
+    ("㉠", "㉤", True, "`ratchet --write` 가 도구 소스의 상수를 쓴다 → 그 도구의 변이 지문이 어긋난다(서술 · `mutate.catch_print`)"),
+    ("㉠", "㉡", False, "그 도구를 지목한 절이 있으면 도장도 낡는다(서술 — 절마다 다르다)"),
+    ("㉤", "㉠", False, "래칫이 `data/golden/mutation.json` 을 읽는다(실측) — 장부가 바뀌면 상수가 움직일 수 있다"),
+    ("㉤", "㉤", False, "`mutate` 가 장부를 쓴 뒤 **제 래칫 상수를 맨 끝에 적는다**(`ratchet.py` 머리말 · 서술) — 제 소스가 바뀌어 자기 지문이 또 어긋날 수 있다"),
+    ("㉢", "㉠", True, "도장 없는 절이 줄어 `UNSEALED` 가 조여진다 — 래칫이 `data/golden/docseal.json` 을 읽는다(실측) · 조이는 쪽이 생긴다"),
+]
+ORDER = ["㉠", "㉤", "㉡", "㉢"]       # 사람이 칠 순서(㉣ 커밋은 늘 맨 끝 — 바퀴 밖)
+LAP_CAP = 4
+#: 표본 — 2026-11-10~11 사람이 돈 바퀴. **한 건이다** · 단계별 기록은 없다. 모델의 확정 바퀴는 이 표본보다 작다 — 되돌아올 수 있는 변이 실제로 밟혔다는 뜻이다.
+SAMPLE_LAPS = 5
+
+
+@dataclass
+class Forecast:
+    sure: int                  # 확정 변만 밟은 바퀴 수
+    most: int                  # 가능한 변까지 밟은 바퀴 수(`LAP_CAP` 에서 자른다)
+    capped: bool
+    lines: list[str]
+
+
+def _simulate(start: dict[str, bool], wrote: bool, possible: bool) -> tuple[int, bool, list[str]]:
+    """바퀴를 센다. `start` = 지금 막는 칸 → 그 칸이 확정인가. `wrote` = ㉠ 이 상수를 쓰는 칸인가(조이는 쪽이 있는가). `possible` 이면 확정이 아닌 변도 밟는다."""
+    need = dict(start)
+    entered: set[str] = set()       # 변을 타고 들어온 칸 — 그 칸은 **고쳐 쓰는** 칸이다(처음부터 막던 ㉠ 만 `wrote` 를 따진다)
+    laps, notes = 0, []
+    while need and laps < LAP_CAP:
+        laps += 1
+        nxt: dict[str, bool] = {}
+        for step in ORDER:
+            if step not in need:
+                continue
+            sure_here = need.pop(step)
+            writes = step != "㉠" or wrote or step in entered
+            entered.discard(step)
+            for a, b, sure_edge, why in EDGES:
+                if a != step or not writes:
+                    continue
+                if not sure_edge and not possible:
+                    continue
+                sure_to = sure_here and sure_edge
+                tgt = need if ORDER.index(b) > ORDER.index(a) else nxt
+                tgt[b] = tgt.get(b, False) or sure_to
+                entered.add(b)
+                if possible and laps == 1:
+                    notes.append(f"{a}→{b} {'[확정]' if sure_to else '[가능]'} {why}")
+        need = nxt
+    return laps, bool(need), notes
+
+
+def forecast(blocks: list[Block]) -> Forecast:
+    """**이번에 사슬을 치면 다음에 무엇이 또 낡는가** — 막는 칸(`blocks`)과 `EDGES` 만으로 바퀴 수를 말한다. **읽기 전용 · 아무것도 안 친다.**
+
+    ★ 모델이다 — 고정점을 증명하지 않는다(`#220`). 확정 변만 밟으면 최소, 가능한 변까지 밟으면 `LAP_CAP` 바퀴에서 자른다(가능한 자기 루프가 있어 끝이 안 난다)."""
+    keys = {b.key: b for b in blocks}
+    start = {k: True for k in ORDER if k in keys}
+    ratchet = keys.get("㉠")
+    wrote = bool(ratchet and any(c.lstrip().startswith("uv run python tools/ratchet.py --write") for c in ratchet.cmds))
+    sure, _, _ = _simulate(start, wrote, possible=False)
+    most, capped, notes = _simulate(start, wrote, possible=True)
+    if not start:
+        return Forecast(0, 0, False, ["막는 것이 사슬 안에 없다 — 0바퀴(커밋만 남았을 수 있다)"])
+    names = {"㉠": "래칫", "㉤": "변이 장부", "㉡": "도장(낡음)", "㉢": "도장(없음)"}
+    steps = [f"{names[k]}({k})" for k in ORDER if k in start]
+    L = [f"이번에 {' → '.join(steps)} 순으로 치면 **확정 {sure}바퀴**" + (f" · 되돌아올 수 있는 변까지 밟으면 **{LAP_CAP}바퀴 이상**(가능한 자기 루프 — 고정점은 증명 안 됨)" if capped else f" · 가능한 변까지 밟으면 {most}바퀴"),
+         *[f"    · {n}" for n in notes]]
+    L.append(f"    · 표본: 2026-11-10~11 사람이 **{SAMPLE_LAPS}바퀴**를 돌았다(한 건 · 단계별 기록 없음) — 확정만 센 수는 그보다 작다. 되돌아올 수 있는 변이 실제로 밟혔다는 뜻이다")
+    L.append("    · 이 도구는 치지 않았다 — 말하기만 한다. 한 바퀴를 친 뒤 이 명령을 다시 돌리면 남은 바퀴가 줄어든 채 다시 나온다")
+    return Forecast(sure, most, capped, L)
+
+
 #: 사슬 순서 — 래칫 → 변이 장부 → 문서 도장 → 커밋. **싼 것을 앞에 두지 않는다**(사람이 칠 순서가 목록 순서다).
 CHECKS: list[tuple[str, Callable[[Path, Runner], Block | None]]] = [
-    ("㉧", check_behind), ("㉥", check_tests), ("㉦", check_obligations), ("㉠", check_ratchet), ("㉤", check_mutate), ("㉡", check_invalid_seals),
+    ("㉧", check_behind), ("㉥", check_tests), ("㉦", check_obligations), ("㉨", check_ci_mirror), ("㉠", check_ratchet), ("㉤", check_mutate), ("㉡", check_invalid_seals),
     ("㉢", check_unsealed), ("㉣", check_dirty),
 ]
 
@@ -280,16 +411,20 @@ def survey(root: Path = ROOT, run: Runner = real_run, *, log: Callable[[str], No
 def render(blocks: list[Block], notes: list[str] | None = None) -> str:
     tail = [f"  · {n}" for n in notes or []]
     if not blocks:
-        return "\n".join(["✓ 푸시 가능 — 원격 대비 · 시험 묶음 · 새 파일 등재 · 래칫 · 변이 장부 · 도장(낡음 · 없음) · 커밋 일곱 축이 막지 않는다.",
+        return "\n".join(["✓ 푸시 가능 — 원격 대비 · 시험 묶음 · 새 파일 등재 · CI 빠른 잡 미러 · 래칫 · 변이 장부 · 도장(낡음 · 없음) · 커밋 여덟 축이 막지 않는다.",
                           "  (전수 pytest 는 안 돌았다 — 이 도구는 그 대신이 아니다.)",
                           f"  ★ {BEHIND_LIMIT}", *tail])
-    L = [f"✗ 푸시 불가 — 막는 것 {len(blocks)}가지 (사슬 순서: 받기 → 시험 → 등재 의무 → 래칫 → 변이 장부 → 문서 도장 → 커밋)\n"]
+    L = [f"✗ 푸시 불가 — 막는 것 {len(blocks)}가지 (사슬 순서: 받기 → 시험 → 등재 의무 → CI 미러 → 래칫 → 변이 장부 → 문서 도장 → 커밋)\n"]
     for b in blocks:
         L.append(f"  {b.key} {b.what}")
         L += [f"      {d}" for d in b.detail]
         L.append("    사람이 칠 명령:")
         L += [f"      {c}" for c in b.cmds]
         L.append("")
+    fc = forecast(blocks)
+    L.append("  ── 몇 바퀴 남았나 (PLAN #220 · 모델 — 치지 않는다)")
+    L += [f"      {x}" for x in fc.lines]
+    L.append("")
     L += tail
     L.append("  ★ 이 도구는 읽기만 한다. 도장은 사람이 읽고 찍는다. 찍은 뒤에는 **커밋까지** 한다 — 그리고 다시 이 명령을 돌린다.")
     return "\n".join(L)

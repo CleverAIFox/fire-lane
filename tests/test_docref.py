@@ -85,8 +85,7 @@ def _sources() -> list[Path]:
     out = [ROOT / "README.md"]
     for d in SCAN_DIRS:
         base = ROOT / d
-        if not base.exists():
-            continue
+        assert base.exists(), f"스캔 디렉터리 {d} 가 없다 — 추적 디렉터리다. 없다고 넘어가면 그 디렉터리의 참조는 아무도 안 본다(PLAN #215)"
         for ext in ("*.md", "*.py"):
             out += [p for p in base.rglob(ext) if "_backup" not in str(p)]
     return sorted(set(p for p in out if p.exists()))
@@ -484,7 +483,7 @@ def test_tool_headers_do_not_cite_a_file_that_does_not_exist():
             for m in HEAD_PATH.findall(line):
                 seen += 1
                 if Path(m).stem in HEAD_PLACEHOLDER or (ROOT / m).exists():
-                    continue
+                    continue            # 조용한 갈래가 아니다 — 「있다」가 **통과 조건**이고 없으면 아래가 위반으로 센다(PLAN #215)
                 # ★ **산출물과 사람이 주는 입력은 지금 없는 것이 정상이다.**
                 #   `.gitignore` 에게 직접 묻는다 — 규칙을 여기 베껴 적으면
                 #   정본이 둘이 된다(`refcheck` ⑦ 과 같은 판단).

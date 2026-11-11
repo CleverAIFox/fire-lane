@@ -271,8 +271,15 @@ def survey() -> list[dict]:
                                  "at": at, "path": p})
                 continue
             if name not in vals:
-                rows.append({"tool": p.name, "name": name, "err":
-                             "`ratchet_values()` 가 이 이름을 안 낸다"})
+                # ★ 2026-11-10 (PLAN #213). 소유 모듈이 **`LAKE_ONLY` 로 선언한** 이름만 건너뛴다 — 레이크가 없으면 `ratchet_values()` 가 그 이름을 안 낸다.
+                #   선언이 없으면 그대로 빨강이다(「안 냈으면 봐 준다」가 되면 어떤 결함도 통과한다 · §318). 건너뛴 것은 사유와 함께 찍힌다.
+                lake = getattr(m, "LAKE_ONLY", {})
+                if isinstance(lake, dict) and name in lake:
+                    rows.append({"tool": f"{p.name} · {name}", "name": name, "skip": lake[name],
+                                 "cause": "`ratchet_values()` 가 레이크 없이는 이 이름을 안 낸다"})
+                else:
+                    rows.append({"tool": p.name, "name": name, "err":
+                                 "`ratchet_values()` 가 이 이름을 안 낸다"})
                 continue
             stored = ratchetstore.load().get(p.name, {})
             if name in stored:

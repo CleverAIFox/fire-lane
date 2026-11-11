@@ -17,12 +17,15 @@ PLAN 본문  규칙 — 문서가 이름까지 적은 도구(`tools/*.py` 표기
 """
 import json
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 import pytest
 from shapely.geometry import LineString, Polygon
+from tracked_guard import mirror_tree
 
 from firelane.guards import (
     CRITICAL,
@@ -593,8 +596,7 @@ def test_docs_point_at_the_real_package():
                "sources.yaml", "web/config.js", "web/README.md"]
     for rel in targets:
         p = ROOT / rel
-        if not p.exists():
-            continue
+        assert p.exists(), f"추적 파일 {rel} 이 없다 — 지웠거나 이름을 바꿨으면 이 시험의 목록을 고쳐라(PLAN #215)"
         for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
             if "src/etl" in line:
                 stale.append(f"{rel}:{i}  {line.strip()[:70]}")
@@ -925,7 +927,7 @@ def test_tools_declared_in_docs_exist():
                     r"tools/([\w_]+\.(?:py|sh|mjs))`?\s*(\(삭제됨\)|\(미구현\))?", ln):
                 name, marked = m
                 if marked or (ROOT / "tools" / name).exists():
-                    continue
+                    continue            # 조용한 갈래가 아니다 — 「있다」(또는 삭제됨 · 미구현 표기)가 통과 조건이고 없으면 아래가 `missing` 에 쌓는다(PLAN #215)
                 missing.append(f"{rel}:{i}  tools/{name}")
     assert not missing, (
         "문서가 가리키는데 없는 도구:\n  " + "\n  ".join(sorted(set(missing)))
@@ -1134,8 +1136,7 @@ def test_docs_call_the_entrypoint_through_uv():
     for rel in ("README.md", "docs/MASTER.md", "docs/PLAN.md",
                 "src/firelane/README.md", "src/firelane/pipeline.py"):
         p = ROOT / rel
-        if not p.exists():
-            continue
+        assert p.exists(), f"추적 파일 {rel} 이 없다 — 지웠거나 이름을 바꿨으면 이 시험의 목록을 고쳐라(PLAN #215)"
         for i, ln in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
             # 줄 맨 앞(들여쓰기 허용)에서 시작하는 실행 지시만 본다.
             if re.match(r"^\s*fire-lane(\s|$)", ln) and "uv run" not in ln:
@@ -1164,26 +1165,26 @@ def test_golden_refuses_stale_artifacts():
     assert "allow_stale" in src, "낡음을 알고 넘길 탈출구(--allow-stale)가 없다"
 
     seg = ROOT / "data/processed/segments.geojson"
-    fp = ROOT / "data/golden/.code_fingerprint"
     if not seg.exists():
         pytest.skip("환경skip(산출물) — 파이프라인 산출물이 없다")
 
     # ★ 2026-08-23. 처음엔 `os.utime` 으로 mtime 을 조작해 검증했다.
     #   지금은 **판정 로직의 내용 해시**를 보므로 mtime 은 무관하다.
     #   지문을 다른 값으로 바꿔 "코드가 바뀐 상태" 를 만든다.
-    keep = fp.read_text(encoding="utf-8") if fp.exists() else None
+    # ★ 거울에서 잰다(PLAN #219) — 진짜 `.code_fingerprint`(추적 파일)를 고쳤다 되돌리면 병렬로 도는 다른 시험이 중간 값을 읽는다.
+    #   `tools/` · `src/` · `data/golden/` 는 복사본이라 `golden.py` 의 `ROOT` 와 `firelane` 이 모두 거울을 본다.
+    import os
+    mir = mirror_tree(Path(tempfile.mkdtemp(prefix="guards_mirror_")), copy=("tools", "src", "data/golden"),
+                      replace={"data/golden/.code_fingerprint": "0000000000000000\n"})
     try:
-        fp.write_text("0000000000000000\n", encoding="utf-8")
-        r = subprocess.run([sys.executable, str(ROOT / "tools/golden.py"), "check"],
-                           capture_output=True, text=True, cwd=ROOT)
+        env = dict(os.environ, PYTHONPATH=os.pathsep.join([str(mir / "tools"), str(mir / "src")]))
+        r = subprocess.run([sys.executable, str(mir / "tools/golden.py"), "check"],
+                           capture_output=True, text=True, cwd=mir, env=env, timeout=600)
         assert r.returncode != 0, (
             "판정 로직이 바뀌었는데 통과했다:\n" + r.stdout[-500:])
         assert "낡" in r.stdout, "왜 막혔는지 말하지 않는다"
     finally:
-        if keep is not None:
-            fp.write_text(keep, encoding="utf-8")
-        else:
-            fp.unlink(missing_ok=True)
+        shutil.rmtree(mir, ignore_errors=True)
 
 
 def test_tidy_ignores_the_virtualenv():
@@ -1385,8 +1386,7 @@ def test_ci_installs_what_the_tests_import():
     need: dict[str, set[str]] = {}
     for name in CI_TESTS:
         f = ROOT / "tests" / name
-        if not f.exists():
-            continue
+        assert f.exists(), f"추적 파일 tests/{name} 이 없다 — CI 가 도는 시험 목록에서 빠지면 그 import 가 pip 대상인지 아무도 안 본다(PLAN #215)"
         tree = ast.parse(f.read_text(encoding="utf-8"))
         for n in ast.walk(tree):
             mods = []
@@ -1406,7 +1406,7 @@ def test_ci_installs_what_the_tests_import():
                 #   `tools/` 만 보던 탓에 `docparse` 가 **pip 대상**으로 세어졌다.
                 if ((ROOT / "tools" / f"{top}.py").exists()
                         or (ROOT / "tests" / f"{top}.py").exists()):
-                    continue
+                    continue            # 조용한 갈래가 아니다 — 내부 모듈이면 pip 대상이 아니고 아니면 아래가 `need` 에 쌓는다(PLAN #215)
                 need.setdefault(DIST.get(top, top).lower(), set()).add(name)
 
     missing = {k: sorted(v) for k, v in need.items() if k not in installed}
@@ -1521,37 +1521,26 @@ def test_golden_staleness_ignores_comments():
     import subprocess
     import sys
 
-    fp = ROOT / "data/golden/.code_fingerprint"
     seg = ROOT / "data/processed/segments.geojson"
     if not seg.exists():
         pytest.skip("환경skip(산출물) — 파이프라인 산출물이 없다")
 
+    # ★ 거울에서 잰다(PLAN #219) — 종전에는 **진짜** `src/firelane/seg/width.py` · `params.py`(판정 로직) 와 `.code_fingerprint` 를 고쳤다 되돌렸다.
+    mir = mirror_tree(Path(tempfile.mkdtemp(prefix="guards_mirror_")), copy=("tools", "src", "data/golden"))
+    W = mir / "src/firelane/seg/width.py"
+    P = mir / "src/firelane/seg/params.py"
+    fpm = mir / "data/golden/.code_fingerprint"
+    w0, p0 = W.read_text(encoding="utf-8"), P.read_text(encoding="utf-8")
+
     def stale() -> str:
-        # ★ `sys.path.insert` 를 문자열로 쓰면 `test_sys_path_해킹이_없다`
-        #   가 잡는다. 정당한 지적이라 PYTHONPATH 로 넘긴다 —
-        #   경로 조작을 코드에 심지 않는다는 규칙은 문자열 안에서도 같다.
         import os
-        # ★ 2026-09-28 (DECISIONS §290-8). 종전에는 `PYTHONPATH` 를 `tools`
-        #   **하나로 덮어썼다.** 그러면 `import firelane` 이 설치된 편집
-        #   패키지(= 본 저장소)로 풀리고, 워크트리에서 돌 때 `golden` 이
-        #   `relative_to(ROOT)` 에서 죽는다. 배달 예습이 워크트리에서 도므로
-        #   이 한 줄이 예습을 영구히 빨갛게 만들었다.
-        #   **시험은 그것이 사는 체크아웃을 재야 한다** — `src` 를 먼저 둔다.
-        env = dict(os.environ, PYTHONPATH=os.pathsep.join(
-            [str(ROOT / "tools"), str(ROOT / "src"),
-             *([os.environ["PYTHONPATH"]] if os.environ.get("PYTHONPATH") else [])]))
-        r = subprocess.run(
-            [sys.executable, "-c",
-             "import golden; print(golden._staleness())"],
-            capture_output=True, text=True, cwd=ROOT, env=env)
+        env = dict(os.environ, PYTHONPATH=os.pathsep.join([str(mir / "tools"), str(mir / "src")]))
+        r = subprocess.run([sys.executable, "-c", "import golden; print(golden._staleness())"],
+                           capture_output=True, text=True, cwd=mir, env=env, timeout=600)
         return r.stdout.strip()
 
-    keep = fp.read_text(encoding="utf-8") if fp.exists() else None
-    W = ROOT / "src/firelane/seg/width.py"
-    P = ROOT / "src/firelane/seg/params.py"
-    w0, p0 = W.read_text(encoding="utf-8"), P.read_text(encoding="utf-8")
     try:
-        fp.unlink(missing_ok=True)
+        fpm.unlink(missing_ok=True)
         assert stale() == "[]", "기준선을 만들 때 낡았다고 한다"
 
         W.write_text(w0.replace("class WidthEngine", "# 주석\nclass WidthEngine", 1),
@@ -1564,12 +1553,7 @@ def test_golden_staleness_ignores_comments():
                             p0, count=1, flags=re.M), encoding="utf-8")
         assert stale() != "[]", "임계값을 바꿨는데 안 잡는다 — 게이트가 죽었다"
     finally:
-        W.write_text(w0, encoding="utf-8")
-        P.write_text(p0, encoding="utf-8")
-        if keep is not None:
-            fp.write_text(keep, encoding="utf-8")
-        else:
-            fp.unlink(missing_ok=True)
+        shutil.rmtree(mir, ignore_errors=True)
 
 
 def test_sample_writer_uses_a_key_that_survives_merging():
@@ -2304,8 +2288,7 @@ def test_strict_lint_args_have_one_home():
     bad = []
     for rel in (".github/workflows/contract.yml", "tools/verify.sh"):
         f = ROOT / rel
-        if not f.exists():
-            continue
+        assert f.exists(), f"추적 파일 {rel} 이 없다 — 두 곳을 대조하는 시험이 한 곳만 보고 통과한다(PLAN #215)"
         txt = f.read_text(encoding="utf-8")
         if "--config .ruff-strict.toml" not in txt:
             bad.append(f"{rel} 이 .ruff-strict.toml 를 안 읽는다")

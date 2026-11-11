@@ -106,8 +106,7 @@ def test_published_polygons_are_well_formed():
     seen = 0
     for name in ("road_area", "sidewalk", "buildings"):
         f = WEB / f"{name}.geojson"
-        if not f.exists():
-            continue
+        assert f.exists(), f"추적 파일 {name}.geojson 이 없다 — 있는 둘만 훑고 통과하면 빠진 하나가 안 보인다(PLAN #215)"
         d = json.loads(f.read_text(encoding="utf-8"))
         for i, ft in enumerate(d.get("features", [])):
             g = ft.get("geometry") or {}
@@ -661,8 +660,7 @@ def test_the_schema_declares_width_is_unverified():
     """
     for rel in ("data/processed/segments.schema.json", "web/data/segments.schema.json"):
         q = ROOT / rel
-        if not q.is_file():
-            continue
+        assert q.is_file(), f"추적 파일 {rel} 이 없다 — 둘 다 없으면 이 시험은 아무것도 안 재고 통과한다(PLAN #215)"
         s = json.loads(q.read_text(encoding="utf-8"))
         assert "width_verified" in s, (
             f"{rel} 최상위에 `width_verified` 선언이 없다 — 미검증을 말하는 자리가 사라졌다")
@@ -699,7 +697,7 @@ def test_schema_layers_differ_only_by_declaration():
     declared = {"seg_no", "z", "clear_min_m", "clear_med_m", "clear_max_m", "clear_src", "clear_cov",
                 "ecc_rel_med_m", "ecc_rel_max_m", "ecc_cov", "struct_kind", "struct_dist_m",
                 "nfa_access_listed", "nfa_access_width", "nfa_access_len_m", "nfa_access_hh",
-                "nfa_access_len_ratio", "nfa_access_loose", "nfa_access_token", "scope_tier"}      # Zm7 · Zm8 · #62 — publish 가 싣는 web 전용 칸
+                "nfa_access_len_ratio", "nfa_access_loose", "nfa_access_token", "scope_tier", "scope_basis"}      # Zm7 · Zm8 · #62 · #186 — publish 가 싣는 web 전용 칸
     assert web_only <= declared and "seg_no" in web_only, (
         f"web 전용 필드가 선언 밖이다 — {sorted(web_only)}")
     drift = sorted(k for k in pf & wf

@@ -49,7 +49,7 @@ fix() {                       # fix "<이름>" <명령…>
         return
     fi
     local out rc
-    out=$("$@" 2>&1); rc=$?
+    out=$(FIRE_LANE_AUDIT_TAG="$name" "$@" 2>&1); rc=$?    # 꼬리표 — 감사 훅이 켜져 있을 때만 쓰인다(안 켜면 무해 · PLAN #220)
     NAMES+=("$name")
     if [ $rc -ne 0 ]; then
         RESULTS+=("빨강"); bad=$((bad+1))
@@ -57,7 +57,7 @@ fix() {                       # fix "<이름>" <명령…>
         return
     fi
     # 「고칠 것이 없다」와 「고쳤다」를 가른다 — 둘을 섞으면 무엇이 움직였는지 모른다
-    if printf '%s' "$out" | grep -qE '고쳐 적었다|채웠다|고쳤다|조였다|^Fixed|Found .* error'; then
+    if printf '%s' "$out" | grep -qE '고쳐 적었다|채웠다|고쳤다|조였다|줄 [1-9][0-9]*개 수정|^Fixed|Found .* error'; then
         RESULTS+=("고침"); ok=$((ok+1))
         printf '  %s✎%s %-26s %s\n' "$G" "$Z" "$name" "$(printf '%s' "$out" | tail -1)"
     else

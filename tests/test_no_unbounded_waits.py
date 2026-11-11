@@ -59,7 +59,7 @@ BLOCKING = {
 #:   고쳐도 안 줄고, 안 줄면 사람이 그 래칫을 안 믿는다.
 # ★ 2026-10-09 (DECISIONS §444) 45 → **43.** 조이는 쪽이다 — docx·pdf 를
 #   들어내며 지운 도구 일곱과 시험 셋에 시한 없는 대기가 둘 있었다.
-RATCHET = 43
+RATCHET = 41
 
 
 def unbounded(path: Path) -> list[tuple[int, str]]:
