@@ -314,16 +314,15 @@ def run_reads(name: str, root: Path = ROOT, out_dir: Path | None = None) -> tupl
     """시험 파일 **하나를 자기 프로세스에서** 돌려 그 시험이 연 추적 파일을 얻는다. (rc, 출력 꼬리, 읽은 파일들)
 
     ★ 파일마다 프로세스가 따로여야 한다 — 이미 import 된 모듈은 다시 안 읽혀서 한 프로세스에 여럿이면 뒤 파일의 읽기가 샌다(`fsaudit` 머리말).
-    ★ 훅은 `tests/tracked_guard.py` 의 세션 훅이 켠다. 이 길은 `FIRE_LANE_READS_OUT` 만 더한다 — 시험을 느슨하게 하지 않는다."""
+    ★ 훅은 `tests/tracked_guard.py` 의 세션 훅이 켠다. 이 길은 `--fl-reads-out` 인자만 더한다(환경변수가 아니다 — `env_check`) — 시험을 느슨하게 하지 않는다."""
     import tempfile
     d = out_dir or Path(tempfile.mkdtemp(prefix="fl-reads-"))
     dest = d / f"{name}.json"
-    env = {**os.environ, "FIRE_LANE_READS_OUT": str(dest)}
     try:
         r = subprocess.run([sys.executable, "-m", "pytest", f"tests/{name}", "-q", "-p", "no:cacheprovider", "--no-header", "-o", "addopts=",
-                            "-o", f"timeout={MEASURE_TEST_TIMEOUT}", "-rfE"],
+                            "-o", f"timeout={MEASURE_TEST_TIMEOUT}", "-rfE", "--fl-reads-out", str(dest)],
                            cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace",
-                           timeout=MEASURE_PROC_TIMEOUT, stdin=subprocess.DEVNULL, env=env)
+                           timeout=MEASURE_PROC_TIMEOUT, stdin=subprocess.DEVNULL)
     except subprocess.TimeoutExpired:
         return 124, f"시한 {MEASURE_PROC_TIMEOUT}초 초과", []
     out = (r.stdout or "") + (r.stderr or "")

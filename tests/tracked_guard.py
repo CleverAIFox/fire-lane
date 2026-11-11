@@ -139,6 +139,11 @@ def _parent_test() -> str:
     return _STATE.get("collecting") or os.environ.get("PYTEST_CURRENT_TEST", "")
 
 
+def pytest_addoption(parser) -> None:
+    """`--fl-reads-out PATH` — 읽기 실측을 그 파일에 적는다. **환경변수가 아니라 인자다**(`env_check` 가 `paths.py` 밖의 `os.environ` 독자를 센다 — 도구가 자식에게 환경을 얹으려 읽을 일이 없다)."""
+    parser.addoption("--fl-reads-out", dest="fl_reads_out", default=None, help="시험 파일별로 연 추적 파일을 이 JSON 에 적는다(testpick --measure-reads)")
+
+
 def pytest_collectstart(collector) -> None:
     """수집 중 모듈 import 가 읽는 파일을 그 시험 파일에 붙인다(모듈 첫 줄의 `import firelane.x` 도 읽기다)."""
     if type(collector).__name__ == "Module" and not hasattr(collector.config, "workerinput"):
@@ -194,7 +199,7 @@ def pytest_sessionfinish(session, exitstatus) -> None:
         return
     _STATE["audit"] = False
     _drain_children()
-    out_path = os.environ.get("FIRE_LANE_READS_OUT")      # 읽기 실측 길(`testpick --measure-reads`)만 켠다 — 평소엔 안 쓴다
+    out_path = session.config.getoption("fl_reads_out", default=None)      # 읽기 실측 길(`testpick --measure-reads`)만 켠다 — 평소엔 안 쓴다
     if out_path:
         import json
         Path(out_path).write_text(json.dumps({k: sorted(v) for k, v in sorted(READS.items())}, ensure_ascii=False), encoding="utf-8")

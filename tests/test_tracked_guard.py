@@ -75,7 +75,7 @@ def plugin(tmp_path_factory, monkeypatch) -> None:
         "_s = g.snapshot\n"
         "g.snapshot = lambda root=None: _s(g.ROOT)\n"
         "pytest_sessionstart = g.pytest_sessionstart\npytest_sessionfinish = g.pytest_sessionfinish\n"
-        "pytest_collectstart = g.pytest_collectstart\npytest_collection_finish = g.pytest_collection_finish\npytest_runtest_logstart = g.pytest_runtest_logstart\n", encoding="utf-8")
+        "pytest_addoption = g.pytest_addoption\npytest_collectstart = g.pytest_collectstart\npytest_collection_finish = g.pytest_collection_finish\npytest_runtest_logstart = g.pytest_runtest_logstart\n", encoding="utf-8")
     monkeypatch.setenv("PYTHONPATH", os.pathsep.join([str(d), os.environ.get("PYTHONPATH", "")]))
 
 
@@ -166,8 +166,8 @@ def test_reads_are_recorded_per_test_file_including_children_and_the_import_at_c
     (repo / "test_x.py").write_text(body, encoding="utf-8")
     _git(repo, "add", "test_x.py")
     _git(repo, "commit", "-q", "-m", "t")
-    env = {**os.environ, "FIRE_LANE_READS_OUT": str(out), "PYTHONPATH": os.pathsep.join([str(TESTS), os.environ.get("PYTHONPATH", "")])}
-    r = subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "-p", "tg_for_test", "test_x.py"],
+    env = {**os.environ, "PYTHONPATH": os.pathsep.join([str(TESTS), os.environ.get("PYTHONPATH", "")])}
+    r = subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "-p", "tg_for_test", "--fl-reads-out", str(out), "test_x.py"],
                        cwd=repo, env=env, capture_output=True, text=True, timeout=120, check=False)
     assert r.returncode == 0, r.stdout + r.stderr
     import json
