@@ -3281,7 +3281,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 3,104 전수 · **분모(blank) 0절** · 물림(inherit) 1,917절.
+★ **강제자 칸의 분모.** 절 3,106 전수 · **분모(blank) 0절** · 물림(inherit) 1,917절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -3980,6 +3980,7 @@ uv run python -m firelane.datalog impact ngii1k
 
 지금은 파일로 충분하다. 옮길 시점은 **네비 API 가 붙을 때**다.
 `sources.yaml` 이 곧 DDL 이 되도록 설계한다.
+**2026-11-12 사람이 정했다 — DB 는 안 쓴다(소비자가 없다).** `PLAN #63`(닫힘) · `#64`(닫힘) 는 기각했고 다시 여는 조건 넷은 `DECISIONS §694` 가 든다. 아래는 방향 기록이다.
 
 ```sql
 CREATE SCHEMA core;      -- 파이프라인 산출. 읽기 전용
