@@ -25,6 +25,8 @@ pushready.py — 「푸시해도 되는가」 **한 명령.**  (PLAN #207)
   ㉥ `testpick --run` — 실측으로 고른 시험 묶음(구조 규약 시험 포함 · PLAN #209)
   ㉦ `obligations --new` — 새 파일의 빠진 등재 의무를 이름으로(PLAN #199 · 훅이 아니라 여기 — 훅은 예산이 없다)
   ㉧ 로컬이 **로컬에 있는 원격 추적 가지**(`@{u}`)보다 뒤인가 — 뒤면 받을 명령을 댄다(PLAN #211). `fetch` 는 **안 한다**(사람이 정했다: 읽기 전용이 정체성이다)
+★ **몇 바퀴 남았나**(PLAN #220): 막는 것 목록 끝에 `forecast` 가 「이번에 치면 다음에 무엇이 또 낡는가」를 말한다 — 되먹임 변 다섯(`EDGES` · 실측 · 서술을 달았다)만으로 **확정 바퀴 · 가능한 바퀴**를 센다.
+  모델이다: 고정점을 증명하지 않고, 가능한 자기 루프 때문에 상한(`LAP_CAP`)에서 자른다. 표본은 사람이 돈 다섯 바퀴 한 건이다. 이 도구는 여전히 **아무것도 안 친다**.
 순서는 사슬이다 — **받기 → 시험 → 등재 의무 → 래칫 → 변이 장부 → 문서 도장 → 커밋.** 목록은 그 순서로 낸다(받으면 트리가 바뀌어 뒤의 것이 다 낡으므로 ㉧ 이 맨 앞이다).
 
 부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398 — 아직 어느 관문에도 안 올렸다: 2분이 예산 30초에 안 든다)
@@ -259,6 +261,81 @@ def notes(root: Path = ROOT, run: Runner = real_run) -> list[str]:
     return []
 
 
+# ── 몇 바퀴 남았나 (PLAN #220) ───────────────────────────────────
+#: **되먹임 그래프**(2026-11-11 · `#220` 의 실측). 사슬은 래칫(㉠) → 변이 장부(㉤) → 문서 도장(㉡ · ㉢) 순서인데, 뒤가 앞이 읽는 것을 **쓰는** 변이 있어 위상 정렬이 안 된다.
+#: 각 변은 `(from, to, 확정인가, 앞으로 가는가, 사유)` 다. **앞으로 가는 변**(순서에서 to 가 뒤)은 같은 바퀴에서 풀리고, **뒤로 가는 변**은 바퀴를 늘린다.
+#: 근거 — `실측`: 감사 훅으로 읽기 · 쓰기를 쟀다(`fix.sh` 를 복사본에서 돌려 래칫이 `data/golden/{mutation,docseal}.json` 을 읽는 것까지) · `서술`: 도구 머리말만 근거다(그 도구는 사람 몫이라 안 돌렸다).
+EDGES: list[tuple[str, str, bool, str]] = [
+    ("㉠", "㉤", True, "`ratchet --write` 가 도구 소스의 상수를 쓴다 → 그 도구의 변이 지문이 어긋난다(서술 · `mutate.catch_print`)"),
+    ("㉠", "㉡", False, "그 도구를 지목한 절이 있으면 도장도 낡는다(서술 — 절마다 다르다)"),
+    ("㉤", "㉠", False, "래칫이 `data/golden/mutation.json` 을 읽는다(실측) — 장부가 바뀌면 상수가 움직일 수 있다"),
+    ("㉤", "㉤", False, "`mutate` 가 장부를 쓴 뒤 **제 래칫 상수를 맨 끝에 적는다**(`ratchet.py` 머리말 · 서술) — 제 소스가 바뀌어 자기 지문이 또 어긋날 수 있다"),
+    ("㉢", "㉠", True, "도장 없는 절이 줄어 `UNSEALED` 가 조여진다 — 래칫이 `data/golden/docseal.json` 을 읽는다(실측) · 조이는 쪽이 생긴다"),
+]
+ORDER = ["㉠", "㉤", "㉡", "㉢"]       # 사람이 칠 순서(㉣ 커밋은 늘 맨 끝 — 바퀴 밖)
+LAP_CAP = 4
+#: 표본 — 2026-11-10~11 사람이 돈 바퀴. **한 건이다** · 단계별 기록은 없다. 모델의 확정 바퀴는 이 표본보다 작다 — 되돌아올 수 있는 변이 실제로 밟혔다는 뜻이다.
+SAMPLE_LAPS = 5
+
+
+@dataclass
+class Forecast:
+    sure: int                  # 확정 변만 밟은 바퀴 수
+    most: int                  # 가능한 변까지 밟은 바퀴 수(`LAP_CAP` 에서 자른다)
+    capped: bool
+    lines: list[str]
+
+
+def _simulate(start: dict[str, bool], wrote: bool, possible: bool) -> tuple[int, bool, list[str]]:
+    """바퀴를 센다. `start` = 지금 막는 칸 → 그 칸이 확정인가. `wrote` = ㉠ 이 상수를 쓰는 칸인가(조이는 쪽이 있는가). `possible` 이면 확정이 아닌 변도 밟는다."""
+    need = dict(start)
+    entered: set[str] = set()       # 변을 타고 들어온 칸 — 그 칸은 **고쳐 쓰는** 칸이다(처음부터 막던 ㉠ 만 `wrote` 를 따진다)
+    laps, notes = 0, []
+    while need and laps < LAP_CAP:
+        laps += 1
+        nxt: dict[str, bool] = {}
+        for step in ORDER:
+            if step not in need:
+                continue
+            sure_here = need.pop(step)
+            writes = step != "㉠" or wrote or step in entered
+            entered.discard(step)
+            for a, b, sure_edge, why in EDGES:
+                if a != step or not writes:
+                    continue
+                if not sure_edge and not possible:
+                    continue
+                sure_to = sure_here and sure_edge
+                tgt = need if ORDER.index(b) > ORDER.index(a) else nxt
+                tgt[b] = tgt.get(b, False) or sure_to
+                entered.add(b)
+                if possible and laps == 1:
+                    notes.append(f"{a}→{b} {'[확정]' if sure_to else '[가능]'} {why}")
+        need = nxt
+    return laps, bool(need), notes
+
+
+def forecast(blocks: list[Block]) -> Forecast:
+    """**이번에 사슬을 치면 다음에 무엇이 또 낡는가** — 막는 칸(`blocks`)과 `EDGES` 만으로 바퀴 수를 말한다. **읽기 전용 · 아무것도 안 친다.**
+
+    ★ 모델이다 — 고정점을 증명하지 않는다(`#220`). 확정 변만 밟으면 최소, 가능한 변까지 밟으면 `LAP_CAP` 바퀴에서 자른다(가능한 자기 루프가 있어 끝이 안 난다)."""
+    keys = {b.key: b for b in blocks}
+    start = {k: True for k in ORDER if k in keys}
+    ratchet = keys.get("㉠")
+    wrote = bool(ratchet and any(c.lstrip().startswith("uv run python tools/ratchet.py --write") for c in ratchet.cmds))
+    sure, _, _ = _simulate(start, wrote, possible=False)
+    most, capped, notes = _simulate(start, wrote, possible=True)
+    if not start:
+        return Forecast(0, 0, False, ["막는 것이 사슬 안에 없다 — 0바퀴(커밋만 남았을 수 있다)"])
+    names = {"㉠": "래칫", "㉤": "변이 장부", "㉡": "도장(낡음)", "㉢": "도장(없음)"}
+    steps = [f"{names[k]}({k})" for k in ORDER if k in start]
+    L = [f"이번에 {' → '.join(steps)} 순으로 치면 **확정 {sure}바퀴**" + (f" · 되돌아올 수 있는 변까지 밟으면 **{LAP_CAP}바퀴 이상**(가능한 자기 루프 — 고정점은 증명 안 됨)" if capped else f" · 가능한 변까지 밟으면 {most}바퀴"),
+         *[f"    · {n}" for n in notes]]
+    L.append(f"    · 표본: 2026-11-10~11 사람이 **{SAMPLE_LAPS}바퀴**를 돌았다(한 건 · 단계별 기록 없음) — 확정만 센 수는 그보다 작다. 되돌아올 수 있는 변이 실제로 밟혔다는 뜻이다")
+    L.append("    · 이 도구는 치지 않았다 — 말하기만 한다. 한 바퀴를 친 뒤 이 명령을 다시 돌리면 남은 바퀴가 줄어든 채 다시 나온다")
+    return Forecast(sure, most, capped, L)
+
+
 #: 사슬 순서 — 래칫 → 변이 장부 → 문서 도장 → 커밋. **싼 것을 앞에 두지 않는다**(사람이 칠 순서가 목록 순서다).
 CHECKS: list[tuple[str, Callable[[Path, Runner], Block | None]]] = [
     ("㉧", check_behind), ("㉥", check_tests), ("㉦", check_obligations), ("㉠", check_ratchet), ("㉤", check_mutate), ("㉡", check_invalid_seals),
@@ -291,6 +368,10 @@ def render(blocks: list[Block], notes: list[str] | None = None) -> str:
         L.append("    사람이 칠 명령:")
         L += [f"      {c}" for c in b.cmds]
         L.append("")
+    fc = forecast(blocks)
+    L.append("  ── 몇 바퀴 남았나 (PLAN #220 · 모델 — 치지 않는다)")
+    L += [f"      {x}" for x in fc.lines]
+    L.append("")
     L += tail
     L.append("  ★ 이 도구는 읽기만 한다. 도장은 사람이 읽고 찍는다. 찍은 뒤에는 **커밋까지** 한다 — 그리고 다시 이 명령을 돌린다.")
     return "\n".join(L)

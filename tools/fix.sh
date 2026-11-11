@@ -49,7 +49,7 @@ fix() {                       # fix "<이름>" <명령…>
         return
     fi
     local out rc
-    out=$("$@" 2>&1); rc=$?
+    out=$(FIRE_LANE_AUDIT_TAG="$name" "$@" 2>&1); rc=$?    # 꼬리표 — 감사 훅이 켜져 있을 때만 쓰인다(안 켜면 무해 · PLAN #220)
     NAMES+=("$name")
     if [ $rc -ne 0 ]; then
         RESULTS+=("빨강"); bad=$((bad+1))

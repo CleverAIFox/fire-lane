@@ -209,3 +209,52 @@ def test_behind_blocks_first_in_survey_and_green_output_states_the_limit():
     b = P.survey(ROOT, _runner(behind=(0, "2\t5\n")))
     assert [x.key for x in b] == ["㉧"] and "5 커밋 뒤" in b[0].what
     assert "마지막 `git fetch` 이후" in P.render([], [])
+
+
+# ── #220 몇 바퀴 남았나 — 되먹임 변으로 바퀴 수를 말한다(읽기 전용 · 모델) ──────────────────
+
+def _blk(key: str, cmds: list[str] | None = None) -> P.Block:
+    return P.Block(key, "x", [], cmds or [])
+
+
+WRITE = "uv run python tools/ratchet.py --write   # 조이는 쪽만 쓴다"
+
+
+def test_only_a_stale_stamp_is_one_lap_and_moves_nothing_back():
+    f = P.forecast([_blk("㉡")])
+    assert (f.sure, f.most, f.capped) == (1, 1, False)
+
+
+def test_an_unsealed_stamp_tightens_the_ratchet_so_it_is_two_laps_and_says_why():
+    f = P.forecast([_blk("㉢")])
+    assert f.sure == 2, "도장 없는 절을 찍으면 UNSEALED 가 조여져 래칫을 다시 쳐야 한다 — 확정 2바퀴"
+    assert any("UNSEALED" in x for x in f.lines)
+
+
+def test_ratchet_then_ledger_then_stamp_is_one_sure_lap_but_can_come_back_without_a_fixed_point_claim():
+    f = P.forecast([_blk("㉠", [WRITE]), _blk("㉤"), _blk("㉡")])
+    assert f.sure == 1 and f.capped and f.most == P.LAP_CAP
+    text = "\n".join(f.lines)
+    assert "래칫이 `data/golden/mutation.json` 을 읽는다" in text and "제 래칫 상수를 맨 끝에 적는다" in text
+    assert "고정점은 증명 안 됨" in text and "5바퀴" in text
+
+
+def test_a_loosened_ratchet_that_only_a_human_fixes_writes_no_constant_so_it_pulls_nothing_forward():
+    f = P.forecast([_blk("㉠", ["# 느슨해진 쪽은 손으로"])])
+    assert (f.sure, f.most) == (1, 1)
+
+
+def test_nothing_blocking_in_the_chain_is_zero_laps():
+    assert P.forecast([_blk("㉣")]).sure == 0 and P.forecast([]).sure == 0
+
+
+def test_every_edge_connects_chain_steps_and_names_its_evidence():
+    for a, b, sure, why in P.EDGES:
+        assert a in P.ORDER and b in P.ORDER and isinstance(sure, bool)
+        assert "실측" in why or "서술" in why, f"{a}→{b} 에 근거(실측 · 서술)가 없다"
+
+
+def test_the_forecast_is_pure_and_the_rendered_report_carries_it_without_running_anything(capsys):
+    out = P.render([_blk("㉠", [WRITE]), _blk("㉡")])
+    assert "몇 바퀴 남았나" in out and "치지 않는다" in out
+    assert "몇 바퀴" not in P.render([]), "막는 것이 없으면 바퀴 절은 안 낸다 — 초록 출력은 그대로다"
