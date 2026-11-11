@@ -303,7 +303,7 @@ test("경로 위 경고 — 문장은 거리 · 이름 · 종류 · 여유를 **
   const lb = riskLine(b);
   ok(lb.includes("60m") && lb.includes("B로") && lb.includes("여유") && lb.includes("+0.2"), lb);
   const lc = riskLine(c);
-  ok(lc.includes("C로") && lc.includes("폭을 모른다"), lc);
+  ok(lc.includes("C로") && lc.includes("폭 모름"), lc);
 });
 
 test("경로 위 경고 — 카드는 최대 몇 줄만 보이고 나머지는 「외 N곳」 수로 말한다", () => {

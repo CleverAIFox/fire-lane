@@ -5,9 +5,10 @@ publish_basemap.py — 내비 바탕 지도의 **면**을 낸다. 도로면 · �
 IN    data/processed/ngii1k_5186.gpkg (수치지형도 1:1,000 도로경계 면)
       data/processed/road_rw_5186.gpkg (도로명주소 실폭도로 면)
       data/processed/ngii1k_walk_5186.gpkg (보도 면)
+      data/processed/vworld_uq153_5186.gpkg (도시계획시설 — 공원 · 녹지 · 광장 · 공공공지 면 · 행 144 · 닫힘)
       web/data/view.json (maxBounds — 자르는 틀)
-OUT   web/data/road_area.geojson · web/data/sidewalk.geojson
-PARAM 단순화 SIMPLIFY_M · 좌표 자릿수 PREC · 크기 상한 SIZE_MAX
+OUT   web/data/road_area.geojson · web/data/sidewalk.geojson · web/data/landuse.geojson
+PARAM 단순화 SIMPLIFY_M · 좌표 자릿수 PREC · 크기 상한 SIZE_MAX · LANDUSE_SIZE_MAX · GREEN_WORDS
 
 ── 왜 생겼나 (2026-09-22 · DECISIONS §213-4) ─────────────────────
 「대비가 없다」. 내비가 도로를 **판정 구간의 중심선**(1,281개)으로만 그렸다.
@@ -54,6 +55,16 @@ SOURCES = {
     "road_area": ["ngii1k_5186.gpkg", "road_rw_5186.gpkg"],
     "sidewalk": ["ngii1k_walk_5186.gpkg"],
 }
+
+
+#: 토지이용 면의 원천(`sources.yaml` 의 `vworld_uq153` · `ingest` 가 `<키>_5186.gpkg` 로 낸다). 대장의 `feeds` 가 이 파일을 소비처로 적는다 —
+#: 그 선언이 참이려면 **이 코드가 그 키를 실제로 읽어야** 하고 `tests/test_basemap_geometry.py` 가 그것을 문다.
+LANDUSE_STEM = "vworld_uq153"
+LANDUSE_FILE = f"{LANDUSE_STEM}_5186.gpkg"
+#: 토지이용 면 산출 상한 — 41면이 약 100KB 다. 도로면(`SIZE_MAX`)과 따로 못박는다(합치면 한쪽이 부풀어도 안 보인다)
+LANDUSE_SIZE_MAX = 256 * 1024
+#: `DGM_NM`(시설명)에 이 낱말이 들면 녹지 계열이고 나머지(공공공지 · 광장)는 포장 공지로 칠한다. **색의 갈래일 뿐 판정이 아니다.**
+GREEN_WORDS = ("공원", "녹지", "유원지")
 
 
 def _frame() -> object:
@@ -187,6 +198,41 @@ def build(name: str, frame) -> dict:
     }
 
 
+def landuse_class(name: object) -> str:
+    """시설명 → 칠 갈래. 낱말이 없거나 비면 `plaza` 다(없다고 녹지로 칠하지 않는다)."""
+    return "green" if isinstance(name, str) and any(w in name for w in GREEN_WORDS) else "plaza"
+
+
+def build_landuse(frame) -> dict:
+    """토지이용 면 — 공원 · 녹지 · 광장 · 공공공지를 **갈래를 살려** 낸다. (행 144 · 닫힘)
+
+    ★ 도로면처럼 합치지(union) 않는다 — 합치면 갈래가 사라진다. 면마다 따로 격자 · 유효화 · 감김을 건다(`snap_orient`).
+    ★ **판정과 무관하다.** 폭에는 안 쓴다(`sources.yaml` 의 `used_for`). 칠하는 면일 뿐이다.
+    ★ 원천이 없으면 죽는다 — 빈 바탕을 조용히 내지 않는다(`union` 과 같은 규율).
+    """
+    path = P / LANDUSE_FILE
+    if not path.exists():
+        raise SystemExit(f"★ {path} 가 없다 — `ingest` 를 먼저 돌려라. 빈 토지이용 면을 조용히 내지 않는다")
+    g = gpd.read_file(path)
+    g = g[g.intersects(frame)]
+    items = []
+    for geom, name in zip(g.geometry.make_valid().intersection(frame), g.get("DGM_NM", [None] * len(g)), strict=False):
+        for q in _polys(geom.simplify(SIMPLIFY_M)):
+            if q.area >= 1.0:
+                items.append((landuse_class(name), q))
+    items.sort(key=lambda t: (-round(t[1].area, 9), round(t[1].centroid.x, 9), round(t[1].centroid.y, 9), t[0]))
+    feats = []
+    for cls, q in items:
+        out = gpd.GeoSeries([q], crs=5186).to_crs(4326).iloc[0]
+        fixed = snap_orient(out)
+        if fixed is None:
+            continue
+        if not fixed.is_valid:
+            raise SystemExit(f"★ landuse: 무효 기하 — 조용히 발행하지 않는다 ({cls})")
+        feats.append({"type": "Feature", "properties": {"cls": cls}, "geometry": _round(mapping(fixed))})
+    return {"type": "FeatureCollection", "name": "landuse", "features": feats}
+
+
 def main() -> None:
     frame = _frame()
     total = 0
@@ -198,6 +244,12 @@ def main() -> None:
         print(f"  {name}.geojson  면 {len(fc['features'])} · {len(txt.encode()) / 1024:.0f}KB")
     if total > SIZE_MAX:
         raise SystemExit(f"★ 바탕 면이 {total / 1e6:.1f}MB — 상한 {SIZE_MAX / 1e6:.1f}MB 를 넘었다")
+    lu = build_landuse(frame)
+    txt = json.dumps(lu, ensure_ascii=False, separators=(",", ":"))
+    if len(txt.encode()) > LANDUSE_SIZE_MAX:
+        raise SystemExit(f"★ 토지이용 면이 {len(txt.encode()) / 1024:.0f}KB — 상한 {LANDUSE_SIZE_MAX / 1024:.0f}KB 를 넘었다")
+    (W / "landuse.geojson").write_text(txt, encoding="utf-8")
+    print(f"  landuse.geojson  면 {len(lu['features'])} · {len(txt.encode()) / 1024:.0f}KB")
 
 
 if __name__ == "__main__":

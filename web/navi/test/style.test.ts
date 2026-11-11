@@ -19,10 +19,17 @@ import {
   opsClearanceBand, opsClearanceColor, landmarkSource, landmarkLayers,
 } from "../src/components/opsLayers";
 import { CLEARANCE_SCALE } from "../src/ui/clearanceMeaning";
+import { MAP } from "../src/ui/tokens";
+import { withLanduse, landuseLayers } from "../src/components/layers";
 import { CLEARANCE_WIDE_M, type ClearanceBand } from "../src/domain/clearance";
 import { TUNING } from "../src/domain/vehicle";
 
 const style = FL.graph.style ?? {};
+
+// ★ `.geojson` 은 JSON 모듈이 아니라 글롭으로 읽는다(`destSnap.test.ts` 와 같다) — 파일이 없으면 모음이 비어 시험이 우는 쪽이다
+const LANDUSE_RAW = Object.values(
+  import.meta.glob("../../data/landuse.geojson", { query: "?raw", import: "default", eager: true }),
+)[0] as string | undefined;
 
 function check(name: string, layers: StyleSpecification["layers"]) {
   const src = {
@@ -114,4 +121,30 @@ test("검증기가 살아 있다 — 줌 보간을 + 로 감싼 옛 식은 운�
   let threw = false;
   try { check("canary", bad as never); } catch { threw = true; }
   ok(threw, "옛 무효 식을 검증기가 통과시켰다 — 이 시험은 빈 그물이다");
+});
+
+
+/**
+ * ★ PLAN 행 144(닫힘). 토지이용 면은 **진짜로 그려진다** — 소스가 서 있고 · 레이어가 보도 · 도로면 **아래에** 있고 ·
+ *   갈래 색 둘이 모두 쓰이며 · 발행물의 모든 면이 알려진 갈래(`cls`)를 든다.
+ *   소스 이름만 적고 레이어가 없거나, 레이어만 있고 데이터가 안 맞으면 읽는 코드가 아니다.
+ */
+test("토지이용 면 — 소스 · 레이어 순서(보도 · 도로면 아래) · 갈래 색 · 발행물의 갈래", () => {
+  const src = sources("../data/", [126.9, 35.14, 126.94, 35.16]) as Record<string, { type: string; data?: unknown }>;
+  ok(src.landuse?.type === "geojson" && String(src.landuse.data).endsWith("landuse.geojson"), "토지이용 소스가 안 선다");
+  ok(!baseLayers(style).some((l) => l.id === "landuse"), "관제 화면과 나눠 쓰는 baseLayers 에 landuse 가 들었다(공유 층 래칫이 오른다)");
+  check("landuse", landuseLayers());
+  const layers = withLanduse(baseLayers(style)) as { id: string; source?: string; paint?: Record<string, unknown> }[];
+  const ids = layers.map((l) => l.id);
+  const lu = layers.find((l) => l.id === "landuse");
+  ok(!!lu && lu.source === "landuse", "landuse 레이어가 없다");
+  ok(ids.indexOf("bg") < ids.indexOf("landuse") && ids.indexOf("landuse") < ids.indexOf("sidewalk") && ids.indexOf("sidewalk") < ids.indexOf("road-area"),
+     "토지이용 면이 보도 · 도로면 위에 그려진다(길을 가린다)");
+  const paint = JSON.stringify(lu!.paint);
+  ok(paint.includes(MAP.landGreen) && paint.includes(MAP.landPlaza), "두 갈래 색이 다 안 쓰인다");
+  ok(String(MAP.landGreen) !== String(MAP.landPlaza) && String(MAP.landGreen) !== `rgb(${MAP.bg.join(",")})`, "갈래 색이 구별되지 않는다");
+  ok(LANDUSE_RAW !== undefined, "web/data/landuse.geojson 이 없다");
+  const fc = JSON.parse(LANDUSE_RAW!) as { features: { properties: { cls: string } }[] };
+  ok(fc.features.length > 0, "발행물에 토지이용 면이 0개다 — 빈 바탕이다");
+  ok(fc.features.every((f) => f.properties.cls === "green" || f.properties.cls === "plaza"), "모르는 갈래가 발행물에 있다");
 });

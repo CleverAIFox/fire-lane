@@ -888,14 +888,16 @@ datasets:
   #   99.99% 같고 전국판이라 23배 무겁다. 같은 것을 두 이름으로 들지 않는다.
   # ★ 셋 다 `kind: raw_only` 다. **폭 판정에 안 쓴다** — EDA 가 §379-4 의 여덟
   #   자리를 UQ153 0/8 · UQ164 0/8 로 쟀다. 도시계획시설은 주차 apron · 로터리 ·
-  #   보도를 안 든다. 「건물 없으면 검다」(#144) 를 지도에서 메우는 용도다.
+  #   보도를 안 든다. 「건물 없으면 검다」(행 144 · 닫힘) 를 지도에서 메우는 용도다.
   vworld_uq153:
     feeds:
       - src/firelane/normalize_raw.py
+      - src/firelane/publish_basemap.py
     feeds_note: '[]'
     stem: vworld_uq153
     ext: [zip]
-    kind: raw_only
+    kind: shp_zip
+    layer: '*C_UQ153*.shp'
     scope: kr
     updated: '2026-10-01'            # 제공처가 「이 날짜로 갱신」이라 찍은 날
     notified: '2026-08-30'           # ★ 실측 — dbf `CREATE_DAT` 최댓값(63,391/66,067 채워짐)
@@ -908,8 +910,8 @@ datasets:
       동명동 bbox 안 25면 — 유원지 658,385 m2 · 기타 공원시설 465,491 ·
       근린공원 4 · 소공원 2 · 완충녹지 1 · 공공공지 8.
     feeds_why: |
-      ★ 미투입이다. `raw_only` 라 ingest 가 SKIP 한다. 배선은 `#144`(토지이용 면)
-        가 든다 — 발행 지도에서 공터가 검게 그려지는 것을 메운다.
+      ★ 토지이용 면(공원 · 녹지 · 광장 · 공공공지)이다. `publish_basemap` 이 읽어 발행 지도의
+        바탕으로 칠한다 — 공터가 검게 그려지던 것을 메운다(행 144 · 닫힘).
     used_for: |
       ★ **폭에는 안 쓴다.** 전수로 쟀다 — 전체 1,281구간 중 이 면에 닿는 것이
         33 (2.6%) 이고, DECISIONS §379-4 가 든 여덟 자리 중 **0곳**이다.
@@ -923,6 +925,12 @@ datasets:
       rows: 66067
       required_cols: [DGM_NM, LCLAS_CL, MLSFC_CL, NTFC_SN]
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      layers: ['C_UQ153']
+      layer_glob: '*C_UQ153*.shp'
+      layer_used: 'C_UQ153.shp'
+      columns: ['PRESENT_SN', 'LCLAS_CL', 'MLSFC_CL', 'SCLAS_CL', 'ATRB_SE', 'WTNNC_SN', 'NTFC_SN', 'DGM_NM', 'DGM_AR', 'DGM_LT', 'SIGNGU_SE', 'DRAWING_NO', 'EXCUT_SE', 'CREATE_DAT']
+      features: 66067
   vworld_uq164:
     status: missing
     missing_why: |

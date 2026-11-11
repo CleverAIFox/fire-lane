@@ -89,8 +89,8 @@ export function RouteBrief(p: Props) {
       </div>
       <div style={{ fontSize: 13, color: C.panelSub, marginTop: 4 }}>
         {p.fromOrder
-          ? "관제가 정한 경로다. 아래는 다른 경로와의 차이다."
-          : "지령에 경로 지정이 없어 안전으로 간다."}
+          ? "관제가 정한 경로다."
+          : "경로 지정이 없어 안전으로 간다."}
       </div>
 
       <Card o={p.safe} on={p.chosen === "safe"}
@@ -104,7 +104,7 @@ export function RouteBrief(p: Props) {
               title="빠른 경로" />
       ) : (
         <div style={{ ...note, marginTop: 12 }}>
-          둘째 경로가 서지 않았다 — 안전 경로 하나로 안내한다.
+          둘째 경로 없음 — 안전 경로로 안내한다.
         </div>
       )}
 
@@ -171,8 +171,7 @@ function Diff({ o }: { o: RouteOption }) {
            v={o.uncertainCount ? `${o.uncertainCount}개 · ${Math.round(o.uncertainM)}m` : "0개"} />
       {/* ★ PLAN #78 ③ — 개수만이 아니라 **어디가** 위험한지. 두 카드가 같은 자리에 같은 모양으로 낸다 */}
       {o.risks.lines.length > 0 && (
-        <div style={riskBox} aria-label="경로 위 경고">
-          <div style={{ fontWeight: 800, marginBottom: 2 }}>경로 위 경고</div>
+        <div style={riskBox}>
           {o.risks.lines.map((l) => <div key={l}>{l}</div>)}
           {o.risks.more > 0 && <div style={{ color: C.panelSub }}>외 {o.risks.more}곳</div>}
         </div>

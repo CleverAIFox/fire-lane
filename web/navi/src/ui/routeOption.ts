@@ -25,13 +25,13 @@ import { fmtDur } from "./tokens";
 export const RISK_LINES_MAX = 4;
 
 const RISK_KIND_TEXT: Record<RiskItem["kind"], string> = {
-  blocked: "통행 불가", needs_cv: "확인 필요", unknown: "폭을 모른다", tight: "여유 부족",
+  blocked: "통행 불가", needs_cv: "확인 필요", unknown: "폭 모름", tight: "여유 부족",
 };
 
 /** 경고 한 줄 — 거리 · 이름 · 종류 · 여유를 **실제 수로** 쓴다(0 으로 얼버무리지 않는다) */
 export function riskLine(r: RiskItem): string {
   const margin = r.marginM != null ? ` · 여유 ${r.marginM >= 0 ? "+" : ""}${r.marginM.toFixed(1)}m` : "";
-  return `${r.atM}m 지점 ${r.label} · ${RISK_KIND_TEXT[r.kind]}${margin}`;
+  return `${r.atM}m ${r.label} · ${RISK_KIND_TEXT[r.kind]}${margin}`;
 }
 
 export function routeOption(

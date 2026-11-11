@@ -83,6 +83,9 @@ export const C = {
 export const MAP = {
   bg: [232, 228, 218] as [number, number, number],
   sidewalk: "#d6d0c3",
+  /** 토지이용 면(PLAN 행 144(닫힘)) — 공원 · 녹지 · 유원지(`green`)와 광장 · 공공공지(`plaza`). 배경보다 살짝만 다르다 — 길과 건물을 못 이기게 */
+  landGreen: "#cfe0c3",
+  landPlaza: "#dedacd",
   asphalt: "#6f7680",
   asphaltEdge: "#5b616a",
   marking: "#f4f1e8",
