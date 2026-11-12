@@ -27,7 +27,9 @@ import type { FeedItem, Unit } from "../domain/opsProtocol";
 import {
   GLYPHS, sources, baseLayers, applyTerrain, markerLayers, stationLayers, shortenStationLabels,
   cctvIcon, hydrantIcon, bumpIcon, camIcon, zoneIcon, pillImage, pillOptions,
+  Z,
 } from "./layers";
+import { attachRoadLabels } from "./roadLabels";
 import {
   opsSegLayers, opsHistoryLayers, refOpacity, refFilter, andFilter, OPS_SEG_OPACITY, opsOverlayLayers, hillshadeLayer,
   landmarkSource, landmarkLayers,
@@ -219,6 +221,7 @@ export function OpsMap(props: Props) {
         m.setPaintProperty(id, "text-halo-width", id === "lbl-road" || id === "lbl-station" ? 1.4 : 0);
         if (id === "lbl-bldg" || id === "lbl-poi") m.setPaintProperty(id, "icon-opacity", 0.18);
       }
+      attachRoadLabels(m, Z.road);          // ★ DECISIONS §711 — 도로명은 화면 기준으로 이름마다 한 점(가로)
       ready.current = true;
       const q = pending.current; pending.current = [];
       for (const f of q) f(m);

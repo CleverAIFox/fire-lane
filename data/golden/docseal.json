@@ -13240,6 +13240,64 @@
   },
   "sha": "081aab3447f535d3"
  },
+ "DECISIONS/709": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "data/field/evalset_2610.key.json",
+   "src/firelane/seg/width.py",
+   "src/firelane/segments.py",
+   "tests/test_evalset.py",
+   "tests/test_wallab.py",
+   "tools/evalset.py",
+   "tools/wallab.py",
+   "tools/widthcross.py"
+  ],
+  "fp": "view-v2",
+  "kind": "read",
+  "legacy": [
+   "1949b74ca0882ecf",
+   "532dbba97fb3b840",
+   "73106a45b857998e",
+   "9709952913199169"
+  ],
+  "parts": {
+   "data/field/evalset_2610.key.json": "c98dc2601a3962a0",
+   "src/firelane/seg/width.py": "d6f72de95fd1a2c3",
+   "src/firelane/segments.py": "e5ab0e03ed2ca3b9",
+   "tests/test_evalset.py": "e99c1b802595a36a",
+   "tests/test_wallab.py": "01578990d9115303",
+   "tools/evalset.py": "b8ea0b36de53015b",
+   "tools/wallab.py": "5fe6a1a3e106d827",
+   "tools/widthcross.py": "0320341ec4393edc",
+   "본문": "820aefee29a42c20"
+  },
+  "sha": "1949b74ca0882ecf"
+ },
+ "DECISIONS/710": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_wallab.py",
+   "tools/canary.py",
+   "tools/naviweight.py",
+   "tools/suppress.py",
+   "tools/wallab.py"
+  ],
+  "fp": "view-v2",
+  "kind": "read",
+  "legacy": [
+   "487a5adc144740a6",
+   "71ebe0f61b9c2495"
+  ],
+  "parts": {
+   "tests/test_wallab.py": "01578990d9115303",
+   "tools/canary.py": "27ccc6c0a2d42c90",
+   "tools/naviweight.py": "dcf8f285f734686d",
+   "tools/suppress.py": "d5007e49d6fb4c61",
+   "tools/wallab.py": "5fe6a1a3e106d827",
+   "본문": "7ffdc1e44fbcfdfc"
+  },
+  "sha": "71ebe0f61b9c2495"
+ },
  "DECISIONS/74": {
   "doc": "docs/DECISIONS.md",
   "files": [

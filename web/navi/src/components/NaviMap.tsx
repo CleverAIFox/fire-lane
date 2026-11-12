@@ -48,7 +48,9 @@ import { C, S } from "../ui/tokens";
 import {
   GLYPHS, sources, baseLayers, withLanduse, markerLayers, routeLayers, altRouteLayers, NAVI_OFF,
   stationLayers, shortenStationLabels, applyTerrain, chevronImage, cctvIcon, hydrantIcon, bumpIcon, camIcon, zoneIcon, pillImage, pillOptions,
+  Z,
 } from "./layers";
+import { attachRoadLabels } from "./roadLabels";
 import { dataBase } from "../infra/dataBase";
 
 maplibregl.setWorkerUrl(workerUrl);
@@ -211,6 +213,7 @@ export function NaviMap(props: Props) {
       if (p.view.terrainBounds) {
         applyTerrain(m, p.terrain, new URLSearchParams(location.search).get("terrain") !== "0");
       }
+      attachRoadLabels(m, Z.road);          // ★ DECISIONS §711 — 도로명은 화면 기준으로 이름마다 한 점(가로)
       ready.current = true;
       const q = pending.current; pending.current = [];
       for (const f of q) f(m);

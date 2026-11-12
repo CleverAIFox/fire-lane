@@ -66,7 +66,7 @@ const FONT = ["LiberationSans"];
 export const GLYPHS = "../fonts/{fontstack}/{range}.pbf";
 
 /** 어느 줌부터 켜는가. 다 켜면 골목에서 글자가 겹쳐 아무것도 못 읽는다. */
-const Z = { road: 16, bldg: 16, hydrant: 16.5, cctv: 16.5, poi: 17.5 } as const;
+export const Z = { road: 16, bldg: 16, hydrant: 16.5, cctv: 16.5, poi: 17.5 } as const;
 
 /**
  * 판정색을 배경 쪽으로 당겨 **배경선용 음영**을 만든다.
@@ -96,6 +96,8 @@ export function sources(dataUrl: string, terrainBounds?: [number, number, number
     landuse: { type: "geojson", data: dataUrl + "landuse.geojson" },
     sidewalk: { type: "geojson", data: dataUrl + "sidewalk.geojson" },
     segments: { type: "geojson", data: dataUrl + "segments.geojson" },
+    // ★ DECISIONS §711. 도로명 글자의 **점** — `components/roadLabels.ts` 가 화면 기준으로 이름마다 한 점을 골라 채운다(처음엔 비어 있다).
+    road_labels: { type: "geojson", data: { type: "FeatureCollection", features: [] } },
     poi: { type: "geojson", data: dataUrl + "poi.geojson" },
     stations: { type: "geojson", data: dataUrl + "stations.geojson" },
     cctv: { type: "geojson", data: dataUrl + "cctv.geojson" },
@@ -308,6 +310,20 @@ export function routeLayers(style: Record<string, VerdictStyle> = {}): LayerSpec
 
 export function markerLayers(): LayerSpecification[] {
   return [
+    // ★ 2026-11-12 (DECISIONS §711 · PLAN #73). **도로명 글자는 아이콘 밑에 둔다 · 점으로 가로로 쓴다.**
+    //   · 층 순서가 곧 자리 잡는 순서다 — 위 층이 먼저 잡는다. 도로명이 소화전 · CCTV 위에 있었을 때 글자가 먼저 잡혀 아이콘이 그 위에 겹쳤다. 이제 아이콘 층(`allow-overlap` 이어도
+    //     충돌 색인에는 들어간다)이 먼저 잡고 글자는 **비켜난다** — 소화전 · CCTV 는 위치가 뜻이고 도로명은 다른 글자로 대체된다(사람이 정했다).
+    //   · `symbol-placement: "line"` 을 버렸다 — 길을 따라 눕히면 남북 길에서 한글이 세로로 누웠다. 점 + 가로(`viewport`)다. 점은 `roadLabels.ts` 가 화면 기준으로 이름마다 하나만 고른다.
+    //   · `symbol-sort-key` — 화면에서 **긴 길이 먼저** 자리를 잡는다.
+    { id: "lbl-road", type: "symbol", source: "road_labels", minzoom: Z.road,
+      layout: {
+        "symbol-placement": "point", "text-field": ["get", "name"],
+        "text-font": FONT, "text-size": 11, "text-padding": 6,
+        "text-rotation-alignment": "viewport", "text-pitch-alignment": "viewport",
+        "symbol-sort-key": ["-", 0, ["get", "len"]] as never,
+      },
+      paint: { "text-color": MAP.roadLabel, "text-halo-color": MAP.roadLabelHalo,
+               "text-halo-width": 1.6 } },
     { id: "hydrant", type: "symbol", source: "hydrants", minzoom: Z.hydrant,
       layout: {
         "icon-image": "ic-hyd", "icon-allow-overlap": true, "icon-pitch-alignment": "viewport",
@@ -326,14 +342,6 @@ export function markerLayers(): LayerSpecification[] {
         "icon-allow-overlap": false, "icon-pitch-alignment": "viewport",
         "icon-size": ["interpolate", ["linear"], ["zoom"], 16, .34, 19, .62] as never,
       } },
-    { id: "lbl-road", type: "symbol", source: "segments", minzoom: Z.road,
-      layout: {
-        "symbol-placement": "line", "text-field": ["get", "road_name"],
-        "text-font": FONT, "text-size": 11, "text-max-angle": 40,
-        "symbol-spacing": 260, "text-pitch-alignment": "viewport",
-      },
-      paint: { "text-color": MAP.roadLabel, "text-halo-color": MAP.roadLabelHalo,
-               "text-halo-width": 1.6 } },
     // 이름 알약 — 와이어프레임의 흰 배지. **적게.** 층수 높은 것부터, 겹치면 버린다
     { id: "lbl-bldg", type: "symbol", source: "buildings", minzoom: Z.bldg + 0.6,
       // ★ 2026-09-22 검수 — 이름 칸이 **빈 문자열**인 건물이 `has` 를 통과해 글자 없는 흰
