@@ -102,24 +102,61 @@ def test_grey_always_carries_a_reason(rows):
             if p["verdict"] != "unknown" and p["unknown_reason"] is not None] == []
 
 
-def test_the_ledger_rule_is_load_bearing(rows):
-    """★ 이 수가 §305 의 근거다 — 「판정에 쓰지 않는다」고 서술된 열 하나가
-    blocked 의 과반을 **혼자** 만든다. 이 시험은 그 사실이 조용히 사라지는
-    것을 막는다(규칙을 지우면 여기서 0 이 되어 운다).
-    """
+#: 대장폭 규칙(`VERDICT_RULE[1]`)이 만든 `blocked` 구간 수의 **천장**(양방향 래칫). DECISIONS §718.
+#: ★ 이 수는 「문서에 적힌 폭(대장)에 기대어 막은 구간」이다. **늘면 판정이 문서 의존으로 되돌아간 것**이라 운다. **줄면 기록을 내린다**(측정 의존으로 옮겼다는 뜻 — 좋은 쪽).
+#:   올리지 않는다 — 올릴 일이 생기면 그 재잠금이 왜 문서 의존을 늘렸는지가 먼저다.
+LEDGER_FORCED = 62
+
+
+def _ledger_forced(rows):
+    """공개된 `blocked` 중 순수 폭 판정(`verdict()`)이 안 내는 구간 = 대장폭 규칙이 만든 것. 규칙 둘뿐이라(`classify`) 정의가 정확하다."""
     from firelane.seg.geom import verdict as pure
-    forced = [p for p in rows
-              if p["verdict"] == "blocked"
-              and pure(p["width_min_m"], p["width_max_m"], p["n_sample"]) != "blocked"]
-    n_blocked = sum(1 for p in rows if p["verdict"] == "blocked")
+    blocked = [p for p in rows if p["verdict"] == "blocked"]
+    forced = [p for p in blocked if pure(p["width_min_m"], p["width_max_m"], p["n_sample"]) != "blocked"]
+    return forced, len(blocked)
+
+
+def test_the_ledger_rule_is_alive(rows):
+    """★ **규칙이 죽지 않았는가.** 0 이면 대장폭을 아무도 안 읽는다 — 그것도 결함이다(노면이 안 재진 좁은 길을 문서 한 줄이 막던 자리다).
+
+    이 시험은 §305 의 사실 — 「판정에 쓰지 않는다」고 서술된 열이 판정에 쓰인다 — 이 **조용히 사라지는 것**을 막는다(규칙을 지우면 0 이 되어 운다).
+    ★ 몫(`> 0.5`)은 과녁이 아니었다 — §305 의 「과반」 서술에서 온 파생이다. **높을수록 좋다는 전제는 뒤집혔다**(DECISIONS §718): 측정이 더 막고 문서가 덜 막는 쪽이 좋다.
+    """
+    forced, n_blocked = _ledger_forced(rows)
     assert forced, "대장폭 규칙이 만드는 blocked 가 0 이다 — 규칙이 죽었거나 데이터가 바뀌었다"
-    share = len(forced) / n_blocked
-    assert share > 0.5, (
-        f"대장폭 규칙이 만드는 blocked 가 {len(forced)}/{n_blocked} ({share:.0%}). "
-        "과반 아래로 내려갔으면 §305 의 서술을 다시 재라"
-    )
+    assert n_blocked, "blocked 가 하나도 없다"
+
+
+def test_document_dependence_does_not_grow(rows):
+    """★ **문서 의존이 늘지 않는가**(양방향 래칫). 대장폭(문서에 적힌 수)에 기대어 막은 구간 수가 천장 `LEDGER_FORCED` 와 같아야 한다.
+
+    ★ 몫이 아니라 **개수**다: 몫은 분모(`blocked` 총수)가 측정으로 늘면 문서 의존이 **늘어도** 내려가 나쁜 방향을 가린다
+      (예: 문서 62 → 90, 측정 122 → 250 이면 몫은 34% → 26% 로 내려간다). 문서에 기댄 구간의 **절대 수**가 노출이다.
+    ★ 올라가면 우는 것이 방향이다 — 그리고 **내려가도 기록을 안 내리면 운다**(느슨해진 래칫은 초록으로 위장한다). 몫은 메시지에만 싣는다.
+    """
+    forced, n_blocked = _ledger_forced(rows)
+    n = len(forced)
+    assert n <= LEDGER_FORCED, (
+        f"대장폭 규칙이 만든 blocked 가 {n} 로 늘었다 — 천장 {LEDGER_FORCED} (몫 {n}/{n_blocked} = {n / n_blocked:.0%}). "
+        "판정이 측정에서 문서로 되돌아갔다. 올리지 않는다 — 왜 늘었는지를 먼저 적는다(DECISIONS §718)")
+    assert n >= LEDGER_FORCED, (
+        f"대장폭 규칙이 만든 blocked 가 {n} 으로 줄었다(몫 {n / n_blocked:.0%}) — 측정 의존으로 옮긴 것이다. "
+        f"{Path(__file__).name} 의 LEDGER_FORCED 를 {n} 으로 내려 기록을 조여라")
     # 그 구간들은 전부 담~담이 없다 — 규칙의 전제다
     assert all(p["width_max_m"] is None for p in forced)
+
+
+def test_the_forced_count_separates_measurement_from_the_ledger():
+    """★ 합성 입력으로 **정의를 문다** — 담~담이 3m 미만이라 측정이 막은 구간은 세지 않고, 담~담이 없어 대장폭이 막은 구간만 센다.
+
+    실물만 먹이면 초록인 채로 정의가 틀려도 모른다(위 두 시험은 지금 값에서 초록이다) — 두 시험이 **무엇을 세는지**를 여기서 따로 댄다.
+    """
+    measured = {"verdict": "blocked", "width_min_m": 2.0, "width_max_m": 2.5, "n_sample": 5}      # 담~담 2.5m — 측정이 막았다
+    ledger = {"verdict": "blocked", "width_min_m": 2.0, "width_max_m": None, "n_sample": 5}       # 담~담 없음 — 대장폭 규칙이 막았다
+    not_blocked = {"verdict": "clear", "width_min_m": 8.0, "width_max_m": None, "n_sample": 5}
+    forced, n_blocked = _ledger_forced([measured, ledger, ledger, not_blocked])
+    assert len(forced) == 2 and n_blocked == 3, (len(forced), n_blocked)
+    assert _ledger_forced([measured, not_blocked])[0] == [], "측정이 막은 구간을 문서 의존으로 셌다"
 
 
 def test_counts_are_stated_not_assumed(rows):

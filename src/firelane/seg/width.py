@@ -25,6 +25,7 @@ import numpy as np
 from shapely.geometry import LineString, Point
 from shapely.ops import nearest_points
 
+from firelane.seg.geom import wall_gap
 from firelane.seg.params import (
     COV_MIN,
     ESCAPE_M,
@@ -343,8 +344,7 @@ class WidthEngine:
                 B = s1 + s2
         # 벽 사이 폭은 도로 폭보다 좁을 수 없다. 상한(WMAX_CAP) 이상은 잘리지 않고 입장에서
         # 빠지므로(DECISIONS §597) 표본마다 입장이 달라 역전이 생긴다 — 도로 폭으로 끌어올린다.
-        if A is not None and B is not None and B < A:
-            B = A
+        B = wall_gap(A, B)       # B < A → B = A (끌어올림) 뒤에 좁은 길 가드 — DECISIONS §714
 
         a_1k, a_ngii, a_rw = (res[nm][0] for nm in WIDTH_SRCS)
         if self.debug:

@@ -35,6 +35,7 @@ PLAN 본문  규칙 — 문서가 든 숫자는 커밋된 지문과 같아야 �
 from __future__ import annotations
 
 import json
+import os
 import re
 from pathlib import Path
 
@@ -308,3 +309,70 @@ def test_a_row_citation_is_not_read_as_a_retired_count():
     assert not pat.findall("`#63` 의 「그 칸을 채울 원천이 `#3` 이다」 · `#120` 행")
     assert pat.findall("blocked 는 63 구간이다") == ["63"]      # 건수로 적은 것은 여전히 잡는다
     assert pat.findall("#5 와 63 구간") == ["63"]                  # 같은 줄의 건수는 가려지지 않는다
+
+
+# ── 방금 대체된 값은 **저절로** 폐기값이 된다 (2026-11-12 · DECISIONS §715 · #53 재잠금 ②) ──────────
+def test_the_value_just_replaced_retires_itself():
+    """★ 손으로 적는 `RETIRED` 를 사람이 잊어 옛 값(`blocked 193` 넷)이 문서에 조용히 남았다. 이력에서 유도한다 — **방금 대체된 값 하나**."""
+    D = _docnum()
+    hist = [{"blocked": 184, "clear": 249}, {"blocked": 184, "clear": 249}, {"blocked": 193, "clear": 275}, {"blocked": 192, "clear": 274}]
+    got = D.replaced_values(hist, {"blocked": 184, "clear": 249})
+    assert got == {"blocked": ["193"], "clear": ["275"]}, got   # 현재와 같은 칸은 건너뛰고 **가장 가까운 다른 값 하나** — 더 옛것(192 · 274)은 안 문다
+
+
+def test_a_replaced_value_that_is_another_axis_current_value_is_not_retired():
+    """맞는 문서가 빨개지면 사람이 문을 끈다(`retired_clashes` 와 같은 이유) — 옛 값이 지금 다른 축의 값이면 안 문다."""
+    D = _docnum()
+    got = D.replaced_values([{"clear": 249, "needs_cv": 294}, {"clear": 294, "needs_cv": 283}], {"clear": 249, "needs_cv": 294})
+    assert "clear" not in got, got                              # 옛 clear 294 = 지금 needs_cv
+    assert got.get("needs_cv") == ["283"], got
+
+
+def test_a_missing_history_retires_nothing_and_never_lies():
+    """얕은 클론 · 못 읽은 이력은 검사를 **줄일 뿐** 거짓 폐기값을 안 낸다. `None` 칸도 건너뛴다."""
+    D = _docnum()
+    assert D.replaced_values([], {"clear": 249}) == {}
+    assert D.replaced_values([{"clear": None}], {"clear": 249}) == {}
+
+
+def test_the_real_history_knows_the_value_the_last_relock_replaced():
+    """실물: 지금 저장소의 골든 지문 이력에서 직전 재잠금의 옛 값을 읽는다. 이력이 없는 얕은 클론이면 건너뛴다(거짓 빨강을 안 낸다)."""
+    D = _docnum()
+    hist = D.previous_values() or []
+    if not any("clear" in h and h["clear"] is not None for h in hist):
+        # ★ 얕은 클론에서 이 검사가 **침묵하는 것은 로컬에서만 옳다**. CI 는 이력을 받는다(`contract.yml` 의 `filter: blob:none`) — 거기서 얕으면 방어선이 꺼진 것이다.
+        if os.environ.get("CI") == "true":
+            pytest.fail("CI 인데 골든 지문 git 이력이 없다 — 체크아웃이 얕다. 폐기값 자동 유도(`docnumhist`)가 CI 에서 꺼져 있다")
+        pytest.skip("환경skip(도구) — 골든 지문 git 이력이 없는 얕은 클론이다(로컬 한정 · CI 는 실패)")
+    cur = D.verdicts()
+    got = D.replaced_values(hist, {"clear": cur["clear"], "needs_cv": cur["needs_cv"], "blocked": cur["blocked"], "unknown(회색)": cur["unknown"]})
+    assert got, "이력이 있는데 대체된 값을 하나도 못 읽었다 — 판정이 한 번도 안 움직였을 리 없다"
+    assert all(len(v) == 1 for v in got.values()), got
+
+
+_GIT_S = 60       # ★ 시한 없는 기다림은 빨강을 무한 대기로 바꾼다(`test_no_unbounded_waits`) — 임시 저장소의 git 도 시한을 건다
+
+
+def test_a_shallow_clone_is_detected(tmp_path):
+    """★ 얕은 클론에서 방어선(`docnumhist`)이 **조용히** 꺼지면 안 된다 — `is_shallow` 가 사실대로 답해야 `docnum_check` 가 말한다(CI 에서는 오류)."""
+    import subprocess
+
+    D = _docnum()
+    full = tmp_path / "full"
+    full.mkdir()
+    g = ["git", "-c", "user.name=t", "-c", "user.email=t@example.invalid"]
+    subprocess.run([*g, "init", "-q"], cwd=full, check=True, timeout=_GIT_S)
+    for i in range(2):
+        (full / "f.txt").write_text(str(i), encoding="utf-8")
+        subprocess.run([*g, "add", "."], cwd=full, check=True, timeout=_GIT_S)
+        subprocess.run([*g, "commit", "-q", "-m", f"c{i}"], cwd=full, check=True, timeout=_GIT_S)
+    shallow = tmp_path / "shallow"
+    subprocess.run(["git", "clone", "-q", "--depth", "1", f"file://{full}", str(shallow)], check=True, timeout=_GIT_S)
+    assert D.is_shallow(full) is False
+    assert D.is_shallow(shallow) is True, "얕은 클론을 못 알아본다 — 방어선이 꺼진 채 초록이 된다"
+
+
+def test_a_git_that_cannot_answer_is_not_an_empty_history(tmp_path):
+    """★ `deadcheck ③` 가 잡은 결함: git 이 못 답한 것을 **빈 이력**으로 바꾸면 방어선이 초록으로 꺼진다 — 못 답하면 `None` 이다(`gitq` 규약)."""
+    D = _docnum()
+    assert D.previous_values(tmp_path) is None, "저장소가 아닌 곳에서 빈 목록을 냈다 — 못 물은 것과 빈 이력이 섞인다"

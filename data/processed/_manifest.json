@@ -26,15 +26,15 @@
     "georef": "원본 TIF 에 geotransform 없음. 도엽 격자로 역산",
     "tiles": "web/data/ortho/{z}/{x}/{y}.jpg (1423장, z15~19, 24.8MB)",
     "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
-    "generated_at": "2026-11-06T16:00:09+00:00",
+    "generated_at": "2026-11-12T07:48:45+00:00",
     "seal": {
       "raw": "afe2cbb4bcd15153:d83eec9e4da02b1b:c0d4850dfdbe197e:074d2d29a73dcaea",
       "scope": "024d03c08334e323",
-      "code": "3e3d82140e55193b",
+      "code": "08fa70a669e9c082",
       "out": "1423:ac44cf183beed2d9"
     }
   },
-  "generated_at": "2026-11-07T10:55:41.368857+09:00",
+  "generated_at": "2026-11-12T16:54:42.738974+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -61,18 +61,49 @@
       "status": "SKIP"
     },
     {
-      "features": "",
-      "geom": [],
+      "columns": [
+        "PRESENT_SN",
+        "LCLAS_CL",
+        "MLSFC_CL",
+        "SCLAS_CL",
+        "ATRB_SE",
+        "WTNNC_SN",
+        "NTFC_SN",
+        "DGM_NM",
+        "DGM_AR",
+        "DGM_LT",
+        "SIGNGU_SE",
+        "DRAWING_NO",
+        "EXCUT_SE",
+        "CREATE_DAT"
+      ],
+      "features": 41,
+      "geom": [
+        "MultiPolygon",
+        "Polygon"
+      ],
+      "invalid_fixed": 0,
       "key": "vworld_uq153",
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
+      "outputs": [
+        "vworld_uq153.geojson",
+        "vworld_uq153_5186.gpkg"
+      ],
       "resolved": "vworld_uq153_kr_20261001.zip",
       "source_crs": "EPSG:5174",
       "source_files": [
         "**/vworld_uq153_*"
       ],
       "source_sha256": "d43eb5155ada0fb913b0bbe882642cc14de9cfd0c953aa1d0b4b077755cb49da",
-      "status": "SKIP"
+      "status": "OK",
+      "seal": {
+        "raw": "d43eb5155ada0fb9",
+        "cfg": "e224d235667fbf6a",
+        "code": "2e245644c0cf666e",
+        "out": {
+          "vworld_uq153.geojson": "6508e69381162f3c",
+          "vworld_uq153_5186.gpkg": "1d35884ed8697f75"
+        }
+      }
     },
     {
       "files": [
@@ -3790,20 +3821,6 @@
         "**/nfa_vehicle_spec_*"
       ],
       "source_sha256": "3c5d91db980d0b896e8f2cfd2b2c51a385e580d40f7b355f6b5b6835509ba623",
-      "status": "SKIP"
-    },
-    {
-      "features": "",
-      "geom": [],
-      "key": "nfa_mas_spec_2025",
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "nfa_mas_spec_kr_20260610.hwp",
-      "source_crs": "",
-      "source_files": [
-        "**/nfa_mas_spec_*"
-      ],
-      "source_sha256": "9ec7d8d516e631a4c597c8495f8d14050b5b2040ff9ddeb8fac9d38cca8ab5a5",
       "status": "SKIP"
     },
     {

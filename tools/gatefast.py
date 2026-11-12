@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import posixpath
 import re
 import shlex
 import sys
@@ -60,6 +61,8 @@ JOB = "contract-fast"
 #   `env_check` 하나는 +0.7초(중앙)다 — 오늘 CI 가 이것 때문에 빨갰다(`FIRE_LANE_PUSH_RANGES`).
 # ★ 2026-11-11 (⓯-① · #216 닫음). **표의 열쇠를 (열쇠, 인자)로 바꾸고 CI 의 다섯 잡을 전부 읽는다** — 같은 `ruff` 가 기본 룰셋(fast)과 `.ruff-strict.toml`(strict)로 둘이고, 열쇠만 쓰면 둘째가 첫째 뒤에 숨었다.
 #   층이 하나 늘었다: `axis` = `pushready` 의 다른 축(㉠ · ㉥)이 같은 도구를 이미 돈다.
+# ★ **열쇠에는 「같은 이름이 다른 일을 하는 모든 축」이 들어야 한다**(DECISIONS §720 — 한 이름 뒤에 둘이 숨는 패턴의 세 번째 사례). 명령 · 인자 · **작업 디렉터리**(`@web/navi`)가 지금 든 축이다.
+#   실행은 선언에서 **도출**한다(`cwd_lines` 가 열쇠의 `@디렉터리`와 스크립트의 `cd` 를 같은 줄에서 낸다) — 따로 베끼면 갈린다. 아직 안 든 축: 단계의 `env:` · `if:`(CI 검사 4개에 있다).
 # ★ 이 표가 **다시 안 열리게 하는 법** — 새 CI 검사는 이 표에 층을 안 적으면 `tests/test_gatefast.py` 가 빨갛다(미선언). 표에 적고 CI 에서 지워진 것도 빨갛다(죽은 선언).
 _BUDGET = "훅 예산 — 한 개씩은 싸지만(0.1~2.7초) 싼 37개를 한꺼번에 들이면 훅 30.2~33.3초(5회 · 중앙 31.1 · 예산 30)"
 _SLOW1 = "느리다 — 단독 20.5초"
@@ -68,6 +71,8 @@ _SLOW3 = "훅 예산 — 단독 3.8~4.9초(싼 37개 + 이 셋이면 훅 중앙 
 _NET = "망이 필요하다(패키지 내려받기 · GitHub API)"
 _SMOKE = "브라우저가 필요하고 1분 남짓 걸린다(헤드리스 크로미움 · 개발 서버 재시작 시험) — 훅 예산(30초) 밖이다(DECISIONS §700). 로컬은 `verify.sh` 가 돈다(DECISIONS §706)"
 _NPM = "npm · node_modules 가 필요하다(`npm ci` 는 망)"
+_NPM_TEST = ("`vitest` 전수 — 12.8초 · 망이 아니다(`node_modules` 만 있으면 된다) · 발행 산출물(`web/data` · `data/golden`)을 정적 import 로 먹는다. 재잠금이 움직이는 수를 "
+             "pytest 그물(`testpick`)이 못 본다 — CI 에서야 터졌다(DECISIONS §719). 훅 예산(30초)에는 안 든다")
 _PRECOMMIT = "다른 층이 이미 든다 — 커밋 훅이 같은 `pre-commit` 설정을 돈다(`--all-files` 전수는 느리다)"
 _CTX = "CI 문맥이 필요하다(PR 본문 · 기준 커밋 `$BASE`)"
 _WRITES1 = "읽기 전용이 아니다 — `data/interim/lineage.mmd`(추적 밖 산출물)를 쓴다 · 0.6초"
@@ -81,10 +86,10 @@ LAYERS: dict[tuple[str, str], tuple[str, str]] = {
     ("firelane.datalog", "graph"): ("ci", _WRITES1),
     ("firelane.jsonkeys", ""): ("ready", _BUDGET),
     ("firelane.ledger_check", ""): ("ready", _BUDGET),
-    ("navi:lint", ""): ("ci", _NPM),
-    ("navi:smoke", ""): ("ci", _SMOKE),
-    ("navi:test", ""): ("ci", _NPM),
-    ("navi:typecheck", ""): ("ci", _NPM),
+    ("navi:lint", "@web/navi"): ("ci", _NPM),
+    ("navi:smoke", "@web/navi"): ("ci", _SMOKE),
+    ("navi:test", "@web/navi"): ("ready", _NPM_TEST),
+    ("navi:typecheck", "@web/navi"): ("ci", _NPM),
     ("pre-commit", "run --all-files --show-diff-on-failure"): ("ci", _PRECOMMIT),
     ("pytest", "${files[@]} -q"): ("axis", _AXIS_T),
     ("ruff", "check $FILES --config .ruff-strict.toml"): ("ready", _STRICT),
@@ -235,6 +240,39 @@ def _logical_lines(run: str) -> list[str]:
     return out
 
 
+_CD = re.compile(r"^cd\s+(?P<d>[^\s&;|]+)\s*(?:&&\s*(?P<rest>.*))?$")
+
+
+def _cd(cwd: str, target: str) -> str:
+    """`cd target` 뒤의 작업 디렉터리(저장소 루트 기준 · 루트는 빈 문자열). 절대 경로 · 변수는 그대로 둔다 — 풀 수 없는 것을 루트로 접지 않는다."""
+    if target.startswith(("/", "$", "~")):
+        return target
+    out = posixpath.normpath(posixpath.join(cwd, target))
+    return "" if out == "." else out
+
+
+def cwd_lines(run: str) -> list[tuple[str, str]]:
+    """(명령 줄, 그 줄이 도는 **작업 디렉터리**). 셸이 읽는 대로 `cd X` 줄과 `cd X && …` 앞머리가 이후 줄의 디렉터리를 정한다(상대 경로 · `cd ../..` 로 되돌아온다).
+
+    ★ **세 번째 축이다**(DECISIONS §720). 열쇠 `(열쇠, 인자)` 는 명령과 인자뿐이라 같은 명령이 다른 디렉터리에서 다른 일을 해도 한 칸이었고, 실행은 줄만 떼어 저장소 루트에서 돌아
+      `ENOENT package.json` 이 났다. **선언(열쇠)과 실행(스크립트)이 같은 곳에서 나온다** — 이 함수 하나다."""
+    cwd = ""
+    out: list[tuple[str, str]] = []
+    for ln in _logical_lines(run):
+        rest = ln
+        while (m := _CD.match(rest)):
+            cwd = _cd(cwd, m["d"])
+            rest = (m["rest"] or "").strip()
+        if rest:
+            out.append((rest, cwd))
+    return out
+
+
+def self_contained(rest: str, cwd: str) -> str:
+    """디렉터리를 줄 안에 넣은 명령 — 어디서 돌려도 같은 곳에서 돈다(`pushready` ㉨ 는 저장소 루트에서 돈다)."""
+    return f"cd {cwd} && {rest}" if cwd else rest
+
+
 def step_script(run: str) -> str:
     """단계 하나의 `run:` 본문 — 주석 · 빈 줄을 뺀 **글자 그대로**(여러 줄이 변수를 주고받는 단계는 한 덩어리로 돌아야 한다: 엄격 린트의 `FILES=$(…)`)."""
     return "\n".join(ln.rstrip() for ln in str(run).splitlines() if ln.strip() and not ln.strip().startswith("#"))
@@ -242,7 +280,7 @@ def step_script(run: str) -> str:
 
 def fast_commands(workflow: Path = WORKFLOW, job: str = JOB) -> list[str]:
     """한 잡(기본 `contract-fast`)의 `run:` 명령 줄들."""
-    return [c for s in _steps(workflow, job) for c in _logical_lines(s.get("run", ""))]
+    return [self_contained(r, d) for s in _steps(workflow, job) for r, d in cwd_lines(s.get("run", ""))]
 
 
 def all_commands(workflow: Path = WORKFLOW, jobs: tuple[str, ...] = JOBS) -> list[str]:
@@ -259,10 +297,11 @@ def entries(workflow: Path = WORKFLOW, jobs: tuple[str, ...] = JOBS) -> dict[tup
     for j in jobs:
         for st in _steps(workflow, j):
             script = step_script(st.get("run", ""))
-            for cmd in _logical_lines(st.get("run", "")):
+            for rest, cwd in cwd_lines(st.get("run", "")):
+                cmd = self_contained(rest, cwd)        # ★ 열쇠의 `@디렉터리` 축 · 실행 스크립트의 `cd` 가 같은 줄에서 나온다
                 ks = keys(cmd)
                 if ks:
-                    out.setdefault((ks[0], " ".join(args_of(cmd, ks[0]))), {"job": j, "cmd": cmd, "script": script if _needs_step(cmd) else cmd})
+                    out.setdefault((ks[0], " ".join(args_of(cmd, ks[0]))), {"job": j, "cmd": cmd, "cwd": cwd, "script": script if _needs_step(cmd) else cmd})
     return out
 
 
@@ -279,6 +318,9 @@ def _needs_step(cmd: str) -> bool:
 
 def args_of(cmd: str, key: str) -> list[str]:
     """열쇠 **뒤**의 인자(셸 낱말로). pytest 시험 파일은 열쇠가 인자 자리에 있으므로 **옵션만** 비교한다(경로는 열쇠다)."""
+    m = _CD.match(cmd.strip())
+    if m and m["rest"]:                                  # `cd X && …` — 디렉터리는 **세 번째 축**이다(열쇠 뒤 인자 맨 앞에 `@X`)
+        return [f"@{_cd('', m['d'])}"] + args_of(m["rest"].strip(), key)
     try:
         toks = shlex.split(cmd)
     except ValueError:

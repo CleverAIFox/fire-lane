@@ -487,13 +487,11 @@ def main():
                 if ngii1k is not None and len(ngii1k) else None)
     ngii_u = _seal(ngii[ngii.intersects(_clip)].geometry)
     rw_u   = _seal(rw[rw.intersects(_clip)].geometry)
-    # ★ 2026-09-16. 건물 담~담 폭은 **동 경계 80m 에서만** 잰다. 판정 범위로 넓히지 않는다(DECISIONS §170-3).
-    #   웅토피아 §125 는 판정 범위 + WMAX_CAP 으로 넓혀 결손을 496 → 55 로 줄였다. 우리 데이터로
-    #   측량 도로폭(ngii1k_center)과 대조하니 판정이 바뀐 기존 64구간 중 36구간이 **노면 · 대장폭 ·
-    #   측량폭이 전부 3m 미만인데 blocked 에서 빠졌다** — 법선이 먼 건물까지 뻗어 벽 사이를 3.3~25m 로
-    #   잡았고, verdict() 는 wmax ≥ 3 이면 blocked 로 가지 않는다. 미탐 쪽으로의 이동이다(§3-3).
-    #   넓히려면 wmax 를 측량폭 · 노면과 대조해 벌어진 값을 버리는 가드가 먼저다(PLAN).
-    bld_u = unary_union([shapely.make_valid(g) for g in bld[bld.intersects(poly.buffer(80))].geometry])
+    # ★ 2026-11-12 (DECISIONS §709 · §714 · PLAN #53). 건물 담~담 폭은 **판정 범위 + WMAX_CAP(60m)** 에서 잰다 — 종전은 동 경계 80m 였다(2026-09-16 · §170-3).
+    #   동 경계 80m 밖의 판정 범위 구간 27곳(노면 7.6~17m 의 큰 길)은 담~담이 **아예 안 재졌다**(결손 681). 넓히면 결손이 55 로 줄지만
+    #   좁은 길에서 법선이 먼 건물까지 뻗어 wmax 가 3m 넘게 잡혀 blocked 에서 빠진다(§170-3 이 막았던 이유) — 그래서 **가드가 같이 간다**:
+    #   `seg/width.py` 의 `A < 3 and B − A > 2 → B = None`. 둘은 한 쌍이다(가드 없이 이 줄만 두면 §170-3 의 미탐 쪽 이동이 돌아온다).
+    bld_u = unary_union([shapely.make_valid(g) for g in bld[bld.intersects(keep.buffer(60.0))].geometry])
     deg = Counter()
     for a, b in G.edges():
         deg[a] += 1; deg[b] += 1

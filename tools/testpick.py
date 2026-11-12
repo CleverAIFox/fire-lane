@@ -45,6 +45,10 @@ testpick.py — 푸시 전에 도는 시험 묶음을 **실측으로** 고른다
 부류  조사   `--measure` 는 사람이 손으로 돌린다. `--list` · `--run` 은 읽기 전용이다(장부도 안 쓴다)
 IN    `tests/test_*.py` 의 목록 · `data/golden/testtimes.json` · `--measure` 는 pytest `--durations=0` 의 파일별 합(setup+call+teardown)
 OUT   화면 · 종료 코드(`--run`: 빨간 파일이 있으면 1). `--measure --write` 만 장부 한 파일을 쓴다
+밖    **`web/navi/test/*` (vitest)는 고르지 않는다 — pytest 만 본다**(DECISIONS §719). 읽기 장부는 파이썬 감사 훅이 잰 것이라 node 의 읽기를 못 본다.
+      그래서 재잠금이 `web/data` · `data/golden` 의 수를 움직여도 vitest 의 `astarbench` 둘이 **CI 에서야** 빨갰다. 그물은 여기가 아니라 `pushready` ㉨ 의 `ready` 층이다
+      (`gatefast.LAYERS` 의 `navi:test` — 푸시 전에 전수 12.8초). 할 수는 있다: `npx vitest related <바뀐 파일>` 이 모듈 그래프로 고른다(정적 import 만 따르는데 vitest 는 `fs` 읽기가 0 이라 정확하다).
+      안 한 것: 훅 예산(30초)에 node 를 넣으면 경합하고, 전수가 ㉨ 에서 돌아 선택이 중복이다.
 밖    **어떤 시험이 어떤 규약을 무는지는 모른다** — 오직 초만 본다. 예산을 넘는 파일은 이 묶음이 안 돌고 CI 가 돈다.
       파일 **안**의 시험 하나하나는 안 고른다(파일이 단위다). 장부의 초는 기계마다 다르다 — 절대값이 아니라 **순서**로 쓰인다.
 """

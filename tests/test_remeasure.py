@@ -199,7 +199,7 @@ def test_fl_calls_the_chain_and_keeps_the_judgment_with_the_human():
     assert "tools/remeasure.py" in sh, "`fl.sh` 가 사슬을 안 부른다 — 4b 가 다시 막다른 길이다"
     assert "--measured=" in sh, "사람이 판단을 줄 깃발이 없다"
     # ★ 순서를 셸에 **다시 적지 않았는가.** 적으면 정본이 둘이 되고 갈린다.
-    for t in ("tools/evalgen.py", "tools/baseline.py", "tools/htmlfigs.py"):
+    for t in ("tools/evalgen.py", "tools/baseline.py", "tools/htmlfigs.py", "tools/render_figures.py", "tools/build_proposal.py", "tools/doc_fsck.py"):
         assert t not in sh, f"`fl.sh` 가 사슬의 `{t}` 를 직접 부른다 — 순서가 두 집에 산다"
 
 
@@ -273,3 +273,21 @@ def test_fl_hands_back_a_way_in_when_4b_died():
     assert "4b 가 앉히기 전에 멈춘 자국" in sh, "그 자국을 알아보지 못한다"
     assert "git add -A && git commit" in sh, "되돌아올 명령을 안 적는다"
     assert "--since" in sh, "`remeasure` 에 밑동을 안 넘긴다 — 앉히면 사슬이 건너뛴다"
+
+
+def test_the_chain_regenerates_the_figure_source_before_baking_the_screen():
+    """★ 재잠금 ②(§715): `htmlfigs --sync` 만 있던 사슬은 `docs/figures` 의 SVG · 잠금을 안 고쳐 「그림 ↔ 정본」이 영영 빨갰다. 두 도구는 **다르다.**"""
+    tools = [a[0] for _n, a in RM.CHAIN]
+    assert "tools/render_figures.py" in tools, "사슬에 그림 정본이 없다"
+    assert tools.index("tools/render_figures.py") < tools.index("tools/htmlfigs.py"), "그림 정본이 화면 굽기 뒤에 있다"
+    after = [a for _n, a in RM.AFTER]
+    assert ["tools/render_figures.py", "--check"] in after, "사슬 끝에서 그림 ↔ 정본을 안 문다"
+
+
+def test_the_chain_bakes_the_proposal_screen_after_the_figures_and_bites_at_the_end():
+    """★ 재잠금 ③(§716): `web/proposal.html` 은 구워지는 산출물이다. 사슬에 굽기가 없으면 손 편집(선언된 수) 뒤에 「기획서 화면 ↔ 정본」이 영영 빨갛다."""
+    tools = [a[0] for _n, a in RM.CHAIN]
+    assert tools.index("tools/htmlfigs.py") < tools.index("tools/build_proposal.py"), "HTML 굽기가 그림 굽기 앞이다"
+    after = [a for _n, a in RM.AFTER]
+    assert ["tools/build_proposal.py", "--check"] in after, "사슬 끝에서 기획서 화면 ↔ 정본을 안 문다"
+    assert ["tools/doc_fsck.py"] in after, "사슬 끝에서 문서 ↔ 문서(표지 날짜 포함)를 안 문다"

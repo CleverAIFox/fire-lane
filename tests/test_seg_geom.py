@@ -14,8 +14,8 @@ from pathlib import Path
 import pytest
 from shapely.geometry import LineString, Polygon
 
-from firelane.seg.geom import _dirv, _join, _seal, curvature, verdict
-from firelane.seg.params import NODE_TOL, PARK, TRUCK
+from firelane.seg.geom import _dirv, _join, _seal, curvature, verdict, wall_gap
+from firelane.seg.params import NODE_TOL, PARK, TRUCK, WALL_EXCESS_T
 
 ROOT = Path(__file__).resolve().parents[1]
 # ── verdict ────────────────────────────────────────────────────
@@ -184,3 +184,35 @@ def test_curvature_ignores_short_sides():
     """
     sharp = LineString([(0, 0), (1, 0), (1, 1)])
     assert curvature(sharp) is None, "짧은 변 사이의 각을 도로 곡률로 셌다"
+
+
+# ── wall_gap — 담~담 B 를 노면 A 에 맞춘다 (DECISIONS §709 · §714 · PLAN #53) ─────────
+def test_wall_gap_raises_a_narrower_wall_to_the_road():
+    """벽 사이는 도로보다 좁을 수 없다 — B < A 면 A 로 끌어올린다(가드 이전의 규칙 그대로)."""
+    assert wall_gap(3.5, 2.0) == 3.5
+    assert wall_gap(2.0, 1.0) == 2.0
+
+
+def test_wall_gap_drops_a_wall_far_wider_than_a_narrow_road():
+    """좁은 길(A < TRUCK)에서 B − A 가 문턱을 **넘으면** 버린다(None = 모름). 먼 건물까지 뻗은 법선이 만든 값이다."""
+    assert wall_gap(2.0, 2.0 + WALL_EXCESS_T + 0.01) is None
+    assert wall_gap(1.0, 12.0) is None
+
+
+def test_wall_gap_keeps_the_boundary_and_the_wide_roads():
+    """문턱 **이하**는 둔다(경계는 `>`) · 넓은 길(A ≥ TRUCK)은 가드가 안 건드린다 — 큰 길의 담~담은 원래 넓다."""
+    assert wall_gap(2.0, 2.0 + WALL_EXCESS_T) == 2.0 + WALL_EXCESS_T
+    assert wall_gap(TRUCK, TRUCK + 20.0) == TRUCK + 20.0
+    assert wall_gap(8.0, 30.0) == 30.0
+
+
+def test_wall_gap_passes_unknowns_through():
+    """둘 중 하나가 없으면 아무것도 안 한다 — 모름을 지어내지 않는다."""
+    assert wall_gap(None, 5.0) == 5.0
+    assert wall_gap(2.0, None) is None
+    assert wall_gap(None, None) is None
+
+
+def test_the_guard_threshold_is_the_one_the_decision_names():
+    """T = 2 는 §709 에서 사람이 골랐다. 이 수가 움직이면 재잠금이다 — 조용히 바뀌면 안 된다."""
+    assert WALL_EXCESS_T == 2.0

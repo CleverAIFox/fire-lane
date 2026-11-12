@@ -2,12 +2,42 @@
  "nodes": 1147,
  "pairs": 200,
  "one_to_one": {
-  "astar": 47460,
-  "dijkstra": 115747
+  "astar": 54391,
+  "dijkstra": 115803
  },
  "one_to_all": {
-  "astar_sum": 127401,
+  "astar_sum": 145769,
   "dijkstra_sweep": 1243,
   "goals": 695
- }
+ },
+ "history": [
+  {
+   "when": "2026-11-12 · #53 재잠금(Zm4 · T=2) 뒤",
+   "one_to_one": {
+    "astar": 54391,
+    "dijkstra": 115803
+   },
+   "one_to_one_share": 0.47,
+   "one_to_all": {
+    "astar_sum": 145769,
+    "dijkstra_sweep": 1243,
+    "goals": 695
+   },
+   "why": "간선 28개(전체 연장의 2.1% · 노면폭 7.6~17m 의 큰 길)가 판정 이동으로 비용 ×1 → ×2(`avoidUncertain`)가 됐다 — 27개가 `clear` 에서 `needs_cv`·`unknown` 으로 갔고 1개가 되돌아왔다. 휴리스틱 하한은 1.0 그대로(조율값)라 하한에 닿은 간선 몫이 33.5% → 30.3% 로 줄고 A* 가 덜 먹는다. 인접 구조(1,598 항목)와 다익스트라(+0.05%)는 그대로다. DECISIONS §719"
+  },
+  {
+   "when": "재잠금 전(기준)",
+   "one_to_one": {
+    "astar": 47460,
+    "dijkstra": 115747
+   },
+   "one_to_one_share": 0.41,
+   "one_to_all": {
+    "astar_sum": 127401,
+    "dijkstra_sweep": 1243,
+    "goals": 695
+   },
+   "why": "장부를 처음 적은 값(PLAN #71 · DECISIONS §373)"
+  }
+ ]
 }

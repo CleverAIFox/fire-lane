@@ -239,3 +239,63 @@ def test_gatefast_counts_hook_to_pushready_too_every_hook_gate_runs_in_the_mirro
     hp = F.hook_vs_pushready()
     assert len(hp["돈다"]) + len(hp["대신"]) == len(GP.gate_commands()), "훅 게이트가 ㉨ 에서도 대체 표에서도 빠졌다 — 먼저 보는 도구가 나중 도구보다 약하다"
     assert hp["돈다"] and all(" — " in x and len(x.split(" — ", 1)[1]) >= 5 for x in hp["대신"])
+
+
+def test_the_navi_unit_tests_run_before_the_push_not_only_in_ci():
+    """★ `vitest` 전수는 **푸시 전에** 돈다(`ready` 층 — `pushready` ㉨ 이 CI 의 명령 글자 그대로). (DECISIONS §719 · ⓲B 재잠금 ⑥)
+
+    `#53` 재잠금이 `web/data` 의 판정을 움직였고 `astarbench` 둘이 **CI 에서야** 빨갰다 — `testpick` 은 pytest 만 고르고, 이 검사는 `ci` 층(사유: 「npm 이 필요하다」)에 있어
+    푸시 전 어느 그물에도 없었다. 그 사유는 `npm ci`(망)와 `npm run test`(`node_modules` 만 있으면 된다)를 뭉친 것이었다. 되돌리면 같은 구멍이 열린다.
+    """
+    import gatefast as GF
+    layer, why = GF.LAYERS[("navi:test", "@web/navi")]
+    assert layer == "ready", f"`vitest` 전수가 `{layer}` 층이다 — 재잠금이 움직이는 수를 푸시 전에 못 본다"
+    assert "vitest" in why and "§719" in why, "사유가 이 결정을 안 적었다"
+
+
+# ── 세 번째 축: 작업 디렉터리 (2026-11-12 · DECISIONS §720 · 재잠금 ⑦) ───────────────────────────────
+
+def _wf(tmp_path, *runs: str):
+    """합성 워크플로 — 잡 하나 · 단계마다 `run:` 하나."""
+    import yaml
+    steps = [{"name": f"s{i}", "run": r} for i, r in enumerate(runs)]
+    p = tmp_path / "wf.yml"
+    p.write_text(yaml.safe_dump({"jobs": {"contract-fast": {"steps": steps}}}), encoding="utf-8")
+    return p
+
+
+def test_the_same_command_in_two_directories_is_two_entries(tmp_path):
+    """★ **한 이름 뒤에 둘이 숨는다**(엄격 ruff 가 기본 뒤에 · `npm ci` 가 `npm run test` 뒤에 — 이제 디렉터리). 열쇠에 디렉터리가 없으면 둘째가 첫째 뒤에 숨는다."""
+    wf = _wf(tmp_path, "cd sub_a\nuv run python tools/z.py", "cd sub_b\nuv run python tools/z.py", "uv run python tools/z.py")
+    got = F.entries(wf, ("contract-fast",))
+    assert set(got) == {("tools/z.py", "@sub_a"), ("tools/z.py", "@sub_b"), ("tools/z.py", "")}, sorted(got)
+
+
+def test_the_script_that_runs_is_made_from_the_same_line_as_the_key(tmp_path):
+    """★ **선언과 실행이 같은 곳에서 나온다.** 열쇠가 `@디렉터리` 면 실행 스크립트는 `cd 디렉터리 &&` 로 시작한다 — 루트에서 돌려도 같은 곳에서 돈다(`ENOENT package.json`)."""
+    wf = _wf(tmp_path, "uv run python tools/a.py\ncd web/x\nuv run python tools/z.py --q\ncd ../..\nuv run python tools/b.py")
+    got = F.entries(wf, ("contract-fast",))
+    assert got[("tools/a.py", "")]["script"] == "uv run python tools/a.py"
+    assert got[("tools/z.py", "@web/x --q")]["script"] == "cd web/x && uv run python tools/z.py --q", got
+    assert got[("tools/b.py", "")]["script"] == "uv run python tools/b.py", "`cd ../..` 로 되돌아온 줄이 아직 web/x 에서 돈다"
+
+
+def test_cd_and_chain_on_one_line_carries_to_the_next_lines(tmp_path):
+    """`cd X && …` 는 현재 셸의 디렉터리를 바꾼다 — 셸이 읽는 대로 이후 줄도 X 에서 돈다."""
+    wf = _wf(tmp_path, "cd q && uv run python tools/a.py\nuv run python tools/b.py")
+    got = F.entries(wf, ("contract-fast",))
+    assert ("tools/a.py", "@q") in got and ("tools/b.py", "@q") in got, sorted(got)
+
+
+def test_every_real_entry_with_a_directory_runs_from_the_root_without_enoent():
+    """실물: 디렉터리가 있는 CI 검사는 전부 그 디렉터리가 **실재**하고 스크립트가 `cd` 로 들어간다 — `pushready` ㉨ 는 저장소 루트에서 글자 그대로 돈다(`npm run test` 가 루트에서 ENOENT 였다)."""
+    root = F.ROOT
+    bad = []
+    for k, e in F.entries().items():
+        if e.get("cwd"):
+            if not (root / e["cwd"]).is_dir():
+                bad.append(f"{k}: {e['cwd']} 가 없다")
+            if not e["script"].startswith(f"cd {e['cwd']} && "):
+                bad.append(f"{k}: 스크립트가 `cd {e['cwd']}` 로 안 시작한다 — {e['script'][:60]}")
+    assert not bad, bad
+    assert any(k[0] == "navi:test" for k, e in F.entries().items() if e.get("cwd")), "`navi:test` 가 디렉터리를 못 얻었다"

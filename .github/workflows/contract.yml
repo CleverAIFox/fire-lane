@@ -747,6 +747,9 @@ jobs:
         part: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        # ★ 2026-11-12 (DECISIONS §716). **이력을 받는다 — 커밋과 트리만**(`filter: blob:none` · 블롭은 필요한 한 장씩 늦게). `tools/docnumhist.py` 가 골든 지문의
+        #   git 이력에서 「방금 대체된 값」을 읽어 폐기값 검사에 더한다 — 기본 체크아웃(깊이 1)에서는 이력이 현재 커밋 하나라 **방어선이 CI 에서만 꺼진다.**
+        with: { fetch-depth: 0, filter: "blob:none" }
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7
         with:
           # ★ 2026-09-19 (W3-17). 판을 **여기 적지 않는다.** 정본은
@@ -884,6 +887,9 @@ jobs:
     timeout-minutes: 30      # ★ 상한. 사유는 `contract-shared` 머리에
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        # ★ 2026-11-12 (DECISIONS §716). **이력을 받는다 — 커밋과 트리만**(`filter: blob:none` · 블롭은 필요한 한 장씩 늦게). `tools/docnumhist.py` 가 골든 지문의
+        #   git 이력에서 「방금 대체된 값」을 읽어 폐기값 검사에 더한다 — 기본 체크아웃(깊이 1)에서는 이력이 현재 커밋 하나라 **방어선이 CI 에서만 꺼진다.**
+        with: { fetch-depth: 0, filter: "blob:none" }
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7
         with:
           # ★ 정본은 `.python-version` 하나다 (W3-17).
