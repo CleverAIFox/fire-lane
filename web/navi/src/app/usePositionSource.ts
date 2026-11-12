@@ -25,6 +25,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { createGpsSource } from "../infra/position/gps";
 import { createSimulationSource } from "../infra/position/simulation";
 import { createReplaySource } from "../infra/position/replay";
+import { noGpsNotice, type GpsState } from "../domain/demo";
 import { outsideNotice, outsideServiceArea, metresOutside } from "../domain/serviceArea";
 import type { LngLat } from "../domain/geo";
 import type { Fix, Phase, PosMode, RoutePlan } from "../domain/types";
@@ -47,10 +48,15 @@ export function usePositionSource(a: {
   onNotice: (m: string | null) => void;
   /** `view.json` 의 `maxBounds`. 없으면 범위 판정을 **안 한다**(§275) */
   area?: readonly [LngLat, LngLat];
-  /** 측위가 범위 밖이다 — 경로 주행으로 갈아타라고 위에 알린다 */
-  onOutOfArea?: (metres: number) => void;
+  /**
+   * 시연이 켜져 있다(DECISIONS §713) — **GPS 를 아예 안 받는다.** 시연이 멈춰 있어도(■) 실제 GPS 로 안 돌아간다 —
+   * 구역 밖에서 서울 측위가 카메라를 서울로 끌고 가던 길이 이것이었다.
+   */
+  demo: boolean;
+  /** 측위 상태가 바뀌었다 — ① 없음 · ② 구역 밖 · ③ 실주행(`domain/demo.ts`). 안내 문구와 단추는 위에서 같은 규칙으로 낸다 */
+  onGpsState: (g: GpsState) => void;
 }) {
-  const { phase, simSpeed, plan, posMode, onFix, onEnd, onNotice, area, onOutOfArea } = a;
+  const { phase, simSpeed, plan, posMode, onFix, onEnd, onNotice, area, demo, onGpsState } = a;
   const srcRef = useRef<Source | null>(null);
   /** 범위 밖 알림은 **한 번만.** 1Hz 로 뜨면 그것이 화면을 덮는다 */
   const saidOut = useRef(false);
@@ -90,21 +96,24 @@ export function usePositionSource(a: {
     // ★ 2026-09-27 (§275). **잡히는데 엉뚱한 데서 잡히는 경우**가 구멍이었다.
     //   서울에서 열면 GPS 가 정상으로 서울 좌표를 준다 — 에러가 아니므로 위
     //   안내가 안 뜨고, 경로는 동명동인데 현위치는 200km 밖이다. 맵매칭이
-    //   조용히 실패한다. 첫 측위가 범위 밖이면 **말하고 갈아탄다.**
+    //   조용히 실패한다. 범위 밖 측위는 **쓰지 않고 말한다** — 시연은 사람이 켠다(`domain/demo.ts`).
+    if (demo) return;              // ★ 시연은 GPS 와 무관한 축이다 — 멈춰 있어도(simSpeed 0) 실제 GPS 로 안 돌아간다
+    // ★ 측위 상태를 여기서 `idle` 로 안 되돌린다 — 재탐색이 `plan` 을 바꿔 이 효과가 다시 돌 때 **실주행 중에 시연 단추가 깜빡 뜬다.** 되돌리는 곳은 처음부터(`reset`) 하나다.
     const guard = (f: Fix) => {
       const p: LngLat = [f.lon, f.lat];
-      if (!saidOut.current && outsideServiceArea(p, area)) {
-        saidOut.current = true;
-        const m = metresOutside(p, area);
-        onNotice(outsideNotice(m));
-        onOutOfArea?.(m);
-        return;                    // 이 측위는 쓰지 않는다 — 경로 밖이다
+      if (outsideServiceArea(p, area)) {
+        // ★ **구역 밖 측위는 하나도 안 쓴다**(종전에는 첫 하나만 막고 이후는 통과 → 카메라가 서울로 갔다). 말은 한 번만 한다.
+        onGpsState("outside");
+        if (!saidOut.current) { saidOut.current = true; onNotice(outsideNotice(metresOutside(p, area))); }
+        return;
       }
+      onGpsState("live");
       onFix(f);
     };
-    return createGpsSource().start(guard, (m) => onNotice(
-      m.startsWith("위치 없음") ? "실제 GPS 신호가 없다 — 시연은 아래 ▶ 로 주행한다" : m));
-  }, [phase, simSpeed, plan, onFix, posMode]); // eslint-disable-line react-hooks/exhaustive-deps
+    return createGpsSource().start(guard, (m) => {
+      if (m.startsWith("위치 없음")) { onGpsState("none"); onNotice(noGpsNotice()); } else onNotice(m);
+    });
+  }, [phase, simSpeed, plan, onFix, posMode, demo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * 시연 — 차를 앞으로 순간이동시킨다. GPS 가 음영에서 튀어 돌아온 상황이다.

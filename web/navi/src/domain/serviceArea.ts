@@ -3,7 +3,7 @@
  *
  * ── 왜 생겼나 (2026-09-27 실측) ─────────────────────────────────
  * GPS 가 **안 잡히는** 경우는 이미 안내가 있다 — 데스크톱 · 권한 거부는
- * `createGpsSource` 가 `onError` 를 내고 "시연은 아래 ▶ 로 주행한다" 가 뜬다.
+ * `createGpsSource` 가 `onError` 를 내고 안내가 뜬다(`domain/demo.ts` — 가리키는 단추는 같은 규칙에서 나온다).
  *
  * ★ **잡히는데 엉뚱한 데서 잡히는 경우가 구멍이었다.** 서울에서 열면 GPS 가
  *   정상으로 서울 좌표를 준다. 에러가 아니므로 아무 안내도 안 뜨고, 경로는
@@ -21,6 +21,7 @@
  *       **경계를 만들지도 않는다** — `view.json` 이 정본이고 그것은
  *       `publish_web.py` 가 쓴다. 여기서 상수를 박으면 두 벌이 된다.
  */
+import { DEMO_START } from "./demo";
 import { MX, MY, type LngLat } from "./geo";
 
 /**
@@ -73,5 +74,5 @@ export function outsideNotice(metres: number): string {
   const far = metres >= 1000
     ? `${Math.round(metres / 1000)}km`
     : `${Math.round(metres)}m`;
-  return `현위치가 데이터 범위 밖이다 (${far}) — 실제 GPS 로는 안내할 수 없다. 경로 주행으로 바꿨다`;
+  return `현위치가 데이터 범위 밖이다 (${far}) — 실제 GPS 로는 안내할 수 없다. 「${DEMO_START}」을 누른다`;
 }

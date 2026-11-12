@@ -79,6 +79,7 @@ import {
 } from "../domain/progress";
 import { useBundle } from "./useBundle";
 import { useDeadReckoning } from "./useDeadReckoning";
+import { useDemo } from "./useDemo";
 import { usePositionSource } from "./usePositionSource";
 import type {
   Fix, Phase, RoutePlan, SnapResult, VehicleSpec,
@@ -122,6 +123,7 @@ export function useNavigation(
   //   모르는 구간을 싸게 치지 않는다(`unknownIsNeverCheaper`).
   const lenient = false;
   const [simSpeed, setSimSpeed] = useState(0);
+  const { demo, demoRef, gpsState, setGpsState, setDemo } = useDemo(phase, setSimSpeed, setNotice);   // §713
   /** 이탈을 감지하고 새 경로를 내는 중 (와이어프레임 06) */
   const [rerouting, setRerouting] = useState(false);
   /** 차량 폭 조건으로 닿는 경로가 없다 (와이어프레임 13) */
@@ -324,13 +326,10 @@ export function useNavigation(
 
   // ── ② 위치원 — gps · 흉내 · 경로 따라가기(`usePositionSource`) ──
   const onSimEnd = useCallback(() => { setSimSpeed(0); setPhase((p) => nextPhase(p, "arrive")); }, []);
-  // ★ 2026-09-27 (§275). 측위가 **데이터 범위 밖**이면 실제 GPS 로는 안내가 안 된다.
-  //   데이터가 동명동 한 동네뿐이고 개발은 그 밖에서 한다 — 범위 밖이 예외가
-  //   아니라 평소다. 말하고 경로 주행으로 갈아탄다. 배속 1 은 실제 속도다.
-  const onOutOfArea = useCallback(() => { setSimSpeed(1); }, []);
+  // ★ §275 → §713. 구역 밖 측위는 쓰지 않고 말한다 — 시연은 말없이 안 갈아타고 사람이 켠다(`useDemo`).
   const { teleport, forget } = usePositionSource({
     phase, simSpeed, plan, posMode, onFix, onEnd: onSimEnd, onNotice: setNotice,
-    area: data?.view.maxBounds, onOutOfArea,
+    area: data?.view.maxBounds, demo, onGpsState: setGpsState,
   });
 
   const route = useCallback((
@@ -564,12 +563,13 @@ export function useNavigation(
     const g = routeGeom(pl);
     const q = pointAtM(g, 0);
     live.current = { lon: q.point[0], lat: q.point[1], brg: q.bearing, on: true };
+    if (demoRef.current) setSimSpeed(1);          // 시연이 켜져 있으면 곧바로 달린다(GPS 와 무관)
     setPhase((p) => nextPhase(p, "start"));
-  }, []);
+  }, [demoRef]);
 
   const reset = useCallback(() => {
     setPlan(null); setFastPlan(null); setOrigin(null); setDest(null);
-    setCurrent(null); setSimSpeed(0); setOffRoute(false); setNotice(null);
+    setCurrent(null); setSimSpeed(0); setOffRoute(false); setNotice(null); setGpsState("idle");
     setNoRoute(false); setRerouting(false); setBlocked(new Set());
     setDriven(null); prog.current = null; setAccess(null);
     forget();
@@ -577,7 +577,7 @@ export function useNavigation(
     live.current.on = false;
     tracker.current?.reset();
     setPhase((p) => nextPhase(p, "reset"));
-  }, [forget, tracker]);
+  }, [forget, tracker, setGpsState]);
 
   /** 경로 끝까지 남은 거리(m). 최종 접근(05) 판단에 쓴다 */
   const remainM = useMemo(() => {
@@ -590,7 +590,7 @@ export function useNavigation(
   return {
     phase, fatal, notice, data, live, gpsAccM, moving,
     current, origin, dest, plan, fastPlan, offRoute,
-    simSpeed, setSimSpeed,
+    simSpeed, setSimSpeed, demo, setDemo, gpsState,
     rerouting, noRoute, blocked, remainM, cvBlock, cvNow,
     driven, jumpSeq, lastJumpM, posMode, setPosMode, teleport, access, pickDetourable,
     pick, snapAt, recompute, choose, start, reset,

@@ -3281,7 +3281,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 3,174 전수 · **분모(blank) 0절** · 물림(inherit) 1,968절.
+★ **강제자 칸의 분모.** 절 3,180 전수 · **분모(blank) 0절** · 물림(inherit) 1,973절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -4776,6 +4776,8 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `web/navi/src/components/opsLayers.ts` | **관제 전용 층.** `layers.ts` 가 상한을 치면서 **화면 경계**로 갈랐다 — 「두 화면의 일이 다르다」가 코드에도 선 자리다 | 내비가 쓰는 층은 안 든다 |
 | `web/navi/src/components/roadLabels.ts` | **도로명 글자를 화면 기준으로 이름마다 한 점**(가로)으로 고른다 — 안쪽 상자로 자른 조각 중 가장 긴 것에 글자 상자가 통째로 드는 점. 점 소스(`road_labels`)를 채우고 `lbl-road` 층(이 파일의 `roadLabelLayers` — 아이콘 층 **앞**에 넣어 아이콘이 먼저 자리를 잡는다)이 그린다. 진입 청크 래칫 때문에 내비는 **동적 import** 한다. 선을 따라 눕히지 않는다(남북 길에서 한글이 세로로 눕는다) | 글자끼리 · 아이콘과의 충돌(지도 엔진이 든다 — 층 순서가 우선순위다) · HTML 마커(출발 · 사건 핀)와의 충돌(엔진 색인 밖) |
 | `web/navi/src/domain/serviceArea.ts` | 측위가 **우리 데이터 범위 안인가.** 범위 밖은 「GPS 가 안 잡힌다」와 다른 상태다 | 범위 밖일 때 무엇을 할지는 훅이 정한다 |
+| `web/navi/src/domain/demo.ts` | **시연은 GPS 와 무관한 축이다.** 측위 세 상태(없음 · 구역 밖 · 실주행)와 시연 켜기 규칙 — 실주행 중에는 못 켠다 · 안내 문구가 가리키는 단추 이름을 한 곳에서 낸다 | 시연을 돌리는 일(위치원 — `app/usePositionSource`) · 화면에 낼 표 · 단추(`ui/DemoStrip.tsx`) |
+| `web/navi/src/app/useDemo.ts` | 시연 모드의 **상태 · 켜기 규칙**(`demo` · 측위 상태 · `setDemo`) — 켜면 곧바로 달리고 실주행 중이면 거절한다. 위치원이 이 모드를 보고 GPS 를 안 구독한다 | 시연을 돌리는 일(`usePositionSource`) · 규칙의 판단(`domain/demo.ts`) |
 | `web/navi/src/domain/motion.ts` | **차가 달리고 있는가** — 측위의 속도(실린 도플러 속도 · 없으면 앞 측위와의 차분, 오차 안의 움직임은 정지)와 문턱(1.0 m/s 달림 · 0.5 m/s 미만 정지 · 3초 침묵 = 정지)으로 달림 여부를 낸다. 병목 「자세히」 의 속도 잠금이 이것을 본다 | 신호가 통째로 끊긴 채 달리는 차(그 상태는 `gpsWeak` · `offline` 이 말한다) · 잠금을 거는 화면(`ui/BottleneckPanel.tsx`) |
 
 ### 22-3. 그리는 조각 — `ui/`
@@ -4801,6 +4803,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `web/navi/src/ui/TurnArrow.tsx` | 회전 아이콘. 각이 아니라 **어휘**를 받는다 — 각을 어휘로 바꾸는 판단은 `domain/turn.ts` 가 이미 했다 |
 | `web/navi/src/ui/icons.tsx` | 작은 아이콘. **이모지를 안 쓴다** — 글꼴이 없는 단말에서 네모로 나온다 |
 | `web/navi/src/ui/DevBar.tsx` | 개발·시연 조작. 와이어프레임에 없는 것이라 **빼면 화면이 와이어프레임 그대로**가 되게 갈라 뒀다 |
+| `web/navi/src/ui/DemoStrip.tsx` | 시연이 켜져 있으면 **테두리가 호박색 · 「시연 중」 띠가 늘 뜬다** · 시연을 켜고 끄는 단 하나의 길(`?demo=1` 이 아니면 이 단추). 실주행 중에는 단추가 없다. 지연 청크 | 시연을 돌리는 일 · `?dev=1` 의 개발 막대(`DevBar.tsx` — 배속 · 순간이동 · 상태 주입) |
 | `web/navi/src/ui/verdictMeaning.ts` | 판정 4색이 **무엇을 뜻하는가**, 사람 말로. 색은 여기 없다 |
 | `web/navi/src/ui/clearanceMeaning.ts` | 여유폭의 **색과 말**. 수는 `domain/clearance.ts` 가 낸다 |
 | `web/navi/src/ui/routeOption.ts` | 경로 하나를 **비교 카드 한 장**으로 접는다. 훅도 상태도 안 쓴다 |
@@ -4815,6 +4818,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | 파일 | 무엇을 묻나 |
 | --- | --- |
 | `web/navi/test/status.test.ts` | 화면 상태가 **신호대로 갈리는가.** 한 줄이 열여덟 장을 가르는데 시험이 없었다 |
+| `web/navi/test/demo.test.ts` | 시연이 **GPS 와 무관한가** — 측위 셋 × 모든 단계로: 켜지면 표가 나는가 · 실주행 중에는 못 켜고 단추도 없는가 · 안내 문구가 가리키는 단추가 문구가 뜨는 모든 조건에서 있는가 |
 | `web/navi/test/roadLabels.test.ts` | 도로명이 **이름마다 한 점 · 가로 · 화면 안에 통째로 · 아이콘 층 밑**인가 — 순수 고르기(`pickRoadLabels`)와 층 선언(점 배치 · 화면 기준 가로 · 소화전 · CCTV 보다 아래 층) |
 | `web/navi/test/speech.test.ts` | 안내가 **급한 순서로** 나가는가 |
 | `web/navi/test/progress.test.ts` | 위치 추정과 턴바이턴의 **폐루프.** 입력은 GPS 흉내다 — 정답 점을 넣으면 추정기가 틀려도 통과한다 |
