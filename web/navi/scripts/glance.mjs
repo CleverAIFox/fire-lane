@@ -47,13 +47,31 @@ const MEASURE = `(() => {
     targets.push({ w: Math.round(r.width), h: Math.round(r.height), x: Math.round(r.left), y: Math.round(r.top), t: (el.textContent || el.getAttribute("aria-label") || el.tagName).trim().slice(0, 14) });
   }
   const anims = [...new Set(document.getAnimations().filter((a) => a.playState === "running" && a.effect?.target && !(devbar && devbar.contains(a.effect.target))).map((a) => a.animationName || "?"))];
-  return { lines, targets, anims };
+  // 잘린 글자 — 말줄임(overflow:hidden)이 걸린 칸에서 글자 폭이 칸 폭보다 큰 것. 주행 화면에서 **말이 잘리면** 그 말은 없는 것이다.
+  const clipped = [];
+  for (const el of document.querySelectorAll("#root div, #root span")) {
+    if (skip(el) || !visible(el) || el.children.length > 0) continue;
+    const cs = getComputedStyle(el);
+    if ((cs.overflow === "hidden" || cs.textOverflow === "ellipsis") && el.scrollWidth > el.clientWidth + 1) clipped.push(el.textContent.trim().slice(0, 24));
+  }
+  return { lines, targets, anims, clipped };
+})()`;
+const WORST = `(() => {
+  // 최악의 회전 안내를 **실제 칸에** 넣어 본다 — 가장 긴 거리 · 가장 긴 지시 · 긴 도로명. 칸 폭은 그대로(CSS)다.
+  const set = (k, t) => { const e = document.querySelector('[data-turn="' + k + '"]'); if (e) e.textContent = t; return e; };
+  const dist = set("dist", "12.50km 앞"), word = set("word", "오른쪽 방향"), road = set("road", "동명로14번길 123-45");
+  if (!word) return null;
+  const mic = document.querySelector("button[aria-label='음성']").getBoundingClientRect();
+  const right = (e) => { const r = document.createRange(); r.selectNodeContents(e); return Math.round(r.getBoundingClientRect().right); };
+  const clippedRoad = road.scrollWidth > road.clientWidth + 1;
+  return { micLeft: Math.round(mic.left), dist: dist && right(dist), word: right(word), road: road && right(road), roadClipped: clippedRoad,
+           wordFits: right(word) <= mic.left - 8, distFits: !dist || right(dist) <= mic.left - 8 };
 })()`;
 
 const overlaps = (T) => { let n = 0; for (let i = 0; i < T.length; i++) for (let j = i + 1; j < T.length; j++) { const a = T[i], b = T[j]; if (a.x < b.x + b.w - 1 && b.x < a.x + a.w - 1 && a.y < b.y + b.h - 1 && b.y < a.y + a.h - 1) n++; } return n; };
 const row = (name, m) => {
   const over = m.lines.filter((x) => x.n > GLANCE), small = m.lines.filter((x) => x.fs < FONT), t = m.targets.filter((x) => Math.min(x.w, x.h) < TARGET);
-  console.log(`${name.padEnd(26)} 줄 ${String(m.lines.length).padStart(3)} | ${GLANCE}자↑ ${String(over.length).padStart(2)} (최장 ${Math.max(0, ...m.lines.map((x) => x.n))}) | ${FONT}px↓ ${String(small.length).padStart(2)}줄 | 터치 ${TARGET}↓ ${t.length}/${m.targets.length} (최소 ${Math.min(999, ...m.targets.map((x) => Math.min(x.w, x.h)))} · 겹침 ${overlaps(m.targets)}) | 도는 것 ${m.anims.join(",") || "—"}`);
+  console.log(`${name.padEnd(26)} 줄 ${String(m.lines.length).padStart(3)} | ${GLANCE}자↑ ${String(over.length).padStart(2)} (최장 ${Math.max(0, ...m.lines.map((x) => x.n))}) | ${FONT}px↓ ${String(small.length).padStart(2)}줄 | 터치 ${TARGET}↓ ${t.length}/${m.targets.length} (최소 ${Math.min(999, ...m.targets.map((x) => Math.min(x.w, x.h)))} · 겹침 ${overlaps(m.targets)}) | 도는 것 ${m.anims.join(",") || "—"} | 잘림 ${m.clipped.length}${m.clipped.length ? " [" + m.clipped.join(" / ") + "]" : ""}`);
   return { over, t };
 };
 
@@ -69,6 +87,8 @@ await grab("정차: 경로 카드(참고)");
 await pg.click("text=안내 시작");
 await pg.waitForTimeout(3500);
 await grab("주행: 신호대로");
+const worst = await pg.evaluate(WORST);
+console.log("최악 회전 안내(12.50km 앞 · 오른쪽 방향 · 긴 도로명):", JSON.stringify(worst));
 await pg.locator("button", { hasText: /^병목$/ }).first().click();
 await pg.waitForTimeout(1200);
 await grab("주행: 병목 패널 열림");

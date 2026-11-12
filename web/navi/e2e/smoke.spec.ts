@@ -96,3 +96,27 @@ test.describe("개발 서버 재최적화", () => {
     expect(bad, "재최적화 뒤 관제 뷰가 깨졌다(React 가 두 벌이 아닌가)").toEqual([]);
   });
 });
+
+/**
+ * ★ 「자세히」 의 **속도 잠금**(DECISIONS §704) — 달리는 중에는 안 열리고, 서면 열린다. 시뮬레이션이 달리는 동안 단추가 막혀 있고, 개발 막대의 ■ 로 세워
+ *   측위가 끊기면(3초 침묵 = 정지) 열린다. 개발 막대가 있는 `dev` 프로젝트에서만 돈다(빌드본에는 막대가 없다).
+ */
+test("달리는 중에는 병목 「자세히」 가 안 열리고 서면 열린다", async ({ page, baseURL }, info) => {
+  test.skip(info.project.name !== "dev", "개발 막대가 필요하다");
+  test.setTimeout(120_000);
+  await page.goto(`${baseURL}?dev=1&vehicle=pump-js&station=지산&incident=126.921389,35.154563&label=동구%20경양로%20293`);
+  await page.getByText("안내 시작").click();
+  const play = page.getByRole("button", { name: /^[▶■]$/ }).first();      // 개발 막대의 재생 단추(▶ ↔ ■)
+  await expect(play).toHaveText("▶");
+  await play.click();                                                        // 시뮬레이션이 달린다 — 측위에 속도가 실린다
+  await expect(play).toHaveText("■");
+  await page.getByRole("button", { name: "병목", exact: true }).click();
+  const more = page.getByRole("button", { name: "자세히", exact: true });
+  await page.waitForTimeout(5000);                                           // 「측위 침묵 = 정지」 창(3초)을 지난 뒤에도 막혀 있어야 한다
+  await expect(more, "달리는 중인데 자세히가 열려 있다").toBeDisabled();
+  await play.click();                                                        // 세운다 → 측위가 끊긴다
+  await expect(play).toHaveText("▶");
+  await expect(more, "서 있는데 자세히가 막혀 있다").toBeEnabled({ timeout: 15_000 });
+  await more.click();
+  await expect(page.getByText("측정 신뢰도"), "자세히가 안 열린다").toBeVisible();
+});

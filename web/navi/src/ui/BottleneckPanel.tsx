@@ -28,7 +28,7 @@
  *   보고 무엇을 안 보는가」 를 화면에 남기는 장치(§86-5)가 거기 산다.
  * ★ 누르는 곳은 전부 **76dp 이상**이다(Android Auto 의 터치 타깃 기준). 보이는 모양은 그대로이고 **누르는 범위**만 키웠다.
  */
-import { useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { C, F, S } from "./tokens";
 import { CLEARANCE_SCALE } from "./clearanceMeaning";
 import { clearanceBand, fmtClearance } from "../domain/clearance";
@@ -45,10 +45,18 @@ interface Props extends BottleneckData {
   onToggle: () => void;
   onShare: () => void;
   onReport: () => void;
+  /**
+   * **달리는 중이다 — 「자세히」 를 못 연다.** 정차 중에 읽는 상세를 움직이는 차에서 열면 한 시선 2초 규범(DECISIONS §702)을 깬다.
+   * 열려 있던 것도 닫힌다. 속도는 `domain/motion.ts`(§704)가 안다.
+   */
+  locked: boolean;
 }
 
 export function BottleneckPanel(d: Props) {
   const [more, setMore] = useState(false);
+  // 달리기 시작하면 열려 있던 상세를 닫는다(다시 서도 저절로 열리지 않는다). 렌더에서도 막는다 — 효과는 한 박자 늦다.
+  useEffect(() => { if (d.locked) setMore(false); }, [d.locked]);
+  const showMore = more && !d.locked;
   if (!d.open) {
     return (
       <button onClick={d.onToggle} style={tab} aria-label="병목 구간 상세 열기" data-wf="04.5">
@@ -73,9 +81,10 @@ export function BottleneckPanel(d: Props) {
       <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
         <button onClick={d.onShare} style={ghost}>관제에 공유</button>
         <button onClick={d.onReport} style={cta}>통행 불가 신고</button>
-        <button onClick={() => setMore((x) => !x)} aria-expanded={more} style={ghost}>{more ? "접기" : "자세히"}</button>
+        <button onClick={() => setMore((x) => !x)} aria-expanded={showMore} disabled={d.locked}
+                style={d.locked ? { ...ghost, opacity: 0.35, cursor: "not-allowed" } : ghost}>{showMore ? "접기" : "자세히"}</button>
       </div>
-      {more && <div style={{ marginTop: 12 }}><BottleneckDetail {...d} /></div>}
+      {showMore && <div style={{ marginTop: 12 }}><BottleneckDetail {...d} /></div>}
     </div>
   );
 }

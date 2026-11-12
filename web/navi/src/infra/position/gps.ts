@@ -48,6 +48,8 @@ export function createGpsSource(): PositionSource {
           //       올 수 있는데, 받는 쪽이 「받은 시각」으로 덮으면 dt 가
           //       실제보다 작아져 순간속도가 부풀고 추측항법이 차를 앞으로 민다.
           accuracy: Number.isFinite(p.coords.accuracy) ? p.coords.accuracy : null,
+          // ★ 2026-11-12 (§704). 도플러 속도 — 정지 근처에서 위치 차분보다 훨씬 정확하다. 없으면 null(받는 쪽이 차분으로 만든다).
+          speedMps: Number.isFinite(p.coords.speed as number) ? (p.coords.speed as number) : null,
           t: perfTime(p.timestamp),
           source: "gps",
         }),

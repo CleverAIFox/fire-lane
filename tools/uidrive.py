@@ -31,9 +31,9 @@ _HANGUL = re.compile(r"[가-힣]")
 DRIVE_FILES = (
     "ui/TopBar.tsx", "ui/StatusCard.tsx", "ui/BottleneckPanel.tsx", "ui/RemainPill.tsx", "ui/MapControls.tsx",
     "ui/Legend.tsx", "ui/ShareChip.tsx", "domain/status.ts", "app/usePositionSource.ts",
-    # ★ 2026-11-12 (DECISIONS §703). `ui/clearanceMeaning.ts`(병목 패널의 사유 문장 · 15개가 20자를 넘는다)는 **뺐다** — 기본 화면이 더는 그 문장을 안 띄운다.
-    #   그 문장과 옛 몸통은 `ui/BottleneckDetail.tsx`(자세히 — 정차 중에 일부러 여는 상세)로 갔다. **둘은 이 수에 안 든다.** 단 지금은 달리는 중에도 열린다
-    #   (속도 신호로 안 잠갔다) — 그 잠금이 서기 전까지 이 분류는 사람의 선언이다(PLAN #224). 렌더된 수는 `scripts/glance.mjs` 가 「자세히 열림」을 따로 낸다.
+    # ★ 2026-11-12 (DECISIONS §703 · §704). `ui/clearanceMeaning.ts`(병목 패널의 사유 문장 · 15개가 20자를 넘는다)는 **뺐다** — 기본 화면이 더는 그 문장을 안 띄운다.
+    #   그 문장과 옛 몸통은 `ui/BottleneckDetail.tsx`(자세히 — 정차 중 상세)로 갔고 **둘은 이 수에 안 든다.** 이 분류는 **속도 잠금으로 참이다**(§704) —
+    #   달리는 중에는 「자세히」 가 안 열리고 열려 있던 것도 닫힌다(`domain/motion.ts` · `BottleneckPanel` 의 `locked` · `e2e/smoke.spec.ts` 가 문다).
 )
 #: 값이 들어갈 자리(`${…}` · `{road}`)가 화면에서 차지하는 글자 수의 근사 — 숫자 · 도로명이 이만큼이라 치고 길이를 잰다
 PLACEHOLDER_CHARS = 6

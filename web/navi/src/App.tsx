@@ -497,7 +497,7 @@ export default function App() {
           {/* ★ 경로가 서지 않은 상태(재탐색 · 서버 오류 · 경로 없음 · 데이터 부족 ·
               통행 불가)와 도착 쪽 상태에서는 병목을 안 띄운다. 없는 경로의 병목이다. */}
           {bottleneck && st.route !== "pending" && !st.icon && statusKey !== "blocked" && (
-            <Suspense fallback={null}><BottleneckPanel {...bottleneck} open={bnOpen}
+            <Suspense fallback={null}><BottleneckPanel {...bottleneck} open={bnOpen} locked={n.moving}
                              onToggle={() => setBnOpen((x) => !x)}
                              onShare={() => {
                                // 와이어프레임 18 — 공유하면 카드를 닫고 주행을 이어 간다

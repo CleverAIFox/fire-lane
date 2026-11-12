@@ -301,6 +301,12 @@ export interface Fix {
    */
   accuracy?: number | null;
   /**
+   * 속도(m/s). 모르면 `null` · 비어 있으면 받는 쪽이 연속한 두 측위로 만든다(`domain/motion.ts`).
+   * ★ 2026-11-12 (DECISIONS §704). 종전에는 속도를 **어느 소스도 안 실었다** — `gps.ts` 가 `coords.speed` 를 안 읽었다.
+   *   「달리는 중에는 상세를 못 연다」 잠금이 이 값을 본다.
+   */
+  speedMps?: number | null;
+  /**
    * 측위 시각(ms, `performance.now()` 시계). 위치 추정이 속도 × 경과로 예측한다.
    * 비어 있으면 받는 쪽이 받은 시각으로 채운다.
    */
