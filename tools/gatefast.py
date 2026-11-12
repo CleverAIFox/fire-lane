@@ -68,6 +68,8 @@ _SLOW3 = "훅 예산 — 단독 3.8~4.9초(싼 37개 + 이 셋이면 훅 중앙 
 _NET = "망이 필요하다(패키지 내려받기 · GitHub API)"
 _SMOKE = "브라우저가 필요하고 1분 남짓 걸린다(헤드리스 크로미움 · 개발 서버 재시작 시험) — 훅 예산(30초) 밖이다(DECISIONS §700). 로컬은 `verify.sh` 가 돈다(DECISIONS §706)"
 _NPM = "npm · node_modules 가 필요하다(`npm ci` 는 망)"
+_NPM_TEST = ("`vitest` 전수 — 12.8초 · 망이 아니다(`node_modules` 만 있으면 된다) · 발행 산출물(`web/data` · `data/golden`)을 정적 import 로 먹는다. 재잠금이 움직이는 수를 "
+             "pytest 그물(`testpick`)이 못 본다 — CI 에서야 터졌다(DECISIONS §719). 훅 예산(30초)에는 안 든다")
 _PRECOMMIT = "다른 층이 이미 든다 — 커밋 훅이 같은 `pre-commit` 설정을 돈다(`--all-files` 전수는 느리다)"
 _CTX = "CI 문맥이 필요하다(PR 본문 · 기준 커밋 `$BASE`)"
 _WRITES1 = "읽기 전용이 아니다 — `data/interim/lineage.mmd`(추적 밖 산출물)를 쓴다 · 0.6초"
@@ -83,7 +85,7 @@ LAYERS: dict[tuple[str, str], tuple[str, str]] = {
     ("firelane.ledger_check", ""): ("ready", _BUDGET),
     ("navi:lint", ""): ("ci", _NPM),
     ("navi:smoke", ""): ("ci", _SMOKE),
-    ("navi:test", ""): ("ci", _NPM),
+    ("navi:test", ""): ("ready", _NPM_TEST),
     ("navi:typecheck", ""): ("ci", _NPM),
     ("pre-commit", "run --all-files --show-diff-on-failure"): ("ci", _PRECOMMIT),
     ("pytest", "${files[@]} -q"): ("axis", _AXIS_T),

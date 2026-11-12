@@ -239,3 +239,15 @@ def test_gatefast_counts_hook_to_pushready_too_every_hook_gate_runs_in_the_mirro
     hp = F.hook_vs_pushready()
     assert len(hp["돈다"]) + len(hp["대신"]) == len(GP.gate_commands()), "훅 게이트가 ㉨ 에서도 대체 표에서도 빠졌다 — 먼저 보는 도구가 나중 도구보다 약하다"
     assert hp["돈다"] and all(" — " in x and len(x.split(" — ", 1)[1]) >= 5 for x in hp["대신"])
+
+
+def test_the_navi_unit_tests_run_before_the_push_not_only_in_ci():
+    """★ `vitest` 전수는 **푸시 전에** 돈다(`ready` 층 — `pushready` ㉨ 이 CI 의 명령 글자 그대로). (DECISIONS §719 · ⓲B 재잠금 ⑥)
+
+    `#53` 재잠금이 `web/data` 의 판정을 움직였고 `astarbench` 둘이 **CI 에서야** 빨갰다 — `testpick` 은 pytest 만 고르고, 이 검사는 `ci` 층(사유: 「npm 이 필요하다」)에 있어
+    푸시 전 어느 그물에도 없었다. 그 사유는 `npm ci`(망)와 `npm run test`(`node_modules` 만 있으면 된다)를 뭉친 것이었다. 되돌리면 같은 구멍이 열린다.
+    """
+    import gatefast as GF
+    layer, why = GF.LAYERS[("navi:test", "")]
+    assert layer == "ready", f"`vitest` 전수가 `{layer}` 층이다 — 재잠금이 움직이는 수를 푸시 전에 못 본다"
+    assert "vitest" in why and "§719" in why, "사유가 이 결정을 안 적었다"
