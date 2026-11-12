@@ -171,12 +171,17 @@ def test_touched_tests_over_the_cap_are_named_not_dropped_and_unknown_ones_enter
     assert go == ["new.py", "short.py"] and over == {"long.py": 304.0}
 
 
-def test_the_six_long_tests_touching_docs_and_ledger_are_over_the_cap_on_the_real_ledger():
-    """실물 장부 — 긴 여섯은 상한에 걸려 **이름이 난다**(조용히 안 빠진다). 상한이 45초짜리도 가른다."""
+def test_the_long_tests_touching_docs_and_ledger_are_over_the_cap_on_the_real_ledger():
+    """실물 장부 — 긴 다섯은 상한에 걸려 **이름이 난다**(조용히 안 빠진다). 상한이 45초짜리도 가른다.
+
+    ★ 2026-11-12 (DECISIONS §707). 여섯이었다 — `test_fix_door.py`(335초)는 문을 갈라(`fix.sh --skip`) 6.5초가 돼 **상한 아래로 내려왔다.** 빠진 것은 좋은 일이고
+      그 시험은 이제 푸시 전 묶음에 **든다**(아래 시험이 그것을 문다). 상한을 올려서 넣은 것이 아니다."""
     led = T.load_ledger()
-    six = ["test_fix_door.py", "test_ledger_accessor.py", "test_normalize_rules.py", "test_ledger_outputs.py", "test_guards.py", "test_tools_are_wired.py"]
-    _, over = T.pick_touched({n: ["x"] for n in six}, led)
-    assert sorted(over) == sorted(six)
+    five = ["test_ledger_accessor.py", "test_normalize_rules.py", "test_ledger_outputs.py", "test_guards.py", "test_tools_are_wired.py"]
+    _, over = T.pick_touched({n: ["x"] for n in five}, led)
+    assert sorted(over) == sorted(five)
+    go, none = T.pick_touched({"test_fix_door.py": ["x"]}, led)
+    assert go == ["test_fix_door.py"] and not none, "문 시험이 아직 상한 위다 — 갈랐는데도 길다"
 
 
 def test_the_real_tree_a_changed_doc_pulls_in_a_test_outside_the_budget_pick(capsys):
