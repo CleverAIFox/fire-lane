@@ -129,7 +129,7 @@ def test_the_door_actually_repairs_an_injected_defect(tree: Path):
 def test_the_ratchet_step_is_still_the_last_step_of_the_door(tree: Path):
     """★ 위 시험이 건너뛰는 「래칫」 이 **여전히 문에 걸려 있고 맨 뒤인가.** (`--dry` — 싸다)
 
-    래칫 단계가 **실제로 도는가**는 이 시험이 아니라 `tests/test_ratchet.py::test_the_real_tree_is_at_its_ratchets`(실제 트리에서 `ratchet.py` 를 잰다)가 든다 —
+    래칫 단계가 **실제로 도는가**는 이 시험이 아니라 `pushready` ㉠ · CI 「래칫 정합」 · `verify.sh`(실제 트리에서 `ratchet.py` 를 잰다)가 든다 —
     같은 도구를 같은 값으로 두 번 돌릴 이유가 없다. 여기가 드는 것은 **배선**이다: 단계가 빠지거나 앞으로 옮겨지면(앞의 수리가 실측값을 바꾸므로 맨 뒤여야 한다) 운다.
     """
     r = _run(tree, "--dry")

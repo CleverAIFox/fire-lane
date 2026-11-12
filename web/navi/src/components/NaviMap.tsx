@@ -48,6 +48,7 @@ import { C, S } from "../ui/tokens";
 import {
   GLYPHS, sources, baseLayers, withLanduse, markerLayers, routeLayers, altRouteLayers, NAVI_OFF,
   stationLayers, shortenStationLabels, applyTerrain, chevronImage, cctvIcon, hydrantIcon, bumpIcon, camIcon, zoneIcon, pillImage, pillOptions,
+  Z,
 } from "./layers";
 import { dataBase } from "../infra/dataBase";
 
@@ -211,6 +212,8 @@ export function NaviMap(props: Props) {
       if (p.view.terrainBounds) {
         applyTerrain(m, p.terrain, new URLSearchParams(location.search).get("terrain") !== "0");
       }
+      // ★ DECISIONS §711 — 도로명은 화면 기준으로 이름마다 한 점(가로). **미룬 청크다** — 진입 청크 래칫(111KB)이 이 3KB 를 못 받는다(첫 화면에 안 필요하다).
+      void import("./roadLabels").then((r) => r.attachRoadLabels(m, Z.road));
       ready.current = true;
       const q = pending.current; pending.current = [];
       for (const f of q) f(m);

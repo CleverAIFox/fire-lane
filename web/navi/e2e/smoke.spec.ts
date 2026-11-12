@@ -166,3 +166,46 @@ test("취소된 지형 타일은 소음이 아니고 안 받아지는 요청은 
   const loud = await settle(page, { bad: [], aborted: gone });
   expect(loud.length, "안 받아지는 취소를 소음으로 안 셌다").toBe(1);
 });
+
+/**
+ * ★ 시연은 GPS 와 무관한 축이다(DECISIONS §713 · ⓲C). 세 가지 입구를 **실제 브라우저로** 민다 —
+ *   ① 기본 주소 + GPS 없음 → 문구가 가리키는 「시연으로 주행」 단추가 **화면에 있고** 눌린다(종전: 없는 ▶ 를 가리켰다)
+ *   ② 서울에서 연다(구역 밖 측위) → 같은 단추 · 눌러야 시연이 켜진다(종전: 말없이 갈아탔다)
+ *   ③ `?demo=1` → 처음부터 표(테두리 · 띠)가 나고 ▶ 없이 달린다
+ */
+const ORDER = "vehicle=pump-js&station=지산&incident=126.921389,35.154563&label=동구%20경양로%20293";
+
+test("GPS 가 없으면 안내가 가리키는 「시연으로 주행」 단추가 화면에 있고 누르면 표가 난다", async ({ page, baseURL }) => {
+  test.setTimeout(120_000);
+  await page.goto(`${baseURL}?${ORDER}`);
+  await page.getByText("안내 시작").click();
+  const go = page.getByRole("button", { name: "시연으로 주행", exact: true });
+  await expect(go, "문구가 가리키는 단추가 화면에 없다").toBeVisible({ timeout: 20_000 });
+  await expect(page.getByTestId("demo-frame")).toHaveCount(0);            // 켜기 전에는 표가 없다
+  await go.click();
+  await expect(page.getByTestId("demo-frame"), "시연이 켜졌는데 표가 안 난다").toBeVisible();
+  await expect(page.getByText("시연 중", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "■", exact: true }), "켜자마자 달리지 않는다").toBeVisible();
+});
+
+test("서울(구역 밖)에서 열어도 시연이 켜지고 그 전에는 자동으로 안 켜진다", async ({ browser, baseURL }) => {
+  test.setTimeout(120_000);
+  const ctx = await browser.newContext({ geolocation: { latitude: 37.5665, longitude: 126.978 }, permissions: ["geolocation"] });
+  const page = await ctx.newPage();
+  await page.goto(`${baseURL}?${ORDER}`);
+  await page.getByText("안내 시작").click();
+  await expect(page.getByText(/데이터 범위 밖/), "구역 밖 안내가 안 뜬다").toBeVisible({ timeout: 20_000 });
+  await expect(page.getByTestId("demo-frame"), "구역 밖이라고 말없이 시연으로 갈아탔다").toHaveCount(0);
+  await page.getByRole("button", { name: "시연으로 주행", exact: true }).click();
+  await expect(page.getByTestId("demo-frame")).toBeVisible();
+  await ctx.close();
+});
+
+test("?demo=1 은 처음부터 표가 나고 개발 막대 없이 달린다", async ({ page, baseURL }) => {
+  test.setTimeout(120_000);
+  await page.goto(`${baseURL}?demo=1&${ORDER}`);
+  await expect(page.getByTestId("demo-frame"), "?demo=1 인데 표가 없다").toBeVisible({ timeout: 30_000 });
+  await page.getByText("안내 시작").click();
+  await expect(page.getByRole("button", { name: "■", exact: true }), "?demo=1 은 시작하면 달려야 한다").toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText(/GPS 신호가 없다/), "시연 중에 GPS 없음 안내가 떴다").toHaveCount(0);
+});

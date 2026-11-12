@@ -117,6 +117,7 @@ LAYERS: dict[tuple[str, str], tuple[str, str]] = {
     ("tools/navicheck.py", ""): ("ready", _BUDGET),
     ("tools/navicov.py", ""): ("ready", _BUDGET),
     ("tools/naviweight.py", ""): ("ready", _BUDGET),
+    ("tools/naviweight.py", "--build"): ("ci", _NPM),             # 빌드본이 있어야 재진다 — 훅 · pushready 는 내비를 안 짓는다(DECISIONS §710)
     ("tools/owned_paths.py", "--py-only"): ("ready", _STRICT),
     ("tools/pages_add_navi.py", "--check"): ("ready", _BUDGET),
     ("tools/pr_body_check.py", ""): ("ci", _CTX),

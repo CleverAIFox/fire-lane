@@ -54,7 +54,7 @@ import { C, MAP } from "../ui/tokens";
 //   뽑는 글자는 Liberation Sans 다(§312). 이름과 실물이 다르면 다음 사람이
 //   없는 글꼴을 찾는다. **공백은 안 쓴다** — CODEOWNERS 가 못 읽는다(§316).
 //   없는 글꼴을 찾는다. 뽑는 곳 — `web/navi/scripts/glyphs.mjs`
-const FONT = ["LiberationSans"];
+export const FONT = ["LiberationSans"];
 /**
  * 지도 글자. **저장소 안에서 온다** (PLAN §13 W13-4 · DECISIONS §312).
  *
@@ -66,7 +66,7 @@ const FONT = ["LiberationSans"];
 export const GLYPHS = "../fonts/{fontstack}/{range}.pbf";
 
 /** 어느 줌부터 켜는가. 다 켜면 골목에서 글자가 겹쳐 아무것도 못 읽는다. */
-const Z = { road: 16, bldg: 16, hydrant: 16.5, cctv: 16.5, poi: 17.5 } as const;
+export const Z = { road: 16, bldg: 16, hydrant: 16.5, cctv: 16.5, poi: 17.5 } as const;
 
 /**
  * 판정색을 배경 쪽으로 당겨 **배경선용 음영**을 만든다.
@@ -326,14 +326,6 @@ export function markerLayers(): LayerSpecification[] {
         "icon-allow-overlap": false, "icon-pitch-alignment": "viewport",
         "icon-size": ["interpolate", ["linear"], ["zoom"], 16, .34, 19, .62] as never,
       } },
-    { id: "lbl-road", type: "symbol", source: "segments", minzoom: Z.road,
-      layout: {
-        "symbol-placement": "line", "text-field": ["get", "road_name"],
-        "text-font": FONT, "text-size": 11, "text-max-angle": 40,
-        "symbol-spacing": 260, "text-pitch-alignment": "viewport",
-      },
-      paint: { "text-color": MAP.roadLabel, "text-halo-color": MAP.roadLabelHalo,
-               "text-halo-width": 1.6 } },
     // 이름 알약 — 와이어프레임의 흰 배지. **적게.** 층수 높은 것부터, 겹치면 버린다
     { id: "lbl-bldg", type: "symbol", source: "buildings", minzoom: Z.bldg + 0.6,
       // ★ 2026-09-22 검수 — 이름 칸이 **빈 문자열**인 건물이 `has` 를 통과해 글자 없는 흰

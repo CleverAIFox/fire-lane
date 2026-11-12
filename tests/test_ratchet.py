@@ -46,6 +46,15 @@ def _rt():
 RT = _rt()
 
 
+def _load_pushready():
+    spec = importlib.util.spec_from_file_location("pushready_t", ROOT / "tools" / "pushready.py")
+    assert spec and spec.loader
+    m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m
+    spec.loader.exec_module(m)
+    return m
+
+
 # ── ① 조이는 쪽만 쓴다 ─────────────────────────────────────────
 
 def test_a_loosening_move_is_never_a_tightening_one():
@@ -238,10 +247,28 @@ def test_lake_only_comes_from_verify_not_a_hand_list():
         "`ratchet.py` 안에 `verify.sh` 경로 문자열이 있다 — 독자가 둘이 됐다")
 
 
-def test_the_real_tree_is_at_its_ratchets():
-    """지금 트리에서 선언 = 실측이다. **이것이 관문 자체다.**"""
-    assert RT.run(write=False) == 0, (
-        "래칫이 실측과 다르다 — `uv run python tools/ratchet.py --write` 로 조여라")
+def test_the_real_tree_gate_is_wired_without_write_where_it_runs():
+    """★ 「지금 트리에서 선언 = 실측」은 **`ratchet.py` 전수**가 든다 — 그 전수는 이 시험이 아니라 아래 셋이 **`--write` 없이** 돈다.
+
+    ── 왜 여기서 전수를 안 도나 (2026-11-12 · DECISIONS §712 · ⓲B-③) ──
+    종전 시험은 `RT.run(write=False)` 전수를 불렀다. 전수가 단독 약 100초(지금 약 55초)이고 병렬 8 에서는 5배로 늘어 **300초 시한을 넘었다.** 같은 전수가
+    이미 세 곳에서 돈다 — 이 시험이 넷째였다:
+      · `tools/pushready.py` ㉠ (푸시 전 — 사람이 돌리는 차단)  · CI 「래칫 정합」 단계  · `tools/verify.sh` 의 `ratchet.py` 단계
+    좁힌 것이지 느슨하게 한 것이 아니다: 도구가 **읽고 판정하는가**는 위쪽 합성 트리 시험들이 문다(느슨해진 쪽 · 못 재는 것 · 조이는 쪽), **실제 트리가 맞는가**는 위 셋이 든다.
+    여기가 묻는 것은 그 셋이 **`--write` 를 안 쓰고 실제로 걸려 있는가** — 쓰면서 재면 영영 초록이다(§309).
+    """
+    import re
+    PR = _load_pushready()
+    seen: list[list[str]] = []
+
+    def fake(cmd: list[str], root: Path) -> tuple[int, str]:
+        seen.append(list(cmd))
+        return 0, ""
+    PR.check_ratchet(ROOT, fake)
+    assert seen and "tools/ratchet.py" in seen[0] and "--write" not in seen[0], f"pushready ㉠ 이 ratchet.py 를 `--write` 없이 안 부른다: {seen}"
+    ci = (ROOT / ".github" / "workflows" / "contract.yml").read_text(encoding="utf-8")
+    lines = [ln.strip() for ln in ci.splitlines() if re.search(r"run:\s*uv run python tools/ratchet\.py\b", ln)]
+    assert lines and all("--write" not in ln for ln in lines), f"CI 의 래칫 단계가 없거나 `--write` 다: {lines}"
 
 
 def test_the_selftest_is_alive():

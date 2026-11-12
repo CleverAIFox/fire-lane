@@ -81,7 +81,7 @@ DIST = ROOT / "web" / "navi" / "dist"
 #: ★ 2026-09-29 (§311). `opsLayers.ts` 가 갈라져 나온 날, 이 도구가 `layers.ts` 만
 #:   보고 있었다. 공유 수는 우연히 그대로였고(바탕 층이 안 옮겨갔다) **그래서 더
 #:   나빴다** — 초록인 채로 그물에 구멍이 났다. 아래 자기검사가 그것을 문다.
-LAYER_FILES = ("layers.ts", "opsLayers.ts")
+LAYER_FILES = ("layers.ts", "opsLayers.ts", "roadLabels.ts")
 LAYERS = SRC / "components" / "layers.ts"
 
 #: 전환 깃발. `serve.py` 가 루트에 박고, 번들이 읽어야 한다. 한쪽만 있으면 안 된다.
@@ -98,9 +98,9 @@ EXCLUSIVE = {
 }
 
 #: 두 지도가 부르는 층 묶음. `layers.ts` 의 export 함수 이름이다.
-NAVI_FNS = ("baseLayers", "landuseLayers", "altRouteLayers", "routeLayers", "markerLayers", "stationLayers")
+NAVI_FNS = ("baseLayers", "landuseLayers", "altRouteLayers", "routeLayers", "markerLayers", "roadLabelLayers", "stationLayers")
 OPS_FNS = ("baseLayers", "hillshadeLayer", "opsHistoryLayers", "opsSegLayers",
-           "opsOverlayLayers", "markerLayers", "stationLayers")
+           "opsOverlayLayers", "markerLayers", "roadLabelLayers", "stationLayers")
 
 # ── 래칫 ────────────────────────────────────────────────────────
 # ★ 2026-09-29 (§310). 오늘 실측 그대로 박는다 — 래칫의 값어치는 「지금보다
@@ -145,9 +145,9 @@ SHARED_LAYERS = 12
 # ★ 2026-11-07 (PLAN #73 진술 #1 · #3). 3435 → **3441. 올렸다 — 크기 래칫이고 기능이 늘어 커졌다(결함 상한이 아니다).** 접수 카드에 「자료 기준 YYYY-MM-DD」(+4자: 「자료 기준」의 한글 네 글자 —
 #   날짜 숫자는 세지 않는다)와 도로명 곁의 「지번」(+2자)이 들어왔다. 진술 #1(최신 데이터가 없음)은 자료 기준일이 안 보여서, #3(구 주소만 뜸)은 지번 표기가 없어서 생긴 것이다.
 #   `verify.sh` 1377 → 1380 과 같은 족이다 — 기능이 늘어 커졌다. 줄이려면 두 표기 중 하나를 걷어야 하고 그것은 두 진술을 되돌리는 일이라 안 했다. 되돌리는 조건: 두 표기를 걷을 때(3435).
-UI_TEXT = 3385
+UI_TEXT = 3384
 #: 주행 중 화면(`uidrive.DRIVE_FILES`)의 20자 넘는 말 · 24px 미만 글자 선언 수 — 현재 실측이 곧 상한이다(DECISIONS §702). 내려가는 쪽.
-DRIVE_LONG = 6
+DRIVE_LONG = 5
 DRIVE_SMALL_FONT = 19
 
 #: `tools/ratchet.py` 가 **줄었을 때만** 이 수를 고쳐 적는다(§309).

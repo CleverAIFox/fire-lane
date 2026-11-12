@@ -88,7 +88,7 @@ from statkit import quartiles
 
 # ★ 사분위와 결측 읽기의 집은 `tools/statkit.py` 하나다(§379-9).
 # ★ 좌우 분해의 집은 `tools/widthlr.py` 하나다(§509).
-from widthlr import escaped, lr_profile, off_center
+from widthlr import RAY_CAP_M, escaped, lr_profile, off_center
 
 ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / "web" / "data"
@@ -200,7 +200,7 @@ def measure(seg_feats: list, lines: list, road_b, carr_b, road=None) -> list[dic
             cc = clearances(line, carr_b)
             row["carr_min"] = 2 * min(cc) if cc else None
         if road is not None:
-            row.update(lr_profile(line, road))
+            row.update(lr_profile(line, road.intersection(line.buffer(RAY_CAP_M + 1.0))))   # ★ 광선은 중심선에서 25m 안만 간다 — 구간마다 한 번 잘라 쓴다(값 같음 · DECISIONS §712)
         rows.append(row)
     return rows
 

@@ -55,7 +55,7 @@ describe("범위 판정", () => {
   it("안내문이 거리를 든다 — 「밖」만 적으면 튄 것인지 딴 도시인지 모른다", () => {
     expect(outsideNotice(265_000)).toContain("265km");
     expect(outsideNotice(450)).toContain("450m");
-    expect(outsideNotice(265_000)).toContain("경로 주행");
+    expect(outsideNotice(265_000)).toContain("시연으로 주행");
   });
 });
 

@@ -106,8 +106,48 @@ def test_score_runs_on_filled_synthetic_rows() -> None:
     table, key = E.build(rows, samples, sizes=SIZES, mids=mids)
     filled = [{**r, "w_full_m": "6.0", "w_narrow_m": "5.0", "narrow_s_m": "2.0", "note": "합성"} for r in table]
     out = E.score(rows, samples, filled, key)
-    assert out["Q1"]["전체"]["n"] == len(table) and set(out) == {"Q1", "Q2", "Q3", "Q4", "Q5", "Q6"}
+    assert out["Q1"]["전체"]["n"] == len(table) and set(out) == {"Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7"}
     assert set(out["Q6"]) == set(E.NAMED)
+
+
+def test_q7_scores_the_quantity_rule_10_reads_against_the_field_value() -> None:
+    """★ `#222` — 규칙 [10] 이 읽는 `clear_med_m` 을 실제와 대는 채점이 **있다.** 문서에 적은 수(62 → 지금 58)는 재잠금마다 낡으므로 그 수는 채점이 그때 센다."""
+    rows, samples, mids = _data()
+    table, key = E.build(rows, samples, sizes=SIZES, mids=mids)
+    filled = [{**r, "w_full_m": "6.0", "w_narrow_m": "5.0", "narrow_s_m": "2.0", "note": "합성"} for r in table]
+    q7 = E.score(rows, samples, filled, key)["Q7"]
+    cells: dict[str, int] = {}
+    for t in q7["거둠 × 실제(전폭)"].values():
+        for c, n in t.items():
+            cells[c] = cells.get(c, 0) + n
+    # 합성 입력: clear_med_m 은 5.0(거둔다) 또는 20.0(안 거둔다) · 실제 전폭 6.0 은 문턱(CLEAR_M) 미만 = 좁다
+    assert set(cells) <= {"거둔다·실제 좁다", "안 거둔다·실제 좁다"} and sum(cells.values()) == len(table), cells
+    assert q7["clear_med_m − 전폭"]["전체"]["n"] == len(table) and q7["clear_med_m − 최협부"]["전체"]["n"] == len(table)
+    # 오차 부호(우리 − 실제): 5.0 − 6.0 = −1.0 · 20.0 − 6.0 = +14.0 — 중앙이 둘 사이에 있다
+    assert -1.0 <= q7["clear_med_m − 전폭"]["전체"]["median"] <= 14.0
+    assert isinstance(q7["지금 규칙 [10] 이 거두는 구간 수"], int) and q7["문턱 CLEAR_M"] > 0
+
+
+def test_q8_scores_the_upper_quantity_rule_11_reads_and_skips_the_unmeasured() -> None:
+    """★ 판정이 읽는 양 셋 — `wmin`(Q2 · Q3) · `clear_med_m`(Q7) · 폭 급변의 윗수 `width_max_m`(Q8). 윗수가 None(결손)이면 오차로 안 센다."""
+    rows, samples, mids = _data()
+    table, key = E.build(rows, samples, sizes=SIZES, mids=mids)
+    filled = [{**r, "w_full_m": "6.0", "w_narrow_m": "5.0", "narrow_s_m": "2.0", "note": "합성"} for r in table]
+    q = E.score(rows, samples, filled, key)["Q7"]["width_max_m − 전폭(규칙 [11] 의 윗수 · Q8)"]
+    assert q["전체"]["n"] == 0, "합성 행의 width_max_m 은 None 이다 — 결손을 오차로 셌다"
+    rows2 = [{**r, "width_max_m": 30.0} for r in rows]
+    q2 = E.score(rows2, samples, filled, key)["Q7"]["width_max_m − 전폭(규칙 [11] 의 윗수 · Q8)"]
+    assert q2["전체"]["n"] == len(table) and q2["전체"]["median"] == 24.0, q2        # 30.0 − 6.0
+
+
+def test_q7_skips_rows_without_clear_med_instead_of_counting_them_as_zero() -> None:
+    rows, samples, mids = _data()
+    table, key = E.build(rows, samples, sizes=SIZES, mids=mids)
+    gone = [{**r, "clear_med_m": None} for r in rows]
+    filled = [{**r, "w_full_m": "6.0", "w_narrow_m": "5.0", "narrow_s_m": "2.0", "note": "합성"} for r in table]
+    q7 = E.score(gone, samples, filled, key)["Q7"]
+    assert q7["clear_med_m − 전폭"]["전체"]["n"] == 0, "모르는 값(None)이 오차로 셌다"
+    assert q7["거둠 × 실제(전폭)"] == {}
 
 
 def test_the_a_check_pool_reproduces_the_median_rule_count() -> None:

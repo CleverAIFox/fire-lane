@@ -39,6 +39,8 @@ tools/evalset.py — 0판 평가셋을 **뽑는다**(그리고 사람이 채운 
   Q4 대조군 대 규칙 [12] 가 거둘 구간의 Q1 · Q2 오차가 다른가(맨-휘트니) — 다르면 [12] 에 근거가 서고 같으면 근거가 없다
   Q5 체제별 Q1 · Q2 오차가 다른가(크러스컬-월리스) — 체제 규칙의 반증 가능성
   Q6 지명 둘의 `note`
+  Q8 `width_max_m`(담~담) 대 `w_full_m` — **규칙 [11](폭 급변 `wmax/wmin ≥ SPREAD_MAX`)이 읽는 윗수**를 실제 전폭과 댄다. 담~담이 가장 먼 건물까지 뻗으면 부풀어 [11] 이 멀쩡한 `clear` 를 거둔다(DECISIONS §709 — 판정 범위를 넓히면 27구간이 그렇게 움직인다). 오차(우리 − 실측) 중앙 · 사분위 · 묶음별
+  Q7 `clear_med_m` 대 `w_narrow_m` · `w_full_m` — **규칙 [10] 이 읽는 양**(내접원 중앙값)을 실제와 댄다: 오차 중앙 · 사분위 + 「거둔다/안 거둔다」(`< CLEAR_M`)가 실제 전폭의 같은 문턱과 같은 편인가(묶음별 2×2). 지금 거두는 구간 수는 **표에 안 적고 이 채점이 그때 센다**(문서에 적은 수는 재잠금마다 낡는다 — DECISIONS §709)
 ★ 채워지면 `field.fingerprint.json` 에 박는 경로: `uv run python tools/fieldseal.py --write` (사람이 친다 — 이 도구는 안 한다).
 
 IN    web/data/segments.geojson · data/processed/{segments_5186.gpkg,width_samples.csv}
@@ -235,6 +237,10 @@ def score(rows: list[dict], samples_by: dict[str, list[dict]], filled: list[dict
     e1: dict[str, list[float]] = {}
     e2: dict[str, list[float]] = {}
     e3: dict[str, list[float]] = {}
+    e7n: dict[str, list[float]] = {}       # Q7 — clear_med_m − 실제 최협부
+    e7f: dict[str, list[float]] = {}       # Q7 — clear_med_m − 실제 전폭
+    e8: dict[str, list[float]] = {}        # Q8 — width_max_m − 실제 전폭(규칙 [11] 의 윗수)
+    t7: dict[str, dict[str, int]] = {}     # Q7 — 규칙 [10] 이 거둔다(clear_med_m < CLEAR_M) × 실제 전폭이 그 문턱 미만인가
     for r in filled:
         s = r["seg_id"]
         uid = r.get("seg_uid")
@@ -250,6 +256,19 @@ def score(rows: list[dict], samples_by: dict[str, list[dict]], filled: list[dict
             e1.setdefault(g, []).append(p["width_med_m"] - wf)
         if wn is not None and p.get("width_min_m") is not None:
             e2.setdefault(g, []).append(p["width_min_m"] - wn)
+        wmx = num(p.get("width_max_m"))
+        if wmx is not None and wf is not None:
+            e8.setdefault(g, []).append(wmx - wf)
+        cm = num(p.get("clear_med_m"))
+        if cm is not None:
+            if wn is not None:
+                e7n.setdefault(g, []).append(cm - wn)
+            if wf is not None:
+                e7f.setdefault(g, []).append(cm - wf)
+                from firelane.seg.classify import CLEAR_M
+                cell = f"{'거둔다' if cm < CLEAR_M else '안 거둔다'}·실제 {'좁다' if wf < CLEAR_M else '넓다'}"
+                t7.setdefault(g, {}).setdefault(cell, 0)
+                t7[g][cell] += 1
         idx = p.get("width_min_sample_idx")
         rows_s = samples_by.get(p["seg_id"], [])        # 표본도 seg_uid 로 찾은 구간의 현재 seg_id 로 본다
         if ns is not None and idx is not None and 0 <= int(idx) < len(rows_s):
@@ -259,6 +278,19 @@ def score(rows: list[dict], samples_by: dict[str, list[dict]], filled: list[dict
     for name, e in (("Q1", e1), ("Q2", e2), ("Q3", e3)):
         res[name] = {g: _err(v) for g, v in sorted(e.items())}
         res[name]["전체"] = _err([x for v in e.values() for x in v])
+    from firelane.seg.classify import CLEAR_M as _CM
+    live = 0
+    for p in rows:
+        try:
+            live += 1 if was_clear_before_median(p) else 0
+        except (KeyError, TypeError):
+            pass          # 합성 입력 등 칸이 모자라면 센 것에서 뺀다 — 모르는 것을 0 이나 1 로 안 센다
+    res["Q7"] = {"문턱 CLEAR_M": _CM, "지금 규칙 [10] 이 거두는 구간 수": live,
+                 "clear_med_m − 최협부": {g: _err(v) for g, v in sorted(e7n.items())} | {"전체": _err([x for v in e7n.values() for x in v])},
+                 "clear_med_m − 전폭": {g: _err(v) for g, v in sorted(e7f.items())} | {"전체": _err([x for v in e7f.values() for x in v])},
+                 "width_max_m − 전폭(규칙 [11] 의 윗수 · Q8)": {g: _err(v) for g, v in sorted(e8.items())} | {"전체": _err([x for v in e8.values() for x in v])},
+                 "거둠 × 실제(전폭)": {g: dict(sorted(t.items())) for g, t in sorted(t7.items())},
+                 "읽는 법": "오차 중앙이 0 에서 멀면 규칙 [10] 의 입력이 실제와 어긋난다. 2×2 에서 「거둔다·실제 넓다」가 많으면 멀쩡한 길을 거두고 「안 거둔다·실제 좁다」가 많으면 좁은 길을 놓친다."}
     from scipy.stats import kruskal, mannwhitneyu
 
     ctrl, a_chk = e1.get("대조군", []), e1.get("A 확인", [])

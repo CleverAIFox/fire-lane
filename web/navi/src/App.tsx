@@ -51,13 +51,12 @@ import { TopBar } from "./ui/TopBar";
 import { MapControls } from "./ui/MapControls";
 import { RemainPill } from "./ui/RemainPill";
 import { StatusCard } from "./ui/StatusCard";
-import { Legend } from "./ui/Legend";
 import { readHandoff, routeOf } from "./domain/handoff";
 import { PlanHeader, TimeBox } from "./ui/Sheet";
 import { WaitPanel } from "./ui/WaitPanel";
 import { routeOption } from "./ui/routeOption";
 import { Center, SMOKE_CSS, shell, toast, vehChip } from "./ui/appShell";
-import { BottleneckPanel, DevBar, RouteBrief, ShareChip, prefetch } from "./ui/deferred";
+import { BottleneckPanel, DemoStrip, DevBar, Legend, RouteBrief, ShareChip, prefetch } from "./ui/deferred";
 import { Truck } from "./ui/icons";
 import { C, hhmm, hhmmss } from "./ui/tokens";
 import { routeHazards } from "./domain/context";
@@ -126,9 +125,14 @@ export default function App() {
   //   설정자는 안정적이라 이 효과가 한 번만 돌고, 억제를 안 써도 된다 —
   //   억제는 검사를 끄는 것이고 끈 이유는 영영 안 지워진다(§suppress).
   const setPosMode = n.setPosMode;
+  const setDemo = n.setDemo;
+  const demoBoot = useRef(false);
   useEffect(() => {
-    if (hand.demo) setPosMode("route");
-  }, [hand.demo, setPosMode]);
+    if (!hand.demo) return;
+    setPosMode("route");
+    // ★ 2026-11-12 (§713). `?demo=1` 은 **시연을 켠다**(GPS 와 무관) — 종전에는 위치원 기본값만 바꿨고 ▶ 는 `?dev=1` 이 있어야 떴다. 한 번만(단계가 바뀔 때마다 다시 켜면 「끝내기」가 안 먹는다).
+    if (!demoBoot.current) { demoBoot.current = true; setDemo(true); }
+  }, [hand.demo, setPosMode, setDemo]);
 
   const spec = fleet.spec ?? n.data?.spec ?? EMPTY_SPEC;
   // ★ 2026-09-28 (§279-4). `?? {}` 가 매 렌더 **새 객체**를 만들어 아래 두
@@ -487,7 +491,7 @@ export default function App() {
                        onZoomIn={() => setCmd((c) => ({ n: (c?.n ?? 0) + 1, kind: "in" }))}
                        onZoomOut={() => setCmd((c) => ({ n: (c?.n ?? 0) + 1, kind: "out" }))}
                        onLayers={() => setTint((x) => !x)} layersOn={tint} />
-          <Legend style={style} open={tint} onToggle={() => setTint(!tint)} />
+          <Suspense fallback={null}><Legend style={style} open={tint} onToggle={() => setTint(!tint)} /></Suspense>
           {!st.noRemain && <RemainPill sec={hud.remainSec} m={hud.remainM} blank={!!st.blankRemain} />}
           {statusKey === "reroute" && (
             <StatusCard chip="경로 이탈 감지" title="새 경로를 찾는 중"
@@ -516,6 +520,10 @@ export default function App() {
       {s.screen === "wait" && n.noRoute && (
         <div style={toast}>{vehicleKind} · 요구 폭 {need.toFixed(1)}m 를 만족하는 경로가 없다 — 관제가 다른 접근 지점을 정해야 한다</div>
       )}
+
+      <Suspense fallback={null}><DemoStrip phase={n.phase} gps={n.gpsState} demo={n.demo} simSpeed={n.simSpeed}
+                                           setSimSpeed={n.setSimSpeed} setDemo={n.setDemo} reset={reset} origin={n.origin?.point}
+                                           refocus={(at) => { setFirstPerson(true); setCmd((c) => ({ n: (c?.n ?? 0) + 1, kind: "focus", at })); }} /></Suspense>
 
       {dev && (
         <Suspense fallback={null}><DevBar

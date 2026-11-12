@@ -143,7 +143,9 @@ EXTERNAL = 0
 #:   (RouteBrief · BottleneckPanel · ShareChip · DevBar). 165커밋 사이에 주행 화면 부품이
 #:   `App.tsx` 의 정적 import 로 전부 진입 청크에 들어와 128KB 로 터졌고, 그것을 되돌린 것이다.
 #:   130,560 → 117,152 바이트. 여유 13KB.
-ENTRY_KB = 114
+# ★ 2026-11-12 (DECISIONS §710). 114 → **111.** 조이는 쪽이다 — CI 의 배포 · dry 가 111KB 로 쟀고 로컬은 **빌드를 안 해서** 못 쟀다(아래 「안 태운다」 사유 —
+#   빌드본이 있어야 재진다). `npm run build` 뒤 `--build` 가 111 을 댄다.
+ENTRY_KB = 111
 
 #: ★ `ENTRY_KB` 는 **안 태운다.** `tools/ratchet.py` 의 규약은 「어디서나 잴 수 있는
 #:   수」를 전제하는데, 진입 청크는 **빌드본이 있어야** 재진다. 빌드본이 없는 기계
@@ -295,7 +297,7 @@ def check(build: bool) -> list[str]:
                 bad.append(f"진입 청크가 {kb}KB 로 늘었다 (래칫 {ENTRY_KB}KB)\n"
                            "       **4G 첫 진입 시간이 곧 출동 시각이다**")
             elif kb < ENTRY_KB:
-                bad.append(f"진입 청크가 {kb}KB 로 줄었다 — `ratchet.py --write` 로 조여라")
+                bad.append(f"진입 청크가 {kb}KB 로 줄었다 — 이 파일의 `ENTRY_KB` 를 {kb} 로 **손으로** 내린다(`ratchet.py --write` 는 안 받는다 — 빌드본이 있어야 재져서 `RATCHETS` 에 안 태웠다)")
         bad += worker_faults()
     return bad
 
