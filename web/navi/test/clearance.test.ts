@@ -334,7 +334,7 @@ test("경로 위 경고 — 실제 발행물의 경로에서 병목 패널이 �
 // ── 6. 경로 카드를 줄인다 — 폭 모름이면 여유를 안 쓴다 · 앞서 알릴 구간의 정의 하나 · 카드는 네 줄 + 접힘 ──────
 import { renderToStaticMarkup } from "react-dom/server";
 import { createElement } from "react";
-import { isHeadsUp } from "../src/domain/compare";
+import { isHeadsUp, riskKind } from "../src/domain/compare";
 import { Details, RouteBrief } from "../src/ui/RouteCompare";
 import type { RouteOption } from "../src/ui/RouteCompare";
 
@@ -393,4 +393,15 @@ test("경로 카드 — 같은 경로면 카드 하나이고 비교 줄이 없�
 test("펼친 쪽에는 접힌 것이 전부 있다 — 구간 목록 · 규칙 경고 · 경로 주변 · 설명(지운 것이 아니다)", () => {
   const h = renderToStaticMarkup(createElement(Details, { o: opt({}) }));
   for (const t of ["RISK구간", "외 3곳", "RULES요약", "AROUND주변", "NOTE문장"]) ok(h.includes(t), `${t} 가 펼침에 없다`);
+});
+
+test("riskKind — 구간 하나의 위험 종류 · 폭 모름이면 여유가 없다 · 위험이 아니면 null (riskList 와 병목 패널이 같이 쓴다)", () => {
+  ok(riskKind({ verdict: "blocked", width_min_m: 1 }, NEED)?.kind === "blocked", "blocked");
+  const nc = riskKind({ verdict: "needs_cv", width_min_m: NEED - 0.4 }, NEED);
+  ok(nc?.kind === "needs_cv" && nc.marginM !== null && Math.abs(nc.marginM + 0.4) < 1e-9, "needs_cv 는 여유를 든다");
+  const u = riskKind({ verdict: "unknown", width_min_m: NEED + 2.4 }, NEED);
+  ok(u?.kind === "unknown" && u.marginM === null, "폭 모름인데 여유가 있다");
+  ok(riskKind({ verdict: "clear", width_min_m: NEED + 0.2 }, NEED)?.kind === "tight", "여유 부족");
+  ok(riskKind({ verdict: "clear", width_min_m: NEED + 0.9 }, NEED) === null, "넉넉한 초록이 위험으로 올랐다");
+  ok(riskKind({ verdict: "clear", width_min_m: null }, NEED) === null, "폭 값 없는 초록을 위험으로 올렸다");
 });

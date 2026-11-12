@@ -157,3 +157,58 @@ def test_the_render_shows_documents_and_files_apart_and_rc_follows(monkeypatch, 
     assert O.main(["--new"]) == 1
     monkeypatch.setattr(O, "document_unmet", lambda: {})
     assert O.main(["--new"]) == 0
+
+
+# ── 푸시 범위 ∪ 작업 트리 (DECISIONS §705 · `#216` 한계 ②) ─────────────────────────────
+
+def _repo(tmp_path):
+    import subprocess
+
+    def git(*a):
+        return subprocess.run(["git", *a], cwd=tmp_path, capture_output=True, text=True, check=True, timeout=60).stdout.strip()
+
+    git("init", "-q")
+    git("config", "user.email", "t@t")
+    git("config", "user.name", "t")
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "MASTER.md").write_text("# 제목\n", encoding="utf-8")
+    git("add", "-A")
+    git("commit", "-q", "-m", "base")
+    return git, git("rev-parse", "HEAD")
+
+
+def test_a_new_file_committed_inside_the_push_range_is_still_new(tmp_path):
+    """★ 오늘 두 번 물렸다 — 새 파일을 만들자마자 **커밋**하면 옛 `--new`(추적 안 된 것 · 스테이징한 것만)는 그 파일을 못 봤다."""
+    git, base = _repo(tmp_path)
+    (tmp_path / "tools").mkdir()
+    (tmp_path / "tools" / "zz_committed.py").write_text("x = 1\n", encoding="utf-8")
+    git("add", "-A")
+    git("commit", "-q", "-m", "새 파일을 바로 커밋")
+    assert O.new_files(tmp_path, base=base) == ["tools/zz_committed.py"], "커밋된 새 파일을 못 잡았다"
+    assert O.new_files(tmp_path, base="HEAD") == [], "범위가 비었는데 새 파일이 있다 — 작업 트리만 보는 옛 동작이 깨졌다"
+
+
+def test_untracked_and_committed_new_files_are_both_seen_and_a_deleted_one_is_not(tmp_path):
+    git, base = _repo(tmp_path)
+    (tmp_path / "a.py").write_text("1\n", encoding="utf-8")
+    (tmp_path / "gone.py").write_text("1\n", encoding="utf-8")
+    git("add", "-A")
+    git("commit", "-q", "-m", "둘")
+    (tmp_path / "gone.py").unlink()                       # 범위에서 더해졌다가 지금은 없다 — 의무를 물을 파일이 아니다
+    (tmp_path / "b.py").write_text("2\n", encoding="utf-8")   # 추적 안 됨
+    assert O.new_files(tmp_path, base=base) == ["a.py", "b.py"]
+
+
+def test_a_heading_added_in_a_commit_inside_the_range_is_found(tmp_path):
+    git, base = _repo(tmp_path)
+    (tmp_path / "docs" / "MASTER.md").write_text("# 제목\n\n## 99. 새 절\n", encoding="utf-8")
+    git("add", "-A")
+    git("commit", "-q", "-m", "절 신설을 바로 커밋")
+    found = O.added_headings(O._diff_head(tmp_path, base))
+    assert found == {"docs/MASTER.md": {3}}, f"범위 안 커밋의 새 절을 못 잡았다: {found}"
+    assert O.added_headings(O._diff_head(tmp_path, "HEAD")) == {}, "범위가 비었는데 새 절이 잡혔다"
+
+
+def test_the_push_base_is_none_without_upstream_or_origin_dev(tmp_path):
+    _repo(tmp_path)
+    assert O.push_base(tmp_path) is None, "기준을 못 읽는데 값을 냈다 — 그때는 작업 트리만 본다"
