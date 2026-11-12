@@ -63,6 +63,12 @@ export interface StatusSpec {
   tone: Tone;
   /** 배지 윗줄 작은 태그 */
   tag: string;
+  /**
+   * `tag` 가 **상태가 아니라 단추 문구**인가 — 「다른 경로로 바꾼다」(03 의 안전 경로 주행에서 「빠른 경로 안내」).
+   * ★ 2026-11-12 (DECISIONS §724 · B1). 단추가 안 달리면(운전석에는 경로를 고르는 손이 없다 — §400) 이 문구를 **상태 칩으로 그리면 안 된다**:
+   *   초록 「안전 경로 안내중」 옆에 노란 「빠른 경로 안내」 가 서서 **운전자가 가장 먼저 보는 줄에서 어느 경로인지 어긋났다.**
+   */
+  switchTag?: true;
   /** 배지 아랫줄 큰 글씨 */
   label: string;
   /** 비면 회전 안내를 제목으로 쓴다 */
@@ -87,9 +93,9 @@ export interface StatusSpec {
 }
 
 export const STATUS: Record<StatusKey, StatusSpec> = {
-  safe: { wf: ["03", "03A"], tone: "green", tag: "빠른 경로 안내",
+  safe: { wf: ["03", "03A"], tone: "green", tag: "빠른 경로 안내", switchTag: true,
     label: "안전 경로 안내중", eta: "value", route: "solid" },
-  fast: { wf: ["03B"], tone: "yellow", tag: "안전 경로 안내",
+  fast: { wf: ["03B"], tone: "yellow", tag: "안전 경로 안내", switchTag: true,
     label: "빠른 경로 안내중", eta: "value", route: "solid" },
   approach: { wf: ["05"], tone: "green", tag: "안전 경로", label: "목적지 도착",
     title: "최종 접근 지점", sub: "차량 진입 가능 구간 종료", icon: "P",

@@ -7,6 +7,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { ok, test } from "./harness";
 import { BottleneckPanel, TARGET, type BottleneckData } from "../src/ui/BottleneckPanel";
 import { MapControls } from "../src/ui/MapControls";
+import { TopBar } from "../src/ui/TopBar";
+import { STATUS, type StatusKey } from "../src/domain/status";
 
 const base: BottleneckData = {
   kind: "needs_cv", more: 3, segUid: "s1", segLabel: "밤실로4번길 1-11", aheadM: 323.4, widthM: 3.4, requiredM: 3.0,
@@ -66,4 +68,36 @@ test("달리는 중이면 「자세히」 단추가 막혀 있다(disabled) · �
   ok(/<button[^>]*disabled=""[^>]*>자세히</.test(moving), "달리는 중인데 자세히가 안 막혔다");
   ok(!/<button[^>]*disabled=""[^>]*>자세히</.test(stopped), "서 있는데 자세히가 막혔다");
   ok(!moving.includes("측정 신뢰도"), "달리는 중에 상세가 그려졌다");
+});
+
+
+// ── 상단 배지: 상태와 단추 문구가 어긋나지 않는다 (DECISIONS §724 · B1) ─────────────────────────
+const bar = (key: StatusKey, over: Record<string, unknown> = {}) => renderToStaticMarkup(createElement(TopBar, {
+  spec: STATUS[key], vars: {}, vehicleKind: "소방차", turnKind: null, nextDistM: null, roadName: null, nowText: "12:00", etaText: null, incidentText: null, ...over }));
+
+test("안전 경로 주행의 배지에는 「빠른 경로」 문구가 없다 — 경로를 고르는 손이 없으면 단추 문구를 상태 칩으로 안 그린다", () => {
+  const h = bar("safe");
+  ok(h.includes("안전 경로 안내중"), "상태 글씨가 없다");
+  ok(!h.includes("빠른 경로"), "안전 경로 안내중인데 배지가 「빠른 경로」 를 말한다 — 운전자가 가장 먼저 보는 줄에서 경로가 어긋난다");
+});
+
+test("빠른 경로 주행의 배지에는 「안전 경로」 문구가 없다", () => {
+  const h = bar("fast");
+  ok(h.includes("빠른 경로 안내중"), "상태 글씨가 없다");
+  ok(!h.includes("안전 경로"), "빠른 경로 안내중인데 배지가 「안전 경로」 를 말한다");
+});
+
+test("경로를 바꿀 손이 있으면(onSwitchRoute) 단추 문구가 단추로 그려진다 — 사라진 것이 아니다", () => {
+  const h = bar("safe", { onSwitchRoute: () => {} });
+  ok(/<button[^>]*>➤ 빠른 경로 안내<\/button>/.test(h), "단추가 없다");
+});
+
+test("단추 문구(switchTag)는 safe · fast 둘뿐이고 그 문구는 **상태와 반대 경로**다 — 상태를 말하는 태그는 이 표식이 없다", () => {
+  const keys = (Object.keys(STATUS) as StatusKey[]).filter((k) => STATUS[k].switchTag);
+  ok(keys.length === 2 && keys.includes("safe") && keys.includes("fast"), `switchTag: ${keys.join(",")}`);
+  for (const k of keys) {
+    const route = (t: string) => (t.includes("안전") ? "안전" : t.includes("빠른") ? "빠른" : "?");
+    ok(route(STATUS[k].tag) !== route(STATUS[k].label), `${k}: 단추 문구가 상태와 같은 경로다 — 단추는 **다른** 경로를 말해야 한다`);
+  }
+  ok(!bar("approach").includes("undefined") && bar("approach").includes("안전 경로"), "switchTag 가 아닌 상태의 태그(approach)는 그대로 그려져야 한다");
 });
