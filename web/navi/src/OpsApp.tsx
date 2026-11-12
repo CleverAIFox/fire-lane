@@ -58,21 +58,18 @@ import { MOTION_CSS } from "./ui/motion";
 import { useFleet } from "./app/useFleet";
 import { loadAll, loadHistory, type Bundle } from "./infra/dataSource";
 import { openLink, newId, type Link } from "./infra/opsLink";
-import {
-  HB_MS, OPS_EMPTY, asNaviMsg, opsAck, opsReduce, unitStale, type OpsState,
-} from "./domain/opsProtocol";
+import { HB_MS, OPS_EMPTY, asNaviMsg, opsAck, opsReduce, unitStale, type OpsState } from "./domain/opsProtocol";
 import { buildAdjacency, findRouteBetween, nearestNode, snapToEdge } from "./domain/graph";
 import { ruleSummary } from "./domain/rules";
 import { dispatchUrl as mkDispatchUrl } from "./domain/dispatch";
+import { sortUnits } from "./domain/unitBoard";
 import type { RouteMode } from "./domain/handoff";
 import { alternateAccess, reachableEdges, MAX_WALK_M } from "./domain/access";
 import { addressLines, asOfDate, preparePois, searchPois, type PoiHit } from "./domain/search";
 import { dataBase } from "./infra/dataBase";
 import { DISPATCH_FIXED_S, dispatchToArrivalSeconds, travelSeconds } from "./domain/speed";
 import { requiredWidth } from "./domain/vehicle";
-import {
-  CLEARANCE_BAND_ORDER, clearanceCounts, fmtClearance,
-} from "./domain/clearance";
+import { CLEARANCE_BAND_ORDER, clearanceCounts, fmtClearance } from "./domain/clearance";
 import { snap as snapOnce, prepare } from "./domain/snap";
 import { distM, type LngLat } from "./domain/geo";
 import type { GraphEdge, HistorySummary } from "./domain/types";
@@ -241,6 +238,7 @@ export default function OpsApp() {
   const selEdge: GraphEdge | null = seg ? edgeByUid.get(seg) ?? null : null;
 
   const units = useMemo(() => Object.values(ops.units), [ops.units]);
+  const board = useMemo(() => sortUnits(units, now), [units, now]);   // ★ 상황판만 상태 순서(`domain/unitBoard`) — `units` 는 지도에도 가므로 정렬 안 된 그대로(매초 새 배열이면 마커 효과가 매초 돈다)
   const need = spec ? requiredWidth(spec) : 3;
 
   if (fatal) return <Center>★ {fatal}</Center>;
@@ -562,7 +560,7 @@ export default function OpsApp() {
             {units.length === 0 && (
               <div style={{ fontSize: 12, color: D.sub }}>연결된 내비가 없다 — 「출동 지령」 으로 연다.</div>
             )}
-            {units.map((u) => {
+            {board.map((u) => {
               const stale = unitStale(u, now);
               const st = stale ? "끊김" : u.last.remainM != null ? "출동 중" : "대기";
               const tone = stale ? D.danger : u.last.remainM != null ? D.ok : D.sub;

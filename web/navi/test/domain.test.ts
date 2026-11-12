@@ -11,6 +11,8 @@ import {
   unitStale, UNIT_STALE_MS, type Unit,
 } from "../src/domain/opsProtocol";
 import { distM } from "../src/domain/geo";
+import opsAppSrc from "../src/OpsApp.tsx?raw";
+import { sortUnits, unitRank, unitStatus } from "../src/domain/unitBoard";
 import { choOf, isChoQuery, preparePois, searchPois, type Poi } from "../src/domain/search";
 
 const { graph, spec } = FL;
@@ -264,4 +266,44 @@ test("회색 사유 — GRAY_REASON 과 web/config.js 의 reason 키 집합이 �
   ok(cfg.length > 5, `config.js 에서 사유 키를 못 읽었다 — ${cfg.join(",")}`);
   ok(JSON.stringify(cfg) === JSON.stringify(gr),
     `사유 키 집합이 어긋난다 — config.js ${cfg.join(",")} / GRAY_REASON ${gr.join(",")}`);
+});
+
+
+// ── 관제 상황판 순서 (DECISIONS §726 · B3) ─────────────────────────────────────────────────
+/** 합성 차량 — `ago` 초 전에 마지막으로 들었고(5초 넘으면 끊김) `remainM` 이 있으면 나가 있는 차 */
+const NOW = 1_000_000;
+const unit = (name: string, ago: number, remainM: number | null): Unit => ({
+  unit: name, heardAt: NOW - ago * 1000, route: null, routeRev: 0,
+  last: { t: "state", unit: name, at: NOW, vehicle: name, station: null, incident: null, pos: null, brg: 0, status: "safe", title: "", remainM, etaText: null, routeRev: 0 },
+});
+
+test("상황판 — 연결된 순서가 끊김 · 출동 중 · 대기여도 출동 중이 맨 위다(끊김은 색이 할 일이지 순서가 아니다)", () => {
+  const lostIdle = unit("A-끊김", 30, null), live = unit("B-출동", 1, 1800), idle = unit("C-대기", 1, null);
+  const board = sortUnits([lostIdle, live, idle], NOW);
+  ok(board.map((u) => u.unit).join() === "B-출동,C-대기,A-끊김", `순서 ${board.map((u) => u.unit).join()}`);
+});
+
+test("상황판 — 끊겼지만 나가 있던 차는 대기보다 위다(길을 잃었을 수 있다) · 나가 있지 않던 끊김은 맨 아래다", () => {
+  const lostWas = unit("A", 30, 900), lostIdle = unit("B", 30, null), idle = unit("C", 1, null), live = unit("D", 1, 500);
+  ok([lostWas, lostIdle, idle, live].map((u) => unitRank(u, NOW)).join() === "1,3,2,0", "순위표가 다르다");
+  ok(sortUnits([lostIdle, idle, lostWas, live], NOW).map((u) => u.unit).join() === "D,A,C,B", "정렬이 순위표와 다르다");
+});
+
+test("상황판 — 같은 순위 안은 이름순이라 남은 거리가 변해도 행이 안 뒤바뀐다", () => {
+  const a = unit("Z", 1, 100), b = unit("A", 1, 9000);
+  ok(sortUnits([a, b], NOW).map((u) => u.unit).join() === "A,Z", "이름순이 아니다");
+  const a2 = unit("Z", 1, 9999), b2 = unit("A", 1, 50);         // 남은 거리가 뒤집혀도
+  ok(sortUnits([a2, b2], NOW).map((u) => u.unit).join() === "A,Z", "거리에 따라 행이 뒤바뀐다 — 누를 수가 없다");
+});
+
+test("상황판 — 입력을 안 바꾼다 · 끊김 판정은 시계에 따른다", () => {
+  const xs = [unit("A", 30, null), unit("B", 1, 1)]; const before = xs.map((u) => u.unit).join();
+  sortUnits(xs, NOW); ok(xs.map((u) => u.unit).join() === before, "입력 배열이 바뀌었다");
+  ok(unitStatus(xs[1], NOW) === "dispatching" && unitStatus(xs[1], NOW + UNIT_STALE_MS + 1000) === "lost", "시계가 흘러도 끊김이 안 된다");
+});
+
+test("상황판 배선 — 차량 목록은 정렬된 board 로 그린다(되돌리면 연결 순서로 돌아가 끊김이 맨 위가 된다)", () => {
+  ok(/const board = useMemo\(\(\) => sortUnits\(units, now\)/.test(opsAppSrc), "OpsApp 이 sortUnits 로 board 를 안 만든다");
+  ok(/\{board\.map\(\(u\) => \{/.test(opsAppSrc), "상황판이 board 가 아니라 정렬 안 된 목록을 그린다");
+  ok(!/\{units\.map\(\(u\) => \{\s*const stale = unitStale/.test(opsAppSrc), "상황판 행이 옛 목록(units)으로 돌아갔다");
 });
