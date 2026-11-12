@@ -838,7 +838,6 @@ jobs:
         run: |
           cd web/navi
           npx playwright install --with-deps --only-shell chromium
-      # local-exempt: navi:smoke 브라우저 내려받기(헤드리스 크로미움)와 개발 서버 재시작 시험이라 훅 예산(30초) 밖이다 — 로컬에서는 `cd web/navi && npm run smoke` 로 사람이 돈다(DECISIONS §700)
       - name: ★ 브라우저 스모크 — 두 화면이 뜨고 콘솔이 조용한가 (개발 서버 · 빌드본 · 재최적화)
         run: |
           cd web/navi

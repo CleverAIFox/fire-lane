@@ -48460,3 +48460,34 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 - **효과가 커진 점(적어 둔다).** 푸시 범위의 **모든** 새 파일이 의무 검사를 받는다 — 오늘치 열두 커밋의 새 파일(`BottleneckDetail` · `motion.ts` · `uidrive.py` · 스모크 · `glance.mjs` …)이 한 번에 대상이다. 지금은 전부 충족이다.
 
 **세 번째 막힘(사람 몫).** 도장 — `docseal stamp` 는 사람이 읽고 찍는다. 도장이 무효인 절의 이름은 `uv run python tools/docseal.py check --invalid-list` 가 댄다(이 절을 쓸 때 DECISIONS 220 · 407 · 671 · MASTER 11 · 11-2a · 22 · 23 · PLAN 1 이었다 — MASTER 22 는 이 판이 `motion.ts` 줄을 적어 다시 무효가 됐다).
+
+
+## 706. `contract-smoke` 를 `verify.sh` 에 등재한다 — 그리고 `§688`(`#216` 닫힘)이 못 본 네 번째 길을 한계에 더한다 (판정 불변)
+
+> 2026-11-12
+
+유병률  **1회** — `tests/test_guards.py::test_verify_covers_every_ci_job` 이 잡았다: 「CI 에 새 잡이 생겼다 — `contract-smoke`. `verify.sh` 에 같은 검사를 넣고 `NEEDS` 에 표식을 등재해라. 등재하지 않으면 그 잡은 로컬에서 재현되지 않는다」. <!--voice-ok 시험 실패 메시지 인용-->
+
+강제자  `tests/test_guards.py`(`NEEDS` 의 `contract-smoke` 표식 = `npm run -s smoke` — 주석이 아니라 `verify.sh` 가 **실제로 부르는 명령**) · `tools/gate_parity.py`(`navi:smoke` 가 로컬에도 있다 — 종전의 `# local-exempt` 를 지웠다 · 남겨 두면 「로컬이 이미 돈다」로 운다).
+        **하위 둘**이 이 칸을 물려받는다
+
+### 706-1. 그대로 넣을 수 있었다 — 조건은 하나다
+- **`verify.sh` 의 새 단계 「내비 브라우저 스모크」** — `npm run -s build` 다음 `CI=1 npm run -s smoke`. CI 의 `contract-smoke` 와 같은 명령이고 같은 여섯 시험이다(개발 서버 · 빌드본 · 재최적화 되풀이 · 「자세히」 속도 잠금). 느슨하게 고치지 않았다 — 표식만 등재하고 실행은 조건부로 두는 길(주석에 이름만 적는 것)은 그 시험의 과녁(「로컬에서 재현되지 않는다」)과 정반대다.
+- **걸리는 시간은 「15초」가 아니라 1분 30초 남짓이다**(`verify.sh --only` 로 실측 — 빌드 · 개발 서버 둘 · 시험 여섯). `§700` 이 적은 「15초」는 첫 추정이었다. 전수 `verify.sh` 에서는 한 단계일 뿐이다.
+- **조건 = 브라우저가 받아져 있는가.** 실제로 **띄워 보는 탐침**으로 가른다(`chromium.launch()` 를 한 번 해 본다). `chromium.executablePath()` 가 아니다 — 헤드리스 셸만 받은 기계(이 기계)에서 그 경로는 거짓이다(파일이 없는데 시험은 돈다).
+- **브라우저가 없는 기계에서는** `note`(생략)다 — 사유와 **설치 명령**(`cd web/navi && npx playwright install --only-shell chromium`)을 같이 찍는다. `note_hard`(실패)가 아니다: 같은 검사를 CI 의 `contract-smoke` 가 돌아 **증거가 다른 데서 나온다**는 것이 `note` 와 `note_hard` 를 가르는 규칙이다(`verify.sh` 머리말). 두 갈래 모두 실행해 확인했다 — 브라우저가 있을 때 `OK`(`6 passed`), 없을 때(`PLAYWRIGHT_BROWSERS_PATH` 를 빈 곳으로) `생략` + 사유. `npm` 이 없는 갈래에도 한 행을 더했다(`evidence_check` 가 이름마다 한 행을 센다).
+- `scope` 는 `web/navi/*` 다(빌드본 시험이 `tools/serve.py` 로 배포 모양을 흉내 내지만 `scope` 에 적으면 `test_tools_are_wired` 가 `serve` 를 「불리는 도구」로 세어 면제 목록과 부딪힌다 — 그래서 안 적었다. `serve.py` 만 바뀌면 `--since` 가 이 단계를 건너뛴다).
+
+### 706-2. `gatefast` 의 `LAYERS` · `verify.sh` 의 `NEEDS` — 서로를 아는가
+**모른다.** 같은 질문(「CI 의 이 검사가 로컬 어디서 도나」)을 세 곳이 따로 적는다:
+
+| 목록 | 무엇을 맞대나 | 키 | `verify.sh` 를 아나 |
+| --- | --- | --- | --- |
+| `tools/gatefast.py` `LAYERS` | 훅(`pre-push.gates`) · `pushready` · 축 · CI — 그 **세 층** | (검사기, 인자) | **모른다** — 입력이 `pre-push.gates` 와 워크플로뿐이다 |
+| `tools/gate_parity.py` | `verify.sh` ↔ 워크플로 양방향 | 검사기(인자 무시) | **안다**(이것이 그 일이다) — 그러나 `LAYERS` · 훅은 모른다 |
+| `tests/test_guards.py` `NEEDS` | 잡마다 `verify.sh` 에 **표식 한 줄**이 있는가 | 잡 이름 → 부분 문자열 하나 | `verify.sh` 만 안다 — 위 둘을 모르고, 표식이 잡 안의 명령인지도 안 본다(부분 문자열이라 주석에 있어도 통과한다) |
+
+- `gatefast` 는 `gate_parity.keys`(**열쇠 함수**)를 가져다 쓴다 — **검사기의 정체를 가르는 한 곳**은 공유한다. 그러나 목록(선언)은 셋이 다르다.
+- **`§688` 이 못 본 것.** `#216` 은 **세 층**(`pushready` < 훅 < CI)을 한 표로 맞댔다. 그런데 로컬에는 **네 번째 길**이 있다 — `tools/verify.sh`(사람이 전수로 돌리는 「CI 위생 로컬 고속 재현」). 이 길은 **푸시 경로에 없다**: 훅(`pre-push`)도 `pushready` 도 `verify.sh` 를 안 부른다. 그래서 「푸시해도 되는가」의 합집합(`§688`)에 이 길이 들지 않고, `verify.sh` 와 `LAYERS` 는 **어긋나도 아무도 모른다.** 오늘의 예: `navi:smoke` 는 `LAYERS` 에서 `ci`(CI 만)인데 `verify.sh` 에는 있다 — 둘 다 참인 말이지만 한 표가 아니다.
+- **`§688` 의 남은 한계에 더한다(9번째).** 9. 로컬의 네 번째 길 `verify.sh` 가 층 표(`LAYERS`)의 밖이다 — `LAYERS` 의 `ci` 가 「verify.sh 도 안 돈다」는 뜻이 아니다. `NEEDS` 는 잡당 표식 한 줄이라 **잡 안의 어느 검사가 로컬에서 빠졌는지** 못 가린다(그것은 `gate_parity` 가 검사기 단위로 가린다 — 두 시험이 같은 관심사를 다른 단위로 본다). `#216` 은 다시 열지 않았다.
+- **고칠 수 있나 — 크다. 적기만 한다.** 합치려면 (가) `LAYERS` 의 층에 `verify` 칸을 더하거나 (나) `NEEDS` 를 `gate_parity` 가 도출한 표로 바꾸거나 둘 중 하나인데, 둘 다 세 도구의 선언을 건드리고 `gate_parity` 의 면제(`# ci-exempt` · `# local-exempt` 열다섯)와 `LAYERS` 의 사유 문자열을 한 모델로 합쳐야 한다. 한 배치 몫이고 지금 하면 푸시 직전에 선언 셋을 동시에 바꾸게 된다.

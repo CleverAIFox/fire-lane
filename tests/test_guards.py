@@ -2251,7 +2251,7 @@ def test_verify_covers_every_ci_job():
     # 잡마다 "이것이 로컬에도 있어야 한다" 는 표식
     NEEDS = {  # ★ 쪼갠 뒤 `contract-shared` 는 **집계**(DECISIONS §633) — 실제 검사는 `-fast` · `-heavy` · `-tests`. 쪼개기 전엔 `j in jobs` 가 거짓이라 안 문다
         "contract-strict": "owned_paths.py", "contract-shared": "pytest",
-        "contract-fast": "doc_fsck.py", "contract-heavy": "ratchet.py", "contract-tests": "pytest",
+        "contract-fast": "doc_fsck.py", "contract-heavy": "ratchet.py", "contract-tests": "pytest", "contract-smoke": "npm run -s smoke",  # smoke: DECISIONS §706 — 표식은 verify.sh 가 실제로 부르는 **명령**이다(주석에 적은 이름이 아니다)
     }
     miss = [f"{j} → verify.sh 에 `{k}` 가 없다"
             for j, k in NEEDS.items() if j in jobs and k not in vfy]
