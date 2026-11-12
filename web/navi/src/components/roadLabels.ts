@@ -26,6 +26,10 @@ export const CHAR_PX = 11.5;
 export const MIN_PIECE_PX = 48;
 /** 움직임이 멎은 뒤 다시 고르는 간격(ms). 주행 중 카메라가 계속 움직여도 이 간격으로만 고른다. */
 export const UPDATE_MS = 700;
+/** 움직임이 멈춘 뒤 마지막 한 번까지의 간격(ms) */
+export const SETTLE_MS = 150;
+/** 카메라가 이만큼(화면 px) · 줌 0.25 · 방위 20° · 기울기 10° 움직여야 다시 고른다 — 조금 움직인 것은 옛 점이 그대로 맞다 */
+export const MOVE_PX = 80;
 
 /**
  * `lbl-road` 층 — **점 · 가로 · 아이콘 층 밑.** (DECISIONS §711 · PLAN #73)
@@ -132,18 +136,57 @@ export function labelCollection(picks: RoadLabelPick[], unproject: (x: number, y
   };
 }
 
+/** 타이머 쌍 — 시험이 가짜를 꽂는다 */
+export interface Timers { set(f: () => void, ms: number): unknown; clear(h: unknown): void }
+const REAL: Timers = { set: (f, ms) => setTimeout(f, ms), clear: (h) => clearTimeout(h as ReturnType<typeof setTimeout>) };
+
+/**
+ * 갱신 스케줄러 — **움직이는 동안 `throttleMs` 에 한 번 + 멈춘 뒤 `settleMs` 에 한 번.** 순수하다(타이머를 꽂는다). (DECISIONS §723 · A2 렉)
+ *
+ * ★ 종전에는 `moveend` 가 `update` 를 **바로** 불렀다. MapLibre 의 `jumpTo` 는 호출마다 `moveend` 를 동기로 내고 내비의 카메라 추종 루프가 매 프레임 `jumpTo` 를 부르므로
+ *   **매 프레임** 전 타일 `querySourceFeatures` + 투영이 돌았다(프레임 두 배 — 대기 타이머도 안 지웠다). 이벤트는 전부 `touch()` 로 오고, 갱신은 여기서만 정해진다.
+ * ★ `touch` 가 몇 번 오든 `throttleMs` 안에 `run` 은 한 번이다(첫 `touch` 가 시계를 건다 — 이후 `touch` 가 시계를 안 민다). 멈추면(`settleMs` 동안 `touch` 없음) 마지막 자리로 한 번 더 돈다.
+ */
+export function makeScheduler(run: () => void, throttleMs: number, settleMs: number, t: Timers = REAL) {
+  let a: unknown, b: unknown;
+  const fire = () => {
+    if (a !== undefined) { t.clear(a); a = undefined; }
+    if (b !== undefined) { t.clear(b); b = undefined; }
+    run();
+  };
+  return {
+    touch() { if (a === undefined) a = t.set(fire, throttleMs); if (b !== undefined) t.clear(b); b = t.set(fire, settleMs); },
+    now: fire,
+    cancel() { if (a !== undefined) t.clear(a); if (b !== undefined) t.clear(b); a = b = undefined; },
+  };
+}
+
 /** 지도에 붙인다 — 소스와 `lbl-road` 층을 **아이콘 층 앞에** 넣고, 움직임이 있을 때마다(`UPDATE_MS` 간격으로) 다시 고른다. 떼는 함수를 돌려준다. 아이콘 층이 이미 올라 있어야 한다. */
-export function attachRoadLabels(m: MapLibreMap, minZoom: number): () => void {
-  let timer: ReturnType<typeof setTimeout> | undefined;
+export function attachRoadLabels(m: MapLibreMap, minZoom: number, timers: Timers = REAL): () => void {
   const empty: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
   m.addSource(ROAD_LABEL_SRC, { type: "geojson", data: empty });
   for (const L of roadLabelLayers()) m.addLayer(L, m.getLayer("hydrant") ? "hydrant" : undefined);   // 아이콘 층 **앞** — 아이콘이 먼저 자리를 잡는다
+  // ★ 다시 고르는 것은 **비싸다**(전 타일 `querySourceFeatures` + 투영 + `setData` 가 워커 재타일링과 심볼 재배치를 부른다 — DECISIONS §723). 그래서 셋을 건너뛴다:
+  //   ① 카메라가 `MOVE_PX` · 줌 0.25 · 방위 20° · 기울기 10° 를 안 넘었고 데이터(구간 타일)가 안 늘었으면 안 고른다 — 주행 중 한 프레임의 움직임은 몇 px 이다
+  //   ② 골라 보니 이름 묶음이 전과 같고 옛 점이 아직 화면 안이면 `setData` 를 안 한다(옛 점이 지리 좌표라 그대로 맞다)
+  let dirty = true, last: { c: [number, number]; px: [number, number]; z: number; b: number; p: number; w: number; h: number } | undefined;
+  let prev: GeoJSON.Feature<GeoJSON.Point>[] = [];
+  const moved = () => {
+    if (dirty || !last) return true;
+    const cv = m.getCanvas(), q = m.project(last.c);
+    const db = Math.abs(((m.getBearing() - last.b + 540) % 360) - 180);       // 방위 차(0~180°) — 360° 를 건너는 것도 맞다
+    return Math.hypot(q.x - last.px[0], q.y - last.px[1]) >= MOVE_PX || Math.abs(m.getZoom() - last.z) >= 0.25
+      || db >= 20 || Math.abs(m.getPitch() - last.p) >= 10 || cv.clientWidth !== last.w || cv.clientHeight !== last.h;
+  };
   const update = () => {
-    timer = undefined;
     const src = m.getSource(ROAD_LABEL_SRC) as GeoJSONSource | undefined;
     if (!src) return;
-    if (m.getZoom() < minZoom) { src.setData(empty); return; }
-    const c = m.getCanvas();
+    if (!moved()) return;
+    const cc = m.getCenter(), cp = m.project([cc.lng, cc.lat]), cv = m.getCanvas();
+    last = { c: [cc.lng, cc.lat], px: [cp.x, cp.y], z: m.getZoom(), b: m.getBearing(), p: m.getPitch(), w: cv.clientWidth, h: cv.clientHeight };
+    dirty = false;
+    if (m.getZoom() < minZoom) { if (prev.length) { src.setData(empty); prev = []; } return; }
+    const c = cv;
     const seen = new Set<string>();
     const pieces: RoadPiece[] = [];
     for (const f of m.querySourceFeatures("segments", { filter: ["has", "road_name"] })) {
@@ -156,14 +199,21 @@ export function attachRoadLabels(m: MapLibreMap, minZoom: number): () => void {
         pieces.push({ name: String(f.properties?.road_name), px: ln.map((p) => { const q = m.project(p as [number, number]); return [q.x, q.y] as Pt; }) });
       }
     }
-    src.setData(labelCollection(pickRoadLabels(pieces, c.clientWidth, c.clientHeight),
-                                (x, y) => { const l = m.unproject([x, y]); return [l.lng, l.lat]; }));
+    const fc = labelCollection(pickRoadLabels(pieces, c.clientWidth, c.clientHeight), (x, y) => { const l = m.unproject([x, y]); return [l.lng, l.lat]; });
+    const feats = fc.features as GeoJSON.Feature<GeoJSON.Point>[];
+    // ② 이름 묶음이 같고 옛 점이 전부 화면 안이면 그대로 둔다
+    const names = (a: GeoJSON.Feature[]) => a.map((f) => String(f.properties?.name)).sort().join("|");
+    const inView = prev.every((f) => { const q = m.project(f.geometry.coordinates as [number, number]); return q.x >= 4 && q.x <= c.clientWidth - 4 && q.y >= 9 && q.y <= c.clientHeight - 9; });
+    if (prev.length === feats.length && names(prev) === names(feats) && inView) return;
+    prev = feats;
+    src.setData(fc);
   };
-  const sched = () => { if (timer === undefined) timer = setTimeout(update, UPDATE_MS); };
-  const onData = (e: { sourceId?: string; isSourceLoaded?: boolean }) => { if (e.sourceId === "segments" && e.isSourceLoaded) sched(); };
-  m.on("move", sched);
-  m.on("moveend", update);
+  const sch = makeScheduler(update, UPDATE_MS, SETTLE_MS, timers);
+  const onData = (e: { sourceId?: string; isSourceLoaded?: boolean }) => { if (e.sourceId === "segments" && e.isSourceLoaded) { dirty = true; sch.touch(); } };
+  // ★ `moveend` 를 `update` 에 **바로** 안 건다 — 추종 루프의 `jumpTo` 는 호출마다 `moveend` 를 낸다(매 프레임). 전부 스케줄러로 간다.
+  m.on("move", sch.touch);
+  m.on("moveend", sch.touch);
   m.on("sourcedata", onData);
-  sched();
-  return () => { m.off("move", sched); m.off("moveend", update); m.off("sourcedata", onData); if (timer !== undefined) clearTimeout(timer); };
+  sch.touch();
+  return () => { m.off("move", sch.touch); m.off("moveend", sch.touch); m.off("sourcedata", onData); sch.cancel(); };
 }

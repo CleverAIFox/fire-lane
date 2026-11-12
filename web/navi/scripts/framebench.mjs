@@ -15,6 +15,8 @@
  * IN    FRAME_URL(기본 5173) · 시나리오 · 초
  * OUT   표준출력 한 줄(JSON) + 상위 함수 목록
  */
+/* global window, performance, PerformanceObserver, requestAnimationFrame, cancelAnimationFrame, setInterval, clearInterval --
+   `pg.evaluate` 안에서 도는 코드는 브라우저에서 돈다 */
 import { chromium } from "@playwright/test";
 
 const BASE = process.env.FRAME_URL ?? "http://127.0.0.1:5173/fire-lane/navi/";
