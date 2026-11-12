@@ -345,6 +345,15 @@ class WidthEngine:
         # 빠지므로(DECISIONS §597) 표본마다 입장이 달라 역전이 생긴다 — 도로 폭으로 끌어올린다.
         if A is not None and B is not None and B < A:
             B = A
+        # ★ 2026-11-12 (DECISIONS §709 · §714 · PLAN #53). **좁은 길에서 벽 사이가 노면보다 2m 넘게 벌어지면 그 B 를 버린다.**
+        #   판정 범위를 `keep.buffer(60)` 로 넓히면(segments.py) 법선이 먼 건물까지 뻗어 좁은 길의 B 가 3.3~25m 로 잡힌다 —
+        #   `verdict()` 는 wmax ≥ 3 이면 blocked 로 안 가므로 미탐 쪽 이동이다(§170-3). 그것을 막는 가드이고 **B 를 None 으로 둔다**(결손 — 모름).
+        #   T = 2 의 출처: 기준 판에서 A < 3 이고 B 가 있는 256구간의 B − A 분위(10% 1.16 · 25% 1.71 · 중앙 2.44 · 75% 3.76 · 90% 8.27)에서
+        #   **결과를 보기 전에** 후보 셋(2 · 4 · 8)을 고정했고, 측량 도로폭(ngii1k_center) 대조 두 축(측량 3m 미만 막음 90 → 98 ·
+        #   측량 3m 이상 과잉 막음 11 → 3)에서 사람이 2 를 골랐다. ★ **과적합일 수 있다** — 고르는 데 쓴 측량과 평가하는 측량이 **같다**.
+        #   T = 1(탐색)은 결손이 250 으로 늘어 넓히는 목적(681 → 약 60)을 잃는다. 문턱 의존은 연속이다(129 → 184).
+        if A is not None and B is not None and A < 3.0 and B - A > 2:
+            B = None
 
         a_1k, a_ngii, a_rw = (res[nm][0] for nm in WIDTH_SRCS)
         if self.debug:
