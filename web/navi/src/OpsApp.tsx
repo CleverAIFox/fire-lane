@@ -368,8 +368,8 @@ export default function OpsApp() {
                         숫자는 `fleet.json` 에서만 온다(§212). */}
                     <span style={{ fontSize: 11, color: D.sub, textAlign: "right",
                                    lineHeight: 1.4 }}>
-                      <b style={{ fontSize: 12, color: on ? D.accent : D.sub }}>
-                        {v.required_width_m.toFixed(1)}m
+                      <b style={{ fontSize: 12, color: on ? D.accent : D.sub }} title={v.width_note}>
+                        {v.required_width_m.toFixed(1)}m{v.width_basis === "reference" ? "*" : ""}
                       </b><br />
                       {v.turn_radius_ref_m != null
                         ? <>회전 {v.turn_radius_ref_m.toFixed(1)}m <span style={{ opacity: .8 }}>
