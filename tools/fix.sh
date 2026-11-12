@@ -4,6 +4,7 @@
 #
 #   bash tools/fix.sh            고친다
 #   bash tools/fix.sh --dry      무엇을 돌지만 보여준다
+#   bash tools/fix.sh --skip=래칫  ★ 이름이 맞는 단계를 건너뛴다. 부분 실행이다 — 건너뛴 것은 **고친 것이 아니다**(아래 「건너뜀」)
 #
 # ── 왜 따로인가 (DECISIONS §362) ───────────────────────────────
 # `verify.sh` 는 수리를 안 한다. 그 파일이 그 사유를 적는다 —
@@ -36,11 +37,20 @@
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
 
-DRY=0; [ "${1:-}" = "--dry" ] && DRY=1
+DRY=0; SKIP=""
+for _a in "$@"; do
+    case "$_a" in
+        --dry) DRY=1 ;;
+        --skip=*) SKIP="${_a#--skip=}" ;;
+    esac
+done
+# ★ 2026-11-12 (DECISIONS §707). `--skip` 은 **시험이 쓴다** — 문의 마지막 단계 「래칫」 은 `clearance_cross` 하나가 혼자 60초를 쓰고(문 전체 100초 중 98초)
+#   수리 문 시험(`test_fix_door`)이 전수 병렬에서 300초 시한을 넘었다. 시험이 묻는 것(주입한 결함을 문이 되돌리는가)은 그 단계와 무관하다.
+#   기본 실행은 그대로다 — 건너뛰는 일은 부른 쪽이 이름으로 말해야만 일어난다.
 
 R=$'\033[31m'; G=$'\033[32m'; Y=$'\033[33m'; D=$'\033[90m'; Z=$'\033[0m'
 declare -a NAMES RESULTS
-ok=0; bad=0; nop=0
+ok=0; bad=0; nop=0; skipped=0
 
 fix() {                       # fix "<이름>" <명령…>
     local name="$1"; shift
@@ -49,6 +59,11 @@ fix() {                       # fix "<이름>" <명령…>
         return
     fi
     local out rc
+    if [ -n "$SKIP" ] && printf '%s' "$name" | grep -qE "$SKIP"; then
+        NAMES+=("$name"); RESULTS+=("건너뜀"); skipped=$((skipped+1))
+        printf '  %s–%s %-26s %s건너뜀 (--skip)%s\n' "$Y" "$Z" "$name" "$D" "$Z"
+        return
+    fi
     out=$(FIRE_LANE_AUDIT_TAG="$name" "$@" 2>&1); rc=$?    # 꼬리표 — 감사 훅이 켜져 있을 때만 쓰인다(안 켜면 무해 · PLAN #220)
     NAMES+=("$name")
     if [ $rc -ne 0 ]; then
@@ -124,6 +139,7 @@ fi
 
 echo
 printf '  고침 %s%d%s · 그대로 %d · 빨강 %s%d%s\n' "$G" "$ok" "$Z" "$nop" "$R" "$bad" "$Z"
+[ "$skipped" -gt 0 ] && printf '  %s★ 부분 실행 — %d단계를 건너뛰었다(--skip). 건너뛴 것은 고친 것이 아니다.%s\n' "$Y" "$skipped" "$Z"
 
 # ── 사람이 먼저인 것 ──────────────────────────────────────────
 echo
