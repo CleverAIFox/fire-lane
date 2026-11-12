@@ -216,4 +216,4 @@ def test_dev_unregisters_the_service_worker_instead_of_registering_it():
     tail = src.split('"serviceWorker" in navigator', 1)[1]
     assert "import.meta.env.DEV" in tail and "unregister" in tail and "caches.delete" in tail, (
         "개발에서 옛 워커를 떼고 캐시를 비우지 않는다 — 옛 세션이 남긴 워커가 개발 모듈을 계속 내준다")
-    assert tail.index("import.meta.env.DEV") < tail.index("register(`"), "등록이 개발 분기보다 앞에 있다"
+    assert tail.index("import.meta.env.DEV") < tail.index(".register("), "등록이 개발 분기보다 앞에 있다"

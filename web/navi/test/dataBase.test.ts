@@ -44,3 +44,50 @@ describe("dataBase", () => {
     expect(bad, "발행물 주소를 baseURI 로 만드는 자리가 남아 있다 — 루트에서 404 가 난다").toEqual([]);
   });
 });
+
+// ── 접합 — 슬래시는 늘 하나다(DECISIONS §708) ─────────────────────────────────────────────
+describe("접합", () => {
+  // base 셋: 루트 `/` · 저장소 아래 `/fire-lane/`(끝 슬래시) · 빈 문자열 — 거기에 `navi/` 로 끝나는 배포 base 도 같이 문다.
+  const BASES = ["/", "/fire-lane/", "", "/fire-lane/navi/", "/fire-lane"] as const;
+  const noDouble = (u: string) => !new URL(u, "https://h.test").pathname.includes("//");
+
+  it("dataBase — 어느 base 에서도 경로에 `//` 가 없고 슬래시로 끝난다", async () => {
+    for (const b of BASES) {
+      const d = await withBase(b);
+      expect(noDouble(d), `base ${JSON.stringify(b)} → ${d}`).toBe(true);
+      expect(d.endsWith("/"), `base ${JSON.stringify(b)} → ${d}`).toBe(true);
+    }
+  });
+
+  it("dataBase + 상대 경로 이음(지형 타일 꼴) — `//` 가 안 생긴다", async () => {
+    for (const b of BASES) {
+      const url = (await withBase(b)) + "terrain/{z}/{x}/{y}.png";
+      expect(noDouble(url), `base ${JSON.stringify(b)} → ${url}`).toBe(true);
+    }
+  });
+
+  it("appUrl — 앞 슬래시를 걷고 밑의 끝 슬래시를 하나로 맞춘다(셋 base × 앞 슬래시 유무)", async () => {
+    vi.resetModules();
+    const { appUrl } = await import("../src/infra/dataBase");
+    for (const b of BASES) for (const rel of ["sw.js", "/sw.js", "//sw.js"]) {
+      const u = appUrl(rel, b);
+      expect(u.includes("//"), `base ${JSON.stringify(b)} rel ${rel} → ${u}`).toBe(false);
+      expect(u.endsWith("/sw.js")).toBe(true);
+    }
+    expect(appUrl("sw.js", "/fire-lane/")).toBe("/fire-lane/sw.js");
+    expect(appUrl("sw.js", "")).toBe("/sw.js");
+    expect(appUrl("sw.js", "/")).toBe("/sw.js");
+  });
+
+  it("★ 소스에서 base 를 잇는 자리가 둘뿐이다 — 데이터 주소에 `/…` 를 이어 붙이는 곳이 없다", () => {
+    const FILES = import.meta.glob("../src/**/*.{ts,tsx}", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
+    const code = (t: string) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+    // `dataUrl + "/…"` · `D + "/…"` · `${BASE_URL}/…` · `BASE_URL + "/…"` 꼴 — 앞 슬래시를 이으면 프로토콜 상대 URL 이 된다
+    const bad = Object.entries(FILES).flatMap(([f, t]) => code(t).split("\n")
+      .filter((ln) => /\b(dataUrl|dataBase\(\)|D|BASE_URL)\b\s*\+\s*["'`]\//.test(ln) || /\$\{[^}]*BASE_URL[^}]*\}\//.test(ln))
+      .map((ln) => `${f}: ${ln.trim()}`));
+    expect(bad, "base 뒤에 `/` 를 또 붙이는 자리가 있다 — `//…` 는 프로토콜 상대 URL 이다").toEqual([]);
+    const users = Object.entries(FILES).filter(([f, t]) => !f.endsWith("infra/dataBase.ts") && /import\.meta\.env\.BASE_URL/.test(code(t))).map(([f]) => f);
+    expect(users, "BASE_URL 을 직접 읽는 곳이 dataBase.ts 밖에 있다 — 접합은 `appUrl` · `dataBase` 가 든다").toEqual([]);
+  });
+});

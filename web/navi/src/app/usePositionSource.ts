@@ -55,25 +55,33 @@ export function usePositionSource(a: {
   /** 범위 밖 알림은 **한 번만.** 1Hz 로 뜨면 그것이 화면을 덮는다 */
   const saidOut = useRef(false);
   const simAt = useRef<{ plan: RoutePlan | null; along: number }>({ plan: null, along: 0 });
+  // ★ 2026-11-12 (DECISIONS §708). 시연 차가 **섰다**(■) = 속도 0 인 측위 하나. 위치원이 조용히 사라지면 마지막 속도가 「달리는 중」으로 남아 병목 「자세히」 의 잠금이
+  //   영영 안 풀린다(음영과 구별되지 않는다 — `domain/motion.ts` `silenceStops`). 실제 GPS 로 돌아갈 때는 안 낸다 — 그 정지는 GPS 가 말한다.
+  const lastSim = useRef<Fix | null>(null);
 
   useEffect(() => {
     // ★ 2026-09-21. 주행 전(00 · 01 · 02)에는 위치를 안 받는다. 출발지가
     //   안전센터라 현위치가 쓰이지 않고, 받으면 「위치 없음」 알림만 뜬다.
     if (phase !== "guiding") return;
+    if (!(simSpeed > 0 && plan) && lastSim.current) {
+      onFix({ ...lastSim.current, speedMps: 0 });       // 시연 차가 섰다
+      lastSim.current = null;
+    }
     if (simSpeed > 0 && plan) {
+      const track = (f: Fix) => { lastSim.current = f; onFix(f); };
       // 속도는 구간에서 읽는다. simSpeed 는 **재생 배속**이다.
       if (posMode === "gpsSim") {
         // ★ GPS 흉내 — 1Hz · σ5m · 40초마다 8초 음영. 마커는 추정기가 낸 자리다
         const src = createReplaySource(plan, { rate: simSpeed }, onEnd);
         if (simAt.current.plan === plan) src.seek(simAt.current.along);
         srcRef.current = src;
-        const stop = src.start(onFix);
+        const stop = src.start(track);
         return () => { simAt.current = { plan, along: src.truthM }; srcRef.current = null; stop(); };
       }
       const src = createSimulationSource(plan, simSpeed, onEnd);
       if (simAt.current.plan === plan) src.seek(simAt.current.along);
       srcRef.current = src;
-      const stop = src.start(onFix);
+      const stop = src.start(track);
       return () => { simAt.current = { plan, along: src.alongM }; srcRef.current = null; stop(); };
     }
     // ★ 실제 GPS 가 없는 기기(데스크톱 · 거부)에서 「위치 없음 (User denied…)」 이 주행

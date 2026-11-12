@@ -24,3 +24,15 @@ export function dataBase(): string {
   const p = b.endsWith("navi/") ? b.replace(/navi\/$/, "data/") : `${b}data/`;
   return new URL(p, location.origin).href;
 }
+
+/**
+ * 앱 자산(서비스 워커 등)의 주소 — `BASE_URL` 에 상대 경로를 잇는다. **슬래시는 늘 하나다.**
+ *
+ * ★ 2026-11-12 (DECISIONS §708). 접합의 정본은 여기 둘(`dataBase` · `appUrl`)이다 — Vite 의 `BASE_URL` 은 **이미 끝에 슬래시가 있다**(`/` · `/fire-lane/navi/`) ·
+ *   빌드 설정에 따라 빈 문자열일 수도 있다. 그 뒤에 `/` 를 또 붙이거나 앞에 `/` 가 붙은 상대 경로를 이으면 `//…` 가 되고, 브라우저는 그것을 **프로토콜 상대 URL**
+ *   (`//fire-lane/…` = 호스트 `fire-lane`)로 읽는다. 그래서 상대 경로의 **앞 슬래시를 걷고** 밑의 **끝 슬래시를 하나로 맞춘다.**
+ */
+export function appUrl(rel: string, base: string = import.meta.env.BASE_URL): string {
+  const b = (base || "/").replace(/\/*$/, "/");
+  return b + rel.replace(/^\/+/, "");
+}

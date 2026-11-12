@@ -17,18 +17,41 @@ const VIEWS = [
   { name: "관제", query: "?view=ops" },
 ] as const;
 
-/** 한 화면의 소음을 모은다 — 같은 출처의 실패한 요청 · 콘솔 오류 · 잡히지 않은 예외. 경고(warning)는 안 모은다(지도가 자주 낸다). */
-function listen(page: Page, origin: string): string[] {
-  const bad: string[] = [];
-  page.on("pageerror", (e) => bad.push(`pageerror: ${e.message}`));
-  page.on("console", (m) => { if (m.type() === "error") bad.push(`console.error: ${m.text()}`); });
-  page.on("response", (r) => {
-    if (r.url().startsWith(origin) && r.status() >= 400) bad.push(`HTTP ${r.status()}: ${r.url().replace(origin, "/")}`);
+/**
+ * 한 화면의 소음을 모은다 — 같은 출처의 실패한 요청 · 콘솔 오류 · 잡히지 않은 예외. 경고(warning)는 안 모은다(지도가 자주 낸다).
+ *
+ * ★ **취소는 실패가 아니다**(DECISIONS §708). 지도 엔진은 화면 밖으로 밀려난 타일 요청을 스스로 취소한다 — 그 요청은 `net::ERR_ABORTED` 로 끝난다.
+ *   느린 러너(CI)에서 관제 뷰의 지형 타일이 그렇게 끝나 스모크가 빨갰다. 그래서 **데이터 요청**(`fetch` · `xhr` · `image`)의 `ERR_ABORTED` 는 따로 모았다가
+ *   `settle` 에서 **다시 받아 본다** — 다시 받아져(200) 있으면 취소였고, 안 받아지면 그것이 실패다. 문서 · 스크립트 · 스타일의 취소는 그대로 실패다(모듈이 끊긴 것이다).
+ */
+interface Quiet { bad: string[]; aborted: Set<string> }
+function listen(page: Page, origin: string): Quiet {
+  const q: Quiet = { bad: [], aborted: new Set() };
+  const where = (u: string) => new URL(u).pathname;           // 출처를 「/」 로 바꿔 끼우면 `//fire-lane/…` 처럼 슬래시가 둘로 **찍힌다** — 찍는 글이 주소를 틀리게 했다(§708)
+  page.on("pageerror", (e) => q.bad.push(`pageerror: ${e.message}`));
+  page.on("console", (m) => { if (m.type() === "error") q.bad.push(`console.error: ${m.text()}`); });
+  // 응답 · 실패 요청은 **컨텍스트**에서 듣는다 — 지도의 타일 요청은 워커에서 나가는데 `page.on` 은 그것을 못 받는 때가 있다(§708 · 일부러 끊어 보고 알았다).
+  const ctx = page.context();
+  ctx.on("response", (r) => {
+    if (r.url().startsWith(origin) && r.status() >= 400) q.bad.push(`HTTP ${r.status()}: ${where(r.url())}`);
   });
-  page.on("requestfailed", (r) => {
-    if (r.url().startsWith(origin)) bad.push(`requestfailed: ${r.url().replace(origin, "/")} (${r.failure()?.errorText})`);
+  ctx.on("requestfailed", (r) => {
+    if (!r.url().startsWith(origin)) return;
+    const why = r.failure()?.errorText ?? "";
+    if (why.includes("ERR_ABORTED") && ["fetch", "xhr", "image"].includes(r.resourceType())) q.aborted.add(r.url());
+    else q.bad.push(`requestfailed: ${where(r.url())} (${why})`);
   });
-  return bad;
+  return q;
+}
+
+/** 취소된 데이터 요청을 다시 받아 본다 — 받아지면 취소였다. 소음 목록을 낸다. */
+async function settle(page: Page, q: Quiet): Promise<string[]> {
+  const out = [...q.bad];
+  for (const u of q.aborted) {
+    const r = await page.request.get(u).catch((e: Error) => e);
+    if (r instanceof Error || !r.ok()) out.push(`취소된 요청이 다시도 안 받아진다: ${new URL(u).pathname} (${r instanceof Error ? r.message : r.status()})`);
+  }
+  return out;
 }
 
 async function rootText(page: Page): Promise<number> {
@@ -46,7 +69,7 @@ for (const v of VIEWS) {
     const origin = new URL(baseURL!).origin;
     const bad = listen(page, origin);
     await opens(page, `${baseURL}${v.query}`);
-    expect(bad, "콘솔 오류 · 잡히지 않은 예외 · 실패한 요청").toEqual([]);
+    expect(await settle(page, bad), "콘솔 오류 · 잡히지 않은 예외 · 실패한 요청").toEqual([]);
   });
 }
 
@@ -93,7 +116,7 @@ test.describe("개발 서버 재최적화", () => {
     await start();
     const bad = listen(page, new URL(base).origin);
     await opens(page, `${base}?view=ops`);
-    expect(bad, "재최적화 뒤 관제 뷰가 깨졌다(React 가 두 벌이 아닌가)").toEqual([]);
+    expect(await settle(page, bad), "재최적화 뒤 관제 뷰가 깨졌다(React 가 두 벌이 아닌가)").toEqual([]);
   });
 });
 
@@ -119,4 +142,27 @@ test("달리는 중에는 병목 「자세히」 가 안 열리고 서면 열린
   await expect(more, "서 있는데 자세히가 막혀 있다").toBeEnabled({ timeout: 15_000 });
   await more.click();
   await expect(page.getByText("측정 신뢰도"), "자세히가 안 열린다").toBeVisible();
+});
+
+/**
+ * ★ 취소 처리(DECISIONS §708)를 **일부러 일으켜서** 문다 — 느린 러너에서만 나던 `ERR_ABORTED` 를 이 기계에서는 못 재현했다(CPU 8배 · 지연 1.2초 ·
+ *   카메라 40번 이동 모두 0건). 그래서 지형 타일 요청을 **우리가 끊는다**: 끊긴 타일이 서버에는 멀쩡하면 소음이 아니고(취소), 안 받아지는 것은 소음이다.
+ */
+test("취소된 지형 타일은 소음이 아니고 안 받아지는 요청은 소음이다", async ({ page, baseURL }, info) => {
+  test.skip(info.project.name !== "dev", "이 시험은 소음 선별(listen · settle)을 묻는다 — 화면이 아니라 도우미라 한 프로젝트면 된다(빌드본에서는 끊긴 타일의 재시도가 ERR_FAILED 로 다른 길을 탄다)");
+  const origin = new URL(baseURL!).origin;
+  const q = listen(page, origin);
+  const seen = new Set<string>();         // **처음 한 번만** 끊는다 — 지도가 다시 받으러 오면 보낸다(계속 끊으면 재시도가 `ERR_FAILED` 로 다른 길을 탄다)
+  await page.context().route("**/data/terrain/**", (route) => {
+    const u = route.request().url();
+    if (seen.has(u)) return route.continue();
+    seen.add(u);
+    return route.abort("aborted");
+  });
+  await opens(page, `${baseURL}?view=ops`);
+  expect(q.aborted.size, "타일이 끊기지 않았다 — 이 시험이 취소 경로를 안 탔다").toBeGreaterThan(0);
+  expect(await settle(page, q), "서버에 멀쩡한 타일의 취소가 소음으로 셌다").toEqual([]);
+  const gone = new Set([`${origin}${new URL(baseURL!).pathname.replace(/navi\/$/, "data/")}terrain/99/0/0.png`]);   // 서버에 없는 타일
+  const loud = await settle(page, { bad: [], aborted: gone });
+  expect(loud.length, "안 받아지는 취소를 소음으로 안 셌다").toBe(1);
 });

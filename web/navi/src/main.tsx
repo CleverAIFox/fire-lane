@@ -17,6 +17,7 @@
 import { StrictMode, Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
+import { appUrl } from "./infra/dataBase";
 
 const OpsApp = lazy(() => import("./OpsApp"));
 declare global { interface Window { __FL_VIEW?: string } }
@@ -45,7 +46,7 @@ if ("serviceWorker" in navigator) {
       .catch(() => {});
   } else {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {});
+      navigator.serviceWorker.register(appUrl("sw.js")).catch(() => {});
     });
   }
 }

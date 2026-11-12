@@ -2,7 +2,7 @@
  * test/motion.test.ts — **차가 달리고 있는가**(`domain/motion.ts` · DECISIONS §704). 「자세히」 의 속도 잠금이 이것을 본다.
  */
 import { ok, test } from "./harness";
-import { fixSpeed, MOVING_MPS, nextMoving, STOPPED_MPS } from "../src/domain/motion";
+import { fixSpeed, MOVING_MPS, nextMoving, silenceStops, STALE_S, STOPPED_MPS } from "../src/domain/motion";
 import type { Fix } from "../src/domain/types";
 
 const fix = (over: Partial<Fix> = {}): Fix => ({ lon: 126.9, lat: 35.15, heading: null, source: "gps", ...over });
@@ -36,4 +36,13 @@ test("히스테리시스 — 달리다가는 0.5 m/s 미만이 돼야 서고, �
   ok(nextMoving(false, MOVING_MPS - 0.1) === false, "문턱 사이에서 달려 버렸다(깜박임)");
   ok(nextMoving(true, STOPPED_MPS - 0.1) === false && nextMoving(false, MOVING_MPS) === true, "문턱을 넘었는데 안 바뀐다");
   ok(nextMoving(true, null) === true && nextMoving(false, null) === false, "모르는 속도가 상태를 바꿨다");
+});
+
+test("침묵 — 달리던 속도에서 끊기면 GPS 음영이라 잠금을 유지한다 · 느렸거나 근거가 없으면 정지다", () => {
+  const long = STALE_S + 5;                                     // 시뮬레이션의 음영(8초)과 같은 길이
+  ok(silenceStops(8, long) === false, "달리던 중 음영에서 잠금이 풀렸다 — 터널에서 「자세히」 가 열린다");
+  ok(silenceStops(MOVING_MPS, long) === false, "문턱 속도(달림)에서 끊겼는데 정지로 읽었다");
+  ok(silenceStops(0.3, long) === true && silenceStops(0, long) === true, "느리게 서던 차의 침묵을 정지로 안 읽었다");
+  ok(silenceStops(null, long) === true, "속도를 한 번도 못 받았는데(근거 없음) 잠겨 있다");
+  ok(silenceStops(0, STALE_S) === false && silenceStops(0, 1) === false, "침묵이 문턱을 넘기 전에 정지로 읽었다");
 });

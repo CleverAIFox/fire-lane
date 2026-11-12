@@ -70,7 +70,7 @@ import { buildHazardIndex } from "../domain/pressure";
 import { fullProgress } from "../domain/edgeSnap";
 import { progressAlongRoute, routeUids } from "../domain/routeDerive";
 import { reaches, solveRoute } from "../domain/routeSolve";
-import { fixSpeed, nextMoving, STALE_S, type PrevFix } from "../domain/motion";
+import { fixSpeed, nextMoving, silenceStops, type PrevFix } from "../domain/motion";
 import { GPS_WEAK_M } from "../domain/status";
 import { nextPhase } from "../domain/phase";
 import { edgeShare, nextBearing, weakCrossed } from "../domain/track";
@@ -156,12 +156,9 @@ export function useNavigation(
    */
   const [gpsAccM, setGpsAccM] = useState<number | null>(null);
   const accRef = useRef<number | null>(null);
-  // ★ 2026-11-12 (DECISIONS §704). 달리는가 — 병목 「자세히」 의 잠금이 본다. **모르면 달린다**(앞 측위가 없을 때 · 안전한 쪽).
-  //   값이 문턱을 넘나들 때만 state 를 바꾼다(`gpsAccM` 과 같은 사유 — 측위마다 리렌더하지 않는다).
+  // ★ DECISIONS §704 · §708. 달리는가 — 병목 「자세히」 의 잠금이 본다(정책은 `domain/motion.ts`). 문턱을 넘나들 때만 state 를 바꾼다(`gpsAccM` 과 같은 사유).
   const [moving, setMoving] = useState(true);
-  const movingRef = useRef(true);
-  const prevFix = useRef<PrevFix | null>(null);
-  const lastFixAt = useRef(0);
+  const mot = useRef<{ on: boolean; prev: PrevFix | null; at: number; speed: number | null }>({ on: true, prev: null, at: 0, speed: null });
   const lastSnapAt = useRef(0);
   const lastPos = useRef<LngLat | null>(null);
   const curUid = useRef<string | null>(null);
@@ -226,20 +223,22 @@ export function useNavigation(
       : null),
     [data, active, lenient, blocked, hazIdx, cvNow]);
 
-  // 측위가 `STALE_S` 초 안 오면 선 것이다(정지 중에는 `watchPosition` 이 콜백을 안 주기도 한다 — `domain/motion.ts`).
+  // 측위가 침묵하면 — 마지막 속도가 느렸을 때만 선 것이다(`silenceStops` · 달리던 속도였으면 GPS 음영이라 잠금을 유지한다).
   useEffect(() => {
     const id = setInterval(() => {
-      if (movingRef.current && performance.now() - lastFixAt.current > STALE_S * 1000) { movingRef.current = false; setMoving(false); }
+      const m = mot.current;
+      if (m.on && silenceStops(m.speed, (performance.now() - m.at) / 1000)) { m.on = false; setMoving(false); }
     }, 1000);
     return () => clearInterval(id);
   }, []);
 
   const onFix = useCallback((f: Fix) => {
     const t = f.t ?? performance.now();
-    lastFixAt.current = performance.now();
-    const nm = nextMoving(movingRef.current, fixSpeed(prevFix.current, f, t));
-    prevFix.current = { lon: f.lon, lat: f.lat, t };
-    if (nm !== movingRef.current) { movingRef.current = nm; setMoving(nm); }
+    const m = mot.current, v = fixSpeed(m.prev, f, t);
+    m.at = performance.now(); m.prev = { lon: f.lon, lat: f.lat, t };
+    if (v != null) m.speed = v;
+    const nm = nextMoving(m.on, v);
+    if (nm !== m.on) { m.on = nm; setMoving(nm); }
     // ★ 정책은 `domain/track.ts` 가 든다(§336). 여기는 그 답을 상태로 옮긴다.
     const nb = nextBearing(live.current.brg, f, lastPos.current, MOVE_MIN_M);
     const brg = nb.brg;
