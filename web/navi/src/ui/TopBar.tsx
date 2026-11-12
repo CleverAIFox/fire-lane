@@ -55,11 +55,12 @@ const TONE_BG: Record<Tone, string> = {
 
 export function TopBar(p: TopBarProps) {
   const s = p.spec;
-  const title = s.title
-    ?? (p.turnKind
-      ? `${p.nextDistM != null && p.nextDistM > 15 ? `${fmtDist(p.nextDistM)} 앞 ` : ""}`
-        + (TURN_WORD[p.turnKind] ?? "경로 안내")
-      : "경로 안내");
+  // ★ 2026-11-12 (DECISIONS §704). 회전 안내는 **거리와 지시를 두 줄로 가른다** — 「127m 앞 좌회전」 을 한 줄에 놓으면 칸 256px 에 글자 308px 라
+  //   「127m 앞 …」 으로 잘렸다(주행 화면에서 가장 중요한 줄이다 · 옛 TopBar 도 같았다). 거리가 위, 지시가 그 아래 — 지시는 **안 잘린다.**
+  const turn = !s.title && p.turnKind
+    ? { dist: p.nextDistM != null && p.nextDistM > 15 ? `${fmtDist(p.nextDistM)} 앞` : null, word: TURN_WORD[p.turnKind] ?? "경로 안내" }
+    : null;
+  const title = s.title ?? turn?.word ?? "경로 안내";
   const sub = s.title ? fillText(s.sub, p.vars) : (p.roadName ?? fillText(s.sub, p.vars));
 
   const eta = s.eta === "value" ? (p.etaText ?? "—")
@@ -83,12 +84,19 @@ export function TopBar(p: TopBarProps) {
             ? <TurnArrow kind={p.turnKind} size={72} />
             : <div style={{ width: 8 }} />}
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 40, fontWeight: 800, lineHeight: 1.1, letterSpacing: -0.5,
-                        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-            {title}
-          </div>
+          {turn ? (
+            <>
+              {turn.dist && <div data-turn="dist" style={turnLine}>{turn.dist}</div>}
+              <div data-turn="word" style={turnLine}>{turn.word}</div>
+            </>
+          ) : (
+            <div style={{ fontSize: 40, fontWeight: 800, lineHeight: 1.1, letterSpacing: -0.5,
+                          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {title}
+            </div>
+          )}
           {sub && (
-            <div style={{ fontSize: 23, color: C.topBarSub, marginTop: 6, whiteSpace: "nowrap",
+            <div data-turn="road" style={{ fontSize: 24, color: C.topBarSub, marginTop: turn ? 2 : 6, lineHeight: 1.1, whiteSpace: "nowrap",
                           overflow: "hidden", textOverflow: "ellipsis" }}>
               {sub}
             </div>
@@ -99,7 +107,7 @@ export function TopBar(p: TopBarProps) {
       {/* ── 마이크 ───────────────────────────────────────── */}
       <button style={roundBtn} onClick={p.onToggleVoice} aria-label="음성"
               title={p.voiceOn === false ? "음성 꺼짐" : "음성 안내"}>
-        <MicIcon off={p.voiceOn === false} />
+        <span style={disc}><MicIcon off={p.voiceOn === false} /></span>
       </button>
 
       {/* ── 모드 배지 ────────────────────────────────────── */}
@@ -151,7 +159,7 @@ export function TopBar(p: TopBarProps) {
 
       {/* ── 헤드셋 ───────────────────────────────────────── */}
       <button style={roundBtn} onClick={p.onHeadset} aria-label="무전·헤드셋">
-        <HeadsetIcon />
+        <span style={disc}><HeadsetIcon /></span>
       </button>
     </div>
   );
@@ -183,10 +191,16 @@ const bar: CSSProperties = {
   padding: "10px 22px", display: "flex", alignItems: "center", gap: 18,
   boxShadow: "0 4px 18px rgba(0,0,0,.25)",
 };
+/** 회전 안내 한 줄 — 거리 · 지시 모두 같은 크기이고 **말줄임이 없다**(지시는 어떤 폭에서도 끝까지 보인다). 40px 였던 것을 34px 로 낮춘 것은 두 줄 + 도로명이 막대 높이(104px) 안에 들게 하려는 것이다. */
+const turnLine: CSSProperties = { fontSize: 34, fontWeight: 800, lineHeight: 1.1, letterSpacing: -0.5, whiteSpace: "nowrap" };
+/** 누르는 범위는 76×76(Android Auto 터치 타깃 · DECISIONS §702 · §703) — 보이는 동그라미는 그대로 64 이고 그 안에 가운데 둔다. */
 const roundBtn: CSSProperties = {
-  width: 64, height: 64, borderRadius: 999, border: "none", background: "#fff",
+  width: 76, height: 76, border: "none", background: "transparent", padding: 0, margin: "0 -6px",
   display: "grid", placeItems: "center", cursor: "pointer", flex: "0 0 auto",
-  boxShadow: "0 2px 8px rgba(0,0,0,.18)",
+};
+const disc: CSSProperties = {
+  width: 64, height: 64, borderRadius: 999, background: "#fff",
+  display: "grid", placeItems: "center", boxShadow: "0 2px 8px rgba(0,0,0,.18)",
 };
 const badge: CSSProperties = {
   flex: "0 0 auto", minWidth: 330, borderRadius: 16, padding: "10px 16px",

@@ -43,18 +43,22 @@ function Btn({ onClick, label, on, children }: {
 }) {
   return (
     <button onClick={onClick} aria-label={label} title={label}
-            style={{ ...btn, outline: on ? `3px solid ${C.cta}` : "none" }}>
-      {children}
+            style={btn}>
+      <span style={{ ...disc, outline: on ? `3px solid ${C.cta}` : "none" }}>{children}</span>
     </button>
   );
 }
 
 const col: CSSProperties = {
-  position: "absolute", left: 18, zIndex: 5,
-  display: "flex", flexDirection: "column", gap: 14,
+  position: "absolute", left: 6, zIndex: 5,
+  display: "flex", flexDirection: "column", gap: 0,       // 누르는 범위끼리 겹치지도 벌어지지도 않는다 — 보이는 동그라미 사이는 76 − 52 = 24
 };
+/** 누르는 범위 76×76(Android Auto 터치 타깃 · DECISIONS §702 · §703). 보이는 동그라미(`disc` 52)와 아이콘은 그대로 — 범위만 키웠다. */
 const btn: CSSProperties = {
-  width: 52, height: 52, borderRadius: 999, border: "none", background: "#fff",
-  display: "grid", placeItems: "center", cursor: "pointer", color: "#111827",
+  width: 76, height: 76, border: "none", background: "transparent", padding: 0, cursor: "pointer", color: "#111827",
+  display: "grid", placeItems: "center",
+};
+const disc: CSSProperties = {
+  width: 52, height: 52, borderRadius: 999, background: "#fff", display: "grid", placeItems: "center",
   boxShadow: "0 3px 10px rgba(0,0,0,.22)",
 };

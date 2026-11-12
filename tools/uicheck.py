@@ -67,6 +67,12 @@ import urllib.request
 from pathlib import Path
 
 import srgb
+from uidrive import (  # 주행 중 화면의 시선 기준(DECISIONS §702) — 세는 쪽은 `uidrive.py`
+    GLANCE_CHARS,
+    MIN_FONT_PX,
+    drive_long_lines,
+    drive_small_fonts,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "web" / "navi" / "src"
@@ -92,7 +98,7 @@ EXCLUSIVE = {
 }
 
 #: 두 지도가 부르는 층 묶음. `layers.ts` 의 export 함수 이름이다.
-NAVI_FNS = ("baseLayers", "altRouteLayers", "routeLayers", "markerLayers", "stationLayers")
+NAVI_FNS = ("baseLayers", "landuseLayers", "altRouteLayers", "routeLayers", "markerLayers", "stationLayers")
 OPS_FNS = ("baseLayers", "hillshadeLayer", "opsHistoryLayers", "opsSegLayers",
            "opsOverlayLayers", "markerLayers", "stationLayers")
 
@@ -139,12 +145,16 @@ SHARED_LAYERS = 12
 # ★ 2026-11-07 (PLAN #73 진술 #1 · #3). 3435 → **3441. 올렸다 — 크기 래칫이고 기능이 늘어 커졌다(결함 상한이 아니다).** 접수 카드에 「자료 기준 YYYY-MM-DD」(+4자: 「자료 기준」의 한글 네 글자 —
 #   날짜 숫자는 세지 않는다)와 도로명 곁의 「지번」(+2자)이 들어왔다. 진술 #1(최신 데이터가 없음)은 자료 기준일이 안 보여서, #3(구 주소만 뜸)은 지번 표기가 없어서 생긴 것이다.
 #   `verify.sh` 1377 → 1380 과 같은 족이다 — 기능이 늘어 커졌다. 줄이려면 두 표기 중 하나를 걷어야 하고 그것은 두 진술을 되돌리는 일이라 안 했다. 되돌리는 조건: 두 표기를 걷을 때(3435).
-UI_TEXT = 3441
+UI_TEXT = 3385
+#: 주행 중 화면(`uidrive.DRIVE_FILES`)의 20자 넘는 말 · 24px 미만 글자 선언 수 — 현재 실측이 곧 상한이다(DECISIONS §702). 내려가는 쪽.
+DRIVE_LONG = 6
+DRIVE_SMALL_FONT = 19
 
 #: `tools/ratchet.py` 가 **줄었을 때만** 이 수를 고쳐 적는다(§309).
-RATCHETS = {"SHARED_LAYERS": "down", "UI_TEXT": "down"}
+RATCHETS = {"SHARED_LAYERS": "down", "UI_TEXT": "down", "DRIVE_LONG": "down", "DRIVE_SMALL_FONT": "down"}
 
 _HANGUL = re.compile(r"[가-힣]")
+
 
 
 def screen_text(src: str) -> str:
@@ -248,7 +258,8 @@ def tier_faults(rows: list[tuple[str, str]], order: tuple[str, ...] = ("act", "p
 
 def ratchet_values() -> dict[str, int]:
     """공유 층의 지금 수 · 화면 글자 수. **판정은 `split()` 소관**이다."""
-    return {"SHARED_LAYERS": len(shared_layers()), "UI_TEXT": ui_text_chars()}
+    return {"SHARED_LAYERS": len(shared_layers()), "UI_TEXT": ui_text_chars(),
+            "DRIVE_LONG": len(drive_long_lines()), "DRIVE_SMALL_FONT": len(drive_small_fonts())}
 
 
 # ── ① 소스 ──────────────────────────────────────────────────────
@@ -366,6 +377,13 @@ def split() -> list[str]:
     elif now < UI_TEXT:
         bad.append(f"화면 글자 {now}자 < 기록 {UI_TEXT}자 — 줄었다. "
                    f"`tools/uicheck.py` 의 `UI_TEXT` 를 {now} 으로 내려라")
+
+    # ㉩ 주행 중 화면의 시선 기준(DECISIONS §702) — **양방향.** 늘면 「운전자가 한 번에 읽을 것이 늘었다」이고 줄면 기록을 내린다. 고치는 일은 사람이 가른다.
+    for name, now2, rec, what in (("DRIVE_LONG", len(drive_long_lines()), DRIVE_LONG, f"주행 중 {GLANCE_CHARS}자 넘는 말"),
+                                  ("DRIVE_SMALL_FONT", len(drive_small_fonts()), DRIVE_SMALL_FONT, f"주행 중 {MIN_FONT_PX}px 미만 글자 선언")):
+        if now2 != rec:
+            bad.append(f"{what} {now2} " + (f"> 기록 {rec} — 한 시선 2초(DECISIONS §702): 줄이거나 정차 중에만 뜨는 곳으로 옮겨라" if now2 > rec
+                                            else f"< 기록 {rec} — 줄었다. `tools/uicheck.py` 의 `{name}` 을 {now2} 으로 내려라"))
 
     # ㉨ 층의 휘도 순서 (§445 · #143) — 값은 사람이 고르고 **순서는 기계가 든다**
     bad += tier_faults(layers_declared(_THEME.read_text(encoding="utf-8")))
@@ -560,7 +578,9 @@ def main() -> int:
     if a.split or not a.build:
         sh = shared_layers()
         print(f"화면 분리 — 공유 지도 층 {len(sh)} · 래칫 {SHARED_LAYERS}"
-              f" · 화면 글자 {ui_text_chars()}자 · 래칫 {UI_TEXT}자")
+              f" · 화면 글자 {ui_text_chars()}자 · 래칫 {UI_TEXT}자"
+              f" · 주행 중 {GLANCE_CHARS}자 넘는 말 {len(drive_long_lines())}(래칫 {DRIVE_LONG})"
+              f" · {MIN_FONT_PX}px 미만 글자 선언 {len(drive_small_fonts())}(래칫 {DRIVE_SMALL_FONT})")
         bad += split()
     if a.build:
         print(f"빌드본 — {DIST.relative_to(ROOT)}")

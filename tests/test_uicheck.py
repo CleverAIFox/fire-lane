@@ -41,6 +41,7 @@ def _load(name: str):
 
 UI = _load("uicheck")
 MC = _load("mergecheck")
+DV = _load("uidrive")
 
 
 # ── ① 공유 층 — 「닮았다」의 실측 ───────────────────────────────
@@ -77,9 +78,9 @@ def test_what_driving_turns_off_is_really_gone():
 
 def test_the_declaration_has_exactly_one_home():
     """★ `NaviMap` 이 그 목록을 **실제로 돈다.** 도구가 제 목록을 따로 들면 정본이 둘이다."""
-    navimap = (UI.SRC / "components" / "NaviMap.tsx").read_text(encoding="utf-8")
+    navimap = (DV.SRC / "components" / "NaviMap.tsx").read_text(encoding="utf-8")
     assert "NAVI_OFF" in navimap, "내비가 선언을 안 쓴다 — 선언만 하고 안 끄는 꼴이다"
-    opsmap = (UI.SRC / "components" / "OpsMap.tsx").read_text(encoding="utf-8")
+    opsmap = (DV.SRC / "components" / "OpsMap.tsx").read_text(encoding="utf-8")
     assert "NAVI_OFF" not in opsmap, "관제가 주행 예산을 쓴다 — 두 화면의 일이 다르다"
     for o in UI.navi_off():
         assert any(o in v for v in UI.layer_ids().values()), f"`{o}` 는 실재하지 않는 층이다"
@@ -87,7 +88,7 @@ def test_the_declaration_has_exactly_one_home():
 
 def test_ops_starts_in_3d():
     """★ 관제 기본이 3D 다(§311). 토글은 2026-09-23 부터 있었고 기본이 꺼져 있었다."""
-    src = (UI.SRC / "OpsApp.tsx").read_text(encoding="utf-8")
+    src = (DV.SRC / "OpsApp.tsx").read_text(encoding="utf-8")
     import re as _re
     m = _re.search(r"bldg:\s*(true|false)", src)
     assert m, "`bldg` 기본값을 못 찾았다"
@@ -121,7 +122,7 @@ def test_each_screen_uses_only_its_own_parts():
 
 def test_the_switch_itself_is_alive():
     """`main.tsx` 가 두 화면을 가른다. 이게 죽으면 루트가 관제를 못 띄운다."""
-    src = (UI.SRC / "main.tsx").read_text(encoding="utf-8")
+    src = (DV.SRC / "main.tsx").read_text(encoding="utf-8")
     assert UI.FLAG in src, f"`{UI.FLAG}` 를 안 읽는다 — 2026-09-29 의 결함이 이것이다"
     assert '=== "ops"' in src, "`view === \"ops\"` 분기가 없다"
 
@@ -250,3 +251,65 @@ def test_selftests_are_alive():
         r = subprocess.run([sys.executable, str(ROOT / "tools" / f"{t}.py"), "--selftest"],  # noqa: S603 — 트리 안의 도구다
                            capture_output=True, text=True, cwd=ROOT, timeout=120)
         assert r.returncode == 0, f"{t} --selftest 실패\n{r.stdout}{r.stderr}"
+
+
+# ── 주행 중 화면의 시선 기준 (DECISIONS §702) ──────────────────────────────
+
+_F = ("ui/TopBar.tsx",)
+
+
+def _drive_tree(tmp_path: Path, body: str, tokens: str = "export const F = {\n  big: 22,\n  base: 14,\n} as const;\n") -> Path:
+    (tmp_path / "ui").mkdir()
+    (tmp_path / "ui" / "tokens.ts").write_text(tokens, encoding="utf-8")
+    (tmp_path / "ui" / "TopBar.tsx").write_text(body, encoding="utf-8")
+    return tmp_path
+
+
+def test_a_long_driving_sentence_is_counted_and_a_short_one_is_not(tmp_path: Path):
+    body = ('const a = "여기서 멈춘다";\n'
+            'const b = "이 문장은 운전자가 한 번에 읽기에는 너무 길게 적었다 — 스무 자를 넘는다";\n'
+            'const c = `${n}m 통행 불가`;\n'
+            '// "주석 안의 아주 긴 문장은 세지 않는다 — 스무 자를 훌쩍 넘더라도 화면에 안 뜬다"\n'
+            'const d = <p>JSX 글도 한 번에 읽는 양이라서 스무 자를 넘으면 센다</p>;\n')
+    got = DV.drive_long_lines(_drive_tree(tmp_path, body), files=_F)
+    assert [t[:6] for _, t in got] == ["이 문장은 ", "JSX 글도"], got
+
+
+def test_a_placeholder_is_counted_as_the_width_it_takes(tmp_path: Path):
+    """`${…}` 는 코드 글자가 아니라 **값이 차지하는 자리**로 잰다 — 안 그러면 짧은 말이 코드 길이로 길어진다."""
+    got = DV.drive_long_lines(_drive_tree(tmp_path, 'const a = `전방 ${Math.round(d.aheadM)}m`;\n'), files=_F)
+    assert got == []
+
+
+def test_a_small_font_is_counted_through_tokens_and_ternaries(tmp_path: Path):
+    body = ("const s = { fontSize: 30 }; const t = { fontSize: F.big }; const u = { fontSize: F.base };\n"
+            "const v = { fontSize: i ? 13 : 26 }; const w = { fontSize: 24 };\n"
+            "// const x = { fontSize: 10 };\n")
+    got = DV.drive_small_fonts(_drive_tree(tmp_path, body), files=_F)
+    assert [e for _, e in got] == ["F.big", "F.base", "i ? 13 : 26"], got
+
+
+def test_driving_files_never_scroll_text_by_themselves():
+    """★ Android Auto 품질 기준 ST-1 — **자동으로 흐르는 글자를 두지 않는다.** 소스에 `scrollTo` · `scrollIntoView` · 마퀴 · `setInterval` 이 없다(가운데 맞춤의 `translateX(-50%)` 는 정적이라 안 센다).
+    (사용자가 손으로 넘기는 `overflowY: auto` 는 자동이 아니다.)"""
+    bad = []
+    for rel in DV.DRIVE_FILES:
+        p = DV.SRC / rel
+        assert p.is_file(), rel
+        src = DV.uncomment(p.read_text(encoding="utf-8"))
+        for pat in ("scrollTo", "scrollIntoView", "marquee", "setInterval"):
+            if pat in src:
+                bad.append(f"{rel}: {pat}")
+    assert not bad, bad
+
+
+def test_the_driving_ratchets_match_the_tree_and_are_declared_down_only():
+    assert len(UI.drive_long_lines()) == UI.DRIVE_LONG
+    assert len(UI.drive_small_fonts()) == UI.DRIVE_SMALL_FONT
+    assert UI.RATCHETS["DRIVE_LONG"] == UI.RATCHETS["DRIVE_SMALL_FONT"] == "down"
+    assert {"DRIVE_LONG", "DRIVE_SMALL_FONT"} <= set(UI.ratchet_values())
+
+
+def test_the_ops_screen_is_not_a_driving_file():
+    """★ 관제 화면은 **운전 중이 아니다** — 앉아서 여러 정보를 동시에 보는 화면이라 규범이 다르다. 주행 중 수에 관제 전용 파일이 들면 안 된다."""
+    assert not any(f.startswith(("OpsApp", "ui/Ops", "ui/SegCard")) for f in DV.DRIVE_FILES)

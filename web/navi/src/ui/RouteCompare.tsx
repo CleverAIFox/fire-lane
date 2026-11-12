@@ -31,7 +31,7 @@
  * 다르면 둘을 그대로 두되 **어디가 다른지**를 수로 보인다 — 길이 · 통행 불가 경유 ·
  * 규칙 경고 수. 세 줄 다 두 경로에 같은 자리에 있어서 눈으로 뺄 수 있다.
  */
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { C, F, fmtDur } from "./tokens";
 import { Cta, Sheet } from "./Sheet";
 import { clearanceBand, fmtClearance } from "../domain/clearance";
@@ -44,6 +44,8 @@ export interface RouteOption {
   sec: number;
   lengthM: number;
   uncertainCount: number;
+  /** 그중 폭 모름(`unknown`) 구간 수 — 최소폭이 이 구간을 못 본다 */
+  unknownCount: number;
   uncertainM: number;
   minWidthM: number | null;
   requiredM: number;
@@ -56,6 +58,8 @@ export interface RouteOption {
   note: string;
   /** 통행 규칙 요약(`domain/rules.ts ruleSummary`). 없으면 null */
   rules: string | null;
+  /** 경로 **위** 경고(PLAN #78 ③) — 어느 구간이 어떻게 위험한지. 줄은 `RISK_LINES_MAX` 까지 · 넘치면 `more` 수만 */
+  risks: { lines: string[]; more: number };
   /** 경로 주변 사정 요약(§216-3) — 과속방지턱 · 단속카메라 · 보호구역 시설. 없으면 null */
   around: string | null;
 }
@@ -77,157 +81,146 @@ interface Props {
 }
 
 export function RouteBrief(p: Props) {
-  if (p.same) return <SameRoute {...p} />;
+  const [open, setOpen] = useState(false);
+  const two = !p.same && p.fast != null;
+  const orderChip = p.fromOrder ? "관제 지정" : "기본";
+  const opts: { o: RouteOption; on: boolean; accent: string; chip: string; title: string; scope: boolean }[] = p.same
+    ? [{ o: p.safe, on: true, accent: C.toneGreen, chip: "안전 · 최속 동일", title: SAME_ROUTE_TITLE, scope: true }]
+    : [
+        { o: p.safe, on: p.chosen === "safe", accent: C.toneGreen,
+          chip: p.chosen === "safe" ? orderChip : "대안", title: "안전 경로", scope: true },
+        ...(p.fast ? [{ o: p.fast, on: p.chosen === "fast", accent: C.toneYellow,
+          chip: p.chosen === "fast" ? orderChip : "대안", title: "빠른 경로", scope: false }] : []),
+      ];
+  const cols = { display: "grid", gridTemplateColumns: two ? "1fr 1fr" : "1fr", gap: 10 } as const;
   return (
-    <Sheet wf="02" footer={
-      <Cta onClick={p.onConfirm}>안내 시작</Cta>
-    }>
+    <Sheet wf="02" footer={<Cta onClick={p.onConfirm}>안내 시작</Cta>}>
       <div style={{ fontSize: 22, fontWeight: 800 }}>
-        {p.chosen === "safe" ? "안전 경로로 간다" : "빠른 경로로 간다"}
+        {p.same ? SAME_ROUTE_TITLE : p.chosen === "safe" ? "안전 경로로 간다" : "빠른 경로로 간다"}
       </div>
-      <div style={{ fontSize: 13, color: C.panelSub, marginTop: 4 }}>
-        {p.fromOrder
-          ? "관제가 정한 경로다. 아래는 다른 경로와의 차이다."
-          : "지령에 경로 지정이 없어 안전으로 간다."}
-      </div>
-
-      <Card o={p.safe} on={p.chosen === "safe"}
-            accent={C.toneGreen} chip={p.chosen === "safe" ? "지령" : "안 간다"}
-            title="안전 경로" />
-      {p.fast ? (
-        <Card o={p.fast} on={p.chosen === "fast"}
-              accent={C.toneYellow}
-              chip={p.chosen === "fast" ? "지령"
-                : p.fast.deltaSec < -1 ? `${fmtDur(-p.fast.deltaSec)} 빠름` : "같음"}
-              title="빠른 경로" />
-      ) : (
-        <div style={{ ...note, marginTop: 12 }}>
-          둘째 경로가 서지 않았다 — 안전 경로 하나로 안내한다.
-        </div>
+      {/* ★ 고르는 데 필요한 것은 **둘의 차 한 줄**이다 — 카드 위에 먼저 둔다. 카드는 그 근거다(PLAN #73 · DECISIONS §701) */}
+      {two && <Verdict safe={p.safe} fast={p.fast!} />}
+      {!two && !p.same && (
+        <div style={{ ...note, marginTop: 12 }}>둘째 경로 없음 — 안전 경로로 안내한다.</div>
       )}
 
-      <div style={{ fontSize: 11, color: C.panelSub, marginTop: 12, lineHeight: 1.5 }}>
-        <b>폭으로만 본 안전이다</b>
+      <div style={{ ...cols, marginTop: 12 }}>
+        {opts.map((x) => <Col key={x.title} {...x} />)}
       </div>
+
+      <button type="button" onClick={() => setOpen((x) => !x)} aria-expanded={open} style={moreBtn}>
+        {open ? "접기 ▴" : "자세히 ▾"}
+      </button>
+      {/* 펼쳐도 **두 열을 지킨다** — 비교는 나란히 놓여야 산다 */}
+      {open && <DetailsGrid opts={opts.map((x) => x.o)} />}
     </Sheet>
   );
 }
 
 /**
- * 안전 경로 = 빠른 경로일 때의 화면.  (멘토링 §219 → DECISIONS §220)
- *
- * ★ 고르게 하지 않는다. 고를 것이 없다 — 라디오 두 개를 두면 같은 줄을 두 번 읽힌다.
- *   그대로 「안내 시작」 으로 간다. (2026-10-05 이후로는 **다를 때도** 안 고른다.)
+ * 빠른 경로가 안전 경로와 어떻게 다른가 — **한 문장 · 두 수**(시간 · 확인 필요 곳수). 카드보다 위에 선다.
+ * 확인 필요가 늘면 경고색이다 — 빠른 대가가 그것이기 때문이다.
  */
-function SameRoute(p: Props) {
-  const o = p.safe;
-  const margin = o.minWidthM != null ? o.minWidthM - o.requiredM : null;
-  return (
-    <Sheet wf="02" footer={
-      <Cta onClick={p.onConfirm}>안내 시작</Cta>
-    }>
-      <div style={{ fontSize: 22, fontWeight: 800 }}>{SAME_ROUTE_TITLE}</div>
-      <div style={{ fontSize: 13, color: C.panelSub, marginTop: 4 }}>
-        안전 경로와 최단 경로가 같은 길이다.
-      </div>
-
-      <div style={{ ...card, cursor: "default", borderColor: C.toneGreen }}>
-        <div style={{ ...band, background: C.toneGreen }}>
-          <b style={{ fontSize: 17 }}>{SAME_ROUTE_TITLE}</b>
-          <span style={{ flex: 1 }} />
-          <span style={chipS}>안전 · 최속 동일</span>
-        </div>
-        <div style={{ padding: "10px 14px 12px" }}>
-          <div style={{ fontSize: 23, fontWeight: 800, color: C.safeInk, margin: "2px 0 8px" }}>
-            {fmtDur(o.sec)} · {(o.lengthM / 1000).toFixed(1)}km
-          </div>
-          <Diff o={o} />
-          <Row k="최소 유효폭 · 요구폭"
-               v={`${o.minWidthM != null ? `${o.minWidthM.toFixed(1)}m` : "—"} · ${o.requiredM.toFixed(1)}m`} />
-          <ClearanceRow m={margin} />
-          <Row k="통행 규칙" v={o.rules ?? "없음"} warn={!!o.rules} />
-          {o.around && <Row k="경로 주변" v={o.around} />}
-          <div style={{ ...note, background: "#f0fdf4" }}>{o.note}</div>
-        </div>
-      </div>
-
-      <div style={{ fontSize: 11, color: C.panelSub, marginTop: 12, lineHeight: 1.5 }}>
-        <b>폭으로만 본 안전이다</b>
-      </div>
-    </Sheet>
-  );
+export function verdictLine(safe: RouteOption, fast: RouteOption): { text: string; worse: boolean } {
+  const dt = Math.round(fast.sec - safe.sec);
+  const dn = fast.uncertainCount - safe.uncertainCount;
+  const time = dt === 0 ? "시간이 같고" : dt < 0 ? `${fmtDur(-dt)} 빠르고` : `${fmtDur(dt)} 느리고`;
+  const risk = dn === 0 ? "확인 필요는 같다" : `확인 필요가 ${Math.abs(dn)}곳 ${dn > 0 ? "많다" : "적다"}`;
+  return { text: `빠른 경로가 ${time} ${risk}`, worse: dn > 0 };
 }
 
-/** 두 경로를 눈으로 뺄 수 있게 하는 세 줄(§220). 같은 자리에 같은 순서로 놓는다 */
-function Diff({ o }: { o: RouteOption }) {
+function Verdict({ safe, fast }: { safe: RouteOption; fast: RouteOption }) {
+  const v = verdictLine(safe, fast);
   return (
-    <>
-      <Row k="길이" v={`${(o.lengthM / 1000).toFixed(2)}km`} />
-      <Row k="통행 불가 경유" v={`${o.blockedCount}곳`} warn={o.blockedCount > 0} />
-      <Row k="규칙 경고" v={`${o.ruleCount}건`} warn={o.ruleCount > 0} />
-      <Row k="폭 확인 필요 구간"
-           v={o.uncertainCount ? `${o.uncertainCount}개 · ${Math.round(o.uncertainM)}m` : "0개"} />
-    </>
-  );
-}
-
-/** 여유폭 한 줄 — 수와 4단 색을 같이(§219 「색과 수로」) */
-function ClearanceRow({ m }: { m: number | null }) {
-  const b = CLEARANCE_SCALE[clearanceBand(m)];
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, padding: "3px 0" }}>
-      <span style={{ color: C.panelSub }}>여유폭 = 최소 유효폭 − 요구폭</span>
-      <span style={{ fontWeight: 800, color: b.color }}>
-        {fmtClearance(m)} <span style={{ fontWeight: 700, color: C.panelSub }}>{b.short}</span>
-      </span>
+    <div style={{ marginTop: 10, borderRadius: 10, padding: "10px 12px", fontSize: 16, fontWeight: 800, lineHeight: 1.35,
+                  color: v.worse ? "#9a3412" : C.panelInk, background: v.worse ? "#fff7ed" : "#f1f5f9",
+                  border: `1px solid ${v.worse ? "#fed7aa" : C.sheetLine}` }}>
+      {v.text}
     </div>
   );
 }
 
 /**
- * 경로 한 장. **누를 수 없다.**
- *
- * ★ 2026-10-05 (§400). 종전에는 `<button onClick>` 이었다. 고르는 손이
- *   없어졌으므로 **`div` 로 바꿨다** — 누를 수 있는 모양으로 두면 언젠가
- *   누가 `onClick` 을 단다. 라디오 점도 뺐다.
+ * 경로 한 장. 크게 읽히는 것은 **고르는 데 쓰는 둘**(시간 · 확인 필요)이고 폭 값은 작은 줄이다(설명이지 선택 기준이 아니다).
+ * 라벨은 값 **위에** 작게 놓는다 — 한 줄에 나란히 두면 250px 남짓에서 라벨과 값이 붙어 읽힌다. 통행 불가는 0 이 아닐 때만.
+ * **누를 수 없다**(§400). 폭 모름 구간은 최소폭에서 빠진 수라 `*` 한 글자를 달고 풀이는 접힌 쪽에 있다.
  */
-function Card({ o, on, accent, chip, title }: {
-  o: RouteOption; on: boolean;
-  accent: string; chip: string; title: string;
+function Col({ o, on, accent, chip, title, scope }: {
+  o: RouteOption; on: boolean; accent: string; chip: string; title: string; scope: boolean;
 }) {
   const margin = o.minWidthM != null ? o.minWidthM - o.requiredM : null;
-  const ink = on ? C.safeInk : "#c2570c";
+  const b = CLEARANCE_SCALE[clearanceBand(margin)];
   return (
-    <div style={{ ...card, cursor: "default", borderColor: on ? accent : C.sheetLine,
-                  opacity: on ? 1 : .72,
+    <div style={{ ...card, marginTop: 0, cursor: "default", borderColor: on ? accent : C.sheetLine,
+                  opacity: on ? 1 : .85,
                   boxShadow: on ? `0 0 0 3px ${accent}66` : "0 1px 3px rgba(0,0,0,.06)" }}>
-      <div style={{ ...band, background: on ? accent : `${accent}55` }}>
-        <b style={{ fontSize: 17 }}>{title}</b>
+      <div style={{ ...band, background: on ? accent : `${accent}55`, flexWrap: "wrap", gap: 4 }}>
+        <b style={{ fontSize: 15 }}>{title}</b>
         <span style={{ flex: 1 }} />
         <span style={chipS}>{chip}</span>
       </div>
-      <div style={{ padding: "10px 14px 12px" }}>
-        <div style={{ fontSize: 23, fontWeight: 800, color: ink, margin: "2px 0 8px" }}>
-          {fmtDur(o.sec)} · {(o.lengthM / 1000).toFixed(1)}km
+      <div style={{ padding: "8px 10px 10px" }}>
+        {/* 두 카드의 첫 줄을 맞춘다 — 안전 경로만 단 한 줄이 있어 시간 · 확인 필요가 어긋나던 것을, 같은 높이의 빈 줄로 막는다 */}
+        <div style={{ fontSize: 11, lineHeight: "15px", height: 15, marginBottom: 4, color: C.panelSub }}>{scope ? "폭으로만 본 안전" : ""}</div>
+        <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.1, color: on ? C.safeInk : "#c2570c" }}>
+          {fmtDur(o.sec)} <span style={{ fontSize: 13, fontWeight: 700, color: C.panelSub }}>{(o.lengthM / 1000).toFixed(1)}km</span>
         </div>
-        {/* ★ §220 — 두 카드가 **같은 네 줄을 같은 순서로** 낸다. 다른 곳이 어디인지
-            눈으로 빼게 하려는 것이라, 한쪽만 줄을 빼면 안 된다 */}
-        <Diff o={o} />
-        <Row k="최소 유효폭" v={o.minWidthM != null ? `${o.minWidthM.toFixed(1)}m` : "—"} />
-        <ClearanceRow m={margin} />
-        <Row k="통행 규칙" v={o.rules ?? "없음"} warn={!!o.rules} />
-        {o.around && <Row k="경로 주변" v={o.around} />}
-        <div style={{ ...note, background: on ? "#f0fdf4" : "#fffbeb" }}>{o.note}</div>
+        <div style={{ ...lab, marginTop: 10 }}>확인 필요</div>
+        <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.1, color: o.uncertainCount > 0 ? C.danger : C.panelInk }}>
+          {o.uncertainCount}곳
+        </div>
+        {o.blockedCount > 0 && <div style={{ fontSize: 13, fontWeight: 800, color: C.danger, marginTop: 6 }}>통행 불가 {o.blockedCount}곳</div>}
+        <div style={{ ...lab, marginTop: 10, lineHeight: 1.5 }}>
+          최소폭 <b style={{ color: C.panelInk }}>{o.minWidthM != null ? `${o.minWidthM.toFixed(1)}m` : "—"}</b>
+          {o.unknownCount > 0 && <sup>*</sup>}
+          {" · 여유 "}<b style={{ color: b.color }}>{fmtClearance(margin)}</b>
+        </div>
       </div>
     </div>
   );
 }
 
-function Row({ k, v, warn }: { k: string; v: string; warn?: boolean }) {
+/** 접힌 것의 칸들 — 규칙 경고 · 경로 주변 · 구간 목록 · 설명 · 각주. 두 열이 **같은 줄에 같은 칸**이 오도록 칸 이름을 고정한다 */
+const SECTIONS = ["rules", "around", "risks", "note", "foot"] as const;
+type Section = (typeof SECTIONS)[number];
+
+function cells(o: RouteOption): Record<Section, ReactNode> {
+  return {
+    rules: o.ruleCount > 0 || o.rules ? <Block k="규칙 경고" v={o.rules ?? `${o.ruleCount}건`} warn /> : null,
+    around: o.around ? <Block k="경로 주변" v={o.around} /> : null,
+    risks: o.risks.lines.length > 0 ? (
+      <div style={riskBox}>
+        {o.risks.lines.map((l) => <div key={l}>{l}</div>)}
+        {o.risks.more > 0 && <div style={{ color: C.panelSub }}>외 {o.risks.more}곳</div>}
+      </div>
+    ) : null,
+    note: <div style={note}>{o.note}</div>,
+    foot: o.unknownCount > 0 ? <div style={{ fontSize: 11, color: C.panelSub }}>* 폭 모름 {o.unknownCount}곳은 뺀 수</div> : null,
+  };
+}
+
+/** 한 칸 — 라벨은 값 **위에** 작게. 좁은 열에서 나란히 두면 라벨이 두 줄로 꺾인다 */
+function Block({ k, v, warn }: { k: string; v: string; warn?: boolean }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, padding: "3px 0" }}>
-      <span style={{ color: C.panelSub }}>{k}</span>
-      <span style={{ fontWeight: 800, color: warn ? C.danger : C.panelInk }}>{v}</span>
+    <div>
+      <div style={lab}>{k}</div>
+      <div style={{ fontSize: 13, fontWeight: 800, color: warn ? C.danger : C.panelInk }}>{v}</div>
+    </div>
+  );
+}
+
+/** 접힌 것 하나(한 열). 시험이 이것을 직접 그려 접힌 내용이 다 있는지 본다 */
+export function Details({ o }: { o: RouteOption }) {
+  const c = cells(o);
+  return <div style={{ display: "grid", gap: 8, fontSize: 12, minWidth: 0 }}>{SECTIONS.map((k) => c[k] && <div key={k}>{c[k]}</div>)}</div>;
+}
+
+/** 펼침 — **두 열을 지킨다.** 칸마다 두 경로가 같은 줄에 선다(한쪽에 칸이 없으면 그 자리는 빈다) */
+function DetailsGrid({ opts }: { opts: RouteOption[] }) {
+  const cs = opts.map(cells);
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: opts.length > 1 ? "1fr 1fr" : "1fr", gap: "8px 10px", marginTop: 10, fontSize: 12 }}>
+      {SECTIONS.filter((k) => cs.some((c) => c[k])).flatMap((k) => cs.map((c, i) => <div key={`${k}${i}`} style={{ minWidth: 0 }}>{c[k]}</div>))}
     </div>
   );
 }
@@ -243,6 +236,16 @@ const band: CSSProperties = {
 const chipS: CSSProperties = {
   borderRadius: 8, padding: "3px 9px", fontSize: 12, fontWeight: 800, color: C.toneInk,
   background: "#fff",
+};
+const riskBox: CSSProperties = {
+  marginTop: 6, borderRadius: 8, padding: "6px 10px", fontSize: 12, lineHeight: 1.5,
+  color: "#7c2d12", background: "#fff7ed", border: "1px solid #fed7aa",
+};
+const lab: CSSProperties = { fontSize: 11, color: C.panelSub };
+const moreBtn: CSSProperties = {
+  display: "block", width: "100%", marginTop: 12, padding: "10px 0", border: `1px solid ${C.sheetLine}`,
+  borderRadius: 10, background: "#fff", fontSize: 14, fontWeight: 800, color: C.panelInk, cursor: "pointer",
+  fontFamily: F.family,
 };
 const note: CSSProperties = {
   marginTop: 8, borderRadius: 8, padding: "8px 10px", fontSize: 12, color: "#334155", lineHeight: 1.5,

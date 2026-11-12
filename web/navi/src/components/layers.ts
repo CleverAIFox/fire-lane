@@ -91,6 +91,9 @@ export function sources(dataUrl: string, terrainBounds?: [number, number, number
     } : {}),
     buildings: { type: "geojson", data: dataUrl + "buildings.geojson" },
     road_area: { type: "geojson", data: dataUrl + "road_area.geojson" },
+    // ★ PLAN 행 144(닫힘). 공원 · 녹지 · 광장 · 공공공지 면(도시계획시설 `vworld_uq153` · `publish_basemap` 이 낸다) — 공터가 검게 그려지던 것을 메운다.
+    //   칠하는 면일 뿐 판정이 아니다. 갈래는 속성 `cls`(green · plaza) 하나다.
+    landuse: { type: "geojson", data: dataUrl + "landuse.geojson" },
     sidewalk: { type: "geojson", data: dataUrl + "sidewalk.geojson" },
     segments: { type: "geojson", data: dataUrl + "segments.geojson" },
     poi: { type: "geojson", data: dataUrl + "poi.geojson" },
@@ -117,6 +120,23 @@ export const NAVI_OFF = [
   // 접지 그림자 · 평면 건물 · 전 도로 판정 4색 · 건물 라벨 12,663 · 상가 라벨 2,106
   "bldg-contact", "bldg-flat", "seg-tint", "lbl-bldg", "lbl-poi",
 ] as const;
+
+/**
+ * 토지이용 면(PLAN 행 144(닫힘)) — 공원 · 녹지 · 광장 · 공공공지. **내비 화면만** 깐다(관제 화면은 판정을 보는 화면이라 안 깐다 ·
+ * `uicheck` 의 두 화면 공유 층 래칫 12 를 올리지 않는다). 바탕(`bg`) 바로 위, 보도 · 도로면 아래에 들어간다 — `withLanduse`.
+ */
+export function landuseLayers(): LayerSpecification[] {
+  return [
+    { id: "landuse", type: "fill", source: "landuse",
+      paint: { "fill-color": ["match", ["get", "cls"], "green", MAP.landGreen, MAP.landPlaza] as never } },
+  ];
+}
+
+/** 바탕 층 목록의 `bg` 바로 뒤에 토지이용 면을 끼운다 — 길 · 건물 아래다. */
+export function withLanduse(base: LayerSpecification[]): LayerSpecification[] {
+  const i = base.findIndex((l) => l.id === "bg");
+  return [...base.slice(0, i + 1), ...landuseLayers(), ...base.slice(i + 1)];
+}
 
 export function baseLayers(style: Record<string, VerdictStyle>): LayerSpecification[] {
   const tint = (k: string) => shade(style[k]?.color ?? "rgb(120,128,140)");

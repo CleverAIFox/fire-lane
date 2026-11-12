@@ -15,8 +15,9 @@ import { TUNING, edgeCost, requiredWidth, unknownIsNeverCheaper } from "../src/d
 import { CLEARANCE_SCALE, segmentReason, widthLine } from "../src/ui/clearanceMeaning";
 import { GRAY_REASON } from "../src/ui/verdictMeaning";
 import {
-  SAME_ROUTE_TITLE, compareKind, routeStats, sameRoute,
+  SAME_ROUTE_TITLE, compareKind, riskList, routeStats, sameRoute,
 } from "../src/domain/compare";
+import { RISK_LINES_MAX, riskLine, riskSummary } from "../src/ui/routeOption";
 import { buildAdjacency, findRoute } from "../src/domain/graph";
 import type { Fleet, GraphEdge, VehicleSpec } from "../src/domain/types";
 
@@ -263,4 +264,144 @@ test("모름은 막지 않는다 — 비싸게 칠 뿐이다", () => {
   }
   ok(!Number.isFinite(edgeCost(s, 40, null, "blocked", null, true)),
      "`blocked` 는 어느 모드에서도 막혀야 한다 — 그것만 판정이 확정이다");
+});
+
+
+// ── 5. 경로 위 경고 — 신고 주소를 고르면 **어디가** 위험한지 바로 말한다 (PLAN #78 ③) ──────────────────────────
+
+/** 구간 하나만 든 가짜 경로 — `riskList` 는 `edges` 만 읽는다 */
+function plan(...edges: Partial<GraphEdge>[]): { edges: GraphEdge[] } {
+  return { edges: edges.map((e, i) => ({ seg_uid: `S${i}`, verdict: "clear", width_min_m: 9, length_m: 100, ...e }) as GraphEdge) };
+}
+
+test("경로 위 경고 — 확인 필요 · 모름 · 통행 불가 · 여유 0.5m 미만만 올리고 순서는 경로 순서다", () => {
+  const p = plan(
+    { verdict: "clear", width_min_m: NEED + 4 },                         // 넉넉하다 — 안 올린다
+    { verdict: "needs_cv", width_min_m: NEED + 2, seg_label: "A로" },    // 확인 필요
+    { verdict: "clear", width_min_m: NEED + 0.2, seg_label: "B로" },     // 초록이지만 여유 0.2 — tight
+    { verdict: "unknown", width_min_m: null, seg_label: "C로" },
+    { verdict: "blocked", width_min_m: 2, seg_label: "D로" },
+  );
+  const r = riskList(p, NEED);
+  ok(r.map((x) => x.label).join() === "A로,B로,C로,D로", `뽑힌 것 ${r.map((x) => x.label)}`);
+  ok(r.map((x) => x.kind).join() === "needs_cv,tight,unknown,blocked", `종류 ${r.map((x) => x.kind)}`);
+  ok(r.map((x) => x.atM).join() === "100,200,300,400", `경로 앞에서 잰 거리가 어긋났다 ${r.map((x) => x.atM)}`);
+});
+
+test("경로 위 경고 — 폭을 모르는 초록은 tight 로 올리지 않는다(모름을 0 으로 읽지 않는다)", () => {
+  const r = riskList(plan({ verdict: "clear", width_min_m: null }), NEED);
+  ok(r.length === 0, "폭 값이 없는데 여유 부족으로 올렸다");
+});
+
+test("경로 위 경고 — 문장은 거리 · 이름 · 종류 · 여유를 **실제 수로** 쓴다", () => {
+  const [a, b, c] = riskList(plan(
+    { verdict: "needs_cv", width_min_m: NEED - 0.4, seg_label: "A로", length_m: 60 },
+    { verdict: "clear", width_min_m: NEED + 0.2, seg_label: "B로" },
+    { verdict: "unknown", width_min_m: null, seg_label: "C로" }), NEED);
+  const la = riskLine(a);
+  ok(la.includes("0m") && la.includes("A로") && la.includes("확인 필요") && la.includes("-0.4"), la);
+  const lb = riskLine(b);
+  ok(lb.includes("60m") && lb.includes("B로") && lb.includes("여유") && lb.includes("+0.2"), lb);
+  const lc = riskLine(c);
+  ok(lc.includes("C로") && lc.includes("폭 모름"), lc);
+});
+
+test("경로 위 경고 — 카드는 최대 몇 줄만 보이고 나머지는 「외 N곳」 수로 말한다", () => {
+  const many = plan(...Array.from({ length: RISK_LINES_MAX + 3 }, (_, i) => ({ verdict: "needs_cv" as const, seg_label: `R${i}` })));
+  const opt = riskSummary(many, NEED);
+  ok(opt.lines.length === RISK_LINES_MAX, `줄 수 ${opt.lines.length}`);
+  ok(opt.more === 3, `외 ${opt.more}`);
+  const none = riskSummary(plan({ verdict: "clear", width_min_m: NEED + 5 }), NEED);
+  ok(none.lines.length === 0 && none.more === 0, "위험이 없는데 줄을 냈다");
+});
+
+test("경로 위 경고 — 실제 발행물의 경로에서 병목 패널이 고르는 구간과 어긋나지 않는다(같은 정의)", () => {
+  const adj = buildAdjacency(graph, S, false, "safe");
+  const nodes = [...adj.keys()].sort((a, b) => a - b);
+  let checked = 0;
+  for (let i = 1; i < nodes.length && checked < 25; i += 11) {
+    const p = findRoute(graph, adj, nodes[0], nodes[i]);
+    if (!p) continue;
+    const r = riskList(p, NEED);
+    const first = p.edges.find((e) => e.verdict === "needs_cv" || (e.width_min_m != null && e.width_min_m - NEED < 0.5));
+    ok((r[0]?.segUid ?? null) === (first?.seg_uid ?? null) || r[0]?.kind === "unknown" || r[0]?.kind === "blocked",
+       "경고 첫 줄이 병목 패널의 정의(확인 필요 또는 여유 0.5m 미만)와 갈렸다");
+    checked++;
+  }
+  ok(checked >= 5, `경로를 ${checked}개만 봤다`);
+});
+
+// ── 6. 경로 카드를 줄인다 — 폭 모름이면 여유를 안 쓴다 · 앞서 알릴 구간의 정의 하나 · 카드는 네 줄 + 접힘 ──────
+import { renderToStaticMarkup } from "react-dom/server";
+import { createElement } from "react";
+import { isHeadsUp, riskKind } from "../src/domain/compare";
+import { Details, RouteBrief } from "../src/ui/RouteCompare";
+import type { RouteOption } from "../src/ui/RouteCompare";
+
+test("폭 모름이면 여유 수를 안 쓴다 — 다른 소스의 폭 값이 붙어 있어도(모르는 수를 믿게 하지 않는다)", () => {
+  const [u] = riskList(plan({ verdict: "unknown", width_min_m: NEED + 2.4, seg_label: "U로" }), NEED);
+  ok(u.kind === "unknown" && u.marginM === null, "unknown 인데 여유 수가 만들어졌다");
+  const line = riskLine(u);
+  ok(line.includes("폭 모름") && !line.includes("여유") && !/[+-]\d/.test(line), line);
+});
+
+test("앞서 알릴 구간의 정의는 하나다 — 확인 필요 · 폭 모름 · 여유 0.5m 미만(병목 패널과 카드가 같이 쓴다)", () => {
+  ok(isHeadsUp({ verdict: "needs_cv", width_min_m: 9 }, NEED), "needs_cv");
+  ok(isHeadsUp({ verdict: "unknown", width_min_m: null }, NEED), "unknown 은 앞서 알려야 한다");
+  ok(isHeadsUp({ verdict: "clear", width_min_m: NEED + 0.2 }, NEED), "여유 부족");
+  ok(!isHeadsUp({ verdict: "clear", width_min_m: NEED + 0.9 }, NEED), "넉넉한 초록");
+  ok(!isHeadsUp({ verdict: "clear", width_min_m: null }, NEED), "폭 값 없는 초록을 위험으로 올렸다");
+});
+
+function opt(over: Partial<RouteOption>): RouteOption {
+  return {
+    title: "안전 경로", recommended: true, sec: 600, lengthM: 2290, uncertainCount: 7, uncertainM: 100,
+    unknownCount: 0, minWidthM: 3.1, requiredM: 2.6, blockedCount: 0, ruleCount: 2, deltaSec: 0,
+    note: "NOTE문장", rules: "RULES요약", around: "AROUND주변",
+    risks: { lines: ["0m RISK구간 · 확인 필요 · 여유 +0.5m"], more: 3 }, ...over,
+  };
+}
+const html = (safe: RouteOption, fast: RouteOption | null, same = false) =>
+  renderToStaticMarkup(createElement(RouteBrief, { safe, fast, same, chosen: "safe", fromOrder: true, onConfirm: () => {} }));
+
+test("경로 카드 — 접혀 있을 때는 시간 · 최소폭 · 여유 · 확인 필요만 보이고 나머지는 접혀 있다(지우지 않았다)", () => {
+  const h = html(opt({}), opt({ title: "빠른 경로", recommended: false, sec: 520, uncertainCount: 14 }));
+  for (const shown of ["최소폭", "여유", "확인 필요", "10분", "2.3km", "자세히"]) ok(h.includes(shown), `${shown} 이 안 보인다`);
+  for (const folded of ["RISK구간", "RULES요약", "AROUND주변", "NOTE문장", "규칙 경고", "경로 주변", "통행 불가", "길이", "여유폭 ="])
+    ok(!h.includes(folded), `접혀 있어야 할 ${folded} 가 카드에 나온다`);
+  ok(h.includes("빠른 경로가 1분 20초 빠르고 확인 필요가 7곳 많다"), "두 경로의 비교가 한 문장에 안 나온다");
+  ok(h.indexOf("빠른 경로가 1분 20초") < h.indexOf("안전 경로</b>"), "비교 문장이 카드보다 아래에 있다 — 고르는 데 필요한 것이 먼저여야 한다");
+  ok(!h.includes("폭으로만 본 안전이다"), "카드 밖에 떠 있는 고지가 남았다");
+  ok(h.includes("폭으로만 본 안전"), "고지가 안전 경로 카드에 안 붙었다");
+  ok(h.includes("대안") && h.includes("관제 지정") && !h.includes("안 간다"), "배지가 고른 것 · 대안을 말하지 않는다");
+});
+
+test("경로 카드 — 통행 불가는 0 이 아닐 때만 보이고 폭 모름이 있으면 최소폭이 그 구간을 뺀 수임을 단다", () => {
+  ok(!html(opt({}), null).includes("통행 불가"), "0곳인데 통행 불가가 보인다");
+  const h = html(opt({ blockedCount: 1, unknownCount: 2 }), null);
+  ok(h.includes("통행 불가") && h.includes("<sup>*</sup>"), "0 이 아닌 값이 안 보이거나 최소폭에 각주 표지가 없다");
+  ok(!h.includes("폭 모름 2곳은 뺀 수"), "각주 풀이가 본문 한가운데 있다 — 접힌 쪽에 있어야 한다");
+  const d = renderToStaticMarkup(createElement(Details, { o: opt({ unknownCount: 2 }) }));
+  ok(d.includes("* 폭 모름 2곳은 뺀 수"), "접힌 쪽에 각주 풀이가 없다");
+});
+
+test("경로 카드 — 같은 경로면 카드 하나이고 비교 줄이 없다", () => {
+  const h = html(opt({}), null, true);
+  ok(!h.includes("빠른 경로") && !h.includes("둘째 경로 없음"), "같은 경로인데 비교 문구가 나온다");
+});
+
+test("펼친 쪽에는 접힌 것이 전부 있다 — 구간 목록 · 규칙 경고 · 경로 주변 · 설명(지운 것이 아니다)", () => {
+  const h = renderToStaticMarkup(createElement(Details, { o: opt({}) }));
+  for (const t of ["RISK구간", "외 3곳", "RULES요약", "AROUND주변", "NOTE문장"]) ok(h.includes(t), `${t} 가 펼침에 없다`);
+});
+
+test("riskKind — 구간 하나의 위험 종류 · 폭 모름이면 여유가 없다 · 위험이 아니면 null (riskList 와 병목 패널이 같이 쓴다)", () => {
+  ok(riskKind({ verdict: "blocked", width_min_m: 1 }, NEED)?.kind === "blocked", "blocked");
+  const nc = riskKind({ verdict: "needs_cv", width_min_m: NEED - 0.4 }, NEED);
+  ok(nc?.kind === "needs_cv" && nc.marginM !== null && Math.abs(nc.marginM + 0.4) < 1e-9, "needs_cv 는 여유를 든다");
+  const u = riskKind({ verdict: "unknown", width_min_m: NEED + 2.4 }, NEED);
+  ok(u?.kind === "unknown" && u.marginM === null, "폭 모름인데 여유가 있다");
+  ok(riskKind({ verdict: "clear", width_min_m: NEED + 0.2 }, NEED)?.kind === "tight", "여유 부족");
+  ok(riskKind({ verdict: "clear", width_min_m: NEED + 0.9 }, NEED) === null, "넉넉한 초록이 위험으로 올랐다");
+  ok(riskKind({ verdict: "clear", width_min_m: null }, NEED) === null, "폭 값 없는 초록을 위험으로 올렸다");
 });

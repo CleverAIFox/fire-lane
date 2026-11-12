@@ -3281,7 +3281,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 3,104 전수 · **분모(blank) 0절** · 물림(inherit) 1,917절.
+★ **강제자 칸의 분모.** 절 3,150 전수 · **분모(blank) 0절** · 물림(inherit) 1,948절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -3980,6 +3980,7 @@ uv run python -m firelane.datalog impact ngii1k
 
 지금은 파일로 충분하다. 옮길 시점은 **네비 API 가 붙을 때**다.
 `sources.yaml` 이 곧 DDL 이 되도록 설계한다.
+**2026-11-12 사람이 정했다 — DB 는 안 쓴다(소비자가 없다).** `PLAN #63`(닫힘) · `#64`(닫힘) 는 기각했고 다시 여는 조건 넷은 `DECISIONS §694` 가 든다. 아래는 방향 기록이다.
 
 ```sql
 CREATE SCHEMA core;      -- 파이프라인 산출. 읽기 전용
@@ -4774,6 +4775,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `web/navi/src/components/OpsMap.tsx` | 관제 지도. 내비 지도와 **같은 바탕**을 쓰고 그 위에 관제가 보는 것을 얹는다 | 판정 4색을 정의하지 않는다(정본은 `web/config.js`) |
 | `web/navi/src/components/opsLayers.ts` | **관제 전용 층.** `layers.ts` 가 상한을 치면서 **화면 경계**로 갈랐다 — 「두 화면의 일이 다르다」가 코드에도 선 자리다 | 내비가 쓰는 층은 안 든다 |
 | `web/navi/src/domain/serviceArea.ts` | 측위가 **우리 데이터 범위 안인가.** 범위 밖은 「GPS 가 안 잡힌다」와 다른 상태다 | 범위 밖일 때 무엇을 할지는 훅이 정한다 |
+| `web/navi/src/domain/motion.ts` | **차가 달리고 있는가** — 측위의 속도(실린 도플러 속도 · 없으면 앞 측위와의 차분, 오차 안의 움직임은 정지)와 문턱(1.0 m/s 달림 · 0.5 m/s 미만 정지 · 3초 침묵 = 정지)으로 달림 여부를 낸다. 병목 「자세히」 의 속도 잠금이 이것을 본다 | 신호가 통째로 끊긴 채 달리는 차(그 상태는 `gpsWeak` · `offline` 이 말한다) · 잠금을 거는 화면(`ui/BottleneckPanel.tsx`) |
 
 ### 22-3. 그리는 조각 — `ui/`
 
@@ -4789,7 +4791,8 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `web/navi/src/ui/StatusCard.tsx` | 우측 상태 카드. **시간이 걸리는 상태만** 띄운다 — 나머지까지 띄우면 골목에서 지도를 가린다 |
 | `web/navi/src/ui/ShareChip.tsx` | 관제 공유 상태칩. 상단바 바로 아래 **가운데** — 오른쪽에 두면 병목 시트와 재탐색 카드가 같은 자리를 쓴다 |
 | `web/navi/src/ui/deferred.tsx` | **첫 화면에 안 쓰이는 주행 부품을 진입 청크 밖에 둔다**(`React.lazy`). 미룬 것 — `RouteBrief`(`brief` 화면) · `BottleneckPanel` · `ShareChip`(주행 화면) · `DevBar`(`?dev=1`). 진입 청크 래칫(`naviweight` 127KB)이 PR #360 의 배포를 막아 130.56KB → 117.15KB 로 내렸다 — 래칫을 올리지 않았다. **서비스 워커는 첫 방문에서 쓴 것만 캐시하므로** `prefetch()` 가 데이터 도착 직후 유휴 시간에 셋(`DevBar` 제외)을 미리 받는다 — 안 받은 채 통신이 끊기면 주행 화면이 빈다. 폴백은 `null` |
-| `web/navi/src/ui/BottleneckPanel.tsx` | 병목 구간 상세(유효폭 · 요구폭 · 여유폭 · 길이 · 사유 · 근거). 「측정 신뢰도」는 `width_cov` 다 |
+| `web/navi/src/ui/BottleneckPanel.tsx` | 병목 패널 — **다음 구간 하나 · 네 줄**(거리 · 도로명 · 위험 종류 · 여유 · 외 N곳). 누르는 곳은 76dp 이상이고 달리는 중에는 「자세히」 가 막힌다(`domain/motion.ts`) |
+| `web/navi/src/ui/BottleneckDetail.tsx` | 병목 **자세히**(정차 중 상세) — 유효폭 · 요구폭 · 여유폭 · 길이 · 사유 · 근거. 「측정 신뢰도」는 `width_cov` 다. 주행 중 수(`tools/uidrive.py`)에 안 드는 분류가 속도 잠금으로 참이다 |
 | `web/navi/src/ui/SegCard.tsx` | 관제가 도로 하나를 눌렀을 때의 구간 카드. 여유폭을 **수로** 내고 사유를 한 줄 단다 — 넉넉하면 그 칸이 통째로 빠진다 |
 | `web/navi/src/ui/OpsBits.tsx` | 관제의 되풀이 조각 넷(`Row` · `Sec` · `Tile` · `Center`). 층(`LAYER`)을 받아 **휘도로** 무게를 가른다 |
 | `web/navi/src/ui/Legend.tsx` | 내비 지도 범례. 색은 `navi_graph.json.style` 이 주는 것을 그대로 쓴다 |

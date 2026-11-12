@@ -2,7 +2,7 @@
 """
 obligations.py — 새 파일에 따라붙는 **등재 의무**를, 이미 그 의무를 지키는 검사에게 물어 **이름으로** 댄다.  (PLAN #199)
 
-    uv run python tools/obligations.py --new               추적 안 된 새 파일 · 스테이징한 새 파일의 빠진 의무
+    uv run python tools/obligations.py --new               새 파일(추적 안 된 것 · 스테이징한 것 · **푸시 범위에서 커밋된 것**)의 빠진 의무
     uv run python tools/obligations.py --file tools/x.py   그 파일의 빠진 의무
     uv run python tools/obligations.py --table             종류 → 의무 → 그 의무를 지키는 검사 (도출된 표)
 
@@ -15,11 +15,11 @@ obligations.py — 새 파일에 따라붙는 **등재 의무**를, 이미 그 �
   `toolclass` · `scopedecl` 이 머리말을. 이 표는 그 검사들의 **판정 함수를 부를 뿐**이고 의무의 내용을 한 줄도 다시 적지 않는다.
   검사가 바뀌면 표가 따라간다 — 표가 따로 낡을 자리가 없다. 같은 판단을 두 자리에 적어 한쪽만 고쳐지는 병(`.gitleaks.toml` · `plan_renumber` 정규식)을 안 만든다.
 
-★ **새 절 · 새 대장 항목도 이름으로 댄다**(2026-11-08 · PLAN #199 ④) — `git diff HEAD` 로 **새로 더해진 `#` 제목 줄**을 찾아 그 절만 `dms`(칸 · 물림 · 하위 수) ·
+★ **새 절 · 새 대장 항목도 이름으로 댄다**(2026-11-08 · PLAN #199 ④) — 푸시 범위의 밑에서 작업 트리까지의 `git diff` 로 **새로 더해진 `#` 제목 줄**을 찾아 그 절만 `dms`(칸 · 물림 · 하위 수) ·
   `measurecols`(쓴 칸 · `none:` 선언)에 묻고, 새 `datasets` 키는 `firelane.authority`(받은 경로 괄호)에 묻는다. 받은 경로 판정은 시험 안에 살았다 — 한 벌로 꺼냈다.
 ★ **아직 도출 못 한 의무는 표에 「미도출」로 적는다**(`NOT_DERIVED`) — 대장을 건드릴 때의 봉인지(`shardseal`)뿐이다. 있는 척하지 않는다.
 
-IN    `toolclass.classify` · `scopedecl.measure` · `sealcov.survey` · `dms` · `measurecols` · `authority` 의 판정 · git 의 새 파일 · `git diff HEAD`
+IN    `toolclass.classify` · `scopedecl.measure` · `sealcov.survey` · `dms` · `measurecols` · `authority` 의 판정 · git 의 새 파일 · 푸시 범위의 밑(`@{u}` · `origin/dev` 와의 merge-base)에서 작업 트리까지의 `git diff`
 OUT   화면 · 종료 코드(빠진 의무가 있으면 1). 아무것도 안 쓴다
 PARAM NOT_DERIVED
 밖    **의무가 옳은가는 안 본다** — 검사가 그렇다고 하면 그렇다. 봉인지 의무는 안 든다(위 「미도출」). **옛 절 · 옛 대장 항목의 빚은 안 센다**(래칫이 센다) — 새로 더해진 것만 본다.
@@ -124,10 +124,36 @@ def unmet(rels: list[str], state: dict[str, set[str]] | None = None, known: set[
     return out
 
 
-def new_files() -> list[str]:
-    """추적 안 된 새 파일과 스테이징한 새 파일."""
-    r = subprocess.run(["git", "status", "--porcelain=v1", "--untracked-files=all"], cwd=ROOT, capture_output=True, text=True, check=True, timeout=60)
-    return sorted(ln[3:] for ln in r.stdout.splitlines() if ln[:2] in ("??", "A ", "AM"))
+def _git(args: list[str], root: Path) -> str | None:
+    r = subprocess.run(["git", *args], cwd=root, capture_output=True, text=True, timeout=60)
+    return r.stdout if r.returncode == 0 else None
+
+
+def push_base(root: Path = ROOT) -> str | None:
+    """푸시 범위의 **밑**(커밋) — `@{u}` 와의 merge-base, 없으면 `origin/dev` 와의 merge-base. 둘 다 못 읽으면 `None`(작업 트리만 본다).
+
+    ★ 2026-11-12 (DECISIONS §705 · `#216` 한계 ②). 종전 `--new` 는 **커밋 안 된 파일만** 봤다 — 새 파일을 만들자마자 커밋하면 그 창을 안 지났다
+      (오늘 두 번: `test_silent_branches` · `motion.ts`). 기준을 푸시 범위 ∪ 작업 트리로 넓힌다 — `tools/testpick.changed_files` 와 같은 기준이다.
+    """
+    for ref in ("@{u}", "origin/dev"):
+        out = _git(["merge-base", "HEAD", ref], root)
+        if out and out.strip():
+            return out.strip()
+    return None
+
+
+def new_files(root: Path = ROOT, base: str | None = None) -> list[str]:
+    """새 파일 — 추적 안 된 것 · 스테이징한 것 · **푸시 범위에서 커밋으로 더해진 것**(지금도 있는 것만)."""
+    out = set()
+    st = _git(["status", "--porcelain=v1", "--untracked-files=all"], root)
+    if st is None:
+        raise subprocess.CalledProcessError(1, "git status")
+    out.update(ln[3:] for ln in st.splitlines() if ln[:2] in ("??", "A ", "AM"))
+    b = base if base is not None else push_base(root)
+    if b:
+        added = _git(["diff", "--name-only", "--diff-filter=A", "--no-renames", b], root) or ""
+        out.update(f for f in added.split("\n") if f and (root / f).is_file())
+    return sorted(out)
 
 
 #: 의무를 지키는 문서 — dms 의 절 ID 가 이 문서들에서 나온다.
@@ -151,9 +177,10 @@ def added_headings(diff: str) -> dict[str, set[int]]:
     return out
 
 
-def _diff_head() -> str:
-    r = subprocess.run(["git", "diff", "HEAD", "-U0", "--no-color", "--", *DOC_FILES], cwd=ROOT, capture_output=True, text=True, check=True, timeout=60)
-    return r.stdout
+def _diff_head(root: Path = ROOT, base: str | None = None) -> str:
+    """문서의 변경 — **푸시 범위 ∪ 작업 트리**(`base` → 작업 트리). 범위를 못 읽으면 `HEAD` → 작업 트리."""
+    b = base if base is not None else push_base(root)
+    return _git(["diff", b or "HEAD", "-U0", "--no-color", "--", *DOC_FILES], root) or ""
 
 
 def section_unmet(added: dict[str, set[int]], data: dict | None = None) -> dict[str, list[str]]:
@@ -215,16 +242,19 @@ def dataset_unmet(now: dict, before: dict) -> dict[str, list[str]]:
     return out
 
 
-def _sources_at_head() -> dict:
-    r = subprocess.run(["git", "show", "HEAD:sources.yaml"], cwd=ROOT, capture_output=True, text=True, timeout=60)
-    return ledger.parse(r.stdout) if r.returncode == 0 else {}
+def _sources_at_head(root: Path = ROOT, base: str | None = None) -> dict:
+    """대장의 **밑** 모습 — 푸시 범위의 밑 커밋(없으면 `HEAD`)의 `sources.yaml`."""
+    b = base if base is not None else push_base(root)
+    out = _git(["show", f"{b or 'HEAD'}:sources.yaml"], root)
+    return ledger.parse(out) if out is not None else {}
 
 
 def document_unmet() -> dict[str, list[str]]:
-    """새 절 · 새 대장 항목의 빠진 의무 — `git diff HEAD` 로 **새로 더해진 것**만 본다(스테이징 여부와 무관)."""
-    added = added_headings(_diff_head())
+    """새 절 · 새 대장 항목의 빠진 의무 — 푸시 범위 ∪ 작업 트리에서 **새로 더해진 것**만 본다(커밋 · 스테이징 여부와 무관)."""
+    base = push_base()
+    added = added_headings(_diff_head(ROOT, base))
     out = {**section_unmet(added), **measure_unmet(added)}
-    out.update({f"대장/{k}": v for k, v in dataset_unmet(ledger.load(), _sources_at_head()).items()})
+    out.update({f"대장/{k}": v for k, v in dataset_unmet(ledger.load(), _sources_at_head(ROOT, base)).items()})
     return out
 
 

@@ -130,6 +130,7 @@ export function createReplaySource(
         lat: point[1] + ey / MY,
         heading: v >= 2 ? (heading + gauss() * 8 + 360) % 360 : null,
         source: "replay",
+        speedMps: mul > 0 ? v : 0,
         t: nowMs,
       };
     },

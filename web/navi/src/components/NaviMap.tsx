@@ -46,7 +46,7 @@ import type { RouteLook } from "../domain/status";
 import type { LiveFix } from "../domain/types";
 import { C, S } from "../ui/tokens";
 import {
-  GLYPHS, sources, baseLayers, markerLayers, routeLayers, altRouteLayers, NAVI_OFF,
+  GLYPHS, sources, baseLayers, withLanduse, markerLayers, routeLayers, altRouteLayers, NAVI_OFF,
   stationLayers, shortenStationLabels, applyTerrain, chevronImage, cctvIcon, hydrantIcon, bumpIcon, camIcon, zoneIcon, pillImage, pillOptions,
 } from "./layers";
 import { dataBase } from "../infra/dataBase";
@@ -161,7 +161,7 @@ export function NaviMap(props: Props) {
         //   북동면이 어둡다.
         light: { anchor: "viewport", color: "#ffffff", intensity: 0.45, position: [1.3, 210, 30] },
         sources: sources(D, p.view.terrainBounds),
-        layers: baseLayers(styleRef.current),
+        layers: withLanduse(baseLayers(styleRef.current)),
       },
     });
     map.current = m;

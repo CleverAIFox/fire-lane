@@ -60,7 +60,7 @@ def test_the_four_pieces_cover_every_test_file_once():
 def test_the_required_name_aggregates_both_halves_even_when_they_fail():
     jobs = _split_or_skip()
     agg = jobs["contract-shared"]
-    assert set(agg["needs"]) == {"contract-fast", "contract-heavy", "contract-tests"}
+    assert set(agg["needs"]) == {"contract-fast", "contract-heavy", "contract-tests", "contract-smoke"}
     assert "always()" in str(agg["if"]), "집계가 always() 가 아니면 위 셋이 빨개도 필수 체크가 건너뜀으로 남는다"
     run = "\n".join(s.get("run", "") for s in agg["steps"])
     assert "success" in run and "exit 1" in run

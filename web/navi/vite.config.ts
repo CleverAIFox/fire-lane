@@ -34,6 +34,11 @@ const HERE = import.meta.dirname;
 function serveWebData(): Plugin {
   const DATA = path.resolve(HERE, "..", "data");
   const prefix = base.replace(/navi\/$/, "data/");   // /fire-lane/data/
+  // ★ 2026-11-12 (DECISIONS §700). **글자(`web/fonts`)도 같은 길로 내준다.** 지도 스타일의 `glyphs` 가 `../fonts/…pbf` 라서 개발 서버에서는
+  //   404 였다(배포는 `web/` 통째라 멀쩡하다) — 도로 이름이 로컬 글자로 떨어지고 콘솔이 404 로 시끄러웠다. 브라우저 스모크가
+  //   「콘솔 오류 0」을 물으므로 그 소음을 끄는 것이 아니라 **원인을 고쳤다.**
+  const FONTS = path.resolve(HERE, "..", "fonts");
+  const fontsPrefix = base.replace(/navi\/$/, "fonts/");   // /fire-lane/fonts/
 
   const MIME: Record<string, string> = {
     ".json": "application/json; charset=utf-8",
@@ -42,6 +47,7 @@ function serveWebData(): Plugin {
     ".jpg": "image/jpeg",
     ".webp": "image/webp",
     ".js": "text/javascript; charset=utf-8",
+    ".pbf": "application/x-protobuf",
   };
 
   return {
@@ -49,12 +55,14 @@ function serveWebData(): Plugin {
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const url = (req.url ?? "").split("?")[0];
-        if (!url.startsWith(prefix)) return next();
+        const isFont = url.startsWith(fontsPrefix);
+        if (!isFont && !url.startsWith(prefix)) return next();
+        const ROOT_DIR = isFont ? FONTS : DATA;
 
         // 경로 탈출 차단. `..` 로 저장소 밖을 읽지 못하게 한다.
-        const rel = decodeURIComponent(url.slice(prefix.length));
-        const file = path.resolve(DATA, rel);
-        if (!file.startsWith(DATA)) {
+        const rel = decodeURIComponent(url.slice((isFont ? fontsPrefix : prefix).length));
+        const file = path.resolve(ROOT_DIR, rel);
+        if (!file.startsWith(ROOT_DIR)) {
           res.statusCode = 403;
           return res.end("forbidden");
         }
@@ -124,6 +132,9 @@ function opsUrl(mode: string): string {
 
 export default defineConfig(({ mode }) => ({
   base,
+  // ★ 2026-11-12 (DECISIONS §700). 브라우저 스모크가 **자기 개발 서버**를 따로 띄운다 — 의존 캐시(`node_modules/.vite`)를 사람의 개발 서버와
+  //   나눠 쓰면 스모크의 재최적화가 사람의 캐시를 지운다(조사 중 실제로 났다). 환경 변수가 있을 때만 캐시 자리를 바꾼다.
+  cacheDir: process.env.FL_VITE_CACHE || undefined,
   plugins: [react(), serveWebData()],
   define: {
     "import.meta.env.VITE_MAPBOX_TOKEN": JSON.stringify(mapboxToken(mode)),

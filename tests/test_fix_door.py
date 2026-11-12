@@ -116,10 +116,27 @@ def test_the_door_actually_repairs_an_injected_defect(tree: Path):
     assert broken != original
 
     master.write_text(broken, encoding="utf-8")
-    r = _run(tree)
+    # ★ 2026-11-12 (DECISIONS §707). 마지막 단계 「래칫」 은 건너뛴다 — `ratchet.py --write` 의 `clearance_cross` 하나가 60초를 쓰고(문 전체 100초 중 98초)
+    #   전수 병렬에서 이 시험이 300초 시한을 넘었다. 이 시험이 묻는 것(**주입한 생성 블록 결함을 문이 되돌리는가**)은 그 단계와 무관하다 —
+    #   되돌리는 단계는 「문서 생성 블록」 이고 그것은 그대로 돈다. 래칫 단계가 **문의 맨 뒤에 걸려 있다**는 사실은 아래 시험이 문다.
+    r = _run(tree, "--skip=래칫")
     assert r.returncode == 0, r.stdout + r.stderr
     assert "9,999" in r.stdout, f"문이 심은 결함을 못 봤다\n{r.stdout}"
+    assert "건너뜀 (--skip)" in r.stdout and "부분 실행" in r.stdout, "건너뛴 단계가 건너뜀으로 안 찍혔다 — 건너뛴 것이 고친 것으로 읽힌다"
     assert master.read_text(encoding="utf-8") == original, "문이 돌았는데 파일이 원래대로 안 돌아왔다"
+
+
+def test_the_ratchet_step_is_still_the_last_step_of_the_door(tree: Path):
+    """★ 위 시험이 건너뛰는 「래칫」 이 **여전히 문에 걸려 있고 맨 뒤인가.** (`--dry` — 싸다)
+
+    래칫 단계가 **실제로 도는가**는 이 시험이 아니라 `tests/test_ratchet.py::test_the_real_tree_is_at_its_ratchets`(실제 트리에서 `ratchet.py` 를 잰다)가 든다 —
+    같은 도구를 같은 값으로 두 번 돌릴 이유가 없다. 여기가 드는 것은 **배선**이다: 단계가 빠지거나 앞으로 옮겨지면(앞의 수리가 실측값을 바꾸므로 맨 뒤여야 한다) 운다.
+    """
+    r = _run(tree, "--dry")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert any("tools/ratchet.py --write" in ln for ln in r.stdout.splitlines()), "문에서 래칫 단계가 사라졌다"
+    last = [ln for ln in r.stdout.splitlines() if "uv run" in ln][-1]
+    assert "tools/ratchet.py --write" in last, f"래칫이 맨 뒤가 아니다 — 앞의 수리가 실측값을 바꾼다: {last}"
 
 
 def test_every_mechanical_step_is_behind_the_door():

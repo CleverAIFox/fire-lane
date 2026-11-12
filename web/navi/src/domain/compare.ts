@@ -133,3 +133,62 @@ export function compareMarks(base: RoutePlan, other: RoutePlan): CompareMarks {
     checkM: Math.round(runM),
   };
 }
+
+/**
+ * 경로 **위** 경고 — 신고 주소를 고르면 어느 구간이 위험한지를 바로 말한다.  (PLAN #78 ③)
+ *
+ * ★ 종전에는 개수만 말했다(`routeStats` 의 「폭 확인 필요 구간 N개」). 병목 패널은 **앞 400m** 안만 보고
+ *   출발 전에는 첫 400m 뿐이었다. 이 함수는 **전 구간**을 훑어 위험한 구간을 **경로 순서**로 낸다.
+ * ★ 정의는 병목 패널(`App.tsx` 의 `bottleneckEdge`)과 **같다** — 확인 필요(`needs_cv`) 또는 여유폭이 `tightMarginM`
+ *   미만. 거기에 둘을 더한다: 통행 불가(`blocked`)와 모름(`unknown`). 경로 전체를 훑는 자리라 그 둘도 말해야 한다.
+ * ★ 폭 값이 없는 초록은 올리지 않는다 — **모름을 0 으로 읽지 않는다**(`width_min_m` 이 null 이면 여유를 못 잰다).
+ *
+ * 순수하다. 경로 · 요구폭만 받는다.
+ */
+export type RiskKind = "blocked" | "needs_cv" | "unknown" | "tight";
+
+export interface RiskItem {
+  segUid: string;
+  label: string;
+  /** 경로 시작에서 이 구간 시작까지의 거리(m) */
+  atM: number;
+  lengthM: number;
+  kind: RiskKind;
+  widthM: number | null;
+  /** 최소 유효폭 − 요구폭(m). 폭을 모르면 null */
+  marginM: number | null;
+}
+
+/**
+ * **앞서 알릴 구간인가** — 확인 필요 · 폭 모름(`UNCERTAIN`) 또는 여유가 `tightMarginM` 미만.
+ * 병목 패널(안내 중 앞 400m)이 이 정의를 쓴다 — 출발 전 카드는 구간 목록을 접고, **그 구간에 가까워질 때** 패널이 말한다.
+ */
+export function isHeadsUp(e: Pick<GraphEdge, "verdict" | "width_min_m">, need: number, tightMarginM = 0.5): boolean {
+  return UNCERTAIN.has(e.verdict) || (e.width_min_m != null && e.width_min_m - need < tightMarginM);
+}
+
+/** 구간 하나의 위험 종류 — 위험이 아니면 null. **폭 모름이면 여유도 모른다** — 다른 소스의 폭 값이 붙어 있어도 여유를 만들지 않는다. */
+export function riskKind(e: Pick<GraphEdge, "verdict" | "width_min_m">, need: number, tightMarginM = 0.5): { kind: RiskKind; marginM: number | null } | null {
+  const w = e.width_min_m ?? null;
+  const margin = w != null && e.verdict !== "unknown" ? w - need : null;
+  if (e.verdict === "blocked") return { kind: "blocked", marginM: margin };
+  if (e.verdict === "needs_cv") return { kind: "needs_cv", marginM: margin };
+  if (e.verdict === "unknown") return { kind: "unknown", marginM: null };
+  return margin != null && margin < tightMarginM ? { kind: "tight", marginM: margin } : null;
+}
+
+export function riskList(p: Pick<RoutePlan, "edges">, need: number, tightMarginM = 0.5): RiskItem[] {
+  const out: RiskItem[] = [];
+  let acc = 0;
+  for (const e of p.edges) {
+    const r = riskKind(e, need, tightMarginM);
+    if (r) {
+      out.push({
+        segUid: e.seg_uid, label: e.seg_label ?? e.road_name ?? e.seg_uid, atM: Math.round(acc),
+        lengthM: e.length_m ?? 0, kind: r.kind, widthM: e.width_min_m ?? null, marginM: r.marginM,
+      });
+    }
+    acc += e.length_m ?? 0;
+  }
+  return out;
+}

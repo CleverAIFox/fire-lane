@@ -1,7 +1,7 @@
 /**
  * ui/BottleneckPanel.tsx — 병목 구간 상세.  (와이어프레임 04 · 04.5 · 2026-09-21)
  *
- *   열림 (04)   우측 시트. 유효폭 · 요구폭 · **여유폭** · 길이 · 사유 · 판정 근거 · 단추 둘
+ *   열림 (04)   우측 카드. **다음 구간 하나** — 거리 · 도로명 · 위험 종류 · 여유 · 외 N곳 · 단추 셋(공유 · 신고 · 자세히)
  *   접힘 (04.5) 우측 가장자리 주황 ⚠ 탭. 누르면 연다
  *
  * ★ "측정 신뢰도" 는 `width_cov` 다 — 그 구간에서 폭 표본이 실제로 덮은
@@ -21,56 +21,42 @@
  *   사유 한 줄(무엇이 얼마나 모자란가 · 지금 무엇을 하나)이 붙는다. 사유는 빨강 전용이
  *   아니라 판정마다 있고, **취할 조치가 없으면 통째로 빠진다**(`segmentReason` 이 null).
  *
- * ★ 하단 두 줄은 **지우지 마라.** 판정이 무엇을 보고 무엇을 안 보는지
- *   화면에 남기는 유일한 장치다(DECISIONS §86-5 가 겪은 자리). 09-05 판에서
- *   주행 화면 우측 패널에 있던 것이 여기로 옮겨 왔다.
+ * ★ 2026-11-12 (DECISIONS §703). **기본 화면은 「다음 구간 하나 · 네 줄」이다.** 종전에는 열면 54줄(유효폭 · 요구폭 · 여유폭 · 길이 · 사유 ·
+ *   판정 근거 …)이었고 그 45줄이 24px 미만이었다(DECISIONS §702) — 운전자가 한 시선 2초로 읽을 양이 아니다. 자리(안내 중 앞 400m)는 맞았고
+ *   **양이 틀렸다.** 지금은 거리 · 도로명 · 무엇이 위험한가 · 여유 — 그리고 「외 N곳」(아직 몇 개 남았나)만 수로 남긴다. 나머지 구간은 **차례로** 뜬다
+ *   (지나가면 다음 것 — 목록이 아니라 흐름이다 · 턴바이턴의 방식). 옛 몸통은 `BottleneckDetail`(자세히)로 옮겼고 **지우지 않았다** — 「판정이 무엇을
+ *   보고 무엇을 안 보는가」 를 화면에 남기는 장치(§86-5)가 거기 산다.
+ * ★ 누르는 곳은 전부 **76dp 이상**이다(Android Auto 의 터치 타깃 기준). 보이는 모양은 그대로이고 **누르는 범위**만 키웠다.
  */
-import type { CSSProperties, ReactNode } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { C, F, S } from "./tokens";
-import { CLEARANCE_SCALE, type SegmentReason } from "./clearanceMeaning";
+import { CLEARANCE_SCALE } from "./clearanceMeaning";
 import { clearanceBand, fmtClearance } from "../domain/clearance";
-import { countText } from "../domain/pressure";
+import { BottleneckDetail, type BottleneckData } from "./BottleneckDetail";
+import { RISK_KIND_TEXT } from "./routeOption";
 
-export interface BottleneckData {
-  segUid: string;
-  segLabel: string;
-  aheadM: number | null;
-  widthM: number | null;
-  requiredM: number;
-  lengthM: number | null;
-  /** width_cov 0~1. 표본이 구간을 덮은 비율 */
-  coverage: number | null;
-  /** n_sample. 1이면 표본 하나로 낸 값이다 */
-  samples: number | null;
-  verdictLabel: string;
-  verdictColor: string;
-  /** 가장 가까운 CCTV 까지 거리(m). 19m 넘으면 영상판정이 성립 안 한다 */
-  cctvDistM: number | null;
-  /** 회색이면 왜 회색인가(§215-2). 아니면 null */
-  grayReason: string | null;
-  /**
-   * 왜 그 색인가 · 지금 무엇을 하나(§220). 초록이고 여유가 넉넉하면 null —
-   * 취할 조치가 없으면 그 칸을 통째로 뺀다.
-   */
-  reason: SegmentReason | null;
-  /**
-   * 그 도로명의 불법주정차 단속 건수(§216-3). 도로 단위 · 위험의 대리값.
-   * ★ `null` 은 **모른다**(도로명이 없어 못 셌다)이고 `0` 은 세었고 없다는 뜻이다.
-   *   섞으면 모르는 것을 「없음」 으로 말한다 — `countText` 가 가른다.
-   */
-  park: number | null;
-  /** 그 도로명의 불법주정차 단속 **카메라 지점** 수. `park` 와 같은 null · 0 규약 */
-  ecam: number | null;
-}
+export type { BottleneckData };
+
+/** 누르는 범위의 최소 — Android Auto 터치 타깃 76×76dp(DECISIONS §702). 보이는 모양이 아니라 **누르는 범위**가 이 크기다. */
+export const TARGET = 76;
 
 interface Props extends BottleneckData {
   open: boolean;
   onToggle: () => void;
   onShare: () => void;
   onReport: () => void;
+  /**
+   * **달리는 중이다 — 「자세히」 를 못 연다.** 정차 중에 읽는 상세를 움직이는 차에서 열면 한 시선 2초 규범(DECISIONS §702)을 깬다.
+   * 열려 있던 것도 닫힌다. 속도는 `domain/motion.ts`(§704)가 안다.
+   */
+  locked: boolean;
 }
 
 export function BottleneckPanel(d: Props) {
+  const [more, setMore] = useState(false);
+  // 달리기 시작하면 열려 있던 상세를 닫는다(다시 서도 저절로 열리지 않는다). 렌더에서도 막는다 — 효과는 한 박자 늦다.
+  useEffect(() => { if (d.locked) setMore(false); }, [d.locked]);
+  const showMore = more && !d.locked;
   if (!d.open) {
     return (
       <button onClick={d.onToggle} style={tab} aria-label="병목 구간 상세 열기" data-wf="04.5">
@@ -78,143 +64,54 @@ export function BottleneckPanel(d: Props) {
       </button>
     );
   }
-  // ★ 2026-09-23 (§220) 여유폭 = 유효폭 − 요구폭. 수와 **같은 4단 색**을 함께 낸다 —
-  //   멘토링(§219)이 「색과 수로」 라고 한 자리다. 판정은 안 바뀐다.
-  const margin = d.widthM != null ? d.widthM - d.requiredM : null;
+  // ★ 폭 모름이면 여유도 모른다 — 여유 줄을 아예 안 쓴다(모르는 수를 쓰면 보는 사람이 믿는다).
+  const margin = d.widthM != null && d.kind !== "unknown" ? d.widthM - d.requiredM : null;
   const band = CLEARANCE_SCALE[clearanceBand(margin)];
-  const cctvOk = d.cctvDistM != null && d.cctvDistM <= 19;
   return (
     <div style={panel} data-wf="04">
       <button onClick={d.onToggle} style={collapse} aria-label="접기">›</button>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ fontSize: 20, fontWeight: 800 }}>병목 구간 상세</div>
-        <button onClick={d.onToggle} style={x} aria-label="닫기">✕</button>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+        <span style={{ fontSize: 32, fontWeight: 800 }}>{d.aheadM != null ? `${Math.round(d.aheadM)}m 앞` : "전방"}</span>
+        {d.more > 0 && <span style={{ fontSize: 24, fontWeight: 800, color: C.panelSub }}>외 {d.more}곳</span>}
       </div>
-      <span style={chip}>현장 확인 필요</span>
-      <div style={{ fontSize: 13, color: C.panelSub, marginTop: 8 }}>
-        {d.segLabel}{d.aheadM != null ? ` · 전방 ${Math.round(d.aheadM)}m` : ""}
-      </div>
+      <div style={{ fontSize: 24, fontWeight: 700, marginTop: 2 }}>{d.segLabel}</div>
+      <div style={{ fontSize: 24, fontWeight: 800, marginTop: 6, color: d.kind === "blocked" ? C.danger : C.warn }}>{RISK_KIND_TEXT[d.kind]}</div>
+      {margin != null && <div style={{ fontSize: 24, fontWeight: 800, color: band.color }}>여유 {fmtClearance(margin)}</div>}
 
-      <div style={grid}>
-        <Tile k="최소 유효폭" v={d.widthM != null ? `${d.widthM.toFixed(1)}m` : "—"} />
-        <Tile k="요구폭 (전폭 + 여유)" v={`${d.requiredM.toFixed(1)}m`} />
-        <Tile k="여유폭 = 유효폭 − 요구폭" v={fmtClearance(margin)} sub={band.short} color={band.color} />
-        <Tile k="구간 길이" v={d.lengthM != null ? `${Math.round(d.lengthM)}m` : "—"} />
-      </div>
-
-      {d.reason && (
-        <div style={{ ...why, borderColor: band.color }}>
-          <b style={{ color: band.color }}>{d.reason.head}</b>
-          <div style={{ marginTop: 2 }}>{d.reason.detail}</div>
-          {d.reason.action && <div style={{ color: C.panelSub, marginTop: 2 }}>→ {d.reason.action}</div>}
-        </div>
-      )}
-
-      <Section title="장애물 · 위험 요소">
-        <Line k="주차 차량" v="미반영" note="CCTV 영상 판정 전" />
-        {/* ★ `d.park ? … : "없음"` 이었다. 그러면 **모르는 것이 「없음」 으로 찍힌다** —
-            0 은 세었고 없는 것이고 `null` 은 안 세어진 것이다. `countText` 가 그것을 가른다. */}
-        <Line k="불법주정차 단속 이력" v={countText(d.park, "건")} />
-        <Line k="단속 카메라" v={countText(d.ecam, "지점")} />
-        <Line k="회전 · 높이" v="미반영" />
-      </Section>
-
-      <Section title="판정 근거">
-        <Line k="측정 신뢰도" v={d.coverage != null ? `${Math.round(d.coverage * 100)}%` : "—"} blue />
-        <Line k="폭 표본" v={d.samples != null ? `${d.samples}개` : "—"}
-              note={d.samples === 1 ? "표본 하나 — 통과 확정 보류" : undefined} />
-        <Line k="가까운 CCTV" v={d.cctvDistM != null ? `${Math.round(d.cctvDistM)}m` : "—"}
-              note={cctvOk ? "영상 판정 가능 거리" : "19m 밖 — 영상 판정 불가"} />
-        <Line k="판정" v={d.verdictLabel} color={d.verdictColor} />
-        {d.grayReason && (
-          <div style={{ fontSize: 11, color: C.panelInk, padding: "6px 0", lineHeight: 1.5 }}>
-            <b>회색 사유</b> — {d.grayReason}
-          </div>
-        )}
-      </Section>
-
-      {/* ★ 2026-10-09 (§445). 「정직 문단」이 여기 있었다 — **화면에 없다.**
-          집은 `MASTER §15-4`(판정이 안 보는 것)다. */}
-      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+      <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
         <button onClick={d.onShare} style={ghost}>관제에 공유</button>
-        <button onClick={d.onReport} style={cta}>통행 불가 신고 »</button>
+        <button onClick={d.onReport} style={cta}>통행 불가 신고</button>
+        <button onClick={() => setMore((x) => !x)} aria-expanded={showMore} disabled={d.locked}
+                style={d.locked ? { ...ghost, opacity: 0.35, cursor: "not-allowed" } : ghost}>{showMore ? "접기" : "자세히"}</button>
       </div>
-    </div>
-  );
-}
-
-function Tile({ k, v, sub, color }: { k: string; v: string; sub?: string; color?: string }) {
-  return (
-    <div style={tile}>
-      <div style={{ fontSize: 11, color: C.panelSub }}>{k}</div>
-      <div style={{ fontSize: 22, fontWeight: 800, marginTop: 4, color: color ?? C.panelInk }}>
-        {v}{sub && <span style={{ fontSize: 11, fontWeight: 700, color: C.panelSub }}> {sub}</span>}
-      </div>
-    </div>
-  );
-}
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div style={{ marginTop: 14 }}>
-      <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 6 }}>{title}</div>
-      <div style={{ background: "#f8fafc", borderRadius: 10, padding: "4px 10px" }}>{children}</div>
-    </div>
-  );
-}
-function Line({ k, v, note, blue, color }: {
-  k: string; v: string; note?: string; blue?: boolean; color?: string;
-}) {
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline",
-                  padding: "6px 0", borderBottom: `1px solid ${C.sheetLine}`, fontSize: 13 }}>
-      <span>
-        {k}
-        {note && <span style={{ display: "block", fontSize: 10, color: C.panelSub }}>{note}</span>}
-      </span>
-      <b style={{ color: color ?? (blue ? C.cta : C.panelInk) }}>{v}</b>
+      {showMore && <div style={{ marginTop: 12 }}><BottleneckDetail {...d} /></div>}
     </div>
   );
 }
 
 const PANEL_W = 380;
 const panel: CSSProperties = {
-  position: "absolute", zIndex: 5, top: S.guideBarH + 14, right: 14, bottom: 60, width: PANEL_W,
-  background: "#fff", color: C.panelInk, padding: "18px 20px", boxSizing: "border-box",
+  position: "absolute", zIndex: 5, top: S.guideBarH + 14, right: 14, width: PANEL_W,
+  maxHeight: `calc(100% - ${S.guideBarH + 14 + 60}px)`,
+  background: "#fff", color: C.panelInk, padding: "16px 18px", boxSizing: "border-box",
   overflowY: "auto", borderRadius: 20, boxShadow: "0 10px 30px rgba(0,0,0,.28)",
   fontFamily: F.family,
 };
 const collapse: CSSProperties = {
-  position: "fixed", right: 14 + PANEL_W - 2, top: `calc(50% + ${S.guideBarH / 2 - 36}px)`,
-  width: 40, height: 76, border: "none", borderRadius: "76px 0 0 76px", background: C.cta,
-  color: "#fff", fontSize: 28, fontWeight: 800, cursor: "pointer", paddingLeft: 8,
+  position: "fixed", right: 14 + PANEL_W - 2, top: S.guideBarH + 14 + 24,
+  width: TARGET, height: TARGET, border: "none", borderRadius: `${TARGET}px 0 0 ${TARGET}px`, background: C.cta,
+  color: "#fff", fontSize: 28, fontWeight: 800, cursor: "pointer", paddingRight: 24,
   boxShadow: "-3px 3px 10px rgba(0,0,0,.2)",
 };
 const tab: CSSProperties = {
-  position: "absolute", zIndex: 5, right: 0, top: `calc(50% + ${S.guideBarH / 2 - 38}px)`,
-  width: 52, height: 76, border: `3px solid ${C.warn}`, borderRight: "none",
+  position: "absolute", zIndex: 5, right: 0, top: `calc(50% + ${S.guideBarH / 2 - TARGET / 2}px)`,
+  width: TARGET, height: TARGET, border: `3px solid ${C.warn}`, borderRight: "none", boxSizing: "border-box",
   borderRadius: "16px 0 0 16px", background: "#fff", cursor: "pointer",
   display: "grid", placeItems: "center", boxShadow: "-3px 3px 12px rgba(0,0,0,.25)",
 };
-const chip: CSSProperties = {
-  display: "inline-block", marginTop: 10, borderRadius: 999, background: C.warn,
-  color: "#fff", padding: "5px 14px", fontSize: 13, fontWeight: 800,
+const btn: CSSProperties = {
+  minHeight: TARGET, minWidth: TARGET, borderRadius: 10, padding: "0 6px", fontWeight: 800, fontSize: 14, cursor: "pointer",
+  fontFamily: F.family,
 };
-const grid: CSSProperties = {
-  display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 12,
-};
-const tile: CSSProperties = { background: "#f8fafc", borderRadius: 10, padding: "10px 12px" };
-const why: CSSProperties = {
-  marginTop: 10, border: "1.5px solid", borderRadius: 10, padding: "9px 11px",
-  fontSize: 12, lineHeight: 1.5, background: "#f8fafc",
-};
-const x: CSSProperties = {
-  background: "none", border: "none", fontSize: 20, cursor: "pointer", color: C.panelSub,
-};
-const ghost: CSSProperties = {
-  flex: 1, border: `1.5px solid ${C.cta}`, background: "#fff", color: C.cta, borderRadius: 10,
-  padding: "12px 0", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: F.family,
-};
-const cta: CSSProperties = {
-  flex: 1.3, border: "none", background: C.cta, color: "#fff", borderRadius: 10,
-  padding: "12px 0", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: F.family,
-};
+const ghost: CSSProperties = { ...btn, flex: 1, border: `1.5px solid ${C.cta}`, background: "#fff", color: C.cta };
+const cta: CSSProperties = { ...btn, flex: 1.3, border: "none", background: C.cta, color: "#fff" };

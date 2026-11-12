@@ -26,9 +26,15 @@ PARAM 없음
 """
 from __future__ import annotations
 
-import shapely
-from shapely.geometry import MultiPolygon, Polygon
+from pathlib import Path
 
+import geopandas as gpd
+import pytest
+import shapely
+from shapely.geometry import MultiPolygon, Polygon, box
+
+import firelane.publish_basemap as PB
+from firelane.ledger import load_sources
 from firelane.publish_basemap import PREC, rfc7946, snap_orient
 
 #: 시계 방향 사각형. RFC 7946 은 외곽을 **반시계**로 요구한다.
@@ -136,3 +142,53 @@ def test_a_repaired_polygon_is_the_same_shape_but_not_the_same_string():
     assert twice.equals(once), "기하가 달라졌다 — 그건 결함이다"
     assert twice.wkt != once.wkt, (
         "글자까지 같아졌다 — `orient` 의 시작점 선택이 바뀌었으면 위 설명을 고쳐라")
+
+
+# ── PLAN 행 144(닫힘) — 토지이용 면: 읽는 코드가 **진짜로 그 키를 읽는다** ─────────────────────────────────────────────
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def _landuse_gpkg(tmp_path: Path, rows: list[tuple[str, Polygon]]) -> Path:
+    """`vworld_uq153_5186.gpkg` 꼴 — 5186 · `DGM_NM` 한 칸."""
+    g = gpd.GeoDataFrame({"DGM_NM": [n for n, _ in rows]}, geometry=[p for _, p in rows], crs=5186)
+    g.to_file(tmp_path / PB.LANDUSE_FILE, driver="GPKG")
+    return tmp_path
+
+
+def test_landuse_class_is_green_only_when_the_name_says_so() -> None:
+    assert [PB.landuse_class(n) for n in ("근린공원", "소공원", "완충녹지", "유원지", "기타 공원시설")] == ["green"] * 5
+    assert [PB.landuse_class(n) for n in ("공공공지", "광장", "", None, 3)] == ["plaza"] * 5, "낱말이 없는데 녹지로 칠했다"
+
+
+def test_build_landuse_keeps_the_class_clips_to_the_frame_and_is_valid_and_deterministic(tmp_path, monkeypatch) -> None:
+    def sq(x: float, y: float, w: float) -> Polygon:
+        return Polygon([(x, y), (x, y + w), (x + w, y + w), (x + w, y)])             # 시계(CW) 로 준다
+    _landuse_gpkg(tmp_path, [("근린공원", sq(0, 0, 40)), ("공공공지", sq(100, 0, 30)), ("소공원", sq(900, 900, 40))])
+    monkeypatch.setattr(PB, "P", tmp_path)
+    frame = box(-10, -10, 200, 200)                                   # 셋째 면은 틀 밖이다
+    fc = PB.build_landuse(frame)
+    got = {(f["properties"]["cls"]) for f in fc["features"]}
+    assert len(fc["features"]) == 2 and got == {"green", "plaza"}, f"틀 밖 면이 남았거나 갈래를 잃었다: {got}"
+    assert all(set(f["properties"]) == {"cls"} for f in fc["features"]), "속성이 갈래 하나가 아니다(원천 칸을 새로 흘렸다)"
+    assert PB.build_landuse(frame) == fc, "같은 입력이 다른 출력을 냈다 — 바이트 안정성이 깨졌다"
+    for f in fc["features"]:
+        ring = f["geometry"]["coordinates"][0]
+        area2 = sum(ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1] for i in range(len(ring) - 1))
+        assert area2 > 0, "외곽이 시계방향이다 — RFC 7946 위반"
+
+
+def test_build_landuse_dies_without_its_source_instead_of_publishing_an_empty_layer(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(PB, "P", tmp_path)
+    with pytest.raises(SystemExit, match="조용히 내지 않는다"):
+        PB.build_landuse(box(0, 0, 1, 1))
+
+
+def test_the_ledger_names_publish_basemap_as_the_consumer_and_the_code_really_reads_that_key() -> None:
+    """★ 집계를 이기는 길을 막는다 — 대장 `feeds` 에 파일 이름만 적고 코드가 그 키를 안 읽으면 `unused` 가 줄어 보이기만 한다."""
+    ledger = load_sources()["datasets"][PB.LANDUSE_STEM]
+    assert "src/firelane/publish_basemap.py" in ledger["feeds"], "대장이 소비처를 안 적었다"
+    assert ledger["kind"] == "shp_zip", "적재가 안 되는 종류(raw_only)다 — 읽을 파일이 안 나온다"
+    src = (ROOT / "src/firelane/publish_basemap.py").read_text(encoding="utf-8")
+    assert f'LANDUSE_STEM = "{PB.LANDUSE_STEM}"' in src and "gpd.read_file(path)" in src and "build_landuse" in src.split("def main")[1], \
+        "발행기가 대장이 적은 키를 실제로 읽어 내지 않는다 — 이름만 적은 소비처다"

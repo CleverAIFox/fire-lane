@@ -671,20 +671,11 @@ step "web/data 용량"    bash -c '
 #   영향 범위 선언 둘이 함께 빠져 tests/test_verify_scope.py 의 SCOPE_FLOOR 를 내렸다.
 #   화면 검사는 아래 7b(내비 타입 · 단위 시험)가 든다.
 
-# ── 7b. 내비 타입 검사 (web/navi) ────────────────────────────
-# ★ 2026-09-15 신설. (철거된) 6·7 은 `web/js` 옛 지도만 봤다. 내비는
-#   React/TS 라 그 셋에 안 걸렸고, 컴파일하는 곳은 배포 액션 하나뿐이었다.
-#   그래서 maplibre-gl 6 이 로컬 39단계 전부 초록인 채로 main 까지 갔다.
-#   **여기가 비어 있어서 로컬이 CI 의 부분집합도 아니었다**(5b 와 같은 사고).
-# ★ 타입만 본다. `vite build` 는 토큰이 필요하고, 이번 사고는 타입에서
-#   잡혔다. 토큰 없는 빌드는 배포 액션이 맡는다.
-# ★ 2026-09-22 (DECISIONS §213-1). CI 가 `Cannot find namespace 'GeoJSON'` 으로
-#   죽었는데 여기는 초록이었다. 여기는 **있던 node_modules** 로 검사했고 CI 는
-#   잠금대로 새로 깐다 — 설치물이 잠금과 어긋나도 몰랐다. 노드 판도 달랐다
-#   (CI 20 · 로컬 22). 그래서 타입 검사 **앞에** 환경부터 CI 와 맞춘다:
-#   잠금 지문이 바뀌었으면 npm ci, 로컬 노드 = .nvmrc, 잠금 engines 전부 만족.
-#   종전의 「node_modules 가 있으면 그대로 · 없으면 npm ci」 두 갈래는 그 첫
-#   갈래가 구멍이었다.
+# ── 7b. 내비 검사 (web/navi) — 환경 · 린트 · 타입 · 단위 시험 · 브라우저 스모크 ────────────
+# ★ 2026-09-15 신설: 옛 6·7 은 `web/js` 만 봤고 내비(React/TS)는 컴파일하는 곳이 배포 액션 하나뿐이라, maplibre-gl 6 이
+#   로컬 39단계 초록인 채 main 까지 갔다(5b 와 같은 사고). 타입만 본다 — `vite build` 의 토큰은 배포 액션이 맡는다.
+# ★ 2026-09-22 (§213-1). 타입 검사 **앞에** 환경부터 CI 와 맞춘다: 잠금 지문이 바뀌면 npm ci · 로컬 노드 = .nvmrc · 잠금 engines 만족.
+#   「있던 node_modules 로 검사」 하던 갈래가 구멍이었다(CI 는 잠금대로 새로 깐다 · 노드 판도 달랐다).
 if command -v npm >/dev/null 2>&1; then
     scope "web/navi/*"
     step "내비 환경 = CI" uv run python tools/navi_env.py
@@ -701,6 +692,13 @@ if command -v npm >/dev/null 2>&1; then
     #   시뮬레이션이 경로 자체를 따라 걸어서 폐루프가 한 번도 안 돌았다.
     scope "web/navi/*"
     step "내비 단위 시험" bash -c 'cd web/navi && npm run -s test'
+    # ★ DECISIONS §706 · PLAN #223. CI 의 `contract-smoke` 그대로(빌드 → `npm run smoke` · 1분 남짓). 브라우저가 **띄워질 때만** 돈다(`executablePath` 는 셸만 받은 기계에서 거짓 → `launch` 탐침). 없으면 `note`(CI 가 돈다).
+    if (cd web/navi && node -e 'const t=require("@playwright/test");(async()=>{const b=await t.chromium.launch();await b.close()})().catch(()=>process.exit(1))' >/dev/null 2>&1); then
+        scope "web/navi/*"
+        step "내비 브라우저 스모크" bash -c 'cd web/navi && npm run -s build >/dev/null && CI=1 npm run -s smoke'
+    else
+        note "내비 브라우저 스모크" "헤드리스 크로미움이 없다 — cd web/navi && npx playwright install --only-shell chromium (CI 의 contract-smoke 가 같은 검사를 돈다)"
+    fi
 else
     # ★ 2026-09-22 (DECISIONS §218-5). 종전에는 셋 중 「내비 타입 검사」 한 행만 남겼다.
     #   갈래가 건너뛰는 단계는 **이름마다** 한 행이다 — 아래 `evidence_check` 가 센다.
@@ -708,6 +706,7 @@ else
     note "내비 린트" "npm 이 없다"
     note "내비 타입 검사" "npm 이 없다"
     note "내비 단위 시험" "npm 이 없다"
+    note "내비 브라우저 스모크" "npm 이 없다"
 fi
 
 # ── 8. 파이프라인 전량 + 판정 불변 ───────────────────────────

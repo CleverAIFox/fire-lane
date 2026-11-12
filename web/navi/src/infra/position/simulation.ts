@@ -76,7 +76,7 @@ export function createSimulationSource(
         last = t;
         along = Math.min(total, along + mpsAt(along) * mul * dt);
         const { point, heading } = pointAlong(coords, cum, along);
-        onFix({ lon: point[0], lat: point[1], heading, source: "simulation" });
+        onFix({ lon: point[0], lat: point[1], heading, source: "simulation", speedMps: mul > 0 ? mpsAt(along) : 0 });
         if (along >= total) { onEnd?.(); return; }
         raf = requestAnimationFrame(tick);
       };
