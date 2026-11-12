@@ -42,7 +42,6 @@ docnum_check.py — 문서에 적힌 숫자가 산출물과 같은지 본다.
 from __future__ import annotations
 
 import json
-import os
 import re
 import sys
 from pathlib import Path
@@ -52,6 +51,7 @@ from docnumhist import is_shallow, previous_values, replaced_values
 from docnumrules import pattern_gaps, present_faults
 from docnumtable import CONTEXT, RETIRED
 
+from firelane import paths as _paths  # 환경변수의 유일한 독자다(§222-3)
 from firelane.cli import no_args
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -493,7 +493,7 @@ def main() -> int:
     #   앞에 `(` 가 오는 경우도 같다 — 괄호 안 백분율이다.
     #   **검사가 문맥 없이 숫자만 보면 새 사실을 쓸 수 없게 만든다.**
     history = previous_values()
-    _ci = bool(os.environ.get("CI"))
+    _ci = _paths.env("CI") == "true"      # GitHub 가 주는 값 — 환경변수는 `paths` 한 곳이 읽는다(`env_check` 단일 독자 · `build_proposal` 과 같은 읽기)
     if history is None or is_shallow():       # ★ 직전 값 폐기 검사는 이력이 있어야 돈다(§715 · §716) — 침묵하지 않는다. CI 는 이력을 받으므로 거기서 꺼졌으면 설정이 되돌려진 것이다
         print(("! " if _ci else "· ") + ("git 이 못 답했다" if history is None else "얕은 클론이다")
               + " — 방금 대체된 값의 폐기 검사가 꺼져 있거나 줄었다 (git fetch --unshallow)")

@@ -341,13 +341,16 @@ def test_the_real_history_knows_the_value_the_last_relock_replaced():
     hist = D.previous_values() or []
     if not any("clear" in h and h["clear"] is not None for h in hist):
         # ★ 얕은 클론에서 이 검사가 **침묵하는 것은 로컬에서만 옳다**. CI 는 이력을 받는다(`contract.yml` 의 `filter: blob:none`) — 거기서 얕으면 방어선이 꺼진 것이다.
-        if os.environ.get("CI"):
+        if os.environ.get("CI") == "true":
             pytest.fail("CI 인데 골든 지문 git 이력이 없다 — 체크아웃이 얕다. 폐기값 자동 유도(`docnumhist`)가 CI 에서 꺼져 있다")
         pytest.skip("환경skip(도구) — 골든 지문 git 이력이 없는 얕은 클론이다(로컬 한정 · CI 는 실패)")
     cur = D.verdicts()
     got = D.replaced_values(hist, {"clear": cur["clear"], "needs_cv": cur["needs_cv"], "blocked": cur["blocked"], "unknown(회색)": cur["unknown"]})
     assert got, "이력이 있는데 대체된 값을 하나도 못 읽었다 — 판정이 한 번도 안 움직였을 리 없다"
     assert all(len(v) == 1 for v in got.values()), got
+
+
+_GIT_S = 60       # ★ 시한 없는 기다림은 빨강을 무한 대기로 바꾼다(`test_no_unbounded_waits`) — 임시 저장소의 git 도 시한을 건다
 
 
 def test_a_shallow_clone_is_detected(tmp_path):
@@ -358,13 +361,13 @@ def test_a_shallow_clone_is_detected(tmp_path):
     full = tmp_path / "full"
     full.mkdir()
     g = ["git", "-c", "user.name=t", "-c", "user.email=t@example.invalid"]
-    subprocess.run([*g, "init", "-q"], cwd=full, check=True)
+    subprocess.run([*g, "init", "-q"], cwd=full, check=True, timeout=_GIT_S)
     for i in range(2):
         (full / "f.txt").write_text(str(i), encoding="utf-8")
-        subprocess.run([*g, "add", "."], cwd=full, check=True)
-        subprocess.run([*g, "commit", "-q", "-m", f"c{i}"], cwd=full, check=True)
+        subprocess.run([*g, "add", "."], cwd=full, check=True, timeout=_GIT_S)
+        subprocess.run([*g, "commit", "-q", "-m", f"c{i}"], cwd=full, check=True, timeout=_GIT_S)
     shallow = tmp_path / "shallow"
-    subprocess.run(["git", "clone", "-q", "--depth", "1", f"file://{full}", str(shallow)], check=True)
+    subprocess.run(["git", "clone", "-q", "--depth", "1", f"file://{full}", str(shallow)], check=True, timeout=_GIT_S)
     assert D.is_shallow(full) is False
     assert D.is_shallow(shallow) is True, "얕은 클론을 못 알아본다 — 방어선이 꺼진 채 초록이 된다"
 
