@@ -13300,6 +13300,48 @@
   },
   "sha": "71ebe0f61b9c2495"
  },
+ "DECISIONS/711": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tools/uicheck.py",
+   "web/navi/test/roadLabels.test.ts"
+  ],
+  "fp": "view-v2",
+  "kind": "read",
+  "legacy": [
+   "8bb7449e5f8dd1cd",
+   "dc22258992deffc9"
+  ],
+  "parts": {
+   "tools/uicheck.py": "3cb9bfda1c8596ae",
+   "web/navi/test/roadLabels.test.ts": "0dcc1459d89adc15",
+   "본문": "42e4d8c3acd0546d"
+  },
+  "sha": "dc22258992deffc9"
+ },
+ "DECISIONS/712": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_fix_door.py",
+   "tests/test_ratchet.py",
+   "tests/test_testpick.py",
+   "tools/ratchet.py"
+  ],
+  "fp": "view-v2",
+  "kind": "read",
+  "legacy": [
+   "26a5671c4e309423",
+   "beea886783058679"
+  ],
+  "parts": {
+   "tests/test_fix_door.py": "9d5ef4a0408b7aba",
+   "tests/test_ratchet.py": "baf628e704017fb3",
+   "tests/test_testpick.py": "055240a9962a4409",
+   "tools/ratchet.py": "247f92f9431f573c",
+   "본문": "6ab920eeff0aae8a"
+  },
+  "sha": "beea886783058679"
+ },
  "DECISIONS/74": {
   "doc": "docs/DECISIONS.md",
   "files": [
