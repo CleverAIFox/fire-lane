@@ -21,8 +21,22 @@ import shapely
 from shapely.geometry import LineString, Point
 from shapely.ops import unary_union
 
-from firelane.seg.params import NODE_TOL, PARK, TRUCK
+from firelane.seg.params import NODE_TOL, PARK, TRUCK, WALL_EXCESS_T
 from firelane.seg.unionfind import find as _uf_find
+
+
+def wall_gap(A, B):
+    """담~담 폭 `B` 를 노면 폭 `A` 와 맞춘다. 순수 함수 — 둘 다 없을 수 있다(None).  (DECISIONS §709 · §714)
+
+    ① 벽 사이 폭은 도로 폭보다 좁을 수 없다 — `B < A` 면 `B = A`. 상한(WMAX_CAP) 이상은 잘리지 않고 입장에서 빠지므로(§597)
+       표본마다 입장이 달라 역전이 생긴다 — 도로 폭으로 끌어올린다.
+    ② **그 바로 뒤에** 좁은 길 가드: `A < TRUCK` 이고 `B − A > WALL_EXCESS_T` 면 `B = None`(모름). 순서가 뜻이다 — 끌어올린 뒤에 잰다.
+    """
+    if A is not None and B is not None and B < A:
+        B = A
+    if A is not None and B is not None and A < TRUCK and B - A > WALL_EXCESS_T:
+        B = None
+    return B
 
 
 def _seal(polys):
