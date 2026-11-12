@@ -48500,7 +48500,7 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 유병률  **1회** — `tests/test_fix_door.py::test_the_door_actually_repairs_an_injected_defect` 가 푸시 직전 병렬 실행(`pushready ㉥`)에서 `Failed: Timeout (>300.0s)` 로 빨갰다. 지시는 「`⓲A-⑭` 가 `verify.sh` 에 1분 30초짜리 스모크를 넣었고 그게 문 시험을 밀어냈다」였다.
 
 강제자  `tests/test_fix_door.py`(주입한 결함을 문이 되돌리는가 · 래칫 단계가 문의 맨 뒤에 걸려 있는가) · `pyproject.toml` 의 전 시험 시한 300초(올리지 않았다).
-        **하위 셋**이 이 칸을 물려받는다
+        **하위 넷**이 이 칸을 물려받는다
 
 ### 707-1. 읽은 것 — 인과가 지시와 달랐다
 - **문은 `verify.sh` 를 안 부른다.** `tools/fix.sh` 의 단계 열세 개는 `ruff` · `encoding_check` · `countcheck` · `depgroups_check` · `ledger_fields` · `dms` 둘 · `render_figures` · `htmlfigs` · `docgen` · `build_proposal` 둘 · `ratchet` 이고 `verify.sh` 는 **마지막에 「이제 검사 문을 돌린다」는 안내문으로만** 찍는다(`재지 않는다` 선언 — 시험이 그것을 든다). 그래서 **스모크는 이 시험에 닿지 않는다.**
