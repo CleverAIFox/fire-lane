@@ -63,12 +63,21 @@ export function routeOption(
     note: (rec ? recNote : "도착은 빠르지만 폭 측정 신뢰도가 낮은 구간이 포함됩니다.") + tail,
     rules: ruleSummary(p.rules),
     around: hazardSummary(routeHazards(p, ctx)),
-    risks: riskSummary(p, need),
+    risks: riskSummary(p, need, other),
   };
 }
 
-/** 카드에 올릴 경고 — 줄과 넘친 수. 경로에서 `edges` 만 읽는다(그래서 시험이 가짜 경로로 문다) */
-export function riskSummary(p: Pick<RoutePlan, "edges">, need: number): RouteOption["risks"] {
+/**
+ * 카드에 올릴 경고 — 줄과 넘친 수. 경로에서 `edges` 만 읽는다(그래서 시험이 가짜 경로로 문다).
+ *
+ * ★ **상대 경로가 있으면 이 경로에만 있는 구간을 먼저 올린다**(DECISIONS §727 · B4). 두 경로가 출발 쪽을 같이 쓰므로 각자 경로 순서로 앞 네 줄을 올리면 **같은 공통 구간이 양쪽 앞을 채워**
+ *   「고르라고 펼치는 건데 같은 걸 두 번 본다」가 됐다. 갈리는 구간이 먼저고 공통 구간은 뒤(넘치면 「외 N곳」)이며 `shared` 는 **보이는 줄 중 끝에서 몇 줄이 공통인가**다(화면이 흐리게 그린다).
+ */
+export function riskSummary(p: Pick<RoutePlan, "edges">, need: number, other: Pick<RoutePlan, "edges"> | null = null): RouteOption["risks"] {
   const all = riskList(p, need);
-  return { lines: all.slice(0, RISK_LINES_MAX).map(riskLine), more: Math.max(0, all.length - RISK_LINES_MAX) };
+  if (!other) return { lines: all.slice(0, RISK_LINES_MAX).map(riskLine), more: Math.max(0, all.length - RISK_LINES_MAX) };
+  const theirs = new Set(riskList(other, need).map((r) => r.segUid));
+  const ordered = [...all.filter((r) => !theirs.has(r.segUid)), ...all.filter((r) => theirs.has(r.segUid))];   // 각 묶음 안은 경로 순서 그대로
+  const shown = ordered.slice(0, RISK_LINES_MAX);
+  return { lines: shown.map(riskLine), more: Math.max(0, ordered.length - shown.length), shared: shown.filter((r) => theirs.has(r.segUid)).length };
 }
