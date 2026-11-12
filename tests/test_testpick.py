@@ -392,3 +392,15 @@ def test_measure_reads_only_overwrites_the_measured_cells_and_their_hashes(monke
     assert T.main(["--measure-reads", "--write", "--only", "test_a.py"]) == 0
     d = json.loads(led.read_text(encoding="utf-8"))
     assert d["reads"] == {"test_a.py": ["z"], "test_b.py": ["y"]} and d["hashes"] == {"test_a.py": "new", "test_b.py": "keep"}
+
+
+def test_no_ledger_file_reaches_the_per_test_timeout():
+    """★ 장부(8병렬 경합 기준 · 파일 합계) 어느 칸도 시험당 시한(pyproject 300초)에 닿지 않는다. (DECISIONS §712 · ⓲B-③)
+
+    파일 합계가 300 미만이면 그 안의 어느 시험도 같은 부하에서 300을 못 넘는다 — 거꾸로 합계가 300 이상이면 **시한을 넘는 시험이 있을 수 있다.**
+    `test_ratchet` 가 장부 331초이면서 시험 하나가 전부(약 100초 × 병렬 5배)였고 시한에서 죽었다. 칸이 300 에 닿으면 시한을 늘리지 말고 **시험을 쪼개거나 줄인다.**
+    """
+    from pathlib import Path
+    sec = json.loads((Path(__file__).resolve().parents[1] / "data" / "golden" / "testtimes.json").read_text(encoding="utf-8"))["seconds"]
+    over = {k: v for k, v in sec.items() if v >= 300}
+    assert not over, f"장부 칸이 시험당 시한 300초에 닿았다 — 시한을 올리지 말고 시험을 줄여라: {over}"

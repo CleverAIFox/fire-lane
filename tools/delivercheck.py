@@ -151,8 +151,6 @@ RELOCK_TESTS = {
     "test_unknown_reason_counts_match_the_fingerprint":
         "문서가 적은 사유 수를 golden 지문과 댄다. 지문은 재잠금이 다시 쓴다 — "
         "문서는 재잠금 뒤의 수를 적어야 하고, 그 사이에는 어긋나 보인다",
-    "test_the_real_tree_is_at_its_ratchets":
-        "위 「래칫 정합」 축의 pytest 쪽 짝이다. 같은 사실을 두 번 본다",
     "test_the_field_table_names_exactly_the_published_fields":
         "MASTER §11 필드표 ↔ 발행된 속성. 칸을 하나 실으면 표가 **앞서 가고** "
         "산출물은 재잠금에서 따라온다. 이 시험은 그 면제를 받으려고 §436-13 에서 "
