@@ -42,12 +42,13 @@ docnum_check.py — 문서에 적힌 숫자가 산출물과 같은지 본다.
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 from pathlib import Path
 
 # ★ 선언 표 둘은 옆집에 산다 — 값만 있는 것은 값만 있는 파일에(§449-2).
-from docnumhist import previous_values, replaced_values
+from docnumhist import is_shallow, previous_values, replaced_values
 from docnumrules import pattern_gaps, present_faults
 from docnumtable import CONTEXT, RETIRED
 
@@ -491,8 +492,14 @@ def main() -> int:
     #   `도달 가능 687(62%)` 의 62 를 옛 blocked 값으로 잡았다.
     #   앞에 `(` 가 오는 경우도 같다 — 괄호 안 백분율이다.
     #   **검사가 문맥 없이 숫자만 보면 새 사실을 쓸 수 없게 만든다.**
+    history = previous_values()
+    _ci = bool(os.environ.get("CI"))
+    if history is None or is_shallow():       # ★ 직전 값 폐기 검사는 이력이 있어야 돈다(§715 · §716) — 침묵하지 않는다. CI 는 이력을 받으므로 거기서 꺼졌으면 설정이 되돌려진 것이다
+        print(("! " if _ci else "· ") + ("git 이 못 답했다" if history is None else "얕은 클론이다")
+              + " — 방금 대체된 값의 폐기 검사가 꺼져 있거나 줄었다 (git fetch --unshallow)")
+        bad += int(_ci)
     merged = {k: list(dict.fromkeys([*RETIRED.get(k, []), *v]))
-              for k, v in replaced_values(previous_values(), cur).items()}
+              for k, v in replaced_values(history or [], cur).items()}
     for k, v in RETIRED.items():
         merged.setdefault(k, list(v))
     pats = {label: retired_pattern(old) for label, old in merged.items()}

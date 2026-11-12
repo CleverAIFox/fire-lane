@@ -48886,3 +48886,34 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 - **구간 수 옛 값 1,281** 이 현재형 서술 스물다섯(`MASTER` · `PLAN`)에 남아 있다 — 사람이 정하는 `RETIRED["세그먼트 수"]` 에 1,281 이 없어서 조용하다. 각 줄이 「1,281 기준」 같은 옛 기준 표시인지 현재 서술인지 줄마다 읽어야 해서 이번에 안 했다. 열린 빚이다.
 - 소방청 지정은 `docgen` 축이 아니다 — 앵커를 넓히면 DECISIONS 회고를 문다. 이번에는 손으로 254 로 고쳤고 다음부터는 715-4 가 직전 값으로 운다.
 - 이 절은 `golden lock` · `baseline freeze` · `docseal stamp` · `fieldseal` · `mutate --write` · 푸시를 안 했다. `DECISIONS §714` 도장은 건드리지 않았다.
+
+
+## 716. 재잠금 ③ — §715 가 만든 방어선이 **CI 에서만 꺼져 있었다** · 만든 코드가 `deadcheck` 가 잡는 결함을 그대로 갖고 있었다 · 기획서 굽기도 사슬에 없었다 (판정 불변)
+
+> 2026-11-12
+
+유병률  **1회 · 셋** — §715 의 커밋이 훅 셋을 막았다: ① `test_skip_policy` 가 `test_doc_numbers.py` 의 skip 사유를 정책 밖이라 했다 ② `deadcheck` 래칫 `③ 조용한 통과(git)` 0 → 2 ③ 「기획서 화면 ↔ 정본」과 「문서 ↔ 문서」(`doc_fsck` ⑥ 표지 날짜).
+
+강제자  `tests/test_doc_numbers.py`(`is_shallow` · git 이 못 답하면 `None`) · `tests/test_remeasure.py`(굽기 순서 · 끝 검사) · `tools/remeasure.py --selftest` · `tools/deadcheck.py --ratchet`
+        **하위 넷**이 이 칸을 물려받는다
+
+### 716-1. ㉥ 얕은 클론에서 이 검사가 침묵하는 것이 옳은가
+**옳지 않다 — CI 에서는.** 접두사만 붙이면 정책은 통과하고 방어선이 꺼진 채 초록이 된다. 먼저 사실을 가렸다: CI 의 두 잡(`contract-tests` 의 전체 pytest 조각 · `contract-strict` 의 `docnum_check`)은 기본 체크아웃(`fetch-depth: 1`)이라 골든 지문의 git 이력이 **현재 커밋 하나**다. `docnumhist` 는 「현재와 다른 가장 가까운 옛 값」을 이력에서 읽으므로 **거기서 아무것도 못 잡는다 — §715 에서 만든 방어선이 CI 에서만 꺼져 있었다.** 로컬(전체 클론 · `pre-push`)에서는 켜져 있다.
+고친 것 셋:
+1. **CI 가 이력을 받는다**: 두 잡의 체크아웃에 `fetch-depth: 0` + `filter: blob:none`(커밋과 트리만 받고 블롭은 필요한 한 장씩 늦게 — 가볍다). 얕게 받고 깊이를 짐작으로 늘리지 않았다 — 골든 지문은 몇 주에 한 번 움직이고 그 사이 커밋은 수백이라 고정 깊이로는 직전 값에 안 닿는다.
+2. **침묵하지 않는다**: `docnum_check` 가 이력을 못 읽었거나 얕으면 한 줄로 말한다(`· 얕은 클론이다 — … 폐기 검사가 줄었다`). **CI 에서는 오류다**(`CI` 환경변수) — 이 체크아웃 설정이 되돌려지면 조용히 초록이 되지 않고 운다.
+3. **시험의 skip 은 정책 접두사 + CI 에서는 실패**: `환경skip(도구) — … 얕은 클론이다(로컬 한정 · CI 는 실패)`. 얕은 클론이 CI 라면 `pytest.fail` 이다. 또 임시 저장소 둘(전체 · `--depth 1` 클론)로 `is_shallow` 가 사실대로 답하는지 시험이 문다.
+
+### 716-2. ㉨① `deadcheck` — 이 배치가 만든 코드의 실제 결함이었다
+`REDLIST.json` 이 늘린 둘: `docnumhist.previous_values()` 가 **`check=False` 로 git 의 종료코드를 안 본 채** stdout 을 쪼갰고 실패하면 빈 목록이었다. 「git 이 못 답했다」와 「이력이 비었다」가 섞이면 방어선이 **초록으로 꺼진다** — 위 716-1 의 질문과 **같은 병**이다. `firelane.gitq`(§372)가 이 병의 규약을 이미 갖고 있었는데 새 모듈이 그것을 안 썼다.
+고침: `gitq.ask` 로 바꾸고 `previous_values()` 는 **git 이 못 답하면 `None`** 을 돌려준다(빈 이력과 다르다). 부르는 쪽(`docnum_check`)이 `None` 을 소리 내어 알린다. 시험: 저장소가 아닌 곳에서 `None` 이어야 한다. `deadcheck` `③ 조용한 통과(git)` 는 2 → 0, 천장은 안 올렸다.
+
+### 716-3. ㉨②③ 문서 ↔ 문서 · 기획서 화면 — 한 뿌리, 사슬에 빠진 단계
+읽었다: `doc_fsck` 의 어긋남 둘은 **같은 사실의 두 얼굴**이다 — `proposal.md` 를 이 배치에서 고쳤는데(재잠금이 선언된 수를 손으로 고치게 한다) ⑥ 표지의 최종 수정일이 뒤처졌고, 화면 `web/proposal.html` 을 다시 굽지 않았다. 어느 쪽이 정본인지 가릴 일이 없다 — `docs/proposal.md` 가 정본이고 표지 날짜와 HTML 은 **파생**이다. `build_proposal.py --touch-today` → `build_proposal.py`(수리 문 `fix.sh` 가 정한 순서)로 맞췄다.
+**`CHAIN` 에 있어야 하는 단계인가: 그렇다 — `render_figures`(§715-3)와 같은 병이다.** `web/proposal.html` 은 구워지는 산출물이고 사슬에 굽기가 없었다. 재잠금마다 `proposal.md` 의 선언된 수(`docnum_check` 가 요구)를 손으로 고치므로 **재잠금마다 반복된다.**
+- 사슬에 `build_proposal.py`(굽기 · 멱등)를 `htmlfigs --sync` 뒤에 넣었다. 표지 날짜(`--touch-today`)는 **안 넣었다** — 손 편집이 있을 때만 뒤처지기 때문이다.
+- 사슬 끝(`AFTER`)에 `build_proposal.py --check` 와 `doc_fsck.py` 를 더했다 — 손 편집 뒤에 굽기와 표지 날짜가 뒤처지면 **사슬이 끝에서 울고 고치는 법을 적는다.** `--selftest` 와 시험이 순서(굽기가 그림 굽기 뒤)와 끝 검사를 문다.
+
+### 716-4. 한계
+- CI 의 `filter: blob:none` 은 첫 `git show` 마다 블롭을 한 장씩 받는다(약 서른 번). 느려지면 `docnumhist` 의 `depth` 를 줄인다 — 그러나 줄이면 직전 값에 못 닿을 수 있어 **지금은 안 줄였다.**
+- 이 절은 `golden lock` · `docseal stamp` · `fieldseal` · `mutate --write` · 푸시를 안 했다. `DECISIONS §715` 본문은 건드리지 않았다.

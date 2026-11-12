@@ -85,6 +85,10 @@ CHAIN: tuple[tuple[str, list[str]], ...] = (
     #   돌리면 기획서 화면은 맞고 「그림 ↔ 정본」만 영영 빨갛다. 그림 정본이 먼저(SVG · 잠금), 화면에 굽는 것이 그 다음이다.
     ("기획서 그림 정본", ["tools/render_figures.py"]),
     ("기획서 화면 그림", ["tools/htmlfigs.py", "--sync"]),
+    # ★ 2026-11-12 (DECISIONS §716). **`build_proposal` 도 사슬에 없었다 — `render_figures` 와 같은 병이다.** `web/proposal.html` 은 `docs/proposal.md` + 그림에서 **구워지는** 산출물이고,
+    #   재잠금은 `proposal.md` 의 선언된 수(`docnum_check`)를 손으로 고치게 한다 — 그러면 굽기를 안 돌린 채 「기획서 화면 ↔ 정본」이 빨갛다. 굽기는 멱등이라 늘 돌려도 된다.
+    #   표지 날짜(`--touch-today`)는 **안 넣는다** — 손 편집이 있을 때만 뒤처진다(그때 `AFTER` 의 `doc_fsck` 가 울고 고치는 법을 적는다).
+    ("기획서 화면 HTML", ["tools/build_proposal.py"]),
     ("래칫 조임", ["tools/ratchet.py", "--write"]),
 )
 
@@ -95,6 +99,8 @@ RESEAL_ONLY = "eval.json"
 AFTER: tuple[tuple[str, list[str]], ...] = (
     ("문서 숫자 대조", ["tools/docnum_check.py"]),
     ("그림 ↔ 정본", ["tools/render_figures.py", "--check"]),
+    ("기획서 화면 ↔ 정본", ["tools/build_proposal.py", "--check"]),
+    ("문서 ↔ 문서", ["tools/doc_fsck.py"]),
 )
 
 
@@ -344,6 +350,8 @@ def selftest() -> int:
         fails.append("두 번째 봉인에 `--force` 가 없다 — 덮어쓰지 못해 죽는다")
     if tools.index("tools/golden.py") != 0:
         fails.append("지문 재잠금이 첫째가 아니다")
+    if not tools.index("tools/htmlfigs.py") < tools.index("tools/build_proposal.py"):
+        fails.append("화면 굽기(`build_proposal`)가 그림 굽기(`htmlfigs --sync`) **앞**이다 — HTML 이 옛 그림을 가리킨다(§716)")
     if not tools.index("tools/render_figures.py") < tools.index("tools/htmlfigs.py"):
         fails.append("그림 정본(`render_figures`)이 화면 굽기(`htmlfigs --sync`) **앞**이 아니다 — SVG · 잠금이 옛 값으로 남는다(§715)")
     # ★ 두 번째 도장이 무엇을 덮었는지 재는가. 안 재면 §272 다.

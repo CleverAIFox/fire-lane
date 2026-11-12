@@ -11,16 +11,18 @@ docnumhist.py — **방금 대체된 값은 저절로 폐기값이 된다.**  (D
   사람이 정하는 `RETIRED["세그먼트 수"]` 가 지키고, 회색 사유는 이름 앵커(`no_cctv_thin N`)가 이미 현재값을 대조한다.
 
 IN    `data/golden/segments.fingerprint.json` 의 git 이력 · `data/baseline/*/eval.json`
-OUT   replaced_values(history, cur) → {라벨: [옛 값]} · previous_values() → 새것부터의 이력
+OUT   is_shallow() · replaced_values(history, cur) → {라벨: [옛 값]} · previous_values() → 새것부터의 이력
 PARAM VERDICT_LABELS · GOLDEN_FP_REL
+★ **얕은 클론에서는 이 방어선이 줄거나 꺼진다**(이력이 현재 커밋 하나). 침묵하지 않는다 — `is_shallow()` 를 `docnum_check` 가 묻고, CI 에서는 오류다(CI 체크아웃이 이력을 받는다 — `contract.yml` 의 `filter: blob:none`).
 밖    **판정은 안 한다** — 어느 줄이 폐기값을 현재형으로 쓰는지는 `docnum_check` 가 든다. **얕은 클론이면 이력이 줄 뿐**이고 거짓 폐기값은 안 낸다.
 부류  몸통   `docnum_check.py` 가 import 한다  (DECISIONS §398)
 """
 from __future__ import annotations
 
 import json
-import subprocess
 from pathlib import Path
+
+from firelane import gitq
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -30,6 +32,11 @@ ROOT = Path(__file__).resolve().parents[1]
 GOLDEN_FP_REL = "data/golden/segments.fingerprint.json"     # git 이력 조회용 상대 경로(아래 `GOLDEN_FP` 는 절대 경로다)
 VERDICT_LABELS: tuple[tuple[str, str], ...] = (
     ("clear", "clear"), ("needs_cv", "needs_cv"), ("blocked", "blocked"), ("unknown(회색)", "unknown"))
+
+
+def is_shallow(root: Path = ROOT) -> bool:
+    """얕은 클론인가(`git rev-parse --is-shallow-repository`). git 이 못 답했으면 아니다 — 거짓 경고를 안 낸다(못 답한 것은 `previous_values` 가 `None` 으로 알린다)."""
+    return (gitq.ask(["rev-parse", "--is-shallow-repository"], cwd=root) or "").strip() == "true"
 
 
 def replaced_values(history: list[dict], cur: dict[str, int]) -> dict[str, list[str]]:
@@ -54,27 +61,30 @@ def replaced_values(history: list[dict], cur: dict[str, int]) -> dict[str, list[
     return out
 
 
-def previous_values(root: Path = ROOT, depth: int = 40) -> list[dict]:
-    """골든 지문 git 이력의 `{라벨: 값}` 목록(새것부터) + 봉인 이력의 소방청 지정. 못 읽으면 덜 읽는다 — **얕은 클론이면 검사가 줄 뿐 거짓은 아니다.**"""
+def previous_values(root: Path = ROOT, depth: int = 40) -> list[dict] | None:
+    """골든 지문 git 이력의 `{라벨: 값}` 목록(새것부터) + 봉인 이력의 소방청 지정. **git 이 못 답했으면 `None`** — 빈 이력과 다른 사실이다(`firelane.gitq` · §372).
+
+    ★ 종전에는 `check=False` 로 stdout 을 갈라 쓰고 실패하면 빈 목록이었다 — git 이 없는 기계 · 깨진 저장소가 「이력이 비었다」로 읽혀 **방어선이 초록으로 꺼졌다**
+      (`deadcheck ③ 조용한 통과(git)` 가 잡았다). 이제 부르는 쪽(`docnum_check`)이 `None` 을 소리 내어 알린다.
+    ★ 커밋 하나의 블롭을 못 읽으면 그 커밋만 건너뛴다(옛 지문 한 판의 형식이 달라도 이력 전체를 못 읽게 되지는 않는다).
+    """
+    log = gitq.ask(["log", f"-{depth}", "--format=%H", "--", GOLDEN_FP_REL], cwd=root)
+    if log is None:
+        return None
     out: list[dict] = []
-    try:
-        shas = subprocess.run(["git", "log", f"-{depth}", "--format=%H", "--", GOLDEN_FP_REL], cwd=root,  # noqa: S603,S607 — PATH 의 git 이다 · 저장소 안의 고정 인자
-                              capture_output=True, text=True, timeout=60, check=False).stdout.split()
-    except (OSError, subprocess.SubprocessError):
-        shas = []
-    for sha in shas:
-        try:        # ★ 커밋마다 따로 — 옛 지문 한 판의 형식이 달라도 이력 전체를 못 읽게 되지는 않는다
-            blob = subprocess.run(["git", "show", f"{sha}:{GOLDEN_FP_REL}"], cwd=root,  # noqa: S603,S607 — PATH 의 git 이다 · 저장소 안의 고정 인자
-                                  capture_output=True, text=True, timeout=60, check=False)
-            v = (json.loads(blob.stdout).get("L1") or {}).get("verdict") or {}
-            out.append({lab: v.get(k) for lab, k in VERDICT_LABELS})
-        except (OSError, ValueError, AttributeError, subprocess.SubprocessError):
+    for sha in log.split():
+        blob = gitq.ask(["show", f"{sha}:{GOLDEN_FP_REL}"], cwd=root)
+        if blob is None:
             continue
+        try:
+            v = (json.loads(blob).get("L1") or {}).get("verdict") or {}
+        except (ValueError, AttributeError):
+            continue
+        out.append({lab: v.get(k) for lab, k in VERDICT_LABELS})
     # 소방청 지정은 지문에 없다 — 봉인(`eval.json` 의 `tally`)이 새것부터 남긴다.
-    seals = []
     for p in sorted((root / "data" / "baseline").glob("*/eval.json"), reverse=True):
         try:
-            seals.append({"소방청 지정": json.loads(p.read_text(encoding="utf-8")).get("tally", {}).get("nfa_designated")})
+            out.append({"소방청 지정": json.loads(p.read_text(encoding="utf-8")).get("tally", {}).get("nfa_designated")})
         except (OSError, ValueError):
             continue
-    return out + seals
+    return out

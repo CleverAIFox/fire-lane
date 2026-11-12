@@ -35,6 +35,7 @@ PLAN 본문  규칙 — 문서가 든 숫자는 커밋된 지문과 같아야 �
 from __future__ import annotations
 
 import json
+import os
 import re
 from pathlib import Path
 
@@ -337,10 +338,38 @@ def test_a_missing_history_retires_nothing_and_never_lies():
 def test_the_real_history_knows_the_value_the_last_relock_replaced():
     """실물: 지금 저장소의 골든 지문 이력에서 직전 재잠금의 옛 값을 읽는다. 이력이 없는 얕은 클론이면 건너뛴다(거짓 빨강을 안 낸다)."""
     D = _docnum()
-    hist = D.previous_values()
+    hist = D.previous_values() or []
     if not any("clear" in h and h["clear"] is not None for h in hist):
-        pytest.skip("골든 지문 git 이력이 없다(얕은 클론)")
+        # ★ 얕은 클론에서 이 검사가 **침묵하는 것은 로컬에서만 옳다**. CI 는 이력을 받는다(`contract.yml` 의 `filter: blob:none`) — 거기서 얕으면 방어선이 꺼진 것이다.
+        if os.environ.get("CI"):
+            pytest.fail("CI 인데 골든 지문 git 이력이 없다 — 체크아웃이 얕다. 폐기값 자동 유도(`docnumhist`)가 CI 에서 꺼져 있다")
+        pytest.skip("환경skip(도구) — 골든 지문 git 이력이 없는 얕은 클론이다(로컬 한정 · CI 는 실패)")
     cur = D.verdicts()
     got = D.replaced_values(hist, {"clear": cur["clear"], "needs_cv": cur["needs_cv"], "blocked": cur["blocked"], "unknown(회색)": cur["unknown"]})
     assert got, "이력이 있는데 대체된 값을 하나도 못 읽었다 — 판정이 한 번도 안 움직였을 리 없다"
     assert all(len(v) == 1 for v in got.values()), got
+
+
+def test_a_shallow_clone_is_detected(tmp_path):
+    """★ 얕은 클론에서 방어선(`docnumhist`)이 **조용히** 꺼지면 안 된다 — `is_shallow` 가 사실대로 답해야 `docnum_check` 가 말한다(CI 에서는 오류)."""
+    import subprocess
+
+    D = _docnum()
+    full = tmp_path / "full"
+    full.mkdir()
+    g = ["git", "-c", "user.name=t", "-c", "user.email=t@example.invalid"]
+    subprocess.run([*g, "init", "-q"], cwd=full, check=True)
+    for i in range(2):
+        (full / "f.txt").write_text(str(i), encoding="utf-8")
+        subprocess.run([*g, "add", "."], cwd=full, check=True)
+        subprocess.run([*g, "commit", "-q", "-m", f"c{i}"], cwd=full, check=True)
+    shallow = tmp_path / "shallow"
+    subprocess.run(["git", "clone", "-q", "--depth", "1", f"file://{full}", str(shallow)], check=True)
+    assert D.is_shallow(full) is False
+    assert D.is_shallow(shallow) is True, "얕은 클론을 못 알아본다 — 방어선이 꺼진 채 초록이 된다"
+
+
+def test_a_git_that_cannot_answer_is_not_an_empty_history(tmp_path):
+    """★ `deadcheck ③` 가 잡은 결함: git 이 못 답한 것을 **빈 이력**으로 바꾸면 방어선이 초록으로 꺼진다 — 못 답하면 `None` 이다(`gitq` 규약)."""
+    D = _docnum()
+    assert D.previous_values(tmp_path) is None, "저장소가 아닌 곳에서 빈 목록을 냈다 — 못 물은 것과 빈 이력이 섞인다"
