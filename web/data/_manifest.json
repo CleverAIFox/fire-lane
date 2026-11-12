@@ -1,18 +1,18 @@
 {
-  "generated_at": "2026-11-12T05:31:38+09:00",
+  "generated_at": "2026-11-12T17:00:20+09:00",
   "note": "publish_web.py 산출물. 손으로 고치지 마라 — 다음 실행에 덮어써진다.",
   "source": {
     "segments.geojson": {
-      "sha256": "fd742e8db96e73498da65f953fb0b623b3fcf8afb9a965ffab3fb586deab5468",
-      "bytes": 1971098
+      "sha256": "2426ce297e2bf6aaffa25f2480434344e76f176d14f1bd4e2cb2fc05ab2898a2",
+      "bytes": 1971714
     },
     "segments.schema.json": {
-      "sha256": "91408d9ee07665e3f31cc09710483bf69cb8c9e465de4519b69d84bbc5677309",
+      "sha256": "3228185a82d40768575f687cd1317fb7ae5d5e53fd74987ca54be49c087b564e",
       "bytes": 12090
     },
     "_manifest.json": {
-      "sha256": "e23ae74404422be4656a8ce50069adb6459bff57c5dadb70bde2b8a1909857cc",
-      "bytes": 122427
+      "sha256": "672e5e0ad25d96752369582d7c291de0a3cefb48cd35fc4f50ec59117c6f0a69",
+      "bytes": 122648
     }
   },
   "files": {
@@ -49,8 +49,8 @@
       "bytes": 14861
     },
     "navi_graph.json": {
-      "sha256": "871845c4b80f7ec42fe5addf92623d899a19220302ac276120b5765813275a88",
-      "bytes": 588797
+      "sha256": "40ec5112d4740efa0b21a336f05662bc10d2691a70049f478d0795f8d2d59212",
+      "bytes": 589335
     },
     "poi.geojson": {
       "sha256": "28899afae2566960a3909bb1dd6fa80b5c5871109de06c96e77b21375422f159",
@@ -65,11 +65,11 @@
       "bytes": 97380
     },
     "segments.geojson": {
-      "sha256": "8867d006fb48fea88167ec803ec764af2672c24e584cb3a8e44949357b29f92f",
-      "bytes": 2238667
+      "sha256": "4e5f32cd603ce492a6e117935f21ba666feefa4a07ca97e1c2ccd080bc695138",
+      "bytes": 2239283
     },
     "segments.schema.json": {
-      "sha256": "c752d0d8a2627e0ab286058dd7146406defff604c2bf40cdac5955d751bb256e",
+      "sha256": "393ad7959685c9f152020372658bb75cf94f21368518354b9a6ce0a5c5be0f8f",
       "bytes": 15275
     },
     "sidewalk.geojson": {
@@ -85,7 +85,7 @@
       "bytes": 350
     },
     "view.json": {
-      "sha256": "ca673980a8bf23728aaf2901510f9c268a98fccc88e87d9894f5f3f247bed225",
+      "sha256": "25990ddcdb4c4172ffdc07b8b065bf2e549cedc4673c5e0e7ec9acb0cf744f73",
       "bytes": 582
     }
   },
