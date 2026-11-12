@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "glyphs": "node scripts/glyphs.mjs",
     "smoke": "playwright test",
-    "glance": "node scripts/glance.mjs"
+    "glance": "node scripts/glance.mjs",
+    "framebench": "node scripts/framebench.mjs"
   },
   "dependencies": {
     "maplibre-gl": "^6.16.0",
