@@ -47,6 +47,7 @@ import sys
 from pathlib import Path
 
 # ★ 선언 표 둘은 옆집에 산다 — 값만 있는 것은 값만 있는 파일에(§449-2).
+from docnumhist import previous_values, replaced_values
 from docnumrules import pattern_gaps, present_faults
 from docnumtable import CONTEXT, RETIRED
 
@@ -79,8 +80,8 @@ HIST: dict[str, list[tuple[str, str]]] = {
 }
 
 # ── 폐기된 값 ──────────────────────────────────────────────────
-# ★ 산출값이 바뀌면 옛 값을 여기 한 줄 추가한다. 이 도구의 유지보수는
-#   그것이 전부다. 추가를 잊으면 다음 사람이 옛 숫자를 그대로 믿는다.
+# ★ 방금 대체된 값은 `docnumhist` 가 **저절로** 더한다(판정 넷 · 소방청 지정 — DECISIONS §715). 그 밖의 축은 옛 값을 `docnumtable.RETIRED` 에
+#   한 줄 더한다. 추가를 잊으면 다음 사람이 옛 숫자를 그대로 믿는다.
 def retired_clashes(cur: dict[str, int], retired: dict[str, list[str]]) -> list[str]:
     """폐기목록이 **지금 값**을 폐기라고 적고 있는가. 같은 축 · 다른 축 둘 다.
 
@@ -490,7 +491,11 @@ def main() -> int:
     #   `도달 가능 687(62%)` 의 62 를 옛 blocked 값으로 잡았다.
     #   앞에 `(` 가 오는 경우도 같다 — 괄호 안 백분율이다.
     #   **검사가 문맥 없이 숫자만 보면 새 사실을 쓸 수 없게 만든다.**
-    pats = {label: retired_pattern(old) for label, old in RETIRED.items()}
+    merged = {k: list(dict.fromkeys([*RETIRED.get(k, []), *v]))
+              for k, v in replaced_values(previous_values(), cur).items()}
+    for k, v in RETIRED.items():
+        merged.setdefault(k, list(v))
+    pats = {label: retired_pattern(old) for label, old in merged.items()}
     for rel in ("README.md", "docs/MASTER.md", "docs/PLAN.md"):
         for no, ln in live_lines(rel, read(rel)):
             for label, pat in pats.items():

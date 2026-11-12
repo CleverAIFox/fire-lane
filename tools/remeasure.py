@@ -80,6 +80,10 @@ CHAIN: tuple[tuple[str, list[str]], ...] = (
     ("문서 생성 블록", ["tools/docgen.py"]),
     # ★ 2026-10-09 (DECISIONS §444 · PLAN #142). `docx_figs --sync` 였다.
     #   docx 가 은퇴하고 같은 다섯 그림이 화면 자리로 바로 간다.
+    # ★ 2026-11-12 (DECISIONS §715 · #53 재잠금 ②). **`render_figures` 가 사슬에 없었다.** `htmlfigs --sync` 는 PNG 를 굽고 그 지문을 **자기** 잠금에
+    #   적는다 — `docs/figures/*.svg` 와 그 잠금(`render_figures --check` 가 보는 것)은 안 고친다. 둘은 **다른 도구 · 다른 잠금**이라 `htmlfigs` 만
+    #   돌리면 기획서 화면은 맞고 「그림 ↔ 정본」만 영영 빨갛다. 그림 정본이 먼저(SVG · 잠금), 화면에 굽는 것이 그 다음이다.
+    ("기획서 그림 정본", ["tools/render_figures.py"]),
     ("기획서 화면 그림", ["tools/htmlfigs.py", "--sync"]),
     ("래칫 조임", ["tools/ratchet.py", "--write"]),
 )
@@ -90,6 +94,7 @@ RESEAL_ONLY = "eval.json"
 #: 사슬이 끝난 뒤 **무는 것.** 고치는 것이 아니라 판정한다.
 AFTER: tuple[tuple[str, list[str]], ...] = (
     ("문서 숫자 대조", ["tools/docnum_check.py"]),
+    ("그림 ↔ 정본", ["tools/render_figures.py", "--check"]),
 )
 
 
@@ -339,6 +344,8 @@ def selftest() -> int:
         fails.append("두 번째 봉인에 `--force` 가 없다 — 덮어쓰지 못해 죽는다")
     if tools.index("tools/golden.py") != 0:
         fails.append("지문 재잠금이 첫째가 아니다")
+    if not tools.index("tools/render_figures.py") < tools.index("tools/htmlfigs.py"):
+        fails.append("그림 정본(`render_figures`)이 화면 굽기(`htmlfigs --sync`) **앞**이 아니다 — SVG · 잠금이 옛 값으로 남는다(§715)")
     # ★ 두 번째 도장이 무엇을 덮었는지 재는가. 안 재면 §272 다.
     for before, after, want, why in (
             ({"a": "1", "eval.json": "x"}, {"a": "1", "eval.json": "y"}, False,

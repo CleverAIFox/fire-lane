@@ -308,3 +308,39 @@ def test_a_row_citation_is_not_read_as_a_retired_count():
     assert not pat.findall("`#63` 의 「그 칸을 채울 원천이 `#3` 이다」 · `#120` 행")
     assert pat.findall("blocked 는 63 구간이다") == ["63"]      # 건수로 적은 것은 여전히 잡는다
     assert pat.findall("#5 와 63 구간") == ["63"]                  # 같은 줄의 건수는 가려지지 않는다
+
+
+# ── 방금 대체된 값은 **저절로** 폐기값이 된다 (2026-11-12 · DECISIONS §715 · #53 재잠금 ②) ──────────
+def test_the_value_just_replaced_retires_itself():
+    """★ 손으로 적는 `RETIRED` 를 사람이 잊어 옛 값(`blocked 193` 넷)이 문서에 조용히 남았다. 이력에서 유도한다 — **방금 대체된 값 하나**."""
+    D = _docnum()
+    hist = [{"blocked": 184, "clear": 249}, {"blocked": 184, "clear": 249}, {"blocked": 193, "clear": 275}, {"blocked": 192, "clear": 274}]
+    got = D.replaced_values(hist, {"blocked": 184, "clear": 249})
+    assert got == {"blocked": ["193"], "clear": ["275"]}, got   # 현재와 같은 칸은 건너뛰고 **가장 가까운 다른 값 하나** — 더 옛것(192 · 274)은 안 문다
+
+
+def test_a_replaced_value_that_is_another_axis_current_value_is_not_retired():
+    """맞는 문서가 빨개지면 사람이 문을 끈다(`retired_clashes` 와 같은 이유) — 옛 값이 지금 다른 축의 값이면 안 문다."""
+    D = _docnum()
+    got = D.replaced_values([{"clear": 249, "needs_cv": 294}, {"clear": 294, "needs_cv": 283}], {"clear": 249, "needs_cv": 294})
+    assert "clear" not in got, got                              # 옛 clear 294 = 지금 needs_cv
+    assert got.get("needs_cv") == ["283"], got
+
+
+def test_a_missing_history_retires_nothing_and_never_lies():
+    """얕은 클론 · 못 읽은 이력은 검사를 **줄일 뿐** 거짓 폐기값을 안 낸다. `None` 칸도 건너뛴다."""
+    D = _docnum()
+    assert D.replaced_values([], {"clear": 249}) == {}
+    assert D.replaced_values([{"clear": None}], {"clear": 249}) == {}
+
+
+def test_the_real_history_knows_the_value_the_last_relock_replaced():
+    """실물: 지금 저장소의 골든 지문 이력에서 직전 재잠금의 옛 값을 읽는다. 이력이 없는 얕은 클론이면 건너뛴다(거짓 빨강을 안 낸다)."""
+    D = _docnum()
+    hist = D.previous_values()
+    if not any("clear" in h and h["clear"] is not None for h in hist):
+        pytest.skip("골든 지문 git 이력이 없다(얕은 클론)")
+    cur = D.verdicts()
+    got = D.replaced_values(hist, {"clear": cur["clear"], "needs_cv": cur["needs_cv"], "blocked": cur["blocked"], "unknown(회색)": cur["unknown"]})
+    assert got, "이력이 있는데 대체된 값을 하나도 못 읽었다 — 판정이 한 번도 안 움직였을 리 없다"
+    assert all(len(v) == 1 for v in got.values()), got
