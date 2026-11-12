@@ -48650,3 +48650,31 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 3. 재잠금 다섯(`golden lock` · `baseline freeze` · `docseal stamp` · `mutate --write --stale` · `fieldseal`) 후 **`uv run python tools/wallab.py <기준> <새 판>`** 으로 예보 ↔ 실제를 한 번 더 댄다 — 이 절의 표와 같아야 한다.
 4. **`clear` 27 의 윗수**(709-3 ②)가 먼 건물을 문 값인지는 현장 평가셋의 Q8 로 가른다 — 그 전에는 「큰 길 27개가 근거 없이 보류될 수 있다」가 열린 의심이다.
 5. `#53` 은 열어 둔다(재잠금이 안 됐다).
+
+
+## 710. `0499a264` 가 만든 래칫 결함 둘을 원인에서 없앴다 · 진입 청크 래칫을 조였다 — 그리고 `§688` 의 열한째 한계: 로컬에서 안 재지는 래칫 (판정 불변)
+
+> 2026-11-12
+
+유병률  **2회(같은 커밋)** — `§709` 의 작업(`tools/wallab.py` · Q7 · Q8)이 래칫 둘을 느슨하게 만들었다. `--write` 가 안 받는 쪽(결함)이다: `canary` 의 `NO_CANARY` 4 → 5 · `suppress` 55 → 56.
+
+강제자  `tools/canary.py`(`NO_CANARY` 4 · 같은 함수를 `assert not` 과 `assert` 둘로 미는 쌍) · `tools/suppress.py`(사유 없는 억제 55) · `tools/naviweight.py --build`(진입 청크 111).
+        **하위 넷**이 이 칸을 물려받는다
+
+### 710-1. 수를 안 올렸다 — 원인을 없앴다
+- **카나리아(4 → 5 → 4).** 쌍이 없던 시험 파일은 `tests/test_wallab.py` 였다 — `wallab` 을 미는데 **합성 결함을 넣어 우는 것을 본 자리**가 없었다(시험이 전부 `==` 로 값을 대조했다). 같은 함수 `transitions` 를 **`assert not`(같은 판 둘이면 갈림이 없다)와 `assert`(한 구간이 움직이면 갈림이 있다)** 둘로 미는 시험을 더했다 — 판별식이 안 울면 둘 다 통과하는 진짜 쌍이다. 상수는 **제자리(4)** 로 돌아왔고 올리지 않았다.
+- **억제(56 → 55).** `tools/wallab.py` 의 `lambda` 에 붙인 `# noqa: E731` 이었다 — **사유 없는 억제**였다. 억제를 떼고 코드를 고쳤다(`lambda` 를 안쪽 `def` 로). 사유를 적는 길(②)이 아니라 억제를 지우는 길(①)이다.
+- 정확도인지 확산인지 가를 일이 없었다 — 둘 다 올리지 않았다.
+
+### 710-2. 진입 청크 래칫 114 → 111KB(조이는 쪽)
+- **`ratchet --write` 가 안 받는 수였다.** `ENTRY_KB` 는 `RATCHETS` 에 안 태웠다(`tools/naviweight.py` 의 「안 태운다」 사유 — 빌드본이 있어야 재진다). 그래서 사람이 말한 「느슨해진 쪽 때문에 `--write` 가 전체를 안 썼다」는 이 수에는 닿지 않는다 — **이 수는 어차피 `--write` 가 못 쓴다.**
+- **그런데 도구가 거짓을 말하고 있었다.** `--build` 가 「`ratchet.py --write` 로 조여라」 고 안내했다 — 안 되는 길이다. 안내를 「이 파일의 `ENTRY_KB` 를 N 으로 **손으로** 내린다」로 고쳤다.
+- `npm run build` 뒤 `uv run python tools/naviweight.py --build` 가 **111KB** 를 대고(CI 의 배포 · dry 와 같다) `ENTRY_KB` 를 111 로 내렸다.
+
+### 710-3. 변이 장부
+`uv run python tools/mutate.py --write --stale` — **낡은 둘만** 다시 쟀다(`widthcross` 와 이번에 고친 `naviweight`). `data/golden/mutation.json` 이 움직였다(도구 36 · 이번에 잰 것 2). 이후 `ratchet` 의 느슨해진 쪽은 **`docseal` 의 `UNSEALED`(도장 없는 절 · 사람이 찍는다) 하나뿐**이다.
+
+### 710-4. 게이트가 왜 못 봤나 — `§688` 의 열한째 한계(로컬 사슬 밖의 래칫)
+- **정정 먼저.** 이 절의 초안은 「`verify.sh` 가 `naviweight --build` 를 안 부른다」고 적었다 — **틀렸다.** `verify.sh` 에는 「내비 빌드」 → 「내비 무게」(`naviweight --build`) 단계가 이미 있다. 그래서 진입 청크는 **`verify.sh` 전수(사람이 돌린다)와 CI 의 배포 · dry(`build-navi`)가 쟀고**, 푸시 사슬(`pre-push` 훅 · `pushready` · `ratchet`)은 못 쟀다 — 빌드본이 있어야 재지기 때문이다(`ENTRY_KB` 를 `RATCHETS` 에 안 태운 사유). 그리고 **CI 의 빠른 잡(`contract-fast`)은 빌드까지 하면서 무게를 안 쟀다** — 그 자리의 주석(「빌드본 무게는 여기서 내비를 안 지어 못 본다」)은 이미 낡아 있었다.
+- **고쳤다(적기만 하라던 자리에서 한 걸음 더).** `contract-fast` 의 빌드 바로 뒤에 `naviweight --build` 를 한 단계 더했다 — CI 가 「111KB 로 줄었다」를 배포 · dry 보다 **빠른 잡에서** 먼저 댄다. `gatefast` 의 층 선언에 `("tools/naviweight.py", "--build")` = `ci`(빌드본이 필요하다 — 훅 · `pushready` 는 내비를 안 짓는다)를 적었다.
+- **남는 한계(11번째).** 11. 푸시 사슬에는 여전히 이 수가 없다(훅 · `pushready` 는 빌드를 안 한다). 푸시 전에 보려면 사람이 `npm run build` 뒤 `naviweight --build` 를 치거나 `verify.sh` 전수를 돌려야 한다. 같은 족이다 — **로컬 초록이 CI 초록과 같은 입력으로 났는지**를 푸시 사슬이 묻지 않는다. `#216` 은 다시 열지 않았다.

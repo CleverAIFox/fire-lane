@@ -67,7 +67,9 @@ def moved(base: dict[str, dict], cur: dict[str, dict], survey: dict[str, float])
     freed = [u for u in cur if base[u]["verdict"] == "blocked" and cur[u]["verdict"] != "blocked"]
     newly = [u for u in cur if base[u]["verdict"] != "blocked" and cur[u]["verdict"] == "blocked"]
     chg = [u for u in cur if base[u]["verdict"] != cur[u]["verdict"]]
-    c = lambda us: dict(Counter(survey_class(survey.get(u)) for u in us))  # noqa: E731
+    def c(us: list[str]) -> dict:
+        return dict(Counter(survey_class(survey.get(u)) for u in us))
+
     return {"풀림": (len(freed), c(freed)), "새로 막힘": (len(newly), c(newly)), "바뀐 전체": (len(chg), c(chg))}
 
 

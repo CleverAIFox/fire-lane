@@ -25,6 +25,14 @@ def test_transitions_count_only_changed_segments_and_refuse_different_sets() -> 
         W.transitions(a, _d({"a": ("clear", 1.0)}))
 
 
+def test_transitions_is_empty_for_identical_runs_and_not_empty_when_one_segment_moves() -> None:
+    """★ 합성 결함 쌍 — 같은 판 둘은 갈림이 **없고**(`assert not`) 한 구간만 움직여도 갈림이 **있다**(`assert`). 판별식이 안 울면 둘 다 통과하는 쌍이다."""
+    same = _d({"a": ("blocked", None), "b": ("clear", 9.0)})
+    moved = _d({"a": ("blocked", None), "b": ("unknown", 9.0)})
+    assert not W.transitions(same, same), "같은 판인데 갈림이 잡혔다"
+    assert W.transitions(same, moved), "한 구간이 움직였는데 갈림이 안 잡혔다"
+
+
 def test_counts_report_the_missing_wmax_as_missing_not_as_zero() -> None:
     c, miss = W.counts(_d({"a": ("blocked", None), "b": ("clear", 9.0), "c": ("clear", None)}))
     assert c == {"blocked": 1, "clear": 2} and miss == 2
