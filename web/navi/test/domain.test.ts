@@ -307,3 +307,11 @@ test("상황판 배선 — 차량 목록은 정렬된 board 로 그린다(되돌
   ok(/\{board\.map\(\(u\) => \{/.test(opsAppSrc), "상황판이 board 가 아니라 정렬 안 된 목록을 그린다");
   ok(!/\{units\.map\(\(u\) => \{\s*const stale = unitStale/.test(opsAppSrc), "상황판 행이 옛 목록(units)으로 돌아갔다");
 });
+
+test("사건 검색 — 자료가 실렸는데 검색어에 맞는 것이 없으면 「결과 없음」 을 말한다(침묵이 아니라 · B5)", () => {
+  const m = /\{data && q\.trim\(\) && hits\.length === 0 && <div[^>]*>결과 없음<\/div>\}/.exec(opsAppSrc);
+  ok(m != null, "OpsApp 에 빈 결과 줄이 없다 — 검색어를 쳤는데 아무 말이 없다");
+  ok(/hits: PoiHit\[\] = useMemo\(\(\) => \(q\.trim\(\)\.length >= 1 \? searchPois/.test(opsAppSrc), "hits 의 정의가 바뀌어 빈 결과 줄의 조건과 어긋날 수 있다");
+  const pois = preparePois({ type: "FeatureCollection", features: [] } as GeoJSON.FeatureCollection);
+  ok(searchPois(pois, "존재하지않는이름").length === 0, "색인이 비었는데 결과가 났다");
+});

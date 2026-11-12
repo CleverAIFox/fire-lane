@@ -313,6 +313,7 @@ export default function OpsApp() {
                 {picking ? "지도를 누르세요" : "지도에서"}
               </button>
             </div>
+            {data && q.trim() && hits.length === 0 && <div style={{ fontSize: 12, color: D.sub }}>결과 없음</div>}
             {hits.length > 0 && (
               <div style={list}>
                 {hits.map((h, i) => (
@@ -554,11 +555,9 @@ export default function OpsApp() {
         {/* ══ 우 — 차량 상태판 · 현장 공유 · 구간 ═══════════════════ */}
         <aside style={colR}>
           <Sec title={`차량 상태판 · 연결 ${units.length}`} tier={units.length ? "pick" : "idle"}>
-            {link.current?.available === false && (
-              <div style={{ fontSize: 12, color: D.warn }}>탭 연결 안 됨</div>
-            )}
+            {link.current?.available === false && <div style={{ fontSize: 12, color: D.warn }}>탭 연결 안 됨</div>}
             {units.length === 0 && (
-              <div style={{ fontSize: 12, color: D.sub }}>연결된 내비가 없다 — 「출동 지령」 으로 연다.</div>
+              <div style={{ fontSize: 12, color: D.sub }}>내비 없음 — 「출동 지령」 으로 연다.</div>
             )}
             {board.map((u) => {
               const stale = unitStale(u, now);
