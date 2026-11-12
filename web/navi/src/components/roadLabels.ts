@@ -13,7 +13,9 @@
  * 또 한 도로가 여러 구간 · 여러 타일로 쪼개져 **구간마다** 글자가 얹혀 같은 이름이 한 화면에 둘 · 셋 떴다(동명로 넷). 그리고 가장자리에서는 엔진이 화면 밖 100px 까지를
  * 허용해 글자가 **반만** 나왔다. 셋 다 「화면 기준으로 이름마다 한 점을 고른다」로 풀린다 — 이 파일이 그 고르기다.
  */
-import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
+import type { GeoJSONSource, LayerSpecification, Map as MapLibreMap } from "maplibre-gl";
+import { MAP } from "../ui/tokens";
+import { FONT, Z } from "./layers";
 
 export const ROAD_LABEL_SRC = "road_labels";
 /** 화면 가장자리에서 이만큼(px) 안쪽의 상자 안에서만 고른다 — 글자가 가장자리에 걸려 반만 나오지 않게. */
@@ -24,6 +26,26 @@ export const CHAR_PX = 11.5;
 export const MIN_PIECE_PX = 48;
 /** 움직임이 멎은 뒤 다시 고르는 간격(ms). 주행 중 카메라가 계속 움직여도 이 간격으로만 고른다. */
 export const UPDATE_MS = 700;
+
+/**
+ * `lbl-road` 층 — **점 · 가로 · 아이콘 층 밑.** (DECISIONS §711 · PLAN #73)
+ *  · 층 순서가 곧 자리 잡는 순서다 — 위 층이 먼저 잡는다. 도로명이 소화전 · CCTV 위에 있었을 때 글자가 먼저 잡혀 아이콘이 그 위에 겹쳤다. 이제 아이콘 층(`allow-overlap` 이어도
+ *    충돌 색인에는 들어간다)이 먼저 잡고 글자는 **비켜난다**(`attachRoadLabels` 가 이 층을 `hydrant` **앞에** 넣는다) — 소화전 · CCTV 는 위치가 뜻이고 도로명은 다른 글자로 대체된다(사람이 정했다).
+ *  · `symbol-placement: "line"` 을 버렸다 — 길을 따라 눕히면 남북 길에서 한글이 세로로 누웠다. 점 + 가로(`viewport`)다.
+ *  · `symbol-sort-key` — 화면에서 **긴 길이 먼저** 자리를 잡는다(`k` = −길이).
+ * 이 층은 **지연 청크**(이 파일)에 산다 — 진입 청크 래칫(`naviweight` `ENTRY_KB`)이 첫 화면에 안 필요한 바이트를 못 받는다. `tools/uicheck.py` 는 이 파일도 층 명세로 읽는다(`LAYER_FILES`).
+ */
+export function roadLabelLayers(): LayerSpecification[] {
+  return [
+    { id: "lbl-road", type: "symbol", source: ROAD_LABEL_SRC, minzoom: Z.road,
+      layout: {
+        "symbol-placement": "point", "text-field": ["get", "name"],
+        "text-font": FONT, "text-size": 11, "text-rotation-alignment": "viewport",
+        "symbol-sort-key": ["get", "k"] as never,
+      },
+      paint: { "text-color": MAP.roadLabel, "text-halo-color": MAP.roadLabelHalo, "text-halo-width": 1.6 } },
+  ];
+}
 
 export type Pt = [number, number];
 export interface RoadPiece { name: string; px: Pt[] }
@@ -105,15 +127,17 @@ export function pickRoadLabels(pieces: RoadPiece[], W: number, H: number, margin
 export function labelCollection(picks: RoadLabelPick[], unproject: (x: number, y: number) => [number, number]): GeoJSON.FeatureCollection {
   return {
     type: "FeatureCollection",
-    features: picks.map((p) => ({ type: "Feature", properties: { name: p.name, len: Math.round(p.len) },
+    features: picks.map((p) => ({ type: "Feature", properties: { name: p.name, len: Math.round(p.len), k: -Math.round(p.len) },
                                   geometry: { type: "Point", coordinates: unproject(p.x, p.y) } })),
   };
 }
 
-/** 지도에 붙인다 — 움직임이 있을 때마다(`UPDATE_MS` 간격으로) 다시 고른다. 떼는 함수를 돌려준다. `lbl-road` 층의 소스가 이미 있어야 한다(`layers.ts::sources`). */
+/** 지도에 붙인다 — 소스와 `lbl-road` 층을 **아이콘 층 앞에** 넣고, 움직임이 있을 때마다(`UPDATE_MS` 간격으로) 다시 고른다. 떼는 함수를 돌려준다. 아이콘 층이 이미 올라 있어야 한다. */
 export function attachRoadLabels(m: MapLibreMap, minZoom: number): () => void {
-  let timer: number | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   const empty: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
+  m.addSource(ROAD_LABEL_SRC, { type: "geojson", data: empty });
+  for (const L of roadLabelLayers()) m.addLayer(L, m.getLayer("hydrant") ? "hydrant" : undefined);   // 아이콘 층 **앞** — 아이콘이 먼저 자리를 잡는다
   const update = () => {
     timer = undefined;
     const src = m.getSource(ROAD_LABEL_SRC) as GeoJSONSource | undefined;
@@ -135,11 +159,11 @@ export function attachRoadLabels(m: MapLibreMap, minZoom: number): () => void {
     src.setData(labelCollection(pickRoadLabels(pieces, c.clientWidth, c.clientHeight),
                                 (x, y) => { const l = m.unproject([x, y]); return [l.lng, l.lat]; }));
   };
-  const sched = () => { if (timer === undefined) timer = window.setTimeout(update, UPDATE_MS); };
+  const sched = () => { if (timer === undefined) timer = setTimeout(update, UPDATE_MS); };
   const onData = (e: { sourceId?: string; isSourceLoaded?: boolean }) => { if (e.sourceId === "segments" && e.isSourceLoaded) sched(); };
   m.on("move", sched);
   m.on("moveend", update);
   m.on("sourcedata", onData);
   sched();
-  return () => { m.off("move", sched); m.off("moveend", update); m.off("sourcedata", onData); if (timer !== undefined) window.clearTimeout(timer); };
+  return () => { m.off("move", sched); m.off("moveend", update); m.off("sourcedata", onData); if (timer !== undefined) clearTimeout(timer); };
 }

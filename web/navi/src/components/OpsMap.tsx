@@ -211,6 +211,7 @@ export function OpsMap(props: Props) {
       // ★ 2026-11-04. 안전센터 층이 **지점 핀 뒤에** 얹힌다 — 나중 층이 먼저 자리를 잡으므로 센터 글자가 앞선다.
       for (const L of stationLayers()) m.addLayer(L);
       shortenStationLabels(m, D);
+      attachRoadLabels(m, Z.road);          // ★ DECISIONS §711 — 도로명은 화면 기준으로 이름마다 한 점(가로) · 아래 글자 색 루프보다 **먼저**(층이 이때 생긴다)
       // ★ 글자 색은 글자 레이어가 **생긴 뒤에** 입힌다 — 앞에서 입히면 레이어가 없어 조용히 건너뛴다
       //   (독립 검토 2026-09-22: 어두운 바탕에 밝은 테마 글자가 그대로 남았다)
       //   건물 · 상호 이름은 **흰 알약** 위에 앉으므로 알약을 어둡게 하고 글자는 밝게 둔다
@@ -221,7 +222,6 @@ export function OpsMap(props: Props) {
         m.setPaintProperty(id, "text-halo-width", id === "lbl-road" || id === "lbl-station" ? 1.4 : 0);
         if (id === "lbl-bldg" || id === "lbl-poi") m.setPaintProperty(id, "icon-opacity", 0.18);
       }
-      attachRoadLabels(m, Z.road);          // ★ DECISIONS §711 — 도로명은 화면 기준으로 이름마다 한 점(가로)
       ready.current = true;
       const q = pending.current; pending.current = [];
       for (const f of q) f(m);

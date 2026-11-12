@@ -81,7 +81,7 @@ DIST = ROOT / "web" / "navi" / "dist"
 #: ★ 2026-09-29 (§311). `opsLayers.ts` 가 갈라져 나온 날, 이 도구가 `layers.ts` 만
 #:   보고 있었다. 공유 수는 우연히 그대로였고(바탕 층이 안 옮겨갔다) **그래서 더
 #:   나빴다** — 초록인 채로 그물에 구멍이 났다. 아래 자기검사가 그것을 문다.
-LAYER_FILES = ("layers.ts", "opsLayers.ts")
+LAYER_FILES = ("layers.ts", "opsLayers.ts", "roadLabels.ts")
 LAYERS = SRC / "components" / "layers.ts"
 
 #: 전환 깃발. `serve.py` 가 루트에 박고, 번들이 읽어야 한다. 한쪽만 있으면 안 된다.
@@ -98,9 +98,9 @@ EXCLUSIVE = {
 }
 
 #: 두 지도가 부르는 층 묶음. `layers.ts` 의 export 함수 이름이다.
-NAVI_FNS = ("baseLayers", "landuseLayers", "altRouteLayers", "routeLayers", "markerLayers", "stationLayers")
+NAVI_FNS = ("baseLayers", "landuseLayers", "altRouteLayers", "routeLayers", "markerLayers", "roadLabelLayers", "stationLayers")
 OPS_FNS = ("baseLayers", "hillshadeLayer", "opsHistoryLayers", "opsSegLayers",
-           "opsOverlayLayers", "markerLayers", "stationLayers")
+           "opsOverlayLayers", "markerLayers", "roadLabelLayers", "stationLayers")
 
 # ── 래칫 ────────────────────────────────────────────────────────
 # ★ 2026-09-29 (§310). 오늘 실측 그대로 박는다 — 래칫의 값어치는 「지금보다

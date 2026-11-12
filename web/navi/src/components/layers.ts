@@ -54,7 +54,7 @@ import { C, MAP } from "../ui/tokens";
 //   뽑는 글자는 Liberation Sans 다(§312). 이름과 실물이 다르면 다음 사람이
 //   없는 글꼴을 찾는다. **공백은 안 쓴다** — CODEOWNERS 가 못 읽는다(§316).
 //   없는 글꼴을 찾는다. 뽑는 곳 — `web/navi/scripts/glyphs.mjs`
-const FONT = ["LiberationSans"];
+export const FONT = ["LiberationSans"];
 /**
  * 지도 글자. **저장소 안에서 온다** (PLAN §13 W13-4 · DECISIONS §312).
  *
@@ -96,8 +96,6 @@ export function sources(dataUrl: string, terrainBounds?: [number, number, number
     landuse: { type: "geojson", data: dataUrl + "landuse.geojson" },
     sidewalk: { type: "geojson", data: dataUrl + "sidewalk.geojson" },
     segments: { type: "geojson", data: dataUrl + "segments.geojson" },
-    // ★ DECISIONS §711. 도로명 글자의 **점** — `components/roadLabels.ts` 가 화면 기준으로 이름마다 한 점을 골라 채운다(처음엔 비어 있다).
-    road_labels: { type: "geojson", data: { type: "FeatureCollection", features: [] } },
     poi: { type: "geojson", data: dataUrl + "poi.geojson" },
     stations: { type: "geojson", data: dataUrl + "stations.geojson" },
     cctv: { type: "geojson", data: dataUrl + "cctv.geojson" },
@@ -310,20 +308,6 @@ export function routeLayers(style: Record<string, VerdictStyle> = {}): LayerSpec
 
 export function markerLayers(): LayerSpecification[] {
   return [
-    // ★ 2026-11-12 (DECISIONS §711 · PLAN #73). **도로명 글자는 아이콘 밑에 둔다 · 점으로 가로로 쓴다.**
-    //   · 층 순서가 곧 자리 잡는 순서다 — 위 층이 먼저 잡는다. 도로명이 소화전 · CCTV 위에 있었을 때 글자가 먼저 잡혀 아이콘이 그 위에 겹쳤다. 이제 아이콘 층(`allow-overlap` 이어도
-    //     충돌 색인에는 들어간다)이 먼저 잡고 글자는 **비켜난다** — 소화전 · CCTV 는 위치가 뜻이고 도로명은 다른 글자로 대체된다(사람이 정했다).
-    //   · `symbol-placement: "line"` 을 버렸다 — 길을 따라 눕히면 남북 길에서 한글이 세로로 누웠다. 점 + 가로(`viewport`)다. 점은 `roadLabels.ts` 가 화면 기준으로 이름마다 하나만 고른다.
-    //   · `symbol-sort-key` — 화면에서 **긴 길이 먼저** 자리를 잡는다.
-    { id: "lbl-road", type: "symbol", source: "road_labels", minzoom: Z.road,
-      layout: {
-        "symbol-placement": "point", "text-field": ["get", "name"],
-        "text-font": FONT, "text-size": 11, "text-padding": 6,
-        "text-rotation-alignment": "viewport", "text-pitch-alignment": "viewport",
-        "symbol-sort-key": ["-", 0, ["get", "len"]] as never,
-      },
-      paint: { "text-color": MAP.roadLabel, "text-halo-color": MAP.roadLabelHalo,
-               "text-halo-width": 1.6 } },
     { id: "hydrant", type: "symbol", source: "hydrants", minzoom: Z.hydrant,
       layout: {
         "icon-image": "ic-hyd", "icon-allow-overlap": true, "icon-pitch-alignment": "viewport",

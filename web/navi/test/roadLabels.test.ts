@@ -3,8 +3,7 @@
  * 순수 함수(`pickRoadLabels` · `clipPolyline`)와 층 선언을 문다. 지도 엔진의 충돌은 `scripts` 의 실측이 든다(브라우저).
  */
 import { ok, test } from "./harness";
-import { CHAR_PX, LABEL_MARGIN_PX, MIN_PIECE_PX, clipPolyline, labelCollection, pickRoadLabels, type RoadPiece } from "../src/components/roadLabels";
-import { markerLayers } from "../src/components/layers";
+import { CHAR_PX, LABEL_MARGIN_PX, MIN_PIECE_PX, ROAD_LABEL_SRC, attachRoadLabels, clipPolyline, labelCollection, pickRoadLabels, roadLabelLayers, type RoadPiece } from "../src/components/roadLabels";
 
 const W = 1000, H = 700;
 const line = (name: string, ...px: [number, number][]): RoadPiece => ({ name, px });
@@ -57,11 +56,24 @@ test("labelCollection — 점 · 이름 · 길이를 싣는다", () => {
   ok(fc.features.length === 1 && fc.features[0].geometry.type === "Point" && fc.features[0].properties?.len === 300, JSON.stringify(fc));
 });
 
-test("층 선언 — 도로명은 점 · 가로 · 아이콘 층보다 **아래**(자리를 나중에 잡는다)", () => {
-  const L = markerLayers() as { id: string; source?: string; layout?: Record<string, unknown> }[];
-  const ids = L.map((l) => l.id), road = L.find((l) => l.id === "lbl-road")!;
-  ok(road.source === "road_labels", "소스가 점 소스가 아니다");
+test("층 선언 — 도로명은 점 · 가로 · 소스는 점 소스", () => {
+  const road = roadLabelLayers()[0] as { id: string; source?: string; layout?: Record<string, unknown> };
+  ok(road.id === "lbl-road" && road.source === ROAD_LABEL_SRC, "소스가 점 소스가 아니다");
   ok(road.layout?.["symbol-placement"] === "point", "길을 따라 눕히는 배치가 남았다 — 남북 길에서 한글이 세로로 눕는다");
   ok(road.layout?.["text-rotation-alignment"] === "viewport", "글자가 화면 기준 가로가 아니다");
-  for (const icon of ["hydrant", "cctv", "ctx"]) ok(ids.indexOf("lbl-road") < ids.indexOf(icon), `lbl-road 가 ${icon} 보다 위 층이다 — 글자가 먼저 자리를 잡아 아이콘과 겹친다`);
+});
+
+test("붙일 때 도로명 층을 아이콘 층(소화전) **앞에** 넣는다 — 아이콘이 먼저 자리를 잡고 글자가 비켜난다", () => {
+  const calls: { id: string; before?: string }[] = [];
+  const sources: string[] = [];
+  const fake = {
+    addSource: (id: string) => { sources.push(id); },
+    addLayer: (l: { id: string }, before?: string) => { calls.push({ id: l.id, before }); },
+    getLayer: (id: string) => (id === "hydrant" ? {} : undefined),
+    on: () => {}, off: () => {}, getSource: () => undefined,
+  };
+  const off = attachRoadLabels(fake as never, 16);
+  off();
+  ok(sources.includes(ROAD_LABEL_SRC), "점 소스를 안 더했다");
+  ok(calls.length === 1 && calls[0].id === "lbl-road" && calls[0].before === "hydrant", `아이콘 층 앞이 아니다: ${JSON.stringify(calls)}`);
 });

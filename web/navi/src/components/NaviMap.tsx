@@ -50,7 +50,6 @@ import {
   stationLayers, shortenStationLabels, applyTerrain, chevronImage, cctvIcon, hydrantIcon, bumpIcon, camIcon, zoneIcon, pillImage, pillOptions,
   Z,
 } from "./layers";
-import { attachRoadLabels } from "./roadLabels";
 import { dataBase } from "../infra/dataBase";
 
 maplibregl.setWorkerUrl(workerUrl);
@@ -213,7 +212,8 @@ export function NaviMap(props: Props) {
       if (p.view.terrainBounds) {
         applyTerrain(m, p.terrain, new URLSearchParams(location.search).get("terrain") !== "0");
       }
-      attachRoadLabels(m, Z.road);          // ★ DECISIONS §711 — 도로명은 화면 기준으로 이름마다 한 점(가로)
+      // ★ DECISIONS §711 — 도로명은 화면 기준으로 이름마다 한 점(가로). **미룬 청크다** — 진입 청크 래칫(111KB)이 이 3KB 를 못 받는다(첫 화면에 안 필요하다).
+      void import("./roadLabels").then((r) => r.attachRoadLabels(m, Z.road));
       ready.current = true;
       const q = pending.current; pending.current = [];
       for (const f of q) f(m);
