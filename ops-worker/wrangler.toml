@@ -1,0 +1,17 @@
+# 관제 ↔ 내비 중개자 — Cloudflare Workers (Durable Object). DECISIONS §755 · PLAN #176
+# 사람이 치는 명령은 README.md 에 그대로 있다.
+name = "fire-lane-ops"
+main = "src/index.ts"
+compatibility_date = "2025-10-01"
+
+# 방 하나 = DO 하나(`idFromName("fire-lane")`). 무료 플랜은 SQLite 백엔드만 쓸 수 있다.
+[[durable_objects.bindings]]
+name = "ROOM"
+class_name = "Room"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Room"]
+
+# ★ 토큰은 여기 적지 않는다 — `wrangler secret put FIRE_LANE_OPS_TOKEN`(배포) · `.dev.vars`(로컬, 커밋 안 함).
+# ★ 허용 출처(선택): `ALLOWED_ORIGINS = "https://<사용자>.github.io"` 를 [vars] 에 더하면 그 출처의 WebSocket 만 받는다.

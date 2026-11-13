@@ -30,12 +30,15 @@ export function useOpsUplink(snap: UnitSnapshot | null) {
   const [now, setNow] = useState(() => Date.now());
   const rev = useRef({ route: null as LngLat[] | null, n: 0, sentN: -1 });
   const needRoute = useRef(true);
+  // ★ 처음 보는 관제 id 의 `hb` 가 오면 경로를 다시 싣는다(DECISIONS §755 · §746 의 둘째 관제) — 첫 관제의 `hb` 가 흐르는 중에 붙은 둘째 관제는 종전 신호(`hb` 가 4초 넘게 끊김)가 안 서 경로를 못 봤다.
+  const seenOps = useRef(new Set<string>());
 
   useEffect(() => {
     const l = openLink((d) => {
       const m = asOpsMsg(d);
       if (!m) return;
       if (m.t === "hb") {
+        if (!seenOps.current.has(m.ops)) { seenOps.current.add(m.ops); needRoute.current = true; }
         setLastHb((prev) => {
           if (prev == null || Date.now() - prev > 4000) needRoute.current = true;   // 관제가 새로 켜졌다
           return m.at;

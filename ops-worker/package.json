@@ -1,0 +1,15 @@
+{
+  "name": "fire-lane-ops-worker",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "관제 ↔ 내비 중개자 — Cloudflare Workers (Durable Object). DECISIONS §755",
+  "scripts": {
+    "dev": "wrangler dev --local",
+    "deploy": "wrangler deploy",
+    "test": "node --experimental-strip-types --test test/relay.test.ts"
+  },
+  "devDependencies": {
+    "wrangler": "4.45.0"
+  }
+}
