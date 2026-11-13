@@ -6,7 +6,7 @@
  *
  * ★ **메시지의 뜻을 안 본다**(§342). 규칙은 `relay.ts` 에 있고 그것도 글자만 안다.
  * ★ Hibernation API 를 쓴다 — idle 이면 지속시간이 안 붙는다. 대가: **메모리의 마지막 한 통이 DO 가 쫓겨나면 사라진다.** 내비는 0.5초마다 `state` 를 다시 보내므로
- *   차량 버킷은 0.5초 안에 스스로 복구된다. 영상(`cv`)은 주기 신호가 아니라 복구가 안 된다(알려진 한계 — README).
+ *   차량 버킷은 0.5초 안에 스스로 복구된다. 영상(`cv`)은 주기 신호가 아니라 복구가 안 된다(알려진 한계 — DECISIONS §755).
  * ★ 인증 · 열린 선언 · 환경변수 이름은 파이썬 서버와 같다: `FIRE_LANE_OPS_TOKEN` · `FIRE_LANE_OPS_OPEN=1`. 추가: `ALLOWED_ORIGINS`(쉼표 · 비면 안 본다).
  */
 import { Cache, authOk, wants, type Kind } from "./relay.ts";

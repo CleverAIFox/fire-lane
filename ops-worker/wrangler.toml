@@ -1,5 +1,5 @@
 # 관제 ↔ 내비 중개자 — Cloudflare Workers (Durable Object). DECISIONS §755 · PLAN #176
-# 사람이 치는 명령은 README.md 에 그대로 있다.
+# 사람이 치는 명령은 최상위 README.md 의 「중개자」 에 있다.
 name = "fire-lane-ops"
 main = "src/index.ts"
 compatibility_date = "2025-10-01"
