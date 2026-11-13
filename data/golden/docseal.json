@@ -1310,17 +1310,17 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "6cd561cef39d82e1",
-   "9d90290275f8d1e6",
-   "ba0b67877b4736fd",
-   "c130f83ffb4cc817"
+   "58c6ccf4b700aec8",
+   "a9f42f8157a7e625",
+   "aec0efc4711b5aa6",
+   "d2d135e5e8b99348"
   ],
   "parts": {
-   "sources.yaml": "7c9de008faab277a",
+   "sources.yaml": "7f94236e2ea5923c",
    "tests/test_shardseal.py": "5f0d9fca1072d282",
    "본문": "178a7b0090b3eb44"
   },
-  "sha": "6cd561cef39d82e1"
+  "sha": "a9f42f8157a7e625"
  },
  "DECISIONS/166-7": {
   "doc": "docs/DECISIONS.md",
@@ -2560,21 +2560,21 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "038cc9c8f2e3957c",
-   "5cca81eb1fcb69e9",
-   "be97e962eedf4a44",
-   "e4881c01d855e06d"
+   "50ee995dbe619cc2",
+   "6ce2fe88c42c202b",
+   "7c38ab7817c67fcf",
+   "d2932027e7770244"
   ],
   "parts": {
    "tests/test_contract.py": "1ecd3fd5084c9da3",
    "tests/test_deadcheck_probes.py": "1541719099807d71",
    "tests/test_declaration_sync.py": "2f0ad0f85d7378a4",
-   "tools/deadcheck.py": "9a96d5f02324084b",
+   "tools/deadcheck.py": "2cbd70bef9d12fd6",
    "web/config.js": "62e9c33a0c8290b3",
    "web/navi/src/ui/tokens.ts": "99f2021cc1aae95b",
    "본문": "16391725424fd4a3"
   },
-  "sha": "be97e962eedf4a44"
+  "sha": "d2932027e7770244"
  },
  "DECISIONS/202-8": {
   "doc": "docs/DECISIONS.md",
@@ -2839,19 +2839,19 @@
   "kind": "read",
   "legacy": [
    "1869a0bcba67f842",
+   "3adf31ae7b36662e",
    "44f7a75a3651920c",
-   "be334097679ebef6",
-   "fa6aedc32d247a16"
+   "7923ebac3bcf640d"
   ],
   "parts": {
-   ".github/workflows/contract.yml": "24bbe8d31e0c280f",
+   ".github/workflows/contract.yml": "8a8643ab0a3db3fb",
    "tools/navi_env.py": "f5ea19cf34bdc7aa",
    "tools/verify.sh": "9f4290b9bff9bc20",
    "web/config.js": "62e9c33a0c8290b3",
    "web/navi/test/progress.test.ts": "7ba608d12ea14274",
    "본문": "55baeb6f7905416d"
   },
-  "sha": "fa6aedc32d247a16"
+  "sha": "7923ebac3bcf640d"
  },
  "DECISIONS/214": {
   "doc": "docs/DECISIONS.md",
@@ -3250,20 +3250,20 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "c9b8619250ff9520",
-   "d7dc1ca8d9471c4a",
-   "e07df8eccd8a0bad",
-   "ee5b830a68c81a2e"
+   "09fbd9e133e21314",
+   "8023ad59d2458dd3",
+   "dbee287815952a8d",
+   "f28033e0ae007a6f"
   ],
   "parts": {
    "tests/test_scopedecl.py": "ef3f8692cc800988",
    "tools/env_check.py": "ce89cafc042253f6",
    "tools/fl.sh": "f83ede79df1bfda8",
    "tools/inbox_fl.sh": "9bbf157c67480f78",
-   "tools/scopedecl.py": "b6aabe5fa2be4597",
+   "tools/scopedecl.py": "e92f8a735499243a",
    "본문": "6213cece2126aac0"
   },
-  "sha": "c9b8619250ff9520"
+  "sha": "dbee287815952a8d"
  },
  "DECISIONS/227": {
   "doc": "docs/DECISIONS.md",
@@ -3670,17 +3670,17 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "11e0dd6f76c9cfcb",
-   "922914e23a6d26a1",
-   "98c2aa41b7a94716",
-   "f13f68eea560ee69"
+   "59b7a2ad4c68c663",
+   "8c598aef5bfa008f",
+   "8d945c83aa15c94b",
+   "f60640aa688c3559"
   ],
   "parts": {
-   "sources.yaml": "3debedfd536541d6",
+   "sources.yaml": "7190506a5ddd41a4",
    "tests/test_repo_numbers.py": "8f13c4307acee948",
    "본문": "a3836e151a163662"
   },
-  "sha": "f13f68eea560ee69"
+  "sha": "8c598aef5bfa008f"
  },
  "DECISIONS/246-1": {
   "doc": "docs/DECISIONS.md",
@@ -3691,17 +3691,17 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "2330fd8af31dc426",
-   "42580cdf2f64261b",
-   "d49a8ccff3b5c0ff",
-   "ec15fa85cc301013"
+   "7006f81ef66117ac",
+   "c96169f3a79d0076",
+   "e5ccefb301a7e621",
+   "fa3b3ff51fea49e4"
   ],
   "parts": {
-   "sources.yaml": "3debedfd536541d6",
+   "sources.yaml": "7190506a5ddd41a4",
    "tests/test_repo_numbers.py": "778991a49a9441e5",
    "본문": "d2666cb709608cd1"
   },
-  "sha": "42580cdf2f64261b"
+  "sha": "fa3b3ff51fea49e4"
  },
  "DECISIONS/246-2": {
   "doc": "docs/DECISIONS.md",
@@ -3712,17 +3712,17 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "55367925d25c66bd",
-   "7c8116429aafbeff",
-   "d8b7da04cc3bf7bd",
-   "dbf4d8c8fecee2b2"
+   "2c08a4a225d5bdd4",
+   "72716ed332022009",
+   "b131519f5b81b415",
+   "d4e13bcc1afc3394"
   ],
   "parts": {
-   "sources.yaml": "89db27a6b7b400b5",
+   "sources.yaml": "2108589ddb045f34",
    "tests/test_repo_numbers.py": "8c6435d65dd5514c",
    "본문": "1e2a5881279875ad"
   },
-  "sha": "dbf4d8c8fecee2b2"
+  "sha": "b131519f5b81b415"
  },
  "DECISIONS/247": {
   "doc": "docs/DECISIONS.md",
@@ -4889,25 +4889,25 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "3bd2cd47abe81753",
-   "3d0036703e7a6062",
-   "52fa6d70a869e743",
-   "80cf7362be395466",
-   "a63864a7aa3b8ae1",
-   "e51f32df6341c7de",
-   "ec39969b3423208b",
-   "f7b8d6f6f401ce30"
+   "1d439e7901508107",
+   "37e590eea9ec23c3",
+   "55004c556cc21e50",
+   "80a961182ecdf218",
+   "8f4802b53c3bed22",
+   "ac79e7a6dd83d486",
+   "e4f6e46a530e68ca",
+   "f6a476d08b40a523"
   ],
   "parts": {
-   ".github/workflows/contract.yml": "24bbe8d31e0c280f",
+   ".github/workflows/contract.yml": "8a8643ab0a3db3fb",
    "tests/test_selftests_are_run.py": "6eb2d3c29fae06e3",
    "tools/gate_parity.py": "1440487262683161",
-   "tools/scopedecl.py": "b6aabe5fa2be4597",
+   "tools/scopedecl.py": "e92f8a735499243a",
    "tools/selftests.py": "e480d927644991cb",
    "tools/verify.sh": "ef5d82df94567954",
    "본문": "ff5aadecef90b8c6"
   },
-  "sha": "80cf7362be395466"
+  "sha": "ac79e7a6dd83d486"
  },
  "DECISIONS/287": {
   "doc": "docs/DECISIONS.md",
@@ -4946,24 +4946,24 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "2130571b6ba341fd",
    "369d46480737d2ee",
-   "3d3e060bf48bac38",
    "52e0cd12eddeb1b9",
-   "ae86a32f6f59761e",
-   "b7f6c8f53cf48770",
-   "db45c135ccdd941f",
-   "eeabcca11bf59be2"
+   "5eb2ef36331f7e01",
+   "6d407337d9a0d38f",
+   "70d3cb80c6306fe6",
+   "8a32acf20a17b9e3",
+   "c0b4c9b8aa211b7e",
+   "c5f68b783ad0d2fa"
   ],
   "parts": {
-   ".github/workflows/contract.yml": "24bbe8d31e0c280f",
+   ".github/workflows/contract.yml": "8a8643ab0a3db3fb",
    "sources.yaml": "1f51dbbff5df08eb",
    "tests/test_fieldseal.py": "a9e9ac269773098b",
    "tools/fieldseal.py": "6204a8fc1cfed5f6",
    "tools/verify.sh": "bff1c2dc3934bb45",
    "본문": "00ef69af5f136ff2"
   },
-  "sha": "b7f6c8f53cf48770"
+  "sha": "70d3cb80c6306fe6"
  },
  "DECISIONS/289": {
   "doc": "docs/DECISIONS.md",
@@ -5240,18 +5240,18 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "25acb5dfee19ef6a",
-   "4d816a588f187fb9",
-   "8accfc96aff865b6",
-   "bb7a194d0824b5be"
+   "32cbeb2ffc0a6bd6",
+   "5f02bd3ae51076b7",
+   "b7b340d40d7500a1",
+   "cfce42028903a47e"
   ],
   "parts": {
-   "sources.yaml": "89db27a6b7b400b5",
+   "sources.yaml": "2108589ddb045f34",
    "tests/test_guards.py": "ba05da80fe2d6b11",
-   "tools/deadcheck.py": "9a96d5f02324084b",
+   "tools/deadcheck.py": "2cbd70bef9d12fd6",
    "본문": "1be314e1b8d34136"
   },
-  "sha": "4d816a588f187fb9"
+  "sha": "32cbeb2ffc0a6bd6"
  },
  "DECISIONS/301": {
   "doc": "docs/DECISIONS.md",
@@ -5340,18 +5340,18 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "4a433b537faf910d",
+   "4fc3820bcd2a8abc",
    "68687357451e068f",
-   "8ba7af4c3cd4f8ac",
-   "92c48b778d7a8219"
+   "92c48b778d7a8219",
+   "d7a05be90523f6ca"
   ],
   "parts": {
-   ".github/workflows/contract.yml": "24bbe8d31e0c280f",
+   ".github/workflows/contract.yml": "8a8643ab0a3db3fb",
    "tools/verdictsim.py": "9da20dd809a8aa94",
    "tools/verify.sh": "03afcd7c5d693162",
    "본문": "b79dbbac9f324b4b"
   },
-  "sha": "4a433b537faf910d"
+  "sha": "4fc3820bcd2a8abc"
  },
  "DECISIONS/305": {
   "doc": "docs/DECISIONS.md",
@@ -5509,21 +5509,21 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "01d7ea964c8f0ca3",
-   "3109ad55b15b2350",
-   "93be1bbbf9bbc5e3",
-   "fdf457c3a72d01a8"
+   "45b08a58eb4805d4",
+   "4ebfcd5d7a44ba43",
+   "bb7e761b7c1f5c50",
+   "ddde482a52643f4d"
   ],
   "parts": {
    "tests/test_uicheck.py": "4a6e43b1fcd6b46d",
    "tools/mergecheck.py": "e1f5dc98e53310a4",
    "tools/pr_body_check.py": "6d15a32cb264f6d5",
    "tools/serve.py": "704693153e2a2f72",
-   "tools/uicheck.py": "1eb491428e98a0d0",
+   "tools/uicheck.py": "21b529e58287b61e",
    "tools/verify.sh": "57704340a65e3f73",
    "본문": "9a6d41dfdf6947e4"
   },
-  "sha": "fdf457c3a72d01a8"
+  "sha": "4ebfcd5d7a44ba43"
  },
  "DECISIONS/311": {
   "doc": "docs/DECISIONS.md",
@@ -5536,19 +5536,19 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "3f0fb69de4d9c7c2",
-   "656287f5899aca2f",
-   "780266782c720556",
-   "a3f9200afd6f4a62"
+   "3bf4bc02a6e5ec75",
+   "72f72c94c4dca4bd",
+   "cfa91f0b30869617",
+   "fa525af2bd2c6607"
   ],
   "parts": {
    "tests/test_uicheck.py": "4a6e43b1fcd6b46d",
    "tools/ratchet.py": "247f92f9431f573c",
-   "web/navi/src/components/NaviMap.tsx": "c157272296cf953e",
+   "web/navi/src/components/NaviMap.tsx": "a3d76f20b9ef5281",
    "web/navi/src/components/layers.ts": "a284c51cc9f11e9e",
    "본문": "fd69d9710c69bd48"
   },
-  "sha": "a3f9200afd6f4a62"
+  "sha": "3bf4bc02a6e5ec75"
  },
  "DECISIONS/312": {
   "doc": "docs/DECISIONS.md",
@@ -5562,20 +5562,20 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "67962428307870d2",
-   "762a1bbac7e56cfd",
-   "9d58c0fbaa3ee526",
-   "c6a41a070cd54ef2"
+   "4ddf8de5bcc62374",
+   "6494e97114ec4059",
+   "b6e51988263a59d4",
+   "b8312bc636ffe10e"
   ],
   "parts": {
    "tests/test_naviweight.py": "1cc42664b8ca6f69",
    "tools/naviweight.py": "dcf8f285f734686d",
-   "tools/uicheck.py": "1eb491428e98a0d0",
+   "tools/uicheck.py": "21b529e58287b61e",
    "tools/verify.sh": "60e13bfd6b926ed5",
    "web/navi/scripts/glyphs.mjs": "c28ef924361fcdc5",
    "본문": "81b1ddcaf779d7d4"
   },
-  "sha": "762a1bbac7e56cfd"
+  "sha": "b8312bc636ffe10e"
  },
  "DECISIONS/313": {
   "doc": "docs/DECISIONS.md",
@@ -5802,19 +5802,19 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "440603c9180fad69",
-   "5d3942302fd87d0b",
-   "9fe5d8f6d394c1a2",
-   "b03c415cc6b96df0"
+   "02f9e40f4b84a62f",
+   "371abff7869982ab",
+   "be27bfd97d151499",
+   "cb900385cfdeb201"
   ],
   "parts": {
-   "sources.yaml": "7521ceef78a6b28b",
+   "sources.yaml": "95066179e9e06338",
    "tests/test_lake.py": "9688a59df4a6aa2b",
    "tools/lakecheck.py": "c2e187619e597a54",
    "tools/sweep.py": "c89c7656f1c9ef36",
    "본문": "c9682fa4e945668c"
   },
-  "sha": "440603c9180fad69"
+  "sha": "be27bfd97d151499"
  },
  "DECISIONS/322": {
   "doc": "docs/DECISIONS.md",
@@ -5869,23 +5869,23 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "1d03845edfe82536",
-   "22f2b08068463beb",
+   "00cefa2a8db17a1c",
+   "28276e35689d98eb",
    "401e98bb5df02e80",
+   "641f970290245b9e",
    "69feee7e0306fbc3",
-   "ab2c8c030200fba7",
    "cbe4e885d1f2a53b",
    "e23410b96f673dc3",
-   "e4199cc99732d20e"
+   "fc3eeed4983d40dd"
   ],
   "parts": {
-   ".github/workflows/contract.yml": "24bbe8d31e0c280f",
+   ".github/workflows/contract.yml": "8a8643ab0a3db3fb",
    "tests/test_actionpin.py": "bdd3b71589e672b8",
    "tools/actionpin.py": "520af58faa758c4d",
    "tools/verify.sh": "39d0fbdd245f1f3a",
    "본문": "abfd1ba25202b59e"
   },
-  "sha": "1d03845edfe82536"
+  "sha": "fc3eeed4983d40dd"
  },
  "DECISIONS/327": {
   "doc": "docs/DECISIONS.md",
@@ -6168,22 +6168,22 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "0bb3be715a95439d",
-   "1d175ff6c54b1e48",
-   "86aaa098a8e48af5",
-   "b30ee23187beb551"
+   "74fd83f2acf10009",
+   "985d8470eff23b02",
+   "e4d143ee33667a7e",
+   "fed288b72d6f9041"
   ],
   "parts": {
    "tests/test_layering.py": "f8726486dc513f91",
    "tests/test_ops_roster.py": "0288c6609353a2a0",
    "tests/test_ops_server.py": "4c1e60318e13fbda",
    "tools/env_check.py": "ce89cafc042253f6",
-   "tools/scopedecl.py": "b6aabe5fa2be4597",
+   "tools/scopedecl.py": "e92f8a735499243a",
    "web/navi/src/domain/opsProtocol.ts": "ce342f52b47c9308",
    "web/navi/vite.config.ts": "c6aae07eccd09512",
    "본문": "255010a442792161"
   },
-  "sha": "0bb3be715a95439d"
+  "sha": "985d8470eff23b02"
  },
  "DECISIONS/342-1": {
   "doc": "docs/DECISIONS.md",
@@ -6216,16 +6216,16 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "730bf089584ebec4",
-   "fcb5e3025aba8521"
+   "2f4c2c0e84b14b29",
+   "69007a108c8eafc0"
   ],
   "parts": {
    "tools/env_check.py": "ce89cafc042253f6",
-   "tools/scopedecl.py": "b6aabe5fa2be4597",
+   "tools/scopedecl.py": "e92f8a735499243a",
    "web/navi/vite.config.ts": "c6aae07eccd09512",
    "본문": "175e83cca2fe3aa6"
   },
-  "sha": "fcb5e3025aba8521"
+  "sha": "69007a108c8eafc0"
  },
  "DECISIONS/343": {
   "doc": "docs/DECISIONS.md",
@@ -6366,24 +6366,24 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
+   "07f640ffcd430cf9",
    "0ca13c96b0aed1f9",
-   "47c789c1fb4ca7de",
-   "6efbc69f5749b0a6",
-   "84aee7331d2afcbc",
-   "9aa9352d240fb711",
-   "cd03172db34fc71d",
-   "d9ef9b7f0af5147a",
+   "1838153fa9466fb5",
+   "45d6ffc1ffbd7165",
+   "4a1c8d0962782835",
+   "7ce96726bad90ef0",
+   "a3d103094ca31d7e",
    "dfb4924305c69586"
   ],
   "parts": {
-   ".github/workflows/contract.yml": "24bbe8d31e0c280f",
+   ".github/workflows/contract.yml": "8a8643ab0a3db3fb",
    "sources.yaml": "998cac5b549d33e2",
    "tests/test_k2.py": "9074a7c4f00e80ef",
    "tools/ledger_cross.py": "0d90b6e1fb735238",
    "tools/verify.sh": "ca979386917b7247",
    "본문": "ee73103dbc3b4baf"
   },
-  "sha": "47c789c1fb4ca7de"
+  "sha": "7ce96726bad90ef0"
  },
  "DECISIONS/35": {
   "doc": "docs/DECISIONS.md",
@@ -6415,16 +6415,16 @@
   "kind": "read",
   "legacy": [
    "25fb77c14b74430b",
-   "2df1f293a970c552",
    "40da3df11067fcf7",
-   "75cd89f0cb5556d6",
-   "9ca407e6873e0cdd",
+   "8dedac9c96dac5c9",
+   "b32c8c9c6cdfb4ed",
    "c24e5b56e4075264",
-   "c35476d6a66ff1c9",
+   "cdda619befe865f8",
+   "dd4ffe48c5316951",
    "f38abae14bc36c56"
   ],
   "parts": {
-   ".github/workflows/contract.yml": "24bbe8d31e0c280f",
+   ".github/workflows/contract.yml": "8a8643ab0a3db3fb",
    "tests/test_reproducibility.py": "634464dad612b3d6",
    "tests/test_tools_are_wired.py": "02e622a05b6a3440",
    "tools/render_workflow.py": "2093c77d9d3c7a2a",
@@ -6432,7 +6432,7 @@
    "tools/verify.sh": "7abf1f029f004818",
    "본문": "0cab26b5ba4bac93"
   },
-  "sha": "2df1f293a970c552"
+  "sha": "dd4ffe48c5316951"
  },
  "DECISIONS/353": {
   "doc": "docs/DECISIONS.md",
@@ -6543,20 +6543,20 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "0ca620f45de630d0",
-   "3d7dbaf7da148dc7",
-   "57e8d17f840b888f",
-   "5c7b1457a6653c55"
+   "15f569a960b656bf",
+   "75ae6b2d0e59291f",
+   "9560d7008958bc4f",
+   "a8fc5bfbed2550b1"
   ],
   "parts": {
-   "sources.yaml": "52869d8d22cfe405",
+   "sources.yaml": "61b2b8813af1c6e9",
    "tests/test_doc_fsck.py": "1d26d0abd9843639",
-   "tools/deadcheck.py": "9a96d5f02324084b",
+   "tools/deadcheck.py": "2cbd70bef9d12fd6",
    "tools/deadprobes/empty_const.py": "826b3daaf8b26607",
    "tools/selftests.py": "e480d927644991cb",
    "본문": "006e8896431960c2"
   },
-  "sha": "3d7dbaf7da148dc7"
+  "sha": "15f569a960b656bf"
  },
  "DECISIONS/36": {
   "doc": "docs/DECISIONS.md",
@@ -6592,24 +6592,24 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "1c02770ace12b535",
-   "2642838cf70cf8ae",
-   "59f0ffdb037fa081",
+   "21d8cbeaea56e61f",
+   "60800d9ececf085a",
    "a2442ea7c4c2fa09",
    "a6206f8cedfa4a32",
+   "cf66259b09ea7e38",
+   "d696fbef70af5de5",
    "e8521472bb5fc705",
-   "ea05f2c566c12ca3",
    "f725189af6e85a89"
   ],
   "parts": {
-   ".github/workflows/contract.yml": "24bbe8d31e0c280f",
+   ".github/workflows/contract.yml": "8a8643ab0a3db3fb",
    "tests/test_fix_door.py": "9d5ef4a0408b7aba",
    "tools/fix.sh": "9b226960d2a2b4ea",
    "tools/fixable.py": "6c21cff869a93ded",
    "tools/verify.sh": "a6926b40a8b91677",
    "본문": "e6c13faae31ae5f2"
   },
-  "sha": "ea05f2c566c12ca3"
+  "sha": "cf66259b09ea7e38"
  },
  "DECISIONS/364": {
   "doc": "docs/DECISIONS.md",
@@ -6678,13 +6678,13 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "3ba354159b9711e2",
+   "14655a960fe0f869",
+   "5e32f62bbc84701c",
    "bca73e5cc774acd8",
-   "c490b28973908ea8",
    "f17fa14c9f0c78d7"
   ],
   "parts": {
-   ".github/workflows/contract.yml": "24bbe8d31e0c280f",
+   ".github/workflows/contract.yml": "8a8643ab0a3db3fb",
    "tools/countcheck.py": "8f739b6abd5d00a5",
    "tools/matchcheck.py": "d3d142a6ecd5d584",
    "tools/naviweight.py": "dcf8f285f734686d",
@@ -6692,7 +6692,7 @@
    "web/navi/test/wiring.test.ts": "fea60abf511cef76",
    "본문": "1d9fb49f5fe6d8e7"
   },
-  "sha": "c490b28973908ea8"
+  "sha": "5e32f62bbc84701c"
  },
  "DECISIONS/367": {
   "doc": "docs/DECISIONS.md",
@@ -6738,17 +6738,17 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "1fcb44accc0fdbd5",
    "29469ea8ebdc4ddb",
    "33a6d2ac1ffaab4d",
+   "444f51e2038e79c9",
+   "60e8ab6188571fe9",
    "76c60f04013d598e",
-   "8bd1d3dddc472369",
-   "9ae4e326020a413c",
-   "bb6bc4b46fc23922",
-   "d1ec968ce392c145"
+   "c911eb21afb12f52",
+   "d1ec968ce392c145",
+   "e6b5b61b9e02adca"
   ],
   "parts": {
-   ".github/workflows/contract.yml": "24bbe8d31e0c280f",
+   ".github/workflows/contract.yml": "8a8643ab0a3db3fb",
    "src/firelane/pipeline.py": "f177451c1986bf8b",
    "src/firelane/publish_web.py": "b2fcfb7729f801c0",
    "tests/test_declaration_reality.py": "00ae8716fbc062b9",
@@ -6756,7 +6756,7 @@
    "tools/verify.sh": "ac17169b7af2e6ac",
    "본문": "65e854009d5665e2"
   },
-  "sha": "bb6bc4b46fc23922"
+  "sha": "60e8ab6188571fe9"
  },
  "DECISIONS/369": {
   "doc": "docs/DECISIONS.md",
@@ -6770,20 +6770,20 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "02a0812dc5d4d4df",
+   "2023c19d62917487",
    "2cf1804e75bbf9d6",
    "2f62201c1e1ba7c8",
-   "f3091c8388a266e4"
+   "94b6c851e393f15d"
   ],
   "parts": {
-   ".github/workflows/contract.yml": "24bbe8d31e0c280f",
+   ".github/workflows/contract.yml": "8a8643ab0a3db3fb",
    "src/firelane/seg/classify.py": "687024ef5118cfa0",
    "tools/greycheck.py": "83a607e8daa41577",
    "tools/verify.sh": "aeb085e57d155a2e",
    "tools/widthcross.py": "0320341ec4393edc",
    "본문": "9106803bb9928fd0"
   },
-  "sha": "f3091c8388a266e4"
+  "sha": "2023c19d62917487"
  },
  "DECISIONS/37": {
   "doc": "docs/DECISIONS.md",
@@ -6859,17 +6859,17 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "31edf79221d43edf",
+   "025162a53c899bc8",
+   "120e2ea348f1430c",
    "38d0032051157262",
    "4dce051d0fa70c84",
-   "54d56725e510e799",
+   "5ad8450d6c2efafe",
    "a73f66201a568fd8",
    "b784aabf850cc5d7",
-   "d2feea3f5d68013b",
-   "f21375ab8fb04a74"
+   "e7286e870e391b73"
   ],
   "parts": {
-   ".github/workflows/contract.yml": "24bbe8d31e0c280f",
+   ".github/workflows/contract.yml": "8a8643ab0a3db3fb",
    "src/firelane/jsonkeys.py": "2fddd96a3ead64f6",
    "src/firelane/normalize_raw.py": "5e819eb89a372aac",
    "src/firelane/pipeline.py": "f177451c1986bf8b",
@@ -6885,7 +6885,7 @@
    "tools/vintage_check.py": "36902c3495dce314",
    "본문": "c467bcdfad9b7a66"
   },
-  "sha": "54d56725e510e799"
+  "sha": "5ad8450d6c2efafe"
  },
  "DECISIONS/372": {
   "doc": "docs/DECISIONS.md",
@@ -6901,22 +6901,22 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "162b3d732c0c2330",
-   "190869d616d75190",
-   "9e10f61304d7c7da",
-   "aa53f90d27725a3d"
+   "3054170666093186",
+   "3252a7363958ce1d",
+   "99619b826191965b",
+   "ced58279d8cbbefc"
   ],
   "parts": {
-   ".github/workflows/contract.yml": "24bbe8d31e0c280f",
+   ".github/workflows/contract.yml": "8a8643ab0a3db3fb",
    "src/firelane/gitq.py": "a7738c6058f2a511",
-   "tools/deadcheck.py": "9a96d5f02324084b",
+   "tools/deadcheck.py": "2cbd70bef9d12fd6",
    "tools/deadprobes/empty_const.py": "826b3daaf8b26607",
    "tools/deadprobes/git_empty.py": "b9cdeb12f8abc341",
    "tools/encoding_check.py": "339bf6719a3c59ff",
    "tools/verify.sh": "cf7556a555e3d1d3",
    "본문": "c6ff30796bbf309a"
   },
-  "sha": "aa53f90d27725a3d"
+  "sha": "ced58279d8cbbefc"
  },
  "DECISIONS/373": {
   "doc": "docs/DECISIONS.md",
@@ -7294,13 +7294,13 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "1d71bce8c0a68655",
-   "3973f340e5463b74",
+   "64a3c1780634544d",
    "6bbc571426c2dffe",
-   "84d43057f2a473c1"
+   "84d43057f2a473c1",
+   "ab51c826492127aa"
   ],
   "parts": {
-   ".github/workflows/contract.yml": "24bbe8d31e0c280f",
+   ".github/workflows/contract.yml": "8a8643ab0a3db3fb",
    "tests/test_guards.py": "ba05da80fe2d6b11",
    "tools/mutate.py": "2ae67f27943f8eb0",
    "tools/planwork.py": "613853756fb95ebc",
@@ -7309,7 +7309,7 @@
    "tools/verify.sh": "20cc825f05019758",
    "본문": "f54f4002f034f510"
   },
-  "sha": "3973f340e5463b74"
+  "sha": "64a3c1780634544d"
  },
  "DECISIONS/392": {
   "doc": "docs/DECISIONS.md",
@@ -7343,20 +7343,20 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "0f6f582dc9a10a79",
-   "2811f30cd73d56d8",
-   "39164f9712935196",
-   "cbc25c258f96b99e"
+   "0d7a9695dc0403e3",
+   "87ce58d9e9ad04b6",
+   "9539d3622630ede9",
+   "c73f8054fb9cbfc5"
   ],
   "parts": {
    "tests/test_navi_wireframe.py": "addfebb6cdb47a00",
    "web/navi/src/app/useScreens.ts": "473de2a3d1f7f57b",
    "web/navi/src/domain/handoff.ts": "f833d44839dcc058",
-   "web/navi/src/ui/Sheet.tsx": "61be02d831f3c446",
+   "web/navi/src/ui/Sheet.tsx": "c8cd94692af7fb00",
    "web/navi/test/handoff.test.ts": "2d5c9abf1b1cdee7",
    "본문": "305a857f1cf1a66c"
   },
-  "sha": "39164f9712935196"
+  "sha": "9539d3622630ede9"
  },
  "DECISIONS/394": {
   "doc": "docs/DECISIONS.md",
@@ -7615,20 +7615,20 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "4452813477d59d11",
-   "8ab3fdecff498d64",
-   "8e8d83561e0ea96a",
-   "fe493a4a6e10b88c"
+   "19112ff5c34fa9fc",
+   "197d94e849d725bb",
+   "2c8a834f75f6b124",
+   "dccc11f87be77d53"
   ],
   "parts": {
    "tests/test_defect_evidence.py": "de6c9b1a47351156",
    "tests/test_dms_ids.py": "d4fb20c648dc94e8",
-   "tools/deadcheck.py": "9a96d5f02324084b",
+   "tools/deadcheck.py": "2cbd70bef9d12fd6",
    "tools/dms.py": "a7e5da9786ea12b2",
    "tools/verify.sh": "95a9d123121b02bf",
    "본문": "be2834005a27876d"
   },
-  "sha": "fe493a4a6e10b88c"
+  "sha": "197d94e849d725bb"
  },
  "DECISIONS/406": {
   "doc": "docs/DECISIONS.md",
@@ -7861,13 +7861,13 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "2b0b8c4344228d34",
-   "54377183285f6fa5",
-   "73707cde66db4148",
-   "b9cc308451a1005d"
+   "1f10159216528337",
+   "2b7ce5576ee80f21",
+   "bacd220f3ffbc4c7",
+   "c1734f778b7570ed"
   ],
   "parts": {
-   "sources.yaml": "3debedfd536541d6",
+   "sources.yaml": "7190506a5ddd41a4",
    "tests/test_batch_tools.py": "8ed51f94a1e1218a",
    "tests/test_guards.py": "ba05da80fe2d6b11",
    "tools/docgen.py": "81028d0838f4fccf",
@@ -7875,7 +7875,7 @@
    "tools/sizecheck.py": "37ada738f0c098c4",
    "본문": "cbd4d58552ad9b29"
   },
-  "sha": "73707cde66db4148"
+  "sha": "1f10159216528337"
  },
  "DECISIONS/423": {
   "doc": "docs/DECISIONS.md",
@@ -8142,14 +8142,14 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "2c80962a1d1f9291",
-   "3ff03817a4745c9d",
-   "7f1793d5c0aad665",
-   "a4d2418bb086d480",
-   "be19f16dfae32d59",
-   "c75856cd41f82c03",
-   "e19db79a7b72b585",
-   "ebb40f22995d03ae"
+   "1722414047065b63",
+   "33060f0d10ce998b",
+   "4668d92db4756e66",
+   "7bdaa862ed321675",
+   "8fd80dbe11eb3585",
+   "d0f5441c3a3a0f3c",
+   "db52c02ff1c74b74",
+   "dd93c78b3c39740e"
   ],
   "parts": {
    ".devcontainer/setup.sh": "d19d5d7cc1e375ce",
@@ -8169,7 +8169,7 @@
    "tools/bridge_audit.py": "3acfc5c13e70c0b6",
    "tools/build_proposal.py": "fbd8d3cd59592b33",
    "tools/codepatch.py": "573bf7126a3aced9",
-   "tools/deadcheck.py": "9a96d5f02324084b",
+   "tools/deadcheck.py": "2cbd70bef9d12fd6",
    "tools/deadprobes/__init__.py": "4ef368ac278ad4be",
    "tools/doc_fsck.py": "e41aa4a935e713ce",
    "tools/docfsck/__init__.py": "0c57e0127515014b",
@@ -8191,7 +8191,7 @@
    "web/navi/test/harness.ts": "a152365c27c4ce87",
    "본문": "cc8cd2af834f96d9"
   },
-  "sha": "e19db79a7b72b585"
+  "sha": "8fd80dbe11eb3585"
  },
  "DECISIONS/433": {
   "doc": "docs/DECISIONS.md",
@@ -8318,14 +8318,14 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "13a0b48fc3717982",
-   "2de409bde1e168d1",
-   "629ba5ccb106303a",
-   "6df5117698ccfb74"
+   "2312b3b5ec37fcac",
+   "7334f4d048bc3585",
+   "9e1c3c904031f275",
+   "a75bb4e40cedf9c0"
   ],
   "parts": {
    "data/_prep.json": "e65bb37334757a67",
-   "sources.yaml": "84d65a3cedcdfff2",
+   "sources.yaml": "0b9397e86ff0192f",
    "src/firelane/__init__.py": "0bd7b7a56b6a73f0",
    "src/firelane/console.py": "5cd87db3b9a951e1",
    "src/firelane/destinations.py": "2cd0e062b1cf674d",
@@ -8375,14 +8375,14 @@
    "tools/docnum_check.py": "c95bb146d38e429e",
    "tools/mutate.py": "2ae67f27943f8eb0",
    "tools/mutate_guard.py": "3200600c5183244c",
-   "tools/scopedecl.py": "b6aabe5fa2be4597",
+   "tools/scopedecl.py": "e92f8a735499243a",
    "tools/sealcov.py": "e3cef685f982d1e7",
    "tools/segcontract.py": "544f78fc157a30a0",
    "tools/sizecheck.py": "37ada738f0c098c4",
    "tools/verify.sh": "486c7a7da6421faa",
    "본문": "3f91a6b2b2ab498f"
   },
-  "sha": "13a0b48fc3717982"
+  "sha": "a75bb4e40cedf9c0"
  },
  "DECISIONS/436": {
   "doc": "docs/DECISIONS.md",
@@ -8483,10 +8483,10 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "81973b00b5428348",
-   "a4379f6d7e144b51",
-   "a92871c35c96fb6d",
-   "ff00c0f90dfb6ef1"
+   "0e424a34541d2daa",
+   "0f1293a3ee266833",
+   "13debf926107f4a6",
+   "c7f9b99c683f622a"
   ],
   "parts": {
    "src/firelane/ledger.py": "5bd85fbd11da8eb9",
@@ -8498,7 +8498,7 @@
    "web/navi/src/app/useFleet.ts": "b5239f38fa59ba2e",
    "web/navi/src/app/useHudData.ts": "941bde6b201a3b9b",
    "web/navi/src/app/useNow.ts": "27d7d36ea7403004",
-   "web/navi/src/app/useOpsUplink.ts": "4582051d4befaf33",
+   "web/navi/src/app/useOpsUplink.ts": "d00e23fe8b193a1b",
    "web/navi/src/app/usePositionSource.ts": "fda4ce04186c1054",
    "web/navi/src/app/useShare.ts": "850a8cdc6895e1dc",
    "web/navi/src/infra/dataBase.ts": "2d1e9493346593c9",
@@ -8509,7 +8509,7 @@
    "web/navi/src/infra/position/types.ts": "4bdc58e8f8406db8",
    "본문": "f04260b9b529a03d"
   },
-  "sha": "a92871c35c96fb6d"
+  "sha": "c7f9b99c683f622a"
  },
  "DECISIONS/440": {
   "doc": "docs/DECISIONS.md",
@@ -8537,17 +8537,17 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "054eb0a821db7c8a",
-   "169cee86e3523e2e",
-   "2096b79dc7a1f130",
-   "29ddeb4cb6d31ad8",
-   "3e3101c2a2dc7007",
-   "3e44c58676fd803e",
-   "b66e31739a960432",
-   "e9dc8c1548ae3e1a"
+   "321a8d04f922a965",
+   "5dc927bf4478d26f",
+   "63e442e05cf9830c",
+   "85ace724220ed9d3",
+   "967fc3654699f31e",
+   "995af54c16b764c5",
+   "a6cad0e88cc156b0",
+   "bd63ea733cad6728"
   ],
   "parts": {
-   ".github/workflows/contract.yml": "24bbe8d31e0c280f",
+   ".github/workflows/contract.yml": "8a8643ab0a3db3fb",
    "docs/figures/.lock.json": "2a6888d7a20a10e5",
    "tests/test_delivercheck.py": "8eace21a684fec41",
    "tests/test_figure_ink.py": "52818d0976169bfc",
@@ -8560,7 +8560,7 @@
    "tools/mutate.py": "2ae67f27943f8eb0",
    "tools/proposal_source.py": "ee3caf44b36d3cb2",
    "tools/ratchet.py": "247f92f9431f573c",
-   "tools/scopedecl.py": "b6aabe5fa2be4597",
+   "tools/scopedecl.py": "e92f8a735499243a",
    "tools/sealcov.py": "e3cef685f982d1e7",
    "tools/sizecheck.py": "37ada738f0c098c4",
    "tools/sizetable.py": "3ebde3c505398820",
@@ -8568,7 +8568,7 @@
    "web/proposal/fig/.lock.json": "8a584759581167aa",
    "본문": "442fa4ed2877c0a5"
   },
-  "sha": "b66e31739a960432"
+  "sha": "a6cad0e88cc156b0"
  },
  "DECISIONS/441": {
   "doc": "docs/DECISIONS.md",
@@ -8584,10 +8584,10 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "1c2b97587c8d1965",
-   "56655e638c3f9c5e",
-   "e9fb606cf5e58fe2",
-   "f99c7145f65b744a"
+   "9eb96e9668ebdacb",
+   "a03cf1a8d8e14f56",
+   "aa8871a18c3b3994",
+   "d5208812e38c178a"
   ],
   "parts": {
    "tests/test_fleet_turn_radius.py": "1d7017490fa0869b",
@@ -8595,11 +8595,11 @@
    "tools/mutate.py": "2ae67f27943f8eb0",
    "tools/naviweight.py": "dcf8f285f734686d",
    "tools/sealcov.py": "e3cef685f982d1e7",
-   "tools/uicheck.py": "1eb491428e98a0d0",
+   "tools/uicheck.py": "21b529e58287b61e",
    "web/navi/src/ui/motion.ts": "c255a146f282b512",
    "본문": "3e7d9c99214a80f7"
   },
-  "sha": "56655e638c3f9c5e"
+  "sha": "d5208812e38c178a"
  },
  "DECISIONS/442": {
   "doc": "docs/DECISIONS.md",
@@ -8680,14 +8680,14 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "2200727c76bc043f",
-   "22f8811f131cae79",
-   "2dc821dc241e1d43",
-   "3e7c47f5c3dffdde",
-   "6d941c3c1031669e",
-   "71b8f57acfc1f68f",
-   "79936d61f3b90b8a",
-   "c625231f472cebf1"
+   "02aab6fe92b98e2c",
+   "12aaad0ceb543cae",
+   "1af1f0f3a8ed9534",
+   "56b405caa15d5f0e",
+   "64c1235c53f26a5e",
+   "8a87b18a225ae23c",
+   "98d5252580d31409",
+   "c86de9fc2b450b51"
   ],
   "parts": {
    ".github/actions/stage-site/action.yml": "a8dd2a68cb88fa32",
@@ -8699,7 +8699,7 @@
    "tests/test_remeasure.py": "de1797d2de900bde",
    "tests/test_stage_pages.py": "f3c166d48493db54",
    "tools/build_proposal.py": "fbd8d3cd59592b33",
-   "tools/deadcheck.py": "9a96d5f02324084b",
+   "tools/deadcheck.py": "2cbd70bef9d12fd6",
    "tools/docfsck/revised.py": "5fa83c20313e0d8f",
    "tools/docnum_check.py": "c95bb146d38e429e",
    "tools/fix.sh": "9b226960d2a2b4ea",
@@ -8716,7 +8716,7 @@
    "web/navi/test/style.test.ts": "78510a7d6f97a3ef",
    "본문": "70237eae1a76aa98"
   },
-  "sha": "2dc821dc241e1d43"
+  "sha": "12aaad0ceb543cae"
  },
  "DECISIONS/445": {
   "doc": "docs/DECISIONS.md",
@@ -8742,10 +8742,10 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "438c2f28a2813752",
-   "939865bbf374a807",
-   "b3190211c57c6dd2",
-   "be645ce961f30daf"
+   "32e7de18975479c7",
+   "a76b7c0298ca1cd3",
+   "b8110a2add2c7258",
+   "c6a491c41f1b5230"
   ],
   "parts": {
    "tests/test_canary.py": "b4b039b18af9ea8c",
@@ -8754,20 +8754,20 @@
    "tests/test_mutate.py": "2f70ac692bdcb830",
    "tests/test_navi_wireframe.py": "addfebb6cdb47a00",
    "tools/canary.py": "27ccc6c0a2d42c90",
-   "tools/deadcheck.py": "9a96d5f02324084b",
+   "tools/deadcheck.py": "2cbd70bef9d12fd6",
    "tools/mutate.py": "2ae67f27943f8eb0",
    "tools/mutatescope.py": "f3a5cb33234cd5ae",
    "tools/mutatetest.py": "c8e35a7a5f7514dd",
-   "tools/scopedecl.py": "b6aabe5fa2be4597",
+   "tools/scopedecl.py": "e92f8a735499243a",
    "tools/sealcov.py": "e3cef685f982d1e7",
    "tools/sizetable.py": "3ebde3c505398820",
-   "tools/uicheck.py": "1eb491428e98a0d0",
+   "tools/uicheck.py": "21b529e58287b61e",
    "tools/uichecktest.py": "62a4de5182f778c9",
    "tools/verify.sh": "33101c92cdfd4070",
    "web/navi/src/ui/opsTheme.ts": "f9eb39fe5d02285f",
    "본문": "b9ae49931051f0ed"
   },
-  "sha": "b3190211c57c6dd2"
+  "sha": "c6a491c41f1b5230"
  },
  "DECISIONS/446": {
   "doc": "docs/DECISIONS.md",
@@ -8825,18 +8825,18 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "3ef0c433b4abb6a2",
-   "d6634e9e1537bbd3"
+   "2cc50b88ecae281b",
+   "b2ea48b8282ba3b9"
   ],
   "parts": {
-   "tools/uicheck.py": "1eb491428e98a0d0",
+   "tools/uicheck.py": "21b529e58287b61e",
    "web/config.js": "62e9c33a0c8290b3",
    "web/navi/src/OpsApp.tsx": "673679cb974ee456",
    "web/navi/src/components/opsLayers.ts": "499f1f2515b51a7d",
    "web/navi/test/style.test.ts": "78510a7d6f97a3ef",
    "본문": "74bdae6cc2abf1e5"
   },
-  "sha": "3ef0c433b4abb6a2"
+  "sha": "b2ea48b8282ba3b9"
  },
  "DECISIONS/449": {
   "doc": "docs/DECISIONS.md",
@@ -9030,10 +9030,10 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "4f5a0059174ce4dd",
-   "6b0b020baf2443a9",
-   "72d8fe3a14c187ac",
-   "b3e378d1d2bcf961"
+   "4a3de63f26251403",
+   "a920d907da1f0c9e",
+   "db4973a8b40e517e",
+   "ebeace4cbeaee44f"
   ],
   "parts": {
    "src/firelane/publish_web.py": "b2fcfb7729f801c0",
@@ -9045,7 +9045,7 @@
    "tests/test_contract.py": "d086cb4030a3579f",
    "tests/test_schema_self_consistent.py": "7ba6d6fab44a37d4",
    "tools/baseline.py": "515718c8cf0a58b8",
-   "tools/deadcheck.py": "9a96d5f02324084b",
+   "tools/deadcheck.py": "2cbd70bef9d12fd6",
    "tools/delivercheck.py": "395792ccc835d6d6",
    "tools/docnum_check.py": "c95bb146d38e429e",
    "tools/plan_renumber.py": "a286630494cd2a76",
@@ -9053,7 +9053,7 @@
    "tools/verify.sh": "bf97cf5b4a9214db",
    "본문": "e1f16177dba36691"
   },
-  "sha": "4f5a0059174ce4dd"
+  "sha": "4a3de63f26251403"
  },
  "DECISIONS/456": {
   "doc": "docs/DECISIONS.md",
@@ -9105,14 +9105,14 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "33c7d740e9c06c84",
-   "68a6ecd53bdd3741",
-   "69cbea872af3a221",
-   "69ef176296a6b805",
-   "728e5f39af3ceb77",
-   "948846a2821ba54c",
-   "c8256842f8315afc",
-   "e2834acab20c9c8b"
+   "05ae03804980d5c6",
+   "0c9236154b2bb4f5",
+   "9c71c44d55dde1be",
+   "b391bfe0fe491f75",
+   "bbb68f90733d0c98",
+   "cb25cc611e6fd978",
+   "f92ffa74cdbc2444",
+   "fa6f646a2320d3b9"
   ],
   "parts": {
    ".pre-commit-config.yaml": "16a2b804fbc32741",
@@ -9122,12 +9122,12 @@
    "tests/test_verify_scope.py": "86cff8a0cf2c0d82",
    "tools/fix.sh": "9b226960d2a2b4ea",
    "tools/gate_parity.py": "1440487262683161",
-   "tools/scopedecl.py": "b6aabe5fa2be4597",
+   "tools/scopedecl.py": "e92f8a735499243a",
    "tools/toolclass.py": "251f0a9210cdd5ff",
    "tools/treecheck.py": "3bfc9bc975604f12",
    "본문": "f3f381d03f85c9b1"
   },
-  "sha": "33c7d740e9c06c84"
+  "sha": "bbb68f90733d0c98"
  },
  "DECISIONS/458": {
   "doc": "docs/DECISIONS.md",
@@ -9167,10 +9167,10 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "1f9033355bff6d8d",
-   "4109248058bf37ff",
-   "64eeb5d81568b4a8",
-   "fc8d1740e47633fb"
+   "5c27607ff366f09d",
+   "6c64ed284d5ba701",
+   "b4f27f50ac0b5807",
+   "b664381eca71ad37"
   ],
   "parts": {
    "tests/test_gate_parity_args.py": "3f9a9a4b9fd51b2c",
@@ -9178,12 +9178,12 @@
    "tools/gate_parity.py": "1440487262683161",
    "tools/gateruns.py": "e626cde0dd1ae7c8",
    "tools/refcheck.py": "991db47c0ffe3820",
-   "tools/scopedecl.py": "b6aabe5fa2be4597",
+   "tools/scopedecl.py": "e92f8a735499243a",
    "tools/toolindex.py": "b62f4e73cd5f6cce",
    "tools/treecheck.py": "3bfc9bc975604f12",
    "본문": "7e9c139932a6b8d8"
   },
-  "sha": "1f9033355bff6d8d"
+  "sha": "b4f27f50ac0b5807"
  },
  "DECISIONS/46": {
   "doc": "docs/DECISIONS.md",
@@ -9219,10 +9219,10 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "15a4ff5892239af5",
-   "3ba0edc9757ac95b",
-   "4b1760a4280d832a",
-   "c07cb801dab2a3a8"
+   "349e79cd6cf912d0",
+   "4d7819d0506be938",
+   "cc3aadf6e8d62900",
+   "f4d27847d37f86ca"
   ],
   "parts": {
    "sources.yaml": "b85fafb3dd9cf17a",
@@ -9230,10 +9230,10 @@
    "tests/test_seal_axes.py": "fde6f71435b1407e",
    "tests/test_shardseal.py": "a38b8f11aa64f3cd",
    "tools/axis_gain.py": "5f2eaa94285256bb",
-   "tools/deadcheck.py": "9a96d5f02324084b",
+   "tools/deadcheck.py": "2cbd70bef9d12fd6",
    "본문": "702ab2215b6a9e31"
   },
-  "sha": "3ba0edc9757ac95b"
+  "sha": "f4d27847d37f86ca"
  },
  "DECISIONS/461": {
   "doc": "docs/DECISIONS.md",
@@ -9889,19 +9889,19 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "2693d41479e81c25",
-   "8130753312d8a8cb",
-   "9949592c9e715641",
-   "b55e713297006a87"
+   "06270c5ecbee93e5",
+   "7ad656a73ec106e2",
+   "b81f17ee3c620906",
+   "f2b3f7c16a013adf"
   ],
   "parts": {
    "tests/test_toolclass.py": "b9b455748b035349",
    "tools/canary.py": "27ccc6c0a2d42c90",
    "tools/canaryshape.py": "e655c868b5b6fa50",
-   "tools/deadcheck.py": "9a96d5f02324084b",
+   "tools/deadcheck.py": "2cbd70bef9d12fd6",
    "본문": "b291ee4fb80b8724"
   },
-  "sha": "b55e713297006a87"
+  "sha": "f2b3f7c16a013adf"
  },
  "DECISIONS/49": {
   "doc": "docs/DECISIONS.md",
@@ -10214,21 +10214,21 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "3c93c2c7f5753b3d",
-   "586072796c316ae6",
-   "7fbca691cd494cdb",
-   "9c4238aa4af2143d"
+   "1904fbc226f9b3c9",
+   "6e76bb5dc1d49230",
+   "be6f30e450f3f0f5",
+   "d57d347512784a66"
   ],
   "parts": {
    "tests/test_delivercheck.py": "6d47ad18f75d490f",
    "tests/test_layering.py": "b91fa4c1315e0812",
-   "tools/deadcheck.py": "9a96d5f02324084b",
+   "tools/deadcheck.py": "2cbd70bef9d12fd6",
    "tools/delivercheck.py": "395792ccc835d6d6",
    "tools/delivertest.py": "bdac16f3d0903d42",
    "tools/mutatescope.py": "f3a5cb33234cd5ae",
    "본문": "ccf99b1907db8ced"
   },
-  "sha": "7fbca691cd494cdb"
+  "sha": "be6f30e450f3f0f5"
  },
  "DECISIONS/501-9": {
   "doc": "docs/DECISIONS.md",
@@ -10239,15 +10239,15 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "4fa6f299ae2c0f75",
-   "e0c4d75f06892080"
+   "05e1c3dcbede9ead",
+   "d1f0d0e77378d442"
   ],
   "parts": {
-   "tools/deadcheck.py": "9a96d5f02324084b",
+   "tools/deadcheck.py": "2cbd70bef9d12fd6",
    "tools/mutatescope.py": "f3a5cb33234cd5ae",
    "본문": "2d4f138306295749"
   },
-  "sha": "e0c4d75f06892080"
+  "sha": "05e1c3dcbede9ead"
  },
  "DECISIONS/502": {
   "doc": "docs/DECISIONS.md",
@@ -10482,17 +10482,17 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
+   "1694fd166cdd8780",
    "243e8134a21b5ebe",
    "545d2be6c6afebf6",
    "5d55300abd1abe8e",
-   "af75536d7f103853",
-   "b116cc47cc9e2413",
-   "cfe2e5c8823a66ee",
+   "67da8fee58474b86",
+   "a7f22c59429947d6",
    "ecf8861cbf4ef893",
-   "fa706fd761d8dc77"
+   "fcb5afd24535d064"
   ],
   "parts": {
-   ".github/workflows/contract.yml": "24bbe8d31e0c280f",
+   ".github/workflows/contract.yml": "8a8643ab0a3db3fb",
    "tests/test_tools_are_wired.py": "2d86ed14dd1ccc55",
    "tools/fl.sh": "f83ede79df1bfda8",
    "tools/mutate.py": "2ae67f27943f8eb0",
@@ -10501,7 +10501,7 @@
    "tools/widthcross.py": "0320341ec4393edc",
    "본문": "f2c4f7ca6944eb72"
   },
-  "sha": "cfe2e5c8823a66ee"
+  "sha": "67da8fee58474b86"
  },
  "DECISIONS/527": {
   "doc": "docs/DECISIONS.md",
@@ -10513,18 +10513,18 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "48b7756b64c86983",
-   "4e5ab66355231516",
-   "6a4a68049545c63b",
-   "fa82aaa24673481f"
+   "052c99f4e4c36171",
+   "8ed4d2669cc09e67",
+   "ef5f78c44f818aed",
+   "f7489a041eb3f7af"
   ],
   "parts": {
-   "src/firelane/ops/server.py": "c7473cd4a9bfdffa",
+   "src/firelane/ops/server.py": "3d1367ea7fb3b788",
    "tests/test_ops_server.py": "fa3d14b3e2895eaf",
    "web/navi/src/config.ts": "1850a74db7fbca0b",
    "본문": "158db5afaaa8d776"
   },
-  "sha": "fa82aaa24673481f"
+  "sha": "8ed4d2669cc09e67"
  },
  "DECISIONS/528": {
   "doc": "docs/DECISIONS.md",
@@ -10753,10 +10753,10 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "0e42b8c66acafa75",
-   "67e1730e73eeb430",
-   "84765f308f355bf4",
-   "8f9edbf769dad3cd"
+   "5141ab586dfe497d",
+   "5777255c47122bb0",
+   "fad7b6748ba4bda7",
+   "fffad2f03c0765ac"
   ],
   "parts": {
    "src/firelane/segkey.py": "813e54fa56f425fc",
@@ -10766,7 +10766,7 @@
    "tests/test_r3.py": "a69f2a0bc0fe0d89",
    "tests/test_test_hygiene.py": "253d6fbf0ffa49ef",
    "tools/canary.py": "27ccc6c0a2d42c90",
-   "tools/deadcheck.py": "9a96d5f02324084b",
+   "tools/deadcheck.py": "2cbd70bef9d12fd6",
    "tools/delivercheck.py": "395792ccc835d6d6",
    "tools/docpatch.py": "ffbab46727d36543",
    "tools/docseal.py": "e99658a65ba9fda7",
@@ -10776,7 +10776,7 @@
    "tools/verify.sh": "bcdc72730599da8f",
    "본문": "22015507bec87c12"
   },
-  "sha": "8f9edbf769dad3cd"
+  "sha": "fffad2f03c0765ac"
  },
  "DECISIONS/556": {
   "doc": "docs/DECISIONS.md",
@@ -10989,17 +10989,17 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "0866a2c590f5e2bf",
-   "200ae2955d36550b",
-   "2b5c5505d6fdc83b",
+   "23327724b552edd1",
    "58adfe4a0174538c",
-   "64ea97ce8dd3c0fb",
-   "8815b87616f0a5d1",
-   "ee1bb72104e9b670",
-   "f174e6181566a125"
+   "5cf3bfb4e592b6fb",
+   "6d4eea95532efebb",
+   "76696bf88346cfe3",
+   "ec3626b2ddd2e901",
+   "f174e6181566a125",
+   "f610830e7bbeb60a"
   ],
   "parts": {
-   ".github/workflows/contract.yml": "24bbe8d31e0c280f",
+   ".github/workflows/contract.yml": "8a8643ab0a3db3fb",
    "sources.yaml": "1f51dbbff5df08eb",
    "src/firelane/ortho.py": "97dff73394bfdd10",
    "src/firelane/regime.py": "c8a640b90278b7c7",
@@ -11018,7 +11018,7 @@
    "tools/tonecheck.py": "e0a904bdfdd32b7c",
    "본문": "89db19bf08687f8a"
   },
-  "sha": "2b5c5505d6fdc83b"
+  "sha": "ec3626b2ddd2e901"
  },
  "DECISIONS/57": {
   "doc": "docs/DECISIONS.md",
@@ -11232,10 +11232,10 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "789959204dbd02a7",
-   "7b656d231ab0175a",
-   "8e5188c22b742083",
-   "f977a1717c4da45b"
+   "5cc5759b23b8b4aa",
+   "66816b7f20f32e51",
+   "a894f2f5a800a146",
+   "a8b1994981f3cfe3"
   ],
   "parts": {
    "tests/conftest.py": "613a6d546aa8b755",
@@ -11249,12 +11249,12 @@
    "tests/test_scipy_dev_group.py": "a8ee849518eb1699",
    "tests/test_tools_are_wired.py": "2d86ed14dd1ccc55",
    "tools/constbasis.py": "8c16d6b661b635ee",
-   "tools/deadcheck.py": "9a96d5f02324084b",
+   "tools/deadcheck.py": "2cbd70bef9d12fd6",
    "tools/fix.sh": "9b226960d2a2b4ea",
    "tools/sealcov.py": "e3cef685f982d1e7",
    "본문": "6f9e9705c2c4a500"
   },
-  "sha": "7b656d231ab0175a"
+  "sha": "a894f2f5a800a146"
  },
  "DECISIONS/580": {
   "doc": "docs/DECISIONS.md",
@@ -11306,19 +11306,19 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "0239c5e86c7b7a38",
-   "2bbc28572aa257df",
-   "bdd629d7de69446b",
-   "f5be2a630c1f73ea"
+   "3d72168fbd4112f4",
+   "475966061562f163",
+   "80a08363920d9a3f",
+   "899cd521e059bb72"
   ],
   "parts": {
    "tests/test_contract.py": "7a44aad104a6abb4",
-   "tools/uicheck.py": "1eb491428e98a0d0",
+   "tools/uicheck.py": "21b529e58287b61e",
    "web/config.js": "62e9c33a0c8290b3",
    "web/navi/src/ui/verdictMeaning.ts": "eb9ba8d9ddc38830",
    "본문": "8520eae25cfecbd6"
   },
-  "sha": "f5be2a630c1f73ea"
+  "sha": "899cd521e059bb72"
  },
  "DECISIONS/583": {
   "doc": "docs/DECISIONS.md",
@@ -11821,10 +11821,10 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "03f0a4209bc31ccd",
-   "27c47a700a53da9f",
-   "584a8ae54bf3933c",
-   "602227ea91da91bb"
+   "3a017da9fea4359d",
+   "a985b6160dd78b4f",
+   "e5f3dcca664e578f",
+   "efc63041259af1d6"
   ],
   "parts": {
    "src/firelane/contract_verdict.py": "f26ffd417a4041d5",
@@ -11837,7 +11837,7 @@
    "tests/test_scopecheck.py": "d7d9fd954030c209",
    "tests/test_shardseal.py": "176bbbbabc825d3c",
    "tools/acquire.py": "790d3b4e8a9d2360",
-   "tools/deadcheck.py": "9a96d5f02324084b",
+   "tools/deadcheck.py": "2cbd70bef9d12fd6",
    "tools/gate_parity.py": "1440487262683161",
    "tools/lakecheck.py": "c2e187619e597a54",
    "tools/mergecheck.py": "e1f5dc98e53310a4",
@@ -11846,7 +11846,7 @@
    "tools/ratchet.py": "247f92f9431f573c",
    "본문": "7a034e051398dcdb"
   },
-  "sha": "584a8ae54bf3933c"
+  "sha": "efc63041259af1d6"
  },
  "DECISIONS/621": {
   "doc": "docs/DECISIONS.md",
@@ -12073,17 +12073,17 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "018ba76047772c62",
+   "20414a2cff8db3e8",
    "211b8888cc4c0bc6",
-   "5d3cc844e7a893f5",
-   "835398ebc7853b1a",
-   "a8d2ea69c86ff31d",
+   "2d855683d36aae52",
+   "2fd65968ebda1ae7",
+   "4289d7d8d2013ad3",
+   "8bbe68c27cdbb5fa",
    "b82ad23e7dfa64bf",
-   "e5fdef887198e09a",
-   "f3b51f7d935a642e"
+   "f6a11817872e7c75"
   ],
   "parts": {
-   ".github/workflows/contract.yml": "24bbe8d31e0c280f",
+   ".github/workflows/contract.yml": "8a8643ab0a3db3fb",
    "tests/test_contract_split.py": "2b549794df986408",
    "tests/test_fieldseal.py": "a9e9ac269773098b",
    "tests/test_guards.py": "cc5b7e7f467ea1c8",
@@ -12094,7 +12094,7 @@
    "tools/ruleset_check.py": "df3c41a20fd27cfb",
    "본문": "f93e0327f16e14fa"
   },
-  "sha": "f3b51f7d935a642e"
+  "sha": "20414a2cff8db3e8"
  },
  "DECISIONS/634": {
   "doc": "docs/DECISIONS.md",
@@ -12402,21 +12402,21 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "0387a903de383930",
-   "9936facfb2c07d31",
-   "cee82b3595f99a14",
-   "dda9687c4214b66b"
+   "4997189ef8d370ca",
+   "526cc3b1b17b8860",
+   "b48d4f73aeb9e5b3",
+   "f75122591df0d19e"
   ],
   "parts": {
    "tests/test_cost_vs_dispatch.py": "d302a2d3469c82da",
    "tools/cost_vs_dispatch.py": "68cbddcdf321c9a6",
-   "tools/uicheck.py": "1eb491428e98a0d0",
+   "tools/uicheck.py": "21b529e58287b61e",
    "web/config.js": "62e9c33a0c8290b3",
    "web/navi/src/domain/speed.ts": "7cf13b3922ea7e9f",
    "web/navi/test/speed.test.ts": "4f813586d99d010c",
    "본문": "73e89b1f0828d39d"
   },
-  "sha": "dda9687c4214b66b"
+  "sha": "526cc3b1b17b8860"
  },
  "DECISIONS/652": {
   "doc": "docs/DECISIONS.md",
@@ -12553,15 +12553,15 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "3c380ef944a407a1",
-   "5036cf9cb419033a",
-   "5390ebf4d1a428e0",
-   "8dfeda734a2d042b"
+   "87cb389bb70f1619",
+   "c76401cdcd217a5b",
+   "d31d694f971bb4a0",
+   "edf9675a4cd7250e"
   ],
   "parts": {
    "data/_intake.json": "31d1814f4bea4db4",
    "data/_prep.json": "e65bb37334757a67",
-   "sources.yaml": "65b33bdeabaad292",
+   "sources.yaml": "91e2dfc50545ef0a",
    "tests/test_contract_vocab.py": "d0a751fa335fafcc",
    "tests/test_lake_hold.py": "774a30228fc0bbcd",
    "tests/test_sealcov.py": "c876b68d0a28601e",
@@ -12570,7 +12570,7 @@
    "tools/sealcov.py": "e3cef685f982d1e7",
    "본문": "5556c7f2f5498785"
   },
-  "sha": "5036cf9cb419033a"
+  "sha": "edf9675a4cd7250e"
  },
  "DECISIONS/659": {
   "doc": "docs/DECISIONS.md",
@@ -12772,10 +12772,10 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "32adab7d3e2de515",
-   "592dcc38cfd56b66",
-   "90ea7b6452995ef8",
-   "e1b8265d57d8db77"
+   "5b6bc0bf3dce9053",
+   "a652c95dd932e77e",
+   "c00bf2f138664dcb",
+   "fc8b3e67a0bad513"
   ],
   "parts": {
    "tests/test_contract_verdict_ratchets.py": "ef4070d31edfc22e",
@@ -12784,14 +12784,14 @@
    "tests/test_prepush_hook.py": "4484cac5960f4e9e",
    "tests/tracked_guard.py": "613a6d546aa8b755",
    "tools/gate_parity.py": "1440487262683161",
-   "tools/gatefast.py": "6ed789ead6ddac89",
+   "tools/gatefast.py": "e198677b8fc6013a",
    "tools/gatetimes.py": "80bc2674d0ae6f71",
    "tools/plan_renumber.py": "a286630494cd2a76",
    "tools/planclose.py": "b57e85539007ee27",
    "tools/ratchet.py": "247f92f9431f573c",
    "본문": "a57158e3da8e4c09"
   },
-  "sha": "592dcc38cfd56b66"
+  "sha": "fc8b3e67a0bad513"
  },
  "DECISIONS/681": {
   "doc": "docs/DECISIONS.md",
@@ -12832,10 +12832,10 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "11ed6bc4d37cfce5",
-   "5e386aaab8674da5",
-   "6a5d3a5c5cde56b6",
-   "a67f090957c13c9b"
+   "2ca61894e1e95d40",
+   "65344e11339aa7ce",
+   "66cb10a15ea4b0ec",
+   "8f62a009d20d783f"
   ],
   "parts": {
    "tests/test_doc_fsck.py": "1381d00418b8db27",
@@ -12843,13 +12843,13 @@
    "tests/test_gatetimes.py": "e765fea3e4069b8d",
    "tests/test_prepush_hook.py": "4484cac5960f4e9e",
    "tools/evalset.py": "b8ea0b36de53015b",
-   "tools/gatefast.py": "6ed789ead6ddac89",
+   "tools/gatefast.py": "e198677b8fc6013a",
    "tools/gatetimes.py": "80bc2674d0ae6f71",
    "tools/plan_renumber.py": "a286630494cd2a76",
    "tools/planclose.py": "b57e85539007ee27",
    "본문": "9d9cd96a4dee9bc2"
   },
-  "sha": "5e386aaab8674da5"
+  "sha": "8f62a009d20d783f"
  },
  "DECISIONS/686": {
   "doc": "docs/DECISIONS.md",
@@ -12923,20 +12923,20 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "38dcc3369addf3b6",
-   "421e830752bbe173",
-   "5de62d777042171a",
-   "8da429ed6c1016a3"
+   "6bfa0fba7bb2fa2b",
+   "a02c53d60203b57d",
+   "d9c9ff4a1dbdb372",
+   "e58f8099556645b5"
   ],
   "parts": {
    "tests/test_doc_style.py": "c8a4bf0e5c769be2",
    "tests/test_gatefast.py": "f47107bddc9eb5f4",
    "tests/test_pushready.py": "210e7135fe1feea7",
    "tests/test_silent_branches.py": "4974868755f722ec",
-   "tools/gatefast.py": "6ed789ead6ddac89",
+   "tools/gatefast.py": "e198677b8fc6013a",
    "본문": "348aadfda48520c4"
   },
-  "sha": "8da429ed6c1016a3"
+  "sha": "d9c9ff4a1dbdb372"
  },
  "DECISIONS/69": {
   "doc": "docs/DECISIONS.md",
@@ -13045,17 +13045,17 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "746c7b7b22accd0d",
-   "a907e0d3c7256814",
-   "bb680adc0c870f62",
-   "d414e9e6f1bb5536"
+   "2c8b28e154d7ce22",
+   "5ed6ddcb23cbabcc",
+   "83580bb425ff73ee",
+   "ec4692fb1fcfb63c"
   ],
   "parts": {
    "tests/test_naviweight.py": "1cc42664b8ca6f69",
-   "tools/uicheck.py": "1eb491428e98a0d0",
+   "tools/uicheck.py": "21b529e58287b61e",
    "본문": "ec3418575387a80a"
   },
-  "sha": "746c7b7b22accd0d"
+  "sha": "ec4692fb1fcfb63c"
  },
  "DECISIONS/7": {
   "doc": "docs/DECISIONS.md",
@@ -13104,21 +13104,21 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "7fe4e9fd24a63471",
-   "8aa6bb48582b42df",
-   "9b11ada1406178ac",
-   "a6cd3fa516c0b7d7"
+   "4d7964ce691b81b1",
+   "71b362ca01d5edd6",
+   "79941d8887963aeb",
+   "ef7efd40ead817bf"
   ],
   "parts": {
-   ".github/workflows/contract.yml": "24bbe8d31e0c280f",
+   ".github/workflows/contract.yml": "8a8643ab0a3db3fb",
    "tools/gate_parity.py": "1440487262683161",
-   "tools/gatefast.py": "6ed789ead6ddac89",
+   "tools/gatefast.py": "e198677b8fc6013a",
    "tools/serve.py": "704693153e2a2f72",
    "web/navi/e2e/smoke.spec.ts": "78432fe9212f9fb9",
    "web/navi/playwright.config.ts": "d777380c6c0b2c3e",
    "본문": "6e7ffba42f8f62a0"
   },
-  "sha": "a6cd3fa516c0b7d7"
+  "sha": "71b362ca01d5edd6"
  },
  "DECISIONS/702": {
   "doc": "docs/DECISIONS.md",
@@ -13131,19 +13131,19 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "0f1fcf21f1b2f597",
-   "9d867be90551af97",
-   "c7726fc2943d5085",
-   "e59b533b7d4916ea"
+   "1876cf83c221c748",
+   "8081ca00942175c7",
+   "98eaee2757086fed",
+   "d670305b93cf7685"
   ],
   "parts": {
    "tests/test_uicheck.py": "4a6e43b1fcd6b46d",
-   "tools/uicheck.py": "1eb491428e98a0d0",
+   "tools/uicheck.py": "21b529e58287b61e",
    "tools/uidrive.py": "fee78d02165d23f6",
    "web/navi/scripts/glance.mjs": "a53d258cc899b796",
    "본문": "9400a682b5979b1c"
   },
-  "sha": "e59b533b7d4916ea"
+  "sha": "d670305b93cf7685"
  },
  "DECISIONS/703": {
   "doc": "docs/DECISIONS.md",
@@ -13156,17 +13156,17 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "92ed20f3e326aea7",
-   "c8dfbede82650c3a"
+   "0a39c38dcb0074f8",
+   "f9c6b882cd80202d"
   ],
   "parts": {
-   "tools/uicheck.py": "1eb491428e98a0d0",
+   "tools/uicheck.py": "21b529e58287b61e",
    "tools/uidrive.py": "fee78d02165d23f6",
    "web/navi/scripts/glance.mjs": "a53d258cc899b796",
    "web/navi/test/driving.test.ts": "1af6fdca63514914",
    "본문": "af2dce8f8c88a9eb"
   },
-  "sha": "92ed20f3e326aea7"
+  "sha": "f9c6b882cd80202d"
  },
  "DECISIONS/705": {
   "doc": "docs/DECISIONS.md",
@@ -13205,20 +13205,20 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "0ce83a36eed1bf4e",
-   "1639305652ebbf32",
-   "4f49cf6c5b8f3626",
-   "ac08ff9d1c8b741e"
+   "22f77de51ca8e7c3",
+   "92714064afffa037",
+   "a32cfbb3daa6fa43",
+   "a40cb6af0a8fe78b"
   ],
   "parts": {
    "tests/test_guards.py": "cc5b7e7f467ea1c8",
    "tools/gate_parity.py": "1440487262683161",
-   "tools/gatefast.py": "6ed789ead6ddac89",
+   "tools/gatefast.py": "e198677b8fc6013a",
    "tools/serve.py": "704693153e2a2f72",
    "tools/verify.sh": "b4f0392d64afc56b",
    "본문": "7544e864f4b3f03c"
   },
-  "sha": "0ce83a36eed1bf4e"
+  "sha": "22f77de51ca8e7c3"
  },
  "DECISIONS/707": {
   "doc": "docs/DECISIONS.md",
@@ -13310,15 +13310,15 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "102d2d975012ac27",
-   "2ba07fea6d90e9af"
+   "46575deff6e47293",
+   "d7fc34c8a6002af9"
   ],
   "parts": {
-   "tools/uicheck.py": "1eb491428e98a0d0",
+   "tools/uicheck.py": "21b529e58287b61e",
    "web/navi/test/roadLabels.test.ts": "7903d08fe4c47e17",
    "본문": "42e4d8c3acd0546d"
   },
-  "sha": "2ba07fea6d90e9af"
+  "sha": "d7fc34c8a6002af9"
  },
  "DECISIONS/712": {
   "doc": "docs/DECISIONS.md",
@@ -13355,10 +13355,10 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "6463ae2cb8db64a6",
-   "90bcc542e08f43c7",
-   "941e2cfc3105d9ab",
-   "be0d40efe63f22f7"
+   "3c3e9f062596f2ce",
+   "55d9d60eb821adb2",
+   "6563e2024f75f521",
+   "eb36659a9061be4f"
   ],
   "parts": {
    "tests/test_seg_geom.py": "f3b8ef6255065fc1",
@@ -13366,9 +13366,9 @@
    "tools/evalgen.py": "d9442cedc35ab245",
    "tools/remeasure.py": "0d541f18a0d88b61",
    "tools/wallab.py": "5fe6a1a3e106d827",
-   "본문": "68a9b5588390df38"
+   "본문": "ca137efc476e8e43"
   },
-  "sha": "941e2cfc3105d9ab"
+  "sha": "3c3e9f062596f2ce"
  },
  "DECISIONS/715": {
   "doc": "docs/DECISIONS.md",
@@ -13458,15 +13458,15 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "47ea28bf635c5f4d",
-   "67cf83306283d480",
-   "c4d41ac38446ad54",
-   "f431ab1d0a776213"
+   "25c39231380912c7",
+   "4e9765731fbe60d7",
+   "d61c4ce8f83aaa1c",
+   "d6de2cf4bc52409a"
   ],
   "parts": {
    "tests/test_gatefast.py": "0b32eefe5fb021e9",
    "tools/figures/route.py": "9e63086ff399d33c",
-   "tools/gatefast.py": "6ed789ead6ddac89",
+   "tools/gatefast.py": "e198677b8fc6013a",
    "tools/remeasure.py": "0d541f18a0d88b61",
    "tools/testpick.py": "b73d116c4888ff4c",
    "web/navi/src/domain/graph.ts": "01fccfaa03f3577c",
@@ -13474,7 +13474,7 @@
    "web/navi/test/astarbench.test.ts": "d6dfdb929833b37d",
    "본문": "d028d1643d524479"
   },
-  "sha": "67cf83306283d480"
+  "sha": "d61c4ce8f83aaa1c"
  },
  "DECISIONS/721": {
   "doc": "docs/DECISIONS.md",
@@ -13859,18 +13859,18 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "3d7eea7c427f1e6a",
-   "ae841984676132c6",
-   "e6091744f346ab05",
-   "f3681217690eb949"
+   "49d9e6cfd23f55d8",
+   "b2bf675a21bec8fb",
+   "b3122c95fef9395b",
+   "e8058636d9a568ff"
   ],
   "parts": {
-   "sources.yaml": "89db27a6b7b400b5",
+   "sources.yaml": "2108589ddb045f34",
    "tests/test_declaration_sync.py": "600ece1e5a10305d",
    "tools/docnum_check.py": "c95bb146d38e429e",
    "본문": "670c71ca9fc1d413"
   },
-  "sha": "f3681217690eb949"
+  "sha": "49d9e6cfd23f55d8"
  },
  "DECISIONS/95-2": {
   "doc": "docs/DECISIONS.md",
@@ -14340,19 +14340,19 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
+   "0697aa93c1a6b672",
+   "0df50467e5dd1b65",
    "35b784181eb01975",
-   "4e48621c1950bfed",
    "618a1fae00649ca2",
-   "80467b9481be4e24",
-   "88818ece4099ee8b",
+   "8044619a5d687711",
+   "979d5ad0ffc51647",
    "a8dd1e721a960057",
-   "c70ee1ee85eabb36",
    "e4d025a179388219"
   ],
   "parts": {
    ".github/actions/stage-site/action.yml": "a8dd2a68cb88fa32",
    ".github/dependabot.yml": "0f136937128fc0e6",
-   ".github/workflows/contract.yml": "24bbe8d31e0c280f",
+   ".github/workflows/contract.yml": "8a8643ab0a3db3fb",
    "docker-compose.yml": "8b48a87d305e97ab",
    "src/contracts/vision.py": "d16004113ef6e158",
    "tests/test_commit_policy.py": "54a6882d24efb637",
@@ -14382,7 +14382,7 @@
    "tools/web_manifest.py": "0286fb5e3d48b396",
    "본문": "074ece9c74c9cfdb"
   },
-  "sha": "c70ee1ee85eabb36"
+  "sha": "8044619a5d687711"
  },
  "MASTER/12-1": {
   "doc": "docs/MASTER.md",
@@ -14874,10 +14874,10 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "339fc8130d0fac50",
-   "4a01c3cc253b0231",
-   "9a0d8b9965b0471e",
-   "b6e8b11dc813885b"
+   "2147269656c540c5",
+   "2941d91b7f09dc29",
+   "620897e755fafecc",
+   "e065ee501cb2f5f9"
   ],
   "parts": {
    "tests/test_contract.py": "d086cb4030a3579f",
@@ -14887,10 +14887,10 @@
    "tools/docnum_check.py": "c95bb146d38e429e",
    "tools/evalgen.py": "d9442cedc35ab245",
    "tools/proposalcheck.py": "16294dbe00682fa4",
-   "tools/uicheck.py": "1eb491428e98a0d0",
+   "tools/uicheck.py": "21b529e58287b61e",
    "본문": "868ddcf39ac98a15"
   },
-  "sha": "339fc8130d0fac50"
+  "sha": "620897e755fafecc"
  },
  "MASTER/15-3": {
   "doc": "docs/MASTER.md",
@@ -15007,14 +15007,14 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "489e23b3cc20f250",
-   "51f5ec85bda94179",
-   "d7b447aea411b11b",
-   "d8d45bdc10e73095",
-   "e8800d320328a897",
-   "edf2e5a2fe843026",
-   "f1e972f9f4e3001b",
-   "f7dff7346f545db5"
+   "0932d8bd9573f460",
+   "108655557f93adf5",
+   "1984cf1d305f1b9e",
+   "72c5e52f7a3b2062",
+   "82aa7f6c5f9e9175",
+   "86eb355d5cca424c",
+   "b2030ab56033ce9b",
+   "ff4772b10bb035e3"
   ],
   "parts": {
    ".devcontainer/devcontainer.json": "8263815938062a90",
@@ -15035,14 +15035,14 @@
    "tests/test_verify_citations.py": "a82737b1d5629c88",
    "tests/tracked_guard.py": "613a6d546aa8b755",
    "tools/canary.py": "27ccc6c0a2d42c90",
-   "tools/deadcheck.py": "9a96d5f02324084b",
+   "tools/deadcheck.py": "2cbd70bef9d12fd6",
    "tools/dms.py": "a7e5da9786ea12b2",
    "tools/docgen.py": "81028d0838f4fccf",
    "tools/docnum_check.py": "c95bb146d38e429e",
    "tools/figures/value.py": "84cec08074a7e25e",
    "tools/navi_setup.py": "424d01c418d770cd",
    "tools/ruleset_check.py": "df3c41a20fd27cfb",
-   "tools/scopedecl.py": "b6aabe5fa2be4597",
+   "tools/scopedecl.py": "e92f8a735499243a",
    "tools/sealcov.py": "e3cef685f982d1e7",
    "tools/svg_fit.py": "c517d960f3b7278d",
    "tools/testsizetable.py": "d061e6c21162f9b7",
@@ -15052,9 +15052,9 @@
    "web/navi/src/domain/geo.ts": "5d85f2b7d3043ea8",
    "web/navi/src/domain/vehicle.ts": "5fada2911d0cbec0",
    "web/navi/src/ui/tokens.ts": "99f2021cc1aae95b",
-   "본문": "994fc82dc9357ae9"
+   "본문": "b7bececc7c70db1c"
   },
-  "sha": "f1e972f9f4e3001b"
+  "sha": "ff4772b10bb035e3"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
@@ -15091,10 +15091,10 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "0f0a6c46cf3ca773",
-   "21d2b9d9480cb2fa",
-   "34083f61977c20f6",
-   "a66e2ff73a3a57b7"
+   "362493d763b86d26",
+   "3998d70e78dff521",
+   "dea9d3f4686078ae",
+   "e4aa865df27c1181"
   ],
   "parts": {
    "tests/conftest.py": "613a6d546aa8b755",
@@ -15104,12 +15104,12 @@
    "tests/test_skip_policy.py": "6084a78a1fad9a81",
    "tests/tracked_guard.py": "613a6d546aa8b755",
    "tools/canary.py": "27ccc6c0a2d42c90",
-   "tools/deadcheck.py": "9a96d5f02324084b",
+   "tools/deadcheck.py": "2cbd70bef9d12fd6",
    "tools/sealcov.py": "e3cef685f982d1e7",
    "tools/testsizetable.py": "d061e6c21162f9b7",
    "본문": "8b43f38921ba73a6"
   },
-  "sha": "0f0a6c46cf3ca773"
+  "sha": "e4aa865df27c1181"
  },
  "MASTER/17-1": {
   "doc": "docs/MASTER.md",
@@ -15335,17 +15335,17 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "5ddb191e43627606",
-   "a6d2e06539d65b6f",
-   "b3e6f593946f6e81",
-   "b62911f824f1ec6b"
+   "534c810e33277432",
+   "d0c73cb499c3e6cb",
+   "dcd203e011cf2d57",
+   "ea6f073e680c8981"
   ],
   "parts": {
-   "sources.yaml": "8e6dd164f6a42460",
+   "sources.yaml": "a2466ea8580e2ecd",
    "tests/test_sources_of_truth.py": "1afecc94aa1131ce",
    "본문": "f05a8ad8bb29ed27"
   },
-  "sha": "a6d2e06539d65b6f"
+  "sha": "ea6f073e680c8981"
  },
  "MASTER/18-3a": {
   "doc": "docs/MASTER.md",
@@ -15398,20 +15398,20 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "105e1b101ab733fb",
-   "39f16c183f84b7c7",
-   "8cf15d3727d8ea5a",
-   "b34a67028ee69d27"
+   "45465e6c11873eac",
+   "98eb85bd0b9bbdac",
+   "a54ae9f00cdd08ab",
+   "e46eb92266daa7cc"
   ],
   "parts": {
-   "sources.yaml": "8e6dd164f6a42460",
+   "sources.yaml": "a2466ea8580e2ecd",
    "src/firelane/manifest.py": "312236bd0d154a74",
    "tests/test_guards.py": "df26a32aecf1d457",
    "tests/test_write_stable.py": "8240d9fb053756ef",
    "tools/dms.py": "a7e5da9786ea12b2",
    "본문": "fd3bc851484ba7a5"
   },
-  "sha": "b34a67028ee69d27"
+  "sha": "a54ae9f00cdd08ab"
  },
  "MASTER/18-6": {
   "doc": "docs/MASTER.md",
@@ -15934,8 +15934,8 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "6d838f185623a428",
-   "ff469c118d1a9e00"
+   "08403fd48ca0254e",
+   "7211608704c78255"
   ],
   "parts": {
    "tools/sealcov.py": "e3cef685f982d1e7",
@@ -15954,16 +15954,16 @@
    "web/navi/src/domain/unitBoard.ts": "4a9da664d0be7f56",
    "web/navi/src/main.tsx": "f2ba9e834c7592cf",
    "web/navi/src/ui/BottleneckDetail.tsx": "e38570e7160e6bad",
-   "web/navi/src/ui/BottleneckPanel.tsx": "c1983a22309c02e8",
+   "web/navi/src/ui/BottleneckPanel.tsx": "ae9d99c94d08e8be",
    "web/navi/src/ui/DemoStrip.tsx": "d785b22aa7d7a87b",
    "web/navi/src/ui/DevBar.tsx": "cb9db88a53df535d",
    "web/navi/src/ui/Legend.tsx": "02c9afc11f6a2a18",
    "web/navi/src/ui/MapControls.tsx": "f46bf094b715b4ba",
    "web/navi/src/ui/OpsBits.tsx": "fb99ff6c923c1d39",
-   "web/navi/src/ui/RemainPill.tsx": "f4ec382b4baacd25",
+   "web/navi/src/ui/RemainPill.tsx": "8ce6013832ff79a6",
    "web/navi/src/ui/SegCard.tsx": "f787a712e7a7b65a",
-   "web/navi/src/ui/ShareChip.tsx": "af6b25a87f525adc",
-   "web/navi/src/ui/StatusCard.tsx": "aab981b4b6bbbc08",
+   "web/navi/src/ui/ShareChip.tsx": "a4e6368e21db2ba5",
+   "web/navi/src/ui/StatusCard.tsx": "7f4103aedc942ed8",
    "web/navi/src/ui/TopBar.tsx": "9fe5ef35afb64446",
    "web/navi/src/ui/TurnArrow.tsx": "11c5f8dca6359a5a",
    "web/navi/src/ui/VehicleArt.tsx": "8c77d0a77ab75527",
@@ -15999,11 +15999,14 @@
    "web/navi/test/vehicleParity.ts": "1f2e8cc61e2f8eed",
    "본문": "2cdbdd459cba7952"
   },
-  "sha": "6d838f185623a428"
+  "sha": "08403fd48ca0254e"
  },
  "MASTER/23": {
   "doc": "docs/MASTER.md",
   "files": [
+   "ops-worker/scripts/deploy.sh",
+   "ops-worker/src/relay.ts",
+   "ops-worker/test/relay.test.ts",
    "sources.yaml",
    "src/firelane/authority.py",
    "src/firelane/clearance.py",
@@ -16065,6 +16068,7 @@
    "tests/test_sweep_bookmark.py",
    "tests/test_tasktpl.py",
    "tests/test_testpick.py",
+   "tests/test_testsplit.py",
    "tests/test_tile_zoom_agreement.py",
    "tests/test_write_route.py",
    "tools/after_squash.py",
@@ -16090,18 +16094,22 @@
    "tools/sealcov.py",
    "tools/survey_queue.py",
    "tools/tasktpl.py",
-   "tools/testpick.py"
+   "tools/testpick.py",
+   "tools/testsplit.py"
   ],
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "2f661e6ee9a5c25b",
-   "4f42293d75d65398",
-   "5095a51ae826112b",
-   "be321cb1021515cd"
+   "42cace6c2041c9bc",
+   "a35d8efc323ef1cf",
+   "af8480dd3f451d10",
+   "d384638178c0371d"
   ],
   "parts": {
-   "sources.yaml": "89db27a6b7b400b5",
+   "ops-worker/scripts/deploy.sh": "40a8eff1e77dd89d",
+   "ops-worker/src/relay.ts": "8b5c2d336b134a47",
+   "ops-worker/test/relay.test.ts": "1bd3ea37d440305d",
+   "sources.yaml": "2108589ddb045f34",
    "src/firelane/authority.py": "ae46245d8f7fe9ff",
    "src/firelane/clearance.py": "3b29711b8dd839fc",
    "src/firelane/cli.py": "2318e9c9b664c1ad",
@@ -16162,6 +16170,7 @@
    "tests/test_sweep_bookmark.py": "275b24174ca9a938",
    "tests/test_tasktpl.py": "1b846d8513b70a8a",
    "tests/test_testpick.py": "4a6fe412e9dafcfb",
+   "tests/test_testsplit.py": "ba14771ab7cdf6b0",
    "tests/test_tile_zoom_agreement.py": "e9227bdce3a15131",
    "tests/test_write_route.py": "9a7c56beabd1fc82",
    "tools/after_squash.py": "ce06e2b0ca34f6ab",
@@ -16174,7 +16183,7 @@
    "tools/dms_fix_inherit.py": "eeb1712492b56c37",
    "tools/docnumhist.py": "a29a35bba09fe5f4",
    "tools/fetch_api.py": "b8c1b1c2c7c0f908",
-   "tools/gatefast.py": "6ed789ead6ddac89",
+   "tools/gatefast.py": "e198677b8fc6013a",
    "tools/gatetimes.py": "80bc2674d0ae6f71",
    "tools/ledger_extract.py": "54d0f647a073bc7b",
    "tools/obligations.py": "c38f83316b96c378",
@@ -16188,9 +16197,10 @@
    "tools/survey_queue.py": "180e964d265b6d4c",
    "tools/tasktpl.py": "4de999c8a690f5cd",
    "tools/testpick.py": "b73d116c4888ff4c",
-   "본문": "7dc8c2210e2a1377"
+   "tools/testsplit.py": "f991d32f22c963ae",
+   "본문": "cca1f6fa50679081"
   },
-  "sha": "2f661e6ee9a5c25b"
+  "sha": "d384638178c0371d"
  },
  "MASTER/24": {
   "doc": "docs/MASTER.md",
@@ -16214,13 +16224,13 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "3fdc0fdd8bf73acb",
-   "6d21d6551f5ea185",
-   "9071b38abfcff35f",
-   "9353c155d2080bf9"
+   "06167191f683090e",
+   "aa469b556ac24690",
+   "c63126866849e19a",
+   "e3a20a8238775b35"
   ],
   "parts": {
-   "sources.yaml": "165fa79f79438258",
+   "sources.yaml": "03d9ddd7d529f97c",
    "src/firelane/localplane.py": "af5524a9c6138639",
    "src/firelane/paths.py": "f07ecc22607794d9",
    "src/firelane/quantile.py": "85d7b602d36bf054",
@@ -16237,7 +16247,7 @@
    "tools/toolindex.py": "b62f4e73cd5f6cce",
    "본문": "41e09fee882749b2"
   },
-  "sha": "3fdc0fdd8bf73acb"
+  "sha": "aa469b556ac24690"
  },
  "MASTER/24-1": {
   "doc": "docs/MASTER.md",
@@ -16624,18 +16634,18 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "804502583cbe197f",
-   "ac868da52eb51c35",
-   "e6c603234aab7f16",
-   "f976620842050ede"
+   "10d56285152c0162",
+   "30306a3462d85cfb",
+   "31448f4e6c9145d7",
+   "3a0a740804c87a25"
   ],
   "parts": {
-   "sources.yaml": "3debedfd536541d6",
+   "sources.yaml": "7190506a5ddd41a4",
    "tools/docgen.py": "81028d0838f4fccf",
    "tools/docnum_check.py": "c95bb146d38e429e",
    "본문": "ac4e803ac2d3dcb3"
   },
-  "sha": "ac868da52eb51c35"
+  "sha": "31448f4e6c9145d7"
  },
  "MASTER/6-2": {
   "doc": "docs/MASTER.md",
@@ -16820,6 +16830,7 @@
    "tools/mutate.py",
    "tools/plan_renumber.py",
    "tools/pushready.py",
+   "tools/scopecheck.py",
    "tools/uicheck.py",
    "tools/verify.sh",
    "web/assets/vehicles/profiles.json",
@@ -16829,14 +16840,14 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "0eee7d56a8d550f8",
-   "57226efc4621f156",
-   "592a36a0a0244ad8",
-   "5a55fa7503620ad0",
-   "7d36433f40641e72",
-   "8652a9065e6b82d0",
-   "8ccc3745ca616a67",
-   "b76ec9a71145046f"
+   "18011c2203287b34",
+   "31f74c17f0a17b38",
+   "609facc632f0f09b",
+   "775d0dc55da7b418",
+   "8428dfd45aa683ec",
+   "993f280fd147d18b",
+   "c367a083c8c2b02a",
+   "f68e80e17f288339"
   ],
   "parts": {
    ".github/actions/build-navi/action.yml": "7bd07a49dd13d991",
@@ -16854,7 +16865,7 @@
    "tools/cost_vs_dispatch.py": "68cbddcdf321c9a6",
    "tools/docgen.py": "81028d0838f4fccf",
    "tools/evalgen.py": "d9442cedc35ab245",
-   "tools/gatefast.py": "6ed789ead6ddac89",
+   "tools/gatefast.py": "e198677b8fc6013a",
    "tools/hydrant_reach.py": "a456e34822d5cbfc",
    "tools/its_linkmap.py": "8335dbdbe5d9d529",
    "tools/jijeok_probe.py": "7a898e5193f696c4",
@@ -16863,14 +16874,15 @@
    "tools/mutate.py": "2ae67f27943f8eb0",
    "tools/plan_renumber.py": "a286630494cd2a76",
    "tools/pushready.py": "80034ce23c3cabda",
-   "tools/uicheck.py": "1eb491428e98a0d0",
-   "tools/verify.sh": "474ca8aa99c6ebf3",
+   "tools/scopecheck.py": "3a9ea0ab993f422b",
+   "tools/uicheck.py": "21b529e58287b61e",
+   "tools/verify.sh": "8591db1f0e4a087e",
    "web/assets/vehicles/profiles.json": "1348b7791e2e1e9c",
    "web/navi/test/clearance.test.ts": "c2ee10891f496271",
    "web/navi/vite.config.ts": "c6aae07eccd09512",
-   "본문": "0dd0dd1a00a553a9"
+   "본문": "069e04f477e8aa6c"
   },
-  "sha": "5a55fa7503620ad0"
+  "sha": "609facc632f0f09b"
  },
  "PLAN/1-27": {
   "doc": "docs/PLAN.md",
@@ -16883,19 +16895,19 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "3f367db09ac73ddb",
-   "ba5c619f0663c286",
-   "fc01de9e8a793927",
-   "fcd8129cd0b31264"
+   "09eecee04ae49bb6",
+   "806aed7fbe6c24f7",
+   "9fd475191a96d11c",
+   "dd14e5fd15a50a12"
   ],
   "parts": {
    "tests/test_measurements.py": "af2627228abaa1b5",
    "tools/clearance_cross.py": "0aa24a8863357959",
    "tools/jijeok_probe.py": "7a898e5193f696c4",
    "tools/jijeok_review.py": "9152024cad57ddff",
-   "본문": "39b4aab2437acb61"
+   "본문": "b4576155a1a938cb"
   },
-  "sha": "3f367db09ac73ddb"
+  "sha": "806aed7fbe6c24f7"
  },
  "PLAN/10": {
   "doc": "docs/PLAN.md",
@@ -16920,10 +16932,10 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "2348e82cfc5f43db",
-   "62be7121a63f8576",
-   "8d9d26abfc57b492",
-   "f2268a14c546c9bc"
+   "29a9c047397ea4a7",
+   "2ce81130caa3e80d",
+   "6b4c737489450b89",
+   "c8e756c739da2ae7"
   ],
   "parts": {
    "sources.yaml": "eda94bcfc1a7b149",
@@ -16942,9 +16954,9 @@
    "tools/whoknows.py": "69c643537039c2f4",
    "tools/widthcross.py": "0320341ec4393edc",
    "web/navi/package-lock.json": "1813201aba38d693",
-   "본문": "9b3986e3e4ed1cee"
+   "본문": "272d0538b940b1f9"
   },
-  "sha": "f2268a14c546c9bc"
+  "sha": "2ce81130caa3e80d"
  },
  "PLAN/10-1": {
   "doc": "docs/PLAN.md",
@@ -16973,14 +16985,14 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "878749ea7e6a3441",
-   "b9549382a0e0e998"
+   "4ccd5f57deab0489",
+   "95eecb196c8c3443"
   ],
   "parts": {
    "tools/planclose.py": "b57e85539007ee27",
-   "본문": "cfd16413a98b3f90"
+   "본문": "5fb452ad89b36821"
   },
-  "sha": "b9549382a0e0e998"
+  "sha": "4ccd5f57deab0489"
  },
  "PLAN/10-2": {
   "doc": "docs/PLAN.md",
@@ -17038,18 +17050,18 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "3f1d15cc56a47c99",
-   "521c06242900b42f",
-   "daa24595b34d0a23",
-   "ded817649ee855ce"
+   "292902caaddd0861",
+   "7463eb787b1773e1",
+   "b1d3fcfb01df0e68",
+   "fc16429a74b738c5"
   ],
   "parts": {
    "tests/test_declaration_sync.py": "600ece1e5a10305d",
    "tools/its_linkmap.py": "8335dbdbe5d9d529",
    "tools/plan_renumber.py": "a286630494cd2a76",
-   "본문": "ae79ecf62555aba6"
+   "본문": "97f00a77fbe03aef"
   },
-  "sha": "daa24595b34d0a23"
+  "sha": "fc16429a74b738c5"
  },
  "PLAN/10-5": {
   "doc": "docs/PLAN.md",
@@ -17061,18 +17073,18 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "137b7903f041a4f5",
-   "5f2eec5e0d30c827",
-   "636f51145fa037f0",
-   "aa018eced259fadd"
+   "6d4799ffd23c1c67",
+   "b57bba8d37b612fd",
+   "bf10db23368e3f11",
+   "e206b5c08a775050"
   ],
   "parts": {
    "tests/test_clearance_cross.py": "b9bcb1ae5b837be0",
    "tests/test_plan_blocks.py": "9704e90048e64095",
    "tools/rule12_sim.py": "e6867096b69379bd",
-   "본문": "185533518cbe5d45"
+   "본문": "7b241f2a72724eff"
   },
-  "sha": "636f51145fa037f0"
+  "sha": "b57bba8d37b612fd"
  },
  "PLAN/12": {
   "doc": "docs/PLAN.md",
@@ -17140,17 +17152,17 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "1f5465a38408ec85",
-   "22e8ca5df3d84676",
    "2efea7fad02375a8",
-   "5e4c948794c0add2",
+   "4ce90840987a9d68",
+   "5a557f90d2978bd2",
+   "96f865922bd20833",
+   "977579475dd15b5c",
    "98e43a91e97cf256",
    "9a8598a89d048bc3",
-   "b3798ed208b33dcc",
    "d38862891be19b59"
   ],
   "parts": {
-   ".github/workflows/contract.yml": "24bbe8d31e0c280f",
+   ".github/workflows/contract.yml": "8a8643ab0a3db3fb",
    "tests/test_build_proposal.py": "15ec8eb673e5903d",
    "tests/test_ratchet.py": "7293195688803c9c",
    "tools/branch_tidy.sh": "692fbe0a916d8f5f",
@@ -17168,7 +17180,7 @@
    "web/navi/package-lock.json": "1813201aba38d693",
    "본문": "c95dc2717a257f70"
   },
-  "sha": "b3798ed208b33dcc"
+  "sha": "4ce90840987a9d68"
  },
  "PLAN/13-4": {
   "doc": "docs/PLAN.md",
