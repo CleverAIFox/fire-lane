@@ -23,7 +23,9 @@ export const LABEL_MARGIN_PX = 24;
 /** 글자 한 자의 폭 근사(px · 11px 글자 — 한글은 한 자가 거의 한 칸이다). */
 export const CHAR_PX = 11.5;
 /** 이 화면 길이(px) 아래의 도로 조각에는 글자를 안 얹는다 — 글자가 길보다 길면 어느 길의 이름인지 못 읽는다. */
-export const MIN_PIECE_PX = 48;
+export const MIN_PIECE_PX = 32;
+/** …그리고 조각 길이가 글자 폭의 이 비율 아래면 안 얹는다. ★ 2026-11-13(DECISIONS §751): 48px · 0.7 → 32px · 0.5 — 줌 16 에서 폰 42% · 관제 31% 가 빠지던 것을 31% · 19% 로 줄인다(번길의 짧은 조각). 더 낮추면 글자가 길보다 훨씬 길어져 어느 길의 이름인지 못 읽는다. */
+export const MIN_PIECE_RATIO = 0.5;
 /** 움직임이 멎은 뒤 다시 고르는 간격(ms). 주행 중 카메라가 계속 움직여도 이 간격으로만 고른다. */
 export const UPDATE_MS = 700;
 /** 움직임이 멈춘 뒤 마지막 한 번까지의 간격(ms) */
@@ -102,7 +104,7 @@ function pointAt(l: Pt[], d: number): Pt {
  * 도로명마다 **한 점**을 고른다. 순수 함수.
  *  - 이름이 같은 조각은 하나로 본다 — 안쪽 상자 안에서 **화면 길이가 가장 긴** 조각을 쓴다(중복 없음).
  *  - 글자 상자(가로 `이름 길이 × CHAR_PX`)가 **화면 안**(4px 여유)에 통째로 드는 점만 쓴다(반만 나오는 글자 없음).
- *  - 조각이 글자보다 많이 짧으면(`MIN_PIECE_PX` · 글자 폭의 70%) 안 얹는다.
+ *  - 조각이 글자보다 많이 짧으면(`MIN_PIECE_PX` · 글자 폭의 `MIN_PIECE_RATIO`) 안 얹는다.
  * 결과는 길이 큰 순 · 같으면 이름순 — 결정적이다.
  */
 export function pickRoadLabels(pieces: RoadPiece[], W: number, H: number, margin = LABEL_MARGIN_PX): RoadLabelPick[] {
@@ -119,7 +121,7 @@ export function pickRoadLabels(pieces: RoadPiece[], W: number, H: number, margin
   const out: RoadLabelPick[] = [];
   for (const [name, { piece, len }] of best) {
     const w = [...name].length * CHAR_PX;
-    if (len < Math.max(MIN_PIECE_PX, w * 0.7)) continue;
+    if (len < Math.max(MIN_PIECE_PX, w * MIN_PIECE_RATIO)) continue;
     for (const f of [0.5, 0.4, 0.6, 0.3, 0.7, 0.2, 0.8]) {
       const [x, y] = pointAt(piece, len * f);
       if (x - w / 2 >= 4 && x + w / 2 <= W - 4 && y - 9 >= 4 && y + 9 <= H - 4) { out.push({ name, x, y, len }); break; }
