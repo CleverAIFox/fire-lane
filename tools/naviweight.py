@@ -49,6 +49,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -145,9 +146,18 @@ EXTERNAL = 0
 #:   130,560 → 117,152 바이트. 여유 13KB.
 # ★ 2026-11-12 (DECISIONS §710). 114 → **111.** 조이는 쪽이다 — CI 의 배포 · dry 가 111KB 로 쟀고 로컬은 **빌드를 안 해서** 못 쟀다(아래 「안 태운다」 사유 —
 #   빌드본이 있어야 재진다). `npm run build` 뒤 `--build` 가 111 을 댄다.
-# ★ 2026-11-13 (DECISIONS §771). 111 → **113.** 늘리는 쪽이다 — CI 의 배포 · dry 가 113KB 로 쟀다(푸시 뒤 첫 CI). 로컬 빌드 실측은 114,140B(§710 때 = 111) → 114,760B(112) 로 **지도 층(`daeji` · 지목별 면 · 대학 경계선)이 약 0.6KB** 를 더했고,
-#   111 은 이미 반올림 경계 위였다. 합친 면 데이터는 청크가 아니라 지도가 따로 받는다(`daeji.geojson`). 줄이는 길(토지이용 층을 첫 화면 뒤로 미루기)은 `#235` 로 적었다 — 지금은 늘린 것을 숨기지 않고 선언한다.
-ENTRY_KB = 113
+# ★ 2026-11-13 (DECISIONS §772). **KB → 바이트.** 111 → 113 으로 올렸던 것은 **원인을 모른 채** 올린 수였다. 같은 CI 에서 잡마다 112 와 113 이 같이 나왔다 — 둘 다 옳은 측정이었다:
+#     · 배포/dry 는 **`VITE_OPS_URL` · `VITE_OPS_TOKEN` 을 넣고** 빌드한다 → 115.24kB(= 112.54KiB → 반올림 **113**)
+#     · contract-fast · 로컬은 **넣지 않고** 빌드한다 → 114.76kB(= 112.07KiB → **112**)
+#   두 빌드가 **다른 산출물**이고(중개자 배선 코드가 살아남는다 · 주소와 토큰이 문자열로 박힌다) 112.5 가 그 사이에 있었다 — 반올림 경계다.
+#   그래서 ① **바이트로 재고 바이트로 선언한다**(KB 는 표시만) ② **재는 산출물을 하나로 정한다 — 중개자 없는 빌드(bare)** 다. 환경에 중개자가 들어 있으면 이 도구가 **bare 를 따로 지어** 잰다
+#   (`naviweight` 가 `vite build --outDir <임시>` 를 부른다 · 0.5초) — 그래서 어느 잡에서도 같은 수가 나온다. 중개자 판은 bare 보다 얼마나 큰지(`OPS_DELTA_MAX`)만 문다.
+#   선언값 114,761 은 bare 실측이다. 94a13aa6(§710 때) 114,140 에서 **+620B 는 이 묶음의 지도 층**(`daeji` · 지목별 면 · 대학 경계선)이고 올림의 사유다(행 `#235` 가 되돌린다).
+ENTRY_BYTES = 114_761
+#: 중개자 판(주소 · 토큰이 박힌 빌드)이 bare 보다 커도 되는 바이트. 실측 약 480(토큰 길이에 따라 다르다) — 두 배 가까이 여유를 둔 상한이다.
+OPS_DELTA_MAX = 1_024
+#: 줄었을 때 「선언을 내려라」 하고 우는 문턱. 1바이트마다 울면 사람이 관문을 끈다.
+ENTRY_SLACK_DOWN = 1_024
 
 #: ★ `ENTRY_KB` 는 **안 태운다.** `tools/ratchet.py` 의 규약은 「어디서나 잴 수 있는
 #:   수」를 전제하는데, 진입 청크는 **빌드본이 있어야** 재진다. 빌드본이 없는 기계
@@ -186,15 +196,32 @@ def hosts() -> dict[str, list[str]]:
 
 
 # ── ② 첫 화면 무게 ──────────────────────────────────────────────
-def entry_kb() -> int | None:
-    """진입 청크(앱 코드) 크기. 빌드본이 없으면 None."""
-    d = DIST / "assets"
-    if not d.is_dir():
-        return None
+def _biggest_index(d: Path) -> int | None:
     got = sorted(d.glob("index-*.js"))
-    if not got:
-        return None
-    return round(max(p.stat().st_size for p in got) / 1024)
+    return max(p.stat().st_size for p in got) if got else None
+
+
+def entry_bytes() -> int | None:
+    """진입 청크(앱 코드) 바이트. 빌드본이 없으면 None. ★ KB 로 반올림하지 않는다 — 잡마다 다른 수가 나오는 일을 막는다."""
+    d = DIST / "assets"
+    return _biggest_index(d) if d.is_dir() else None
+
+
+def bare_entry_bytes() -> tuple[int | None, int | None]:
+    """(재는 값, 중개자 판 − bare). 환경에 중개자가 없으면 `dist` 가 곧 bare 다. 있으면 bare 를 **임시 폴더에 따로 지어** 잰다."""
+    import tempfile
+
+    from firelane.paths import env as _env  # ★ 환경 읽기는 `paths.env` 한 곳이다(`env_check`)
+    mine = entry_bytes()
+    if mine is None or not (_env("VITE_OPS_URL") or _env("VITE_OPS_TOKEN")):
+        return mine, None
+    with tempfile.TemporaryDirectory() as tmp:
+        # 자식에게는 **환경 전체를 물려 주되** 중개자 둘만 비운다 — `vite` 는 `process.env` 를 읽는다(`VITE_*` 는 빈 문자열이면 비었다고 본다)
+        r = subprocess.run(["npx", "vite", "build", "--outDir", tmp, "--emptyOutDir"], cwd=NAVI,
+                           env={**dict(__import__("os").environ), "VITE_OPS_URL": "", "VITE_OPS_TOKEN": ""},
+                           capture_output=True, text=True)
+        bare = _biggest_index(Path(tmp) / "assets") if r.returncode == 0 else None
+    return (bare, mine - bare) if bare is not None else (None, None)
 
 
 # ── ③ 지도 워커가 산출물에 있는가 ───────────────────────────────
@@ -290,16 +317,19 @@ def check(build: bool) -> list[str]:
         bad.append("`main.tsx` 가 서비스 워커를 등록하지 않는다 — 파일만 있고 안 돈다")
 
     if build:
-        kb = entry_kb()
-        if kb is None:
-            bad.append("빌드본이 없다 — `cd web/navi && npm run build`")
+        got, ops_delta = bare_entry_bytes()
+        if got is None:
+            bad.append("빌드본이 없다(또는 bare 빌드가 안 된다) — `cd web/navi && npm run build`")
         else:
-            print(f"진입 청크 {kb}KB · 래칫 {ENTRY_KB}KB")
-            if kb > ENTRY_KB:
-                bad.append(f"진입 청크가 {kb}KB 로 늘었다 (래칫 {ENTRY_KB}KB)\n"
+            kib = f"{got / 1024:.2f}KiB"
+            print(f"진입 청크 {got:,}B({kib}) · 래칫 {ENTRY_BYTES:,}B" + (f" · 중개자 판 +{ops_delta:,}B(상한 {OPS_DELTA_MAX:,})" if ops_delta is not None else ""))
+            if got > ENTRY_BYTES:
+                bad.append(f"진입 청크가 {got:,}B 로 늘었다 (래칫 {ENTRY_BYTES:,}B · +{got - ENTRY_BYTES:,}B)\n"
                            "       **4G 첫 진입 시간이 곧 출동 시각이다**")
-            elif kb < ENTRY_KB:
-                bad.append(f"진입 청크가 {kb}KB 로 줄었다 — 이 파일의 `ENTRY_KB` 를 {kb} 로 **손으로** 내린다(`ratchet.py --write` 는 안 받는다 — 빌드본이 있어야 재져서 `RATCHETS` 에 안 태웠다)")
+            elif got < ENTRY_BYTES - ENTRY_SLACK_DOWN:
+                bad.append(f"진입 청크가 {got:,}B 로 줄었다 — 이 파일의 `ENTRY_BYTES` 를 {got:,} 로 **손으로** 내린다(`ratchet.py --write` 는 안 받는다 — 빌드본이 있어야 재져서 `RATCHETS` 에 안 태웠다)")
+            if ops_delta is not None and ops_delta > OPS_DELTA_MAX:
+                bad.append(f"중개자 판이 bare 보다 {ops_delta:,}B 크다 (상한 {OPS_DELTA_MAX:,}B) — 중개자 배선이 진입 청크에 더 들어왔다")
         bad += worker_faults()
     return bad
 
