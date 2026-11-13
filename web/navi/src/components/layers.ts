@@ -124,8 +124,8 @@ export const NAVI_OFF = [
 ] as const;
 
 /**
- * 토지이용 면(PLAN 행 144(닫힘)) — 공원 · 녹지 · 광장 · 공공공지. **내비 화면만** 깐다(관제 화면은 판정을 보는 화면이라 안 깐다 ·
- * `uicheck` 의 두 화면 공유 층 래칫 12 를 올리지 않는다). 바탕(`bg`) 바로 위, 보도 · 도로면 아래에 들어간다 — `withLanduse`.
+ * 토지이용 면(PLAN 행 144(닫힘)) — 공원 · 녹지 · 광장 · 공공공지. 내비가 이 값으로 깔고, 관제는 같은 층 명세를 **어두운 값으로 바꿔** 깐다(`OpsMap.tsx` 의 `opsLand` ·
+ * id `ops-` · DECISIONS §775 — 그 전에는 관제에 없었다. 공유 층 래칫 12 는 같은 id 만 센다). 바탕(`bg`) 바로 위, 보도 · 도로면 아래에 들어간다 — `withLanduse`.
  */
 export function landuseLayers(): LayerSpecification[] {
   return [
@@ -134,7 +134,7 @@ export function landuseLayers(): LayerSpecification[] {
     // 도시계획시설(공원 · 광장 · 학교 · 청사 …)과 지적도 지목별로 합친 면. **판정 색 · 아이콘 · 길 · 건물이 이 층 위다**(`withLanduse` 가 `bg` 바로 뒤에 낀다).
     { id: "landuse", type: "fill", source: "landuse", filter: ["==", ["geometry-type"], "Polygon"] as never,
       paint: { "fill-color": ["match", ["get", "cls"],
-        "green", MAP.landGreen, "jm_green", MAP.landGreen, "inst", MAP.landInst, "jm_inst", MAP.landInst,
+        ["green", "jm_green"], MAP.landGreen, ["inst", "jm_inst"], MAP.landInst,
         "jm_forest", MAP.landForest, "jm_farm", MAP.landFarm, "jm_water", MAP.landWater, "jm_paved", MAP.landPaved,
         MAP.landPlaza] as never } },
     // 대학(UQV35)과 틀의 10% 넘는 면은 **칠하지 않고 경계선만**(캠퍼스 안에 길이 있다).

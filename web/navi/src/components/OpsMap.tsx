@@ -26,7 +26,7 @@ import type { LngLat } from "../domain/geo";
 import type { Landmark, VerdictStyle, View } from "../domain/types";
 import type { FeedItem, Unit } from "../domain/opsProtocol";
 import {
-  GLYPHS, sources, baseLayers, applyTerrain, markerLayers, stationLayers, shortenStationLabels,
+  GLYPHS, sources, baseLayers, withLanduse, applyTerrain, markerLayers, stationLayers, shortenStationLabels,
   cctvIcon, hydrantIcon, bumpIcon, camIcon, zoneIcon, pillImage, pillOptions,
   Z,
 } from "./layers";
@@ -38,6 +38,8 @@ import {
 } from "./opsLayers";
 import { CLEARANCE_WIDE_M, type ClearanceBand } from "../domain/clearance";
 import { TUNING } from "../domain/vehicle";
+import { MAP } from "../ui/tokens";
+import type { LayerSpecification } from "maplibre-gl";
 import { CLEARANCE_SCALE } from "../ui/clearanceMeaning";
 import { dataBase } from "../infra/dataBase";
 
@@ -77,6 +79,29 @@ const DARK = {
   bg: "#0b1220", sidewalk: "#131c2e", road: "#1f2a3d", roadEdge: "#26334a", segRoad: "#2b384f",
   bldgFlat: "#172033", bldgEdge: "#2a3650", contact: "#05080f", label: "#cbd5e1", halo: "#0b1220",
 };
+
+/**
+ * 관제(어두운 화면)의 토지이용 면 — 내비의 층 명세(`landuseLayers`)를 **그대로 받아 색만 어둡게 바꾼다**(DECISIONS §775 · PLAN 행 231).
+ * 같은 갈래 · 같은 순서 · 같은 필터라서 두 화면이 어긋날 길이 없고, 값(아래 표)만 다르다. 어두운 바탕(`#0b1220`)보다 ΔE76 ≥ 6 밝게,
+ * 판정 4색 대비는 바탕 위 값의 83% 이상(`tools/themecheck.py` 가 문다). id 는 `ops-` 접두 — 공유 층 래칫(12)은 같은 id 를 센다.
+ * ★ 여기(관제 청크)에 산다 — 진입 청크 바이트 래칫 때문에 `tokens.ts` 에 두지 않았다.
+ */
+const LAND_DARK: Record<string, string> = {
+  [MAP.landDaeji]: "#132035", [MAP.landPlaza]: "#162237", [MAP.landGreen]: "#112429", [MAP.landInst]: "#182235",
+  [MAP.landForest]: "#112527", [MAP.landFarm]: "#162428", [MAP.landWater]: "#112334", [MAP.landPaved]: "#172139",
+  [MAP.landCampus]: "#4a5a78",
+};
+function opsStyleLayers(st: Record<string, VerdictStyle>): LayerSpecification[] {
+  const base = baseLayers(st);
+  base.splice(base.findIndex((l) => l.id === "bg") + 1, 0, ...opsLand());
+  return base;
+}
+function opsLand() {
+  return withLanduse([{ id: "bg", type: "background" }]).slice(1).map((l) => ({
+    ...l, id: "ops-" + l.id,
+    paint: JSON.parse(JSON.stringify(l.paint), (_k, v) => (typeof v === "string" ? LAND_DARK[v] ?? v : v)),
+  })) as LayerSpecification[];
+}
 
 interface Props {
   view: View;
@@ -160,7 +185,7 @@ export function OpsMap(props: Props) {
             ...(v.orthoBounds ? { bounds: v.orthoBounds } : {}),
           },
         },
-        layers: baseLayers(st),
+        layers: opsStyleLayers(st),
       },
     });
     map.current = m;
