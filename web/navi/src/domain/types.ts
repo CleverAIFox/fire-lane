@@ -57,6 +57,10 @@ export interface FleetVehicle {
   width_m: number;
   clearance_m: number;
   required_width_m: number;
+  /** 이 폭이 어디서 온 값인가 — `profile` 이 이 차종의 제원 값, `reference` 가 제원이 없어 기준차 값을 대신 쓴 것(DECISIONS §725) */
+  width_basis?: "profile" | "reference";
+  /** 그 출처를 한 줄로 — 화면이 `title` 로 보인다(문구는 데이터에서 온다 — 소스에 한글을 안 늘린다) */
+  width_note?: string;
   /** 회전 등급 (여유 · 주의 · 미판정). `turn_radius_ref_m` 이 null 일 때 화면이 띄운다 */
   turn_grade?: string | null;
   turn_unknown: boolean;

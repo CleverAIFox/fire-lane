@@ -43,6 +43,12 @@ export interface UnitState {
   /** 경로가 바뀔 때만 좌표를 싣는다. 같으면 routeRev 만 */
   routeRev: number;
   route?: LngLat[] | null;
+  /**
+   * ★ **시연이면 true** (DECISIONS §745 · ⓲I-C2). 내비는 시연이 켜져 있으면 화면 테두리가 호박색이다(`domain/demo.ts`) — 그 표를 **관제가 가를 수 있게** 말에 싣는다.
+   *   종전에는 이 칸이 없어 시연 차량도 관제의 「출동 중」 으로 셌다 — 중개자가 서는 순간 실제 지령과 섞인다(§739).
+   *   **없으면 false 로 읽는다**(옛 판의 내비 — 시연 표시를 모르던 때) — 틀리면 시연이 실제로 세는 쪽이므로 보내는 쪽이 늘 싣는다.
+   */
+  demo: boolean;
 }
 
 export interface ShareMsg {
@@ -95,6 +101,7 @@ export function asNaviMsg(x: unknown): NaviMsg | null {
       remainM: typeof x.remainM === "number" ? x.remainM : null,
       etaText: typeof x.etaText === "string" ? x.etaText : null,
       routeRev: x.routeRev,
+      demo: x.demo === true,
       route: Array.isArray(x.route) && x.route.every(isLL) ? (x.route as LngLat[]) : undefined,
     };
   }

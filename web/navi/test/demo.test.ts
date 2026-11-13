@@ -3,8 +3,8 @@
  * 세 상태(없음 · 구역 밖 · 실주행) × 모든 단계를 **표로** 민다.
  */
 import { ok, test } from "./harness";
-import { DEMO_START, canStartDemo, noGpsNotice, type GpsState } from "../src/domain/demo";
-import { DEMO_BADGE, demoUi } from "../src/ui/DemoStrip";
+import { DEMO_BADGE, DEMO_START, canStartDemo, noGpsNotice, type GpsState } from "../src/domain/demo";
+import { demoUi } from "../src/ui/DemoStrip";
 import { outsideNotice } from "../src/domain/serviceArea";
 import type { Phase } from "../src/domain/types";
 

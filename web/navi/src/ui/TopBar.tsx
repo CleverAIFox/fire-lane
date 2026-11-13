@@ -117,7 +117,8 @@ export function TopBar(p: TopBarProps) {
             <button onClick={p.onSwitchRoute} style={{ ...tag, background: tagBg, cursor: "pointer" }}>
               ➤ {s.tag}
             </button>
-          ) : s.tone === "white" ? (
+          ) : s.switchTag ? null /* ★ 단추 문구는 단추가 있을 때만 — 없으면 상태 칩으로 그리지 않는다(§724 · B1) */
+          : s.tone === "white" ? (
             <span style={{ ...tagPlain, fontSize: 12 }}>{s.tag}</span>
           ) : (
             <span style={{ ...tag, background: tagBg }}>{s.tag}</span>

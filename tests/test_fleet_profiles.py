@@ -17,7 +17,7 @@
   기본규격이 그렇고 동구에는 경형·소형이 없다. **갈리는 것은 전장이다.**
   그래서 이 파일은 전폭이 같은 것을 문제 삼지 않고, **전장이 같아지면** 운다.
 
-IN    web/config.js · sources.yaml · web/data/fleet.json
+IN    web/config.js · 대장 `vehicle_spec`(`ledger.vehicle_spec()`) · web/data/fleet.json
 OUT   없음
 PARAM 없음
 밖    전장을 **판정에 쓰는지**는 안 본다 — 지금 판정은 폭만 본다(`seg/vehicle.py`).
@@ -146,3 +146,24 @@ def test_the_widths_being_equal_is_recorded_not_an_accident():
         "대장이 「전폭은 전 차종 2.5 로 같다」를 안 적는다.\n"
         "  그 줄이 없으면 전폭 동일이 결함으로 오진된다 — 실제로 한 번 그랬다.")
     assert "전장" in notes, "「갈리는 것은 전장」이라는 사실이 대장에 없다"
+
+
+def test_every_width_says_where_it_came_from(fleet):
+    """★ B2(DECISIONS §725): 열 차종의 요구폭이 전부 3.0 인 것은 규격이라 사실이다(§253). 그런데 **다섯은 그 차종의 값이 아니라 기준차 값을 대신 쓴 것**이다 —
+    화면이 둘을 같은 숫자로 보이면 차종 선택이 무의미해 보인다. 출처(`width_basis`)가 모든 차에 있고, `profile` 이 null 인 차는 정확히 `reference` 다."""
+    prof = dict(_config_fleet())
+    for r in fleet:
+        assert r.get("width_basis") in ("profile", "reference"), f"{r['id']}: width_basis 가 없다 — 출처를 안 말한다"
+        assert (r.get("width_note") or "").strip(), f"{r['id']}: width_note 가 비었다 — 화면이 title 로 보일 문구가 없다"
+        want = "reference" if prof.get(r["id"]) is None else "profile"
+        assert r["width_basis"] == want, f"{r['id']}: profile {prof.get(r['id'])!r} 인데 width_basis {r['width_basis']}"
+        assert ("미상" in r["width_note"]) == (r["width_basis"] == "reference"), f"{r['id']}: 출처 문구가 출처와 어긋난다 — {r['width_note']}"
+
+
+def test_a_reference_width_is_the_reference_vehicles_not_an_invention(fleet):
+    """`reference` 의 폭은 기준차(`vehicle_spec`) 값 그대로이고 요구폭은 거기에 여유를 더한 것이다 — 출처가 기준차라고 말하는데 값이 다르면 안 된다."""
+    spec = ledger.vehicle_spec()   # 대장은 `ledger` 한 문으로 읽는다(`test_lake` 의 직접 로드 상한)
+    for r in fleet:
+        if r["width_basis"] == "reference":
+            assert r["width_m"] == float(spec["width_m"]), f"{r['id']}: 기준차 {spec['width_m']} 인데 {r['width_m']}"
+            assert r["required_width_m"] == round(float(spec["width_m"]) + float(spec["clearance_m"]), 2)

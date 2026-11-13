@@ -400,12 +400,13 @@ export default function App() {
       pos: n.current?.point ?? n.origin?.point ?? null, brg: n.live.current.brg,
       status: guiding || arrived ? statusKey : "planning", title: snapTitle,
       remainM: n.remainM, etaText: hud?.etaText ?? null, route: n.plan?.coords ?? null,
+      demo: n.demo,
     });
     // ★ `n.live.current` 는 ref 다. 의존에 넣으면 매 프레임 재실행되고, 안 넣어도
     //   읽는 시점 값은 최신이다. 필요한 필드는 아래에 개별로 걸었다.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- n.live 는 ref 다
   }, [vehicleKind, station?.name, incident, n.current, n.origin, statusKey, snapTitle,
-      n.remainM, hud?.etaText, n.plan, guiding, arrived]);  
+      n.remainM, hud?.etaText, n.plan, guiding, arrived, n.demo]);  
 
   // ★ 알림은 6초 뒤 내린다. 「위치 없음」 처럼 한 번 알면 되는 것이 주행 내내
   //   남아 남은 시간 알약 위를 가렸다(검수 스크린샷).

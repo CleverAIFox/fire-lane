@@ -3,7 +3,7 @@
  * 순수 함수(`pickRoadLabels` · `clipPolyline`)와 층 선언을 문다. 지도 엔진의 충돌은 `scripts` 의 실측이 든다(브라우저).
  */
 import { ok, test } from "./harness";
-import { CHAR_PX, LABEL_MARGIN_PX, MIN_PIECE_PX, ROAD_LABEL_SRC, attachRoadLabels, clipPolyline, labelCollection, pickRoadLabels, roadLabelLayers, type RoadPiece } from "../src/components/roadLabels";
+import { CHAR_PX, LABEL_MARGIN_PX, MIN_PIECE_PX, ROAD_LABEL_SRC, SETTLE_MS, UPDATE_MS, attachRoadLabels, clipPolyline, labelCollection, makeScheduler, pickRoadLabels, roadLabelLayers, type RoadPiece, type Timers } from "../src/components/roadLabels";
 
 const W = 1000, H = 700;
 const line = (name: string, ...px: [number, number][]): RoadPiece => ({ name, px });
@@ -76,4 +76,117 @@ test("붙일 때 도로명 층을 아이콘 층(소화전) **앞에** 넣는다 
   off();
   ok(sources.includes(ROAD_LABEL_SRC), "점 소스를 안 더했다");
   ok(calls.length === 1 && calls[0].id === "lbl-road" && calls[0].before === "hydrant", `아이콘 층 앞이 아니다: ${JSON.stringify(calls)}`);
+});
+
+
+// ── 갱신 빈도 (DECISIONS §723 · A2 렉) — 주행 중 프레임마다 전 타일을 훑던 것 ──────────────────────
+/** 가짜 시계 — 시험이 시간을 직접 민다 */
+function fakeClock(): Timers & { advance(ms: number): void; now(): number } {
+  let t = 0, id = 0;
+  const q = new Map<number, { at: number; f: () => void }>();
+  return {
+    set(f, ms) { q.set(++id, { at: t + ms, f }); return id; },
+    clear(h) { q.delete(h as number); },
+    now: () => t,
+    advance(ms) {
+      const end = t + ms;
+      for (;;) {
+        const due = [...q.entries()].filter(([, v]) => v.at <= end).sort((a, b) => a[1].at - b[1].at || a[0] - b[0])[0];
+        if (!due) break;
+        q.delete(due[0]); t = due[1].at; due[1].f();
+      }
+      t = end;
+    },
+  };
+}
+
+test("스케줄러 — touch 가 천 번 와도 스로틀 안에서 run 은 한 번이다", () => {
+  const c = fakeClock(); let runs = 0;
+  const got = () => runs;               // `ok` 가 단언 함수라 변수를 읽으면 타입이 좁혀진다
+  const s = makeScheduler(() => { runs++; }, 700, 150, c);
+  for (let i = 0; i < 1000; i++) s.touch();
+  ok(got() === 0, "touch 가 바로 run 을 불렀다");
+  c.advance(SETTLE_MS - 1); ok(got() === 0, `멈추기 전에 run ${runs}`);
+  c.advance(2); ok(got() === 1, `멈춘 뒤 run ${runs} — 천 번 touch 에 한 번이어야 한다(두 타이머가 둘 다 돌았거나 touch 마다 돌았다)`);
+  c.advance(5000); ok(got() === 1, `대기 타이머가 남아 한 번 더 돌았다: ${runs}`);
+});
+
+test("스케줄러 — 3초 동안 16ms 마다 touch(추종 루프)해도 run 은 스로틀 한계(≤ 5)이고 멈추면 한 번 더 돈다", () => {
+  const c = fakeClock(); let runs = 0 as number;
+  const s = makeScheduler(() => { runs++; }, UPDATE_MS, SETTLE_MS, c);
+  for (let t = 0; t < 3000; t += 16) { s.touch(); c.advance(16); }
+  ok(runs >= 3 && runs <= 5, `3초에 run ${runs} — 프레임마다(약 190) 돌면 안 된다`);
+  const before = runs;
+  c.advance(SETTLE_MS + 1);
+  ok(runs === before + 1, `멈춘 뒤 마지막 한 번이 없다(${before} → ${runs}) — 라벨이 옛 자리에 남는다`);
+});
+
+test("스케줄러 — cancel 하면 아무것도 안 돈다", () => {
+  const c = fakeClock(); let runs = 0 as number;
+  const s = makeScheduler(() => { runs++; }, 700, 150, c);
+  s.touch(); s.cancel(); c.advance(5000);
+  ok(runs === 0, `cancel 뒤에 run ${runs}`);
+});
+
+/** 가짜 지도 — `attachRoadLabels` 가 부르는 것만 든다. 카메라는 호출마다 움직일 수 있다 */
+function fakeMap(features: unknown[] = []) {
+  const on = new Map<string, Array<() => void>>(); const calls = { qsf: 0, setData: 0 };
+  let lng = 126.92; const src = { setData() { calls.setData++; } };
+  const m = {
+    addSource() {}, addLayer() {}, getLayer: () => ({}),
+    on(e: string, f: () => void) { (on.get(e) ?? on.set(e, []).get(e)!).push(f); },
+    off(e: string, f: () => void) { on.set(e, (on.get(e) ?? []).filter((x) => x !== f)); },
+    getSource: () => src, getCanvas: () => ({ clientWidth: 1000, clientHeight: 700 }),
+    getCenter: () => ({ lng, lat: 35.15 }), getZoom: () => 17, getBearing: () => 0, getPitch: () => 60,
+    querySourceFeatures() { calls.qsf++; return features; }, project: (p: number[]) => ({ x: (p[0] - lng) * 1e6, y: (p[1] - 35.15) * 1e6 }), unproject: (p: number[]) => ({ lng: p[0] / 1e6 + lng, lat: p[1] / 1e6 + 35.15 }),   // 카메라 중심 기준 px — 실제 지도처럼 카메라가 움직이면 같은 점의 화면 자리가 움직인다
+  };
+  return { m, calls, move(dx = 0.00004) { lng += dx; for (const f of on.get("move") ?? []) f(); for (const f of on.get("moveend") ?? []) f(); }, on };
+}
+
+test("주행 시뮬 — 3초 동안 프레임마다 jumpTo(move + moveend)해도 라벨 갱신은 스로틀 한계 안이다", () => {
+  const c = fakeClock(); const fm = fakeMap();
+  const off = attachRoadLabels(fm.m as never, 16, c);
+  const frames = 190;                                  // 3초 · 16ms
+  for (let i = 0; i < frames; i++) { fm.move(); c.advance(16); }
+  ok(fm.calls.qsf >= 3 && fm.calls.qsf <= 6, `프레임 ${frames}번에 querySourceFeatures ${fm.calls.qsf}번 — 프레임마다 돌면 주행이 막힌다(종전 프레임당 1~2번)`);
+  c.advance(SETTLE_MS + 1); const n = fm.calls.qsf;
+  c.advance(5000); ok(fm.calls.qsf === n, `움직임이 없는데 계속 돈다: ${n} → ${fm.calls.qsf}`);
+  off();
+});
+
+test("카메라도 데이터도 안 바뀌었으면 다시 안 고른다 — moveend 가 겹쳐 와도 한 번이다", () => {
+  const c = fakeClock(); const fm = fakeMap();
+  const off = attachRoadLabels(fm.m as never, 16, c);
+  c.advance(UPDATE_MS + 1);                            // 처음 한 번
+  const first = fm.calls.qsf; ok(first === 1, `처음 ${first}번`);
+  for (const f of fm.on.get("moveend") ?? []) f();     // 안 움직였는데 moveend
+  c.advance(5000);
+  ok(fm.calls.qsf === first, `안 움직였는데 다시 골랐다: ${first} → ${fm.calls.qsf}`);
+  off();
+});
+
+test("느리게 흘러가는 카메라(80px 미만)는 다시 안 고른다 — 한 프레임의 움직임은 몇 px 이다", () => {
+  const c = fakeClock(); const fm = fakeMap();
+  const off = attachRoadLabels(fm.m as never, 16, c);
+  c.advance(UPDATE_MS + 1); const first = fm.calls.qsf;                       // 처음 한 번
+  for (let i = 0; i < 60; i++) { fm.move(0.000001); c.advance(16); }          // 프레임당 1px · 60px — 문턱(80) 아래
+  c.advance(5000);
+  ok(fm.calls.qsf === first, `60px 흘렀는데 다시 골랐다: ${first} → ${fm.calls.qsf}`);
+  fm.move(0.00005); c.advance(UPDATE_MS + SETTLE_MS + 5);                    // 50px 더 → 합 110px — 문턱을 넘는다
+  ok(fm.calls.qsf === first + 1, `문턱을 넘었는데 안 골랐다: ${first} → ${fm.calls.qsf}`);
+  off();
+});
+
+test("다시 골라도 이름 묶음이 같고 옛 점이 화면 안이면 setData 를 안 한다 — 워커 재타일링을 안 부른다", () => {
+  const road = { type: "Feature", properties: { seg_uid: "a", road_name: "동명로" },
+                 geometry: { type: "LineString", coordinates: [[126.9196, 35.15035], [126.9204, 35.15035]] } };   // 가로 800px · y 350px
+  const c = fakeClock(); const fm = fakeMap([road]);
+  const off = attachRoadLabels(fm.m as never, 16, c);
+  c.advance(UPDATE_MS + 1);
+  ok(fm.calls.setData >= 1 && fm.calls.qsf === 1, `처음 ${fm.calls.qsf}번 고르고 setData ${fm.calls.setData}번`);
+  const sd: number = fm.calls.setData, q1: number = fm.calls.qsf;
+  fm.move(0.0001); c.advance(UPDATE_MS + SETTLE_MS + 5);                     // 100px — 문턱을 넘어 다시 고른다
+  ok(fm.calls.qsf === q1 + 1, `문턱을 넘었는데 안 골랐다: ${q1} → ${fm.calls.qsf}`);
+  ok(fm.calls.setData === sd, `같은 이름 하나인데 setData 를 또 했다: ${sd} → ${fm.calls.setData}`);
+  off();
 });

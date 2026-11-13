@@ -11,6 +11,9 @@ import {
   unitStale, UNIT_STALE_MS, type Unit,
 } from "../src/domain/opsProtocol";
 import { distM } from "../src/domain/geo";
+import opsAppSrc from "../src/OpsApp.tsx?raw";
+import { demoTag, liveCounts, sortUnits, unitChip, unitRank, unitStatus } from "../src/domain/unitBoard";
+import { DEMO_BADGE } from "../src/domain/demo";
 import { choOf, isChoQuery, preparePois, searchPois, type Poi } from "../src/domain/search";
 
 const { graph, spec } = FL;
@@ -264,4 +267,88 @@ test("회색 사유 — GRAY_REASON 과 web/config.js 의 reason 키 집합이 �
   ok(cfg.length > 5, `config.js 에서 사유 키를 못 읽었다 — ${cfg.join(",")}`);
   ok(JSON.stringify(cfg) === JSON.stringify(gr),
     `사유 키 집합이 어긋난다 — config.js ${cfg.join(",")} / GRAY_REASON ${gr.join(",")}`);
+});
+
+
+// ── 관제 상황판 순서 (DECISIONS §726 · B3) ─────────────────────────────────────────────────
+/** 합성 차량 — `ago` 초 전에 마지막으로 들었고(5초 넘으면 끊김) `remainM` 이 있으면 나가 있는 차 */
+const NOW = 1_000_000;
+const unit = (name: string, ago: number, remainM: number | null, demo = false): Unit => ({
+  unit: name, heardAt: NOW - ago * 1000, route: null, routeRev: 0,
+  last: { t: "state", unit: name, at: NOW, vehicle: name, station: null, incident: null, pos: null, brg: 0, status: "safe", title: "", remainM, etaText: null, routeRev: 0, demo },
+});
+
+test("상황판 — 연결된 순서가 끊김 · 출동 중 · 대기여도 출동 중이 맨 위다(끊김은 색이 할 일이지 순서가 아니다)", () => {
+  const lostIdle = unit("A-끊김", 30, null), live = unit("B-출동", 1, 1800), idle = unit("C-대기", 1, null);
+  const board = sortUnits([lostIdle, live, idle], NOW);
+  ok(board.map((u) => u.unit).join() === "B-출동,C-대기,A-끊김", `순서 ${board.map((u) => u.unit).join()}`);
+});
+
+test("상황판 — 끊겼지만 나가 있던 차는 대기보다 위다(길을 잃었을 수 있다) · 나가 있지 않던 끊김은 맨 아래다", () => {
+  const lostWas = unit("A", 30, 900), lostIdle = unit("B", 30, null), idle = unit("C", 1, null), live = unit("D", 1, 500);
+  ok([lostWas, lostIdle, idle, live].map((u) => unitRank(u, NOW)).join() === "1,3,2,0", "순위표가 다르다");
+  ok(sortUnits([lostIdle, idle, lostWas, live], NOW).map((u) => u.unit).join() === "D,A,C,B", "정렬이 순위표와 다르다");
+});
+
+test("상황판 — 같은 순위 안은 이름순이라 남은 거리가 변해도 행이 안 뒤바뀐다", () => {
+  const a = unit("Z", 1, 100), b = unit("A", 1, 9000);
+  ok(sortUnits([a, b], NOW).map((u) => u.unit).join() === "A,Z", "이름순이 아니다");
+  const a2 = unit("Z", 1, 9999), b2 = unit("A", 1, 50);         // 남은 거리가 뒤집혀도
+  ok(sortUnits([a2, b2], NOW).map((u) => u.unit).join() === "A,Z", "거리에 따라 행이 뒤바뀐다 — 누를 수가 없다");
+});
+
+test("상황판 — 입력을 안 바꾼다 · 끊김 판정은 시계에 따른다", () => {
+  const xs = [unit("A", 30, null), unit("B", 1, 1)]; const before = xs.map((u) => u.unit).join();
+  sortUnits(xs, NOW); ok(xs.map((u) => u.unit).join() === before, "입력 배열이 바뀌었다");
+  ok(unitStatus(xs[1], NOW) === "dispatching" && unitStatus(xs[1], NOW + UNIT_STALE_MS + 1000) === "lost", "시계가 흘러도 끊김이 안 된다");
+});
+
+test("상황판 배선 — 차량 목록은 정렬된 board 로 그린다(되돌리면 연결 순서로 돌아가 끊김이 맨 위가 된다)", () => {
+  ok(/const board = useMemo\(\(\) => sortUnits\(units, now\)/.test(opsAppSrc), "OpsApp 이 sortUnits 로 board 를 안 만든다");
+  ok(/\{board\.map\(\(u\) => \{/.test(opsAppSrc), "상황판이 board 가 아니라 정렬 안 된 목록을 그린다");
+  ok(!/\{units\.map\(\(u\) => \{\s*const stale = unitStale/.test(opsAppSrc), "상황판 행이 옛 목록(units)으로 돌아갔다");
+});
+
+test("사건 검색 — 자료가 실렸는데 검색어에 맞는 것이 없으면 「결과 없음」 을 말한다(침묵이 아니라 · B5)", () => {
+  const m = /\{data && q\.trim\(\) && hits\.length === 0 && <div[^>]*>결과 없음<\/div>\}/.exec(opsAppSrc);
+  ok(m != null, "OpsApp 에 빈 결과 줄이 없다 — 검색어를 쳤는데 아무 말이 없다");
+  ok(/hits: PoiHit\[\] = useMemo\(\(\) => \(q\.trim\(\)\.length >= 1 \? searchPois/.test(opsAppSrc), "hits 의 정의가 바뀌어 빈 결과 줄의 조건과 어긋날 수 있다");
+  const pois = preparePois({ type: "FeatureCollection", features: [] } as GeoJSON.FeatureCollection);
+  ok(searchPois(pois, "존재하지않는이름").length === 0, "색인이 비었는데 결과가 났다");
+});
+
+
+// ── 시연 / 실제 (DECISIONS §745 · ⓲I-C2 · 안전 결함) ───────────────────────────────────────
+const stateMsg = (extra: Record<string, unknown>) => ({ t: "state", unit: "u", at: 1, routeRev: 0, ...extra });
+
+test("시연 — 메시지가 시연 여부를 싣고 받는 쪽이 읽는다 · 칸이 없으면 실제로 읽는다", () => {
+  const on = asNaviMsg(stateMsg({ demo: true })), off = asNaviMsg(stateMsg({ demo: false })), none = asNaviMsg(stateMsg({}));
+  ok(on?.t === "state" && on.demo === true, "demo:true 를 못 읽었다");
+  ok(off?.t === "state" && off.demo === false, "demo:false 를 못 읽었다");
+  ok(none?.t === "state" && none.demo === false, "칸이 없으면 false 여야 한다");
+  ok(asNaviMsg(stateMsg({ demo: "true" }))?.t === "state" && (asNaviMsg(stateMsg({ demo: "true" })) as { demo: boolean }).demo === false, "문자열 true 를 시연으로 믿었다 — 엄격히 불리언 true 만");
+});
+
+test("시연 — 관제의 「출동 중 N대」 에 시연 차량이 안 센다 · 따로 센다", () => {
+  const us = [unit("실제1", 1, 1000), unit("시연1", 1, 800, true), unit("시연끊김", 30, 800, true), unit("실제대기", 1, null)];
+  const c = liveCounts(us, NOW);
+  ok(c.real === 2 && c.demo === 1, `실제 ${c.real} · 시연 ${c.demo} (끊긴 시연은 안 센다)`);
+});
+
+test("시연 — 상황판에서 시연 차량은 실제 뒤에 온다(출동 중이어도)", () => {
+  const b = sortUnits([unit("A-시연출동", 1, 500, true), unit("B-실제대기", 1, null), unit("C-실제끊김", 30, null)], NOW);
+  ok(b.map((u) => u.unit).join() === "B-실제대기,C-실제끊김,A-시연출동", `순서 ${b.map((u) => u.unit).join()}`);
+});
+
+test("시연 — 관제 화면이 시연을 호박색으로 그리고 합계에서 뺀다(소스 계약)", () => {
+  ok(/liveCounts\(units, now\)/.test(opsAppSrc), "OpsApp 이 liveCounts 로 센다 — 시연이 합산될 수 있다");
+  ok(/unitChip\(u, now\)/.test(opsAppSrc) && /demo: D\.warn/.test(opsAppSrc), "상황판 행이 시연을 호박색으로 안 가른다");
+  ok(!/units\.filter\(\(u\) => !unitStale\(u, now\)\)\.length/.test(opsAppSrc), "옛 합산(시연 포함)이 돌아왔다");
+});
+
+test("시연 — 칩: 시연은 호박색 갈래 · 끊긴 시연은 끊김 · 합계 옆 말은 시연이 없으면 없다", () => {
+  ok(unitChip(unit("a", 1, 500, true), NOW).kind === "demo" && unitChip(unit("a", 1, 500, true), NOW).label === DEMO_BADGE, "시연 출동 중이 시연 칩이 아니다");
+  ok(unitChip(unit("b", 30, 500, true), NOW).kind === "lost", "끊긴 시연이 끊김이 아니다");
+  ok(unitChip(unit("c", 1, 500), NOW).kind === "dispatching" && unitChip(unit("d", 1, null), NOW).kind === "idle", "실제 칩이 달라졌다");
+  ok(demoTag(0) === undefined && demoTag(2) === `${DEMO_BADGE} 2`, "합계 옆 말");
 });

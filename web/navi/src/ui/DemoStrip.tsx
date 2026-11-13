@@ -9,12 +9,11 @@
  * 밖    시연을 돌리는 일(위치원)은 안 한다 — `app/usePositionSource`.
  */
 import type { Phase } from "../domain/types";
-import { DEMO_START, type GpsState } from "../domain/demo";
+import { DEMO_BADGE, DEMO_START, type GpsState } from "../domain/demo";
 import { C, F, S } from "./tokens";
 
 export type DemoButton = "on" | "start" | "end" | null;
 export const DEMO_END = "끝내기";
-export const DEMO_BADGE = "시연 중";
 
 /** 화면이 낼 것. `badge` 는 시연이 켜진 동안 늘 true. 단추 이름은 안내 문구(`domain/demo.ts`)와 같은 규칙에서 나온다 */
 export function demoUi(phase: Phase, gps: GpsState, demo: boolean): { badge: boolean; button: DemoButton } {

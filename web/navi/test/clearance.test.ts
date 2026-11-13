@@ -315,6 +315,28 @@ test("경로 위 경고 — 카드는 최대 몇 줄만 보이고 나머지는 �
   ok(none.lines.length === 0 && none.more === 0, "위험이 없는데 줄을 냈다");
 });
 
+test("경로 위 경고 — 상대 경로가 있으면 이 경로에만 있는 구간이 먼저고 공통 구간은 뒤에서 흐려진다(같은 걸 두 번 보지 않는다 · B4)", () => {
+  const common = [0, 1, 2].map((i) => ({ seg_uid: `C${i}`, seg_label: `공통${i}`, verdict: "needs_cv" as const }));
+  const mineOnly = { seg_uid: "M", seg_label: "내것", verdict: "needs_cv" as const }, theirOnly = { seg_uid: "T", seg_label: "남것", verdict: "needs_cv" as const };
+  const mine = plan(...common, mineOnly), theirs = plan(...common, theirOnly);
+  const a = riskSummary(mine, NEED, theirs), b = riskSummary(theirs, NEED, mine);
+  ok(a.lines[0].includes("내것") && b.lines[0].includes("남것"), `갈리는 구간이 맨 앞이 아니다: ${a.lines[0]} · ${b.lines[0]}`);
+  ok(!a.lines[0].includes("공통") && a.lines.length === 4 && a.shared === 3, `줄 ${a.lines.length} · 공통 ${a.shared}`);
+  ok(a.lines.slice(1).every((l) => l.includes("공통")), "공통 구간이 뒤에 안 모였다");
+  const plain = riskSummary(mine, NEED);                                        // 상대가 없으면 종전 그대로(경로 순서)
+  ok(plain.lines[0].includes("공통0") && plain.shared === undefined, "상대가 없는데 순서가 바뀌었다");
+});
+
+test("경로 위 경고 — 공통 구간이 줄 수를 넘으면 갈리는 구간이 먼저 살아남고 공통이 「외 N곳」 으로 밀린다", () => {
+  const common = Array.from({ length: RISK_LINES_MAX + 2 }, (_, i) => ({ seg_uid: `C${i}`, seg_label: `공통${i}`, verdict: "needs_cv" as const }));
+  const mine = plan(...common, { seg_uid: "M", seg_label: "내것", verdict: "needs_cv" as const }), theirs = plan(...common);
+  const r = riskSummary(mine, NEED, theirs);
+  ok(r.lines[0].includes("내것"), "갈리는 구간이 줄 수 제한에 잘렸다 — 공통이 자리를 다 먹었다");
+  ok(r.shared === RISK_LINES_MAX - 1 && r.more === 3, `공통 ${r.shared} · 외 ${r.more}`);
+  const same = riskSummary(mine, NEED, mine);                                    // 완전히 같은 경로면 전부 공통
+  ok(same.shared === same.lines.length, "같은 경로인데 공통이 아니라고 읽었다");
+});
+
 test("경로 위 경고 — 실제 발행물의 경로에서 병목 패널이 고르는 구간과 어긋나지 않는다(같은 정의)", () => {
   const adj = buildAdjacency(graph, S, false, "safe");
   const nodes = [...adj.keys()].sort((a, b) => a - b);

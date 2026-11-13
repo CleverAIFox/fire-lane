@@ -58,21 +58,18 @@ import { MOTION_CSS } from "./ui/motion";
 import { useFleet } from "./app/useFleet";
 import { loadAll, loadHistory, type Bundle } from "./infra/dataSource";
 import { openLink, newId, type Link } from "./infra/opsLink";
-import {
-  HB_MS, OPS_EMPTY, asNaviMsg, opsAck, opsReduce, unitStale, type OpsState,
-} from "./domain/opsProtocol";
+import { HB_MS, OPS_EMPTY, asNaviMsg, opsAck, opsReduce, type OpsState } from "./domain/opsProtocol";
 import { buildAdjacency, findRouteBetween, nearestNode, snapToEdge } from "./domain/graph";
 import { ruleSummary } from "./domain/rules";
 import { dispatchUrl as mkDispatchUrl } from "./domain/dispatch";
+import { demoTag, liveCounts, sortUnits, unitChip } from "./domain/unitBoard";
 import type { RouteMode } from "./domain/handoff";
 import { alternateAccess, reachableEdges, MAX_WALK_M } from "./domain/access";
 import { addressLines, asOfDate, preparePois, searchPois, type PoiHit } from "./domain/search";
 import { dataBase } from "./infra/dataBase";
 import { DISPATCH_FIXED_S, dispatchToArrivalSeconds, travelSeconds } from "./domain/speed";
 import { requiredWidth } from "./domain/vehicle";
-import {
-  CLEARANCE_BAND_ORDER, clearanceCounts, fmtClearance,
-} from "./domain/clearance";
+import { CLEARANCE_BAND_ORDER, clearanceCounts, fmtClearance } from "./domain/clearance";
 import { snap as snapOnce, prepare } from "./domain/snap";
 import { distM, type LngLat } from "./domain/geo";
 import type { GraphEdge, HistorySummary } from "./domain/types";
@@ -241,6 +238,7 @@ export default function OpsApp() {
   const selEdge: GraphEdge | null = seg ? edgeByUid.get(seg) ?? null : null;
 
   const units = useMemo(() => Object.values(ops.units), [ops.units]);
+  const board = useMemo(() => sortUnits(units, now), [units, now]);   // ★ 상황판만 상태 순서(`domain/unitBoard`) — `units` 는 지도에도 가므로 정렬 안 된 그대로(매초 새 배열이면 마커 효과가 매초 돈다)
   const need = spec ? requiredWidth(spec) : 3;
 
   if (fatal) return <Center>★ {fatal}</Center>;
@@ -268,7 +266,7 @@ export default function OpsApp() {
   //   된 둘은 같은 수가 아니다. 가장 오래된 것의 나이를 같이 든다.
   const oldestWait = ops.feed.reduce<number | null>(
     (old, f) => (f.ackedAt ? old : Math.max(old ?? 0, now - f.at)), null);
-  const live = units.filter((u) => !unitStale(u, now)).length;
+  const { real: live, demo: liveDemo } = liveCounts(units, now);
   const hs = history?.summary;
   const myCenter = station ? hs?.by_center[`${station.name.replace(/119안전센터$/, "")}119안전센터`] : undefined;
   const elapsedS = incident ? (now - incident.at.getTime()) / 1000 : null;
@@ -295,7 +293,8 @@ export default function OpsApp() {
               tone={!incident ? undefined
                     : elapsedS != null && medianS != null && elapsedS > medianS ? "danger" : "warn"}
               urgent={!!incident && elapsedS != null && medianS != null && elapsedS > medianS} />
-        <Tile k="출동 중" v={`${live}대`} tone={live ? "ok" : undefined} />
+        <Tile k="출동 중" v={`${live}대`} tone={live ? "ok" : undefined}
+              sub={demoTag(liveDemo)} />
         <Tile k="미확인 공유" v={`${waiting}건`}
               sub={oldestWait == null ? undefined : `가장 오래된 것 ${fmtDur(oldestWait / 1000)}`}
               tone={waiting ? "warn" : undefined}
@@ -315,6 +314,7 @@ export default function OpsApp() {
                 {picking ? "지도를 누르세요" : "지도에서"}
               </button>
             </div>
+            {data && q.trim() && hits.length === 0 && <div style={{ fontSize: 12, color: D.sub }}>결과 없음</div>}
             {hits.length > 0 && (
               <div style={list}>
                 {hits.map((h, i) => (
@@ -368,8 +368,8 @@ export default function OpsApp() {
                         숫자는 `fleet.json` 에서만 온다(§212). */}
                     <span style={{ fontSize: 11, color: D.sub, textAlign: "right",
                                    lineHeight: 1.4 }}>
-                      <b style={{ fontSize: 12, color: on ? D.accent : D.sub }}>
-                        {v.required_width_m.toFixed(1)}m
+                      <b style={{ fontSize: 12, color: on ? D.accent : D.sub }} title={v.width_note}>
+                        {v.required_width_m.toFixed(1)}m{v.width_basis === "reference" ? "*" : ""}
                       </b><br />
                       {v.turn_radius_ref_m != null
                         ? <>회전 {v.turn_radius_ref_m.toFixed(1)}m <span style={{ opacity: .8 }}>
@@ -556,16 +556,13 @@ export default function OpsApp() {
         {/* ══ 우 — 차량 상태판 · 현장 공유 · 구간 ═══════════════════ */}
         <aside style={colR}>
           <Sec title={`차량 상태판 · 연결 ${units.length}`} tier={units.length ? "pick" : "idle"}>
-            {link.current?.available === false && (
-              <div style={{ fontSize: 12, color: D.warn }}>탭 연결 안 됨</div>
-            )}
+            {link.current?.available === false && <div style={{ fontSize: 12, color: D.warn }}>탭 연결 안 됨</div>}
             {units.length === 0 && (
-              <div style={{ fontSize: 12, color: D.sub }}>연결된 내비가 없다 — 「출동 지령」 으로 연다.</div>
+              <div style={{ fontSize: 12, color: D.sub }}>내비 없음 — 「출동 지령」 으로 연다.</div>
             )}
-            {units.map((u) => {
-              const stale = unitStale(u, now);
-              const st = stale ? "끊김" : u.last.remainM != null ? "출동 중" : "대기";
-              const tone = stale ? D.danger : u.last.remainM != null ? D.ok : D.sub;
+            {board.map((u) => {
+              const { label: st, kind } = unitChip(u, now);
+              const tone = { lost: D.danger, demo: D.warn, dispatching: D.ok, idle: D.sub }[kind];
               return (
                 <button key={u.unit} style={unitRow}
                         onClick={() => u.last.pos && setFocus({ n: Date.now(), at: u.last.pos, zoom: 17.2 })}>

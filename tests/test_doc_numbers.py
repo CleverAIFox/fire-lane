@@ -312,12 +312,24 @@ def test_a_row_citation_is_not_read_as_a_retired_count():
 
 
 # ── 방금 대체된 값은 **저절로** 폐기값이 된다 (2026-11-12 · DECISIONS §715 · #53 재잠금 ②) ──────────
-def test_the_value_just_replaced_retires_itself():
-    """★ 손으로 적는 `RETIRED` 를 사람이 잊어 옛 값(`blocked 193` 넷)이 문서에 조용히 남았다. 이력에서 유도한다 — **방금 대체된 값 하나**."""
+def test_every_replaced_value_retires_itself_not_only_the_last_one():
+    """★ 손으로 적는 `RETIRED` 를 사람이 잊어 옛 값(`blocked 193` 넷)이 문서에 조용히 남았다. 이력에서 유도한다 — **이력 전체**(DECISIONS §715 · §721).
+
+    처음에는 「방금 대체된 값 하나」였다. 그러면 **그 앞의 값은 영영 안 잡힌다** — 옛 구간 수 1,281 이 그렇게 살아남았다(2026-11-04 에 1,287 로 바뀐 뒤 다음 재잠금에서는 직전 값이 아니었다).
+    """
     D = _docnum()
     hist = [{"blocked": 184, "clear": 249}, {"blocked": 184, "clear": 249}, {"blocked": 193, "clear": 275}, {"blocked": 192, "clear": 274}]
     got = D.replaced_values(hist, {"blocked": 184, "clear": 249})
-    assert got == {"blocked": ["193"], "clear": ["275"]}, got   # 현재와 같은 칸은 건너뛰고 **가장 가까운 다른 값 하나** — 더 옛것(192 · 274)은 안 문다
+    assert got == {"blocked": ["193", "192"], "clear": ["275", "274"]}, got   # 새것부터 · 같은 값은 한 번 · **더 옛것(192 · 274)도 문다**
+
+
+def test_a_value_two_replacements_ago_is_still_retired_and_both_comma_forms():
+    """★ 옛 구간 수 1,281 이 살아남은 경우 그대로: 1,281 → 1,287 이 **직전이 아닌** 값이 된 뒤에도 폐기값이다. 네 자리 이상은 `1,281` 과 `1281` 둘 다(문서에 둘 다 있었다)."""
+    D = _docnum()
+    hist = [{"세그먼트 수": 1300}, {"세그먼트 수": 1287}, {"세그먼트 수": 1281}]       # 새것부터 — 1,281 은 두 번 전이다
+    got = D.replaced_values(hist, {"세그먼트 수": 1300})
+    assert got["세그먼트 수"] == ["1287", "1,287", "1281", "1,281"], got
+    assert D.retired_pattern(got["세그먼트 수"]).findall("구간 1281 → 1,281구간") == ["1281", "1,281"], "콤마 없는 꼴 · 있는 꼴 중 하나를 못 잡는다"
 
 
 def test_a_replaced_value_that_is_another_axis_current_value_is_not_retired():
@@ -347,7 +359,11 @@ def test_the_real_history_knows_the_value_the_last_relock_replaced():
     cur = D.verdicts()
     got = D.replaced_values(hist, {"clear": cur["clear"], "needs_cv": cur["needs_cv"], "blocked": cur["blocked"], "unknown(회색)": cur["unknown"]})
     assert got, "이력이 있는데 대체된 값을 하나도 못 읽었다 — 판정이 한 번도 안 움직였을 리 없다"
-    assert all(len(v) == 1 for v in got.values()), got
+    # ★ 실물에서 **옛 구간 수 1,281 이 폐기값이다**(2026-11-04 에 1,287 로 바뀜 — 직전 값이 아닌데 살아남았던 그 값) — 이력 전체를 쓴다는 것의 증거
+    n_hist = [h["세그먼트 수"] for h in hist if h.get("세그먼트 수") is not None]
+    if 1281 in n_hist and cur["n"] != 1281:
+        got_n = D.replaced_values(hist, {"세그먼트 수": cur["n"]}).get("세그먼트 수", [])
+        assert "1,281" in got_n and "1281" in got_n, got_n
 
 
 _GIT_S = 60       # ★ 시한 없는 기다림은 빨강을 무한 대기로 바꾼다(`test_no_unbounded_waits`) — 임시 저장소의 git 도 시한을 건다

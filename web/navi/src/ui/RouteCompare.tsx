@@ -59,7 +59,7 @@ export interface RouteOption {
   /** 통행 규칙 요약(`domain/rules.ts ruleSummary`). 없으면 null */
   rules: string | null;
   /** 경로 **위** 경고(PLAN #78 ③) — 어느 구간이 어떻게 위험한지. 줄은 `RISK_LINES_MAX` 까지 · 넘치면 `more` 수만 */
-  risks: { lines: string[]; more: number };
+  risks: { lines: string[]; more: number; /** 보이는 줄 중 **끝에서 몇 줄이** 상대 경로와 공통인가 — 흐리게 그린다(없으면 0 · 상대가 없으면 undefined) */ shared?: number };
   /** 경로 주변 사정 요약(§216-3) — 과속방지턱 · 단속카메라 · 보호구역 시설. 없으면 null */
   around: string | null;
 }
@@ -190,7 +190,7 @@ function cells(o: RouteOption): Record<Section, ReactNode> {
     around: o.around ? <Block k="경로 주변" v={o.around} /> : null,
     risks: o.risks.lines.length > 0 ? (
       <div style={riskBox}>
-        {o.risks.lines.map((l) => <div key={l}>{l}</div>)}
+        {o.risks.lines.map((l, i) => <div key={l} style={i >= o.risks.lines.length - (o.risks.shared ?? 0) ? { opacity: 0.55 } : undefined}>{l}</div>)}
         {o.risks.more > 0 && <div style={{ color: C.panelSub }}>외 {o.risks.more}곳</div>}
       </div>
     ) : null,

@@ -167,6 +167,9 @@ def main() -> None:
         # profile 이 null 인 차는 기준차 전폭을 쓴다 — 그것이 소방청 기준값이고,
         # 그 사실이 `match`/`note` 에 적혀 화면까지 간다(§212).
         width = float(p.get("width_m", spec["width_m"]))
+        # ★ 2026-11-12 (DECISIONS §725 · B2). **이 폭이 어디서 온 값인지**를 같이 낸다. 열 차종이 전부 2.5(요구 3.0)인 것은 규격이라 사실이지만(§253 — 오진이 한 번 났다) 그 중 **넷은 이 차종의
+        #   값이 아니라 기준차 값을 대신 쓴 것**이다(profile 이 null: 구급차 · 직진형 사다리차 53m · 조연차). 화면은 둘을 같은 숫자로 보였다 — 출처가 없으면 둘이 구별되지 않는다.
+        basis = "profile" if "width_m" in p else "reference"
         unknown = bool(f.get("turnUnknown", False))
         radius = None if unknown else radii.get(str(f.get("profile", "")))
         full = None if unknown or f.get("match") != "확정" else complete.get(str(f.get("profile", "")))
@@ -179,6 +182,9 @@ def main() -> None:
             "width_m": width,
             "clearance_m": clearance,
             "required_width_m": round(width + clearance, 2),
+            "width_basis": basis,                  # profile = 이 차종의 제원 값 · reference = 제원이 없어 기준차 값을 대신 쓴다
+            "width_note": (f"전폭 {width:g}m + 여유 {clearance:g}m — 이 차종의 제원 값" if basis == "profile"
+                           else f"전폭 미상 — 기준차 {width:g}m + 여유 {clearance:g}m 를 대신 쓴다"),
             # ── 참고값. 판정에 안 쓴다 ─────────────────────────
             "turn_grade": f.get("grade"),          # 여유 · 주의 · 미판정
             "turn_unknown": unknown,
