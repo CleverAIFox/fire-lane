@@ -84,15 +84,15 @@ export const MAP = {
   bg: [232, 228, 218] as [number, number, number],
   sidewalk: "#d6d0c3",
   /** 토지이용 면(PLAN 행 144(닫힘)) — 공원 · 녹지 · 유원지(`green`)와 광장 · 공공공지(`plaza`). 배경보다 살짝만 다르다 — 길과 건물을 못 이기게 */
-  landGreen: "#cfe0c3",
-  landPlaza: "#dedacd",
-  /** 바탕 면(DECISIONS §768 · PLAN 행 231) — **배경과 거의 같다**(눈에 안 띈다: 바탕이지 정보가 아니다). 판정 색 · 아이콘 · 길 · 건물이 항상 위다 */
-  landDaeji: "#ebe7dd",
-  landInst: "#dcd8d2",
-  landForest: "#dbe3cf",
-  landFarm: "#e1e5cf",
-  landWater: "#d3dfe3",
-  landPaved: "#e0dcd0",
+  landGreen: "#c8d9b9",
+  landPlaza: "#d9d4c3",
+  /** 바탕 면(DECISIONS §768 · §775 · PLAN 행 231) — 배경과 **구분은 되되**(ΔE76 ≥ 6) 판정 색이 이 위에서도 배경 위 대비의 83% 이상을 지킨다(`tools/themecheck.py` 가 문다). 판정 색 · 아이콘 · 길 · 건물이 항상 위다 */
+  landDaeji: "#dcd6c3",
+  landInst: "#d8d2c6",
+  landForest: "#ccd8bb",
+  landFarm: "#d3d9b3",
+  landWater: "#c8d7da",
+  landPaved: "#dad3c3",
   /** 캠퍼스(대학) 경계선 — 칠하지 않고 선만 */
   landCampus: "#b7b09f",
   asphalt: "#6f7680",

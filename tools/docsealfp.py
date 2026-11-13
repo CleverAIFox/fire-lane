@@ -99,7 +99,7 @@ KEY_VIEW = ("sources.yaml",)
 # ★ 지문 공식의 판. 공식이 바뀌면 그 공식이 **관점을 바꾼 파일을 지목하는** 도장이
 #   무효가 되므로, 그때는 「옛 공식에서 유효했는가」를 증명해 옮긴다(§297 · §298).
 #   이 값이 도장에 박혀 있어 **어느 공식으로 찍힌 도장인지** 나중에 갈릴 수 있다.
-FP_METHOD = "view-v2"
+FP_METHOD = "view-v3"
 _STEP = re.compile(r'^\s*(?:step|note)\s+"([^"]+)"', re.M)
 _YKEY = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*):", re.M)
 
@@ -195,10 +195,6 @@ def view_v1(path: str, raw: bytes, others: list[str], text: str = "") -> bytes:
     return "\n".join(_STEP.findall(txt)).encode("utf-8")
 
 
-#: 옛 관점 판들. **새것이 앞이다.** `docseal.survey` 가 `legacy` 지문을 여기서 낸다.
-LEGACY_VIEWS = (view_v1,)
-
-
 # ── 경로 공식 (2026-10-08 · DECISIONS §437-4 · PLAN #163) ─────────
 #: 절 본문에서 코드 쪽을 뽑는 정규식. 백틱 안의 **경로꼴**만 본다.
 #: ★ 머리가 `[\w]` 였다 — `.devcontainer/` · `.githooks/` · `.github/**` 를
@@ -216,8 +212,8 @@ PATH_V1 = re.compile(r"`([\w][\w./-]*\.(?:py|sh|ts|tsx|js|mjs|json|ya?ml))(?:::[
 LEGACY_PATHS = (PATH_V1,)
 
 
-def view(path: str, raw: bytes, others: list[str], text: str = "") -> bytes:
-    """절이 **주장하는 것만** 지문에 넣는다.  (DECISIONS §297 · PLAN W13-10)
+def view_v2(path: str, raw: bytes, others: list[str], text: str = "") -> bytes:
+    """**옛 관점(`view-v2`)** — 절이 **주장하는 것만** 지문에 넣는다.  (DECISIONS §297 · PLAN W13-10)
 
     ★ 실측 2026-09-29 — `verify.sh` 의 `COV_MIN` 을 34 에서 35 로 **한 글자**
       바꾸자 27절의 도장이 한꺼번에 무효가 됐다. 그 절들이 주장하는 것은
@@ -277,6 +273,72 @@ def view(path: str, raw: bytes, others: list[str], text: str = "") -> bytes:
         return _funcs(txt, named).encode("utf-8")
 
     return raw
+
+
+# ── 관점 v3 (2026-11-13 · DECISIONS §776) ───────────────────────────
+#: 한 절이 이만큼 넘는 파일을 지목하면 **색인 표**다 — 표 행에서 **한 번만** 언급된 경로는 「그 파일이 있다」는 지목이지 내용 주장이 아니다.
+BIG_SECTION = 20
+_RATCHETS = re.compile(r"^RATCHETS\s*=\s*\{(.*?)\}", re.S | re.M)
+_RATLINE = re.compile(r"^([A-Z][A-Z0-9_]*)\s*=\s*[-\d_.]+(\s*#.*)?$")
+
+
+def _narrative(path: str, others: list[str], text: str) -> bool:
+    """색인 표(지목 파일 > `BIG_SECTION`)에서 표 행 **한 줄에** 한 번만 나온 경로인가. 둘 이상이거나 표 밖이면 아니다 — 그 절은 그 파일의 내용을 말한다."""
+    if len(others) <= BIG_SECTION:
+        return False
+    hits = [ln for ln in text.split("\n") if re.search(rf"`{re.escape(path)}(?:::[\w.]+)?`", ln)]
+    return len(hits) == 1 and hits[0].lstrip().startswith("|") and len(re.findall(rf"`{re.escape(path)}(?:::[\w.]+)?`", text)) == 1
+
+
+def _mask_ratchets(raw: bytes, text: str) -> bytes:
+    """도구가 `RATCHETS` 로 선언한 **기계가 다시 쓰는 수**(`ratchet.py --write`)를 가린다 — 절이 그 이름을 **안 들었을 때만**. 이름을 든 절은 그 수를 말하는 것이다."""
+    src = raw.decode("utf-8", errors="replace")
+    m = _RATCHETS.search(src)
+    if not m:
+        return raw
+    named = {n for n in re.findall(r'"([A-Z0-9_]+)"\s*:', m.group(1)) if n not in text}
+    out = []
+    for ln in src.split("\n"):
+        mm = _RATLINE.match(ln)
+        out.append(f"# 래칫 수 {mm.group(1)}" if mm and mm.group(1) in named else ln)
+    return "\n".join(out).encode("utf-8")
+
+
+def _lock_view(raw: bytes, text: str) -> bytes:
+    """잠금 json(`package-lock.json`) — 절이 **이름을 든 패키지의 항목만**. 이름을 하나도 안 들었으면 「잠금이 있다」 뿐이다(의존성 PR 이 절을 안 죽인다)."""
+    import json as _json
+    try:
+        pk = _json.loads(raw.decode("utf-8")).get("packages", {})
+    except ValueError:
+        return raw
+    # ★ 「이름을 든다」 = 백틱 이름이 **버전(x.y.z)을 말하는 줄**에 있다. 산문 속 낱말(`vite` 가 뭘 하는지)이나 사건의 위치(「잠금이 dev 에 들어왔다」)는 판을 주장하지 않는다.
+    said = {n for ln in text.split("\n") if re.search(r"\b\d+\.\d+\.\d+\b", ln) for n in re.findall(r"`([@\w./-]+)`", ln)}
+    named = {key: val for key, val in pk.items() if key.rsplit("node_modules/", 1)[-1] in said}
+    if not named:
+        return b"package-lock.json: no named package"
+    return _json.dumps(named, sort_keys=True, ensure_ascii=False).encode("utf-8")
+
+
+def view(path: str, raw: bytes, others: list[str], text: str = "") -> bytes:
+    """현행 관점(`view-v3`) — v2 에 **기계가 쓰는 바이트를 가리는** 셋을 더했다(DECISIONS §776 · §298 의 기준 「기계가 매번 다시 쓰는가」).
+
+    ① 색인 표에서 한 번만 나온 경로 → 내용을 안 본다(있다는 것만 · 지워지면 지목 집합이 바뀌어 죽는다)
+    ② 잠금 json → 절이 이름을 든 패키지의 항목만
+    ③ `RATCHETS` 수 → 절이 이름을 안 든 것만 가린다
+    ★ 좁혀진 만큼 약해졌다 — 약해지는 자리는 ①(한 번 언급된 색인 파일의 **내용 변화**)뿐이고, 나머지는 절이 말하지 않은 바이트만 뺀다.
+    """
+    if _narrative(path, others, text):
+        return ("exists: " + path).encode("utf-8")
+    if path.endswith("package-lock.json"):
+        return _lock_view(raw, text)
+    if path.endswith(".py"):
+        raw = _mask_ratchets(raw, text)
+    return view_v2(path, raw, others, text)
+
+
+#: 옛 관점 판들. **새것이 앞이다.** `docseal.survey` 가 `legacy` 지문을 여기서 낸다 — 옛 공식에서 유효했던 도장은 내용이 안 움직이면 그대로 유효하다.
+LEGACY_VIEWS = (view_v2, view_v1)
+
 
 
 def digest(text: str, files: list[str], vf=view) -> str:

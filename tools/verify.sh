@@ -1044,14 +1044,14 @@ step "래칫 정합" uv run python tools/ratchet.py
 #     "WebGL 은 스크립트가 못 본다. 사람이 눈으로 확인할 것"
 #   ★ `--split` 은 소스만 보므로 어디서나 돈다. 공유 지도 층 수가 래칫이다 —
 #     내비와 관제가 같은 바탕을 깔고 있는 정도이고, 그것이 「닮았다」의 실측이다.
-# ★ 2026-09-29 (§313). 아래 여섯 단계에 `ci-exempt` 를 안 적는다. `gate_parity` 는
-#   **검사기 단위**로 보는데 `uicheck` · `naviweight` · `mergecheck` 셋 다 CI 가
-#   이미 돈다(`--split` · 인자 없는 꼴). 부르는 인자가 로컬에만 있는 것은 면제가
-#   아니다 — 적으면 **죽은 면제**가 되고, 죽은 면제는 「있다고 적혀 있으면 사람이
-#   안 본다」(그 도구의 말).
+# ★ 2026-09-29 (§313). 아래 단계에 `ci-exempt` 를 안 적는다 — `gate_parity` 는 **검사기 단위**로 보고
+#   `uicheck` · `naviweight` · `mergecheck` · `themecheck` 모두 CI 가 이미 돈다. 인자가 로컬에만 있는 것은
+#   면제가 아니고, 적으면 **죽은 면제**가 된다.
 scope "web/navi/src/* tools/*"
 # asks: 소스에서 관제와 내비가 다른 화면인가
 step "화면 분리" uv run python tools/uicheck.py --split
+scope "web/navi/src/* tools/*"
+step "화면 구분" uv run python tools/themecheck.py
 # ★ 2026-09-29 (§313). **관문이 빌드본을 직접 짓는다.** 종전에는 「빌드본이 없으면
 #   빨간불」로 뒀는데, `web/navi/dist/` 는 `.gitignore` 라 **새 클론이 무조건 빨갛다.**
 #   그러면 사람이 그 빨강을 「원래 그런 것」으로 배우고, 그때 진짜 빨강도 같이 묻힌다.

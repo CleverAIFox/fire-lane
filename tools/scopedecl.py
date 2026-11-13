@@ -131,7 +131,7 @@ NO_DECL = 146
 # ★ 2026-10-11 — 75 → 76 (DECISIONS §474). **조이는 쪽이다.** 자기검사가
 #   하나 늘었다 — `tools/srgb.py`(색 공식의 집)가 제 자기검사를 들고 왔다.
 # ★ 2026-11-02 — 91 → 92 (DECISIONS §600). **조이는 쪽이다.** 자기검사가 하나 늘었다 — `tools/dmstree.py`(트리 지문 · `dms.py --selftest` 가 끌어온다).
-SELFTEST_MIN = 95
+SELFTEST_MIN = 96
 
 #: `tools/ratchet.py` 가 이 둘을 **조이는 쪽으로만** 고쳐 적는다(§309).
 #: 사람이 위 두 수를 받아적지 않는다 — 판정은 여전히 `judge()` 가 한다.

@@ -141,6 +141,7 @@ LAYERS: dict[tuple[str, str], tuple[str, str]] = {
     ("tools/srccov.py", ""): ("ready", _SLOW2),
     ("tools/suppress.py", ""): ("ready", _BUDGET),
     ("tools/svg_fit.py", ""): ("ready", _BUDGET),
+    ("tools/themecheck.py", ""): ("ready", _BUDGET),
     ("tools/toolclass.py", ""): ("ready", _BUDGET),
     ("tools/toolindex.py", "--check"): ("ready", _BUDGET),
     ("tools/treecheck.py", ""): ("ready", _SLOW3),
