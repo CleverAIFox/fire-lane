@@ -232,6 +232,7 @@ def selftest() -> int:
 
     print("themecheck 자기검사")
     expect("정상 입력은 조용하다", land_faults("밝", bg, land, 6) + verdict_faults("밝", bg, land, v, 80), False)
+    expect("하한과 같은 값은 조용하다(경계 — `<` 이지 `<=` 가 아니다)", land_faults("밝", bg, land, de("#c8d9b9", bg)), False)
     # ① 바탕을 배경색과 같게 — 구분이 안 되면 울어야 한다
     same = dict(land, landDaeji="rgb(232,228,218)")
     expect("바탕 면을 배경색과 같게(밝은 화면)", land_faults("밝", bg, same, 6), True)
@@ -248,8 +249,27 @@ def selftest() -> int:
     expect("선언 없는 새 라벨 층", role_faults({"lbl-new"}, {"lbl-bldg"}, ROLES), True)
     expect("끔 선언인데 NAVI_OFF 에 없다", role_faults(set(ROLES), {"lbl-poi"}, ROLES), True)
     expect("선언과 NAVI_OFF 가 맞으면 조용하다", role_faults(set(ROLES), {"lbl-bldg", "lbl-poi"}, ROLES), False)
+    # 선언한 하한이 실물보다 높으면 실제 트리가 운다 — 하한을 몰래 올려도 이 자기검사가 잡는다(변이: 하한 6 → 7 이 살아남았었다)
+    m = measure()
+    got = (floors_ok(m, LAND_DE_MIN, VERDICT_RETAIN_PCT) and not floors_ok(m, LAND_DE_MIN + 10, VERDICT_RETAIN_PCT)
+           and not floors_ok(m, LAND_DE_MIN, VERDICT_RETAIN_PCT + 50))   # 둘 중 하나만 틀려도 운다
+    ok &= got
+    print(f"  {'✓' if got else '✗'} 선언한 하한이 실측 안이다 — ΔE {m['LAND_DE_MIN']:.1f} ≥ {LAND_DE_MIN} · 유지 {m['VERDICT_RETAIN_PCT']:.1f}% ≥ {VERDICT_RETAIN_PCT}%")
+    # 종료 코드의 두 갈래 — 성공은 0 · 실패는 1 (변이: main 의 성공 반환 0 → 1 이 살아남았었다)
+    good = exit_code([]) == 0 and exit_code(["x"]) == 1
+    ok &= good
+    print(f"  {'✓' if good else '✗'} 종료 코드 — 조용하면 0 · 울면 1")
     print("✓ 자기검사 통과" if ok else "✗ 자기검사 실패")
-    return 0 if ok else 1
+    return exit_code([] if ok else ["selftest"])
+
+
+def floors_ok(m: dict[str, float], de_min: float, pct: float) -> bool:
+    """선언한 두 하한이 실측 안인가(둘 다)."""
+    return math.floor(m["LAND_DE_MIN"]) >= de_min and math.floor(m["VERDICT_RETAIN_PCT"]) >= pct
+
+
+def exit_code(bad: list[str]) -> int:
+    return 1 if bad else 0
 
 
 def main() -> int:
@@ -266,9 +286,9 @@ def main() -> int:
         print("\n✗ 화면 구분")
         for b in bad:
             print(f"  · {b}")
-        return 1
+        return exit_code(bad)
     print("✓ 화면 구분")
-    return 0
+    return exit_code(bad)
 
 
 if __name__ == "__main__":
