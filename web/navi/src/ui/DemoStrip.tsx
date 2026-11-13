@@ -56,8 +56,9 @@ export function DemoStrip(p: Props) {
       )}
       {(ui.badge || ui.button) && (
         <div data-testid="demo-strip" style={{
-          position: "absolute", zIndex: 9, left: "50%", transform: "translateX(-50%)",
-          ...(p.phase === "guiding" ? { top: S.guideBarH + 8 } : { bottom: 14 }), display: "flex", gap: 6, alignItems: "center",
+          position: "absolute", zIndex: 9,
+          // ★ 주행 중에는 **왼쪽 위**(막대 아래)로 비킨다 — 앞을 보는 카메라에서 먼 목적지 P 와 그 알약 문구(「대체 접근 지점」)가 가운데 위쪽에 오는데 가운데 띠가 그것을 가렸다(DECISIONS §767)
+          ...(p.phase === "guiding" ? { top: S.guideBarH + 8, left: 14 } : { bottom: 14, left: "50%", transform: "translateX(-50%)" }), display: "flex", gap: 6, alignItems: "center",
           background: ui.badge ? C.warn : C.dark, color: ui.badge ? "#1b1203" : C.darkInk,
           borderRadius: 12, padding: "7px 12px", fontSize: F.small, fontFamily: F.family, fontWeight: 800,
         }}>
