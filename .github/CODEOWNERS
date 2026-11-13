@@ -59,6 +59,7 @@
 /sources.yaml            @CleverAIFox           # !strict
 /src/firelane/           @CleverAIFox           # !strict
 /data/                   @CleverAIFox           # !strict
+/ops-worker/             @CleverAIFox
 /docs/MASTER.md          @CleverAIFox           # !strict
 /docs/PLAN.md            @CleverAIFox           # !strict
 /docs/DECISIONS.md       @CleverAIFox           # !strict

@@ -52,6 +52,18 @@ def split(files: list[str], seconds: dict[str, float], n: int) -> list[list[str]
     return [sorted(b, key=lambda s: s.encode()) for b in bins]
 
 
+def defects(files: list[str], parts: list[list[str]], seconds: dict[str, float], ratio: float = 2.0) -> list[str]:
+    """조각의 **결함** — 빠진 파일 · 겹친 파일 · 장부 시간이 `ratio` 배 넘게 치우친 것. 비어 있으면 깨끗하다."""
+    flat = [f for p in parts for f in p]
+    out = [f"빠짐 {f}" for f in sorted(set(files) - set(flat))]
+    out += [f"겹침 {f}" for f in sorted({f for f in flat if flat.count(f) > 1})]
+    med = statistics.median(seconds.values()) if seconds else 1.0
+    sums = [sum(seconds.get(Path(f).name, med) for f in p) for p in parts]
+    if sums and max(sums) > ratio * min(sums):
+        out.append(f"치우침 {[round(x) for x in sums]}")
+    return out
+
+
 def report(files: list[str], seconds: dict[str, float], n: int) -> str:
     med = statistics.median(seconds.values()) if seconds else 1.0
     bins = split(files, seconds, n)

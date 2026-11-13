@@ -97,6 +97,7 @@ LAYERS: dict[tuple[str, str], tuple[str, str]] = {
     ("tests/test_contract.py", "-v"): ("ready", _BUDGET),
     ("tests/test_ownership.py", "-q"): ("ready", _BUDGET),
     ("tools/actionpin.py", ""): ("ci", _NET),
+    ("tools/testsplit.py", "--part $PART --of 4"): ("ci", _AXIS_T),
     ("tools/archcost.py", ""): ("ready", _BUDGET),
     ("tools/argcheck.py", ""): ("ready", _BUDGET),
     ("tools/clearance_cross.py", ""): ("ci", _WRITES2),

@@ -39,3 +39,12 @@ def test_the_ledger_is_in_the_documented_shape():
     d = json.loads((ROOT / "data" / "golden" / "ci_testtimes.json").read_text(encoding="utf-8"))
     assert set(d) == {"_", "seconds"} and all(isinstance(v, (int, float)) and v >= 0 for v in d["seconds"].values())
     assert "DECISIONS §760" in d["_"], "장부가 만든 법을 안 적었다"
+
+
+def test_the_judge_is_quiet_on_a_clean_split_and_loud_on_a_synthetic_defect():
+    files, sec = ts.test_files(), ts.load_seconds()
+    parts = ts.split(files, sec, 4)
+    assert not ts.defects(files, parts, sec)                                       # 깨끗하다 — 비어 있다
+    assert ts.defects(files, [parts[0][1:], *parts[1:]], sec)                      # 합성 결함: 한 파일이 빠졌다
+    assert ts.defects(files, [parts[0] + parts[1][:1], *parts[1:]], sec)           # 합성 결함: 한 파일이 겹쳤다
+    assert ts.defects(files, [parts[0] + parts[1] + parts[2], parts[3], [], []], sec)   # 합성 결함: 한 조각이 몰렸다

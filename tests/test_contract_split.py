@@ -22,6 +22,7 @@ import sys
 from pathlib import Path
 
 import pytest
+import testsplit as ts
 from ruamel.yaml import YAML
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -87,3 +88,12 @@ def test_the_solo_exception_ends_when_a_second_person_appears():
     assert len(owners) == 1, (
         f"CODEOWNERS 의 소유자가 {sorted(owners)} 로 둘 이상이다 — `part/**` 직접 푸시 예외(DECISIONS §633-4)의 종료 조건이다. "
         "예외 절을 닫고 PR 경로로 간다(룰셋은 이미 서 있다).")
+
+
+def test_the_workflow_pieces_pass_the_same_judge_the_tool_uses():
+    """워크플로가 부르는 줄이 낸 조각을 `testsplit.defects` 로 민다 — 깨끗하면 비고 합성 결함이면 운다."""
+    jobs = _split_or_skip()
+    pieces = [_piece(jobs, p) for p in jobs["contract-tests"]["strategy"]["matrix"]["part"]]
+    files, sec = ts.test_files(), ts.load_seconds()
+    assert not ts.defects(files, pieces, sec)
+    assert ts.defects(files, [pieces[0][1:], *pieces[1:]], sec)
