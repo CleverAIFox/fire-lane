@@ -59,6 +59,32 @@ from firelane.seg.params import EMD_CD
 #   원의 반경 정본은 web/config.js 의 markers[].cover.radius 다.
 #   판정 임계(`CCTV_RANGE`)의 정본은 seg/params.py 다. 같은 숫자를
 #   세 곳에 두면 반드시 한 곳만 고치고 잊는다.
+
+#: ★ 2026-11-13 (DECISIONS §776 · PLAN #232). 도로명주소 건물 윤곽이 **안 가진** 건물 — 건축물대장 윤곽(`AL_D010`)에만 있는 동명동 323면. **표시용으로 더한다.**
+#: 판정 입력(`building_5186.gpkg`)은 그대로다 — 화면에만 뜨고 판정은 이 건물을 안 본다(그래서 「저 건물 앞은 왜 빨강」에 답할 수 없는 건물이다 · 목록은 DECISIONS §776).
+GAP_BUILDINGS = ROOT / "data" / "extra" / "bldg_gap_dongmyeong.geojson"
+GAP_ID0 = 100_000        # 발행 건물 번호(20~38,762)와 안 겹치는 자리
+
+
+def _add_gap_buildings(b: gpd.GeoDataFrame, road) -> gpd.GeoDataFrame:
+    """빠진 건물 면을 더한다. 파일이 없으면 그대로 돌려준다(건너뛰었다고 찍는다). 이미 10% 넘게 덮인 면은 뺀다 — 출처가 나중에 그 건물을 갖게 되면 겹쳐 그리지 않는다. **절반 넘게 도로면 위인 면도 뺀다**(도로 위 건물 상한 · `test_building_road_overlap` — 복개 · 측량 차이를 새로 들이지 않는다)."""
+    if not GAP_BUILDINGS.is_file():
+        print("  ! 빠진 건물 파일 없음 — 더하지 않는다")
+        return b
+    x = gpd.read_file(GAP_BUILDINGS).to_crs(b.crs)
+    cover = x.geometry.intersection(b.geometry.union_all()).area / x.geometry.area
+    on_road = x.geometry.intersection(road).area / x.geometry.area
+    x = x[(cover < 0.1) & (on_road <= 0.5)].copy()
+    x["flo"] = x.flo.astype(float).clip(lower=1)
+    x["h"] = (x.flo * 3.3).round(1)
+    x["BUL_MAN_NO"] = range(GAP_ID0, GAP_ID0 + len(x))
+    x["BULD_NM"] = None
+    if "z" in b.columns:       # 지반 높이 — 가장 가까운 발행 건물의 값(60m 안). 없으면 비워 둔다
+        near = gpd.sjoin_nearest(x[["geometry"]], b[["z", "geometry"]], max_distance=60, how="left")
+        x["z"] = near.groupby(level=0).z.first()
+    print(f"  빠진 건물 {len(x)}면 더함(표시용 · 판정 입력 불변)")
+    return pd.concat([b, x[[c for c in b.columns if c in x.columns]]], ignore_index=True)
+
 PREC = dict(driver="GeoJSON", COORDINATE_PRECISION=6)
 # ★ 건물 발행 예산(§181-2). 스코프 판 2.18MB · web/data 32MB / 상한 40MB 에서 잡았다.
 # ★ 2026-09-22 (§218-3) — 6.0 **MiB** 였는데 커밋 정책(`tools/commit_policy.py` MAX_FILE_MB)은 5.0 **MB**
@@ -219,6 +245,7 @@ def main():
     #   틀린 것이라, 자르면 건물이 사라진다. 판정 입력(`building_5186.gpkg`)은 그대로다.
     from firelane import publish_basemap as _bm
     _road = _bm.union("road_area", move)
+    b = _add_gap_buildings(b, _road)
     # ★ 2026-09-22 (§218) — 발행된 도로면은 `SIMPLIFY_M` 만큼 단순화돼 경계가 그만큼 움직인다.
     #   원본 도로면 · 1% 문턱으로 빼면 화면에서 1~5% 겹침이 161동 남았다(`test_building_road_overlap`).
     #   그 여유만큼 넓힌 도로면으로 재고 빼며, 문턱은 0.2% 로 낮춘다(스치는 것도 깎는다).
