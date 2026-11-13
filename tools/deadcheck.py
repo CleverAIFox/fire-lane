@@ -73,11 +73,28 @@ def src(p: Path) -> str:
     return p.read_text(encoding="utf-8", errors="replace")
 
 
+_TREES: dict[tuple[str, int, int], ast.Module | None] = {}
+_WALKED: dict[int, tuple[ast.AST, list[ast.AST]]] = {}
+
+
 def tree(p: Path) -> ast.Module | None:
-    try:
-        return ast.parse(src(p))
-    except SyntaxError:
-        return None
+    st = p.stat()
+    key = (str(p), st.st_mtime_ns, st.st_size)
+    if key not in _TREES:
+        try:
+            _TREES[key] = ast.parse(src(p))
+        except SyntaxError:
+            _TREES[key] = None
+    return _TREES[key]
+
+
+def _walk(n: ast.AST):
+    """`ast.walk` 와 같은 결과 — 모듈 뿌리만 한 번 펼쳐 기억한다(프로브마다 같은 나무를 다시 걷던 비용)."""
+    if not isinstance(n, ast.Module):
+        return ast.walk(n)
+    if id(n) not in _WALKED or _WALKED[id(n)][0] is not n:
+        _WALKED[id(n)] = (n, list(ast.walk(n)))
+    return iter(_WALKED[id(n)][1])
 
 
 # ── ① 빈 그물 ───────────────────────────────────────────────────
@@ -156,14 +173,14 @@ def _entry_reads(fn: ast.AST):
 
     # 컨테이너 — `DS = led["datasets"]` · `ds = y.get("datasets") or {}`
     for _ in range(3):
-        for n in ast.walk(fn):
+        for n in _walk(fn):
             if isinstance(n, ast.Assign) and len(n.targets) == 1 \
                     and isinstance(n.targets[0], ast.Name) and (b := blk_of(n.value)):
                 cont[n.targets[0].id] = b
     # 묶음 — (이름, 블록, 범위, 묶은 노드). 루프·내포는 제 몸통이 범위다.
     binds: list[tuple[str, str, list, ast.AST | None]] = []
     assigned: dict[str, set] = {}
-    for n in ast.walk(fn):
+    for n in _walk(fn):
         if isinstance(n, ast.For):
             if lv := loop_var(n.iter, n.target):
                 binds.append((*lv, n.body, n))
@@ -311,7 +328,7 @@ def probe_empty_net(root: Path = ROOT) -> None:
             rel = p.relative_to(root).as_posix()
         except ValueError:
             rel = str(p)
-        for fn in ast.walk(t):
+        for fn in _walk(t):
             if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 continue
             for ln, blk, key in _entry_reads(fn):
@@ -418,7 +435,7 @@ def probe_handlist(root: Path = ROOT) -> None:
         t = tree(p)
         if t is None:
             continue
-        for node in ast.walk(t):
+        for node in _walk(t):
             if not isinstance(node, ast.Assign):
                 continue
             tgt = node.targets[0]
@@ -486,7 +503,7 @@ def probe_silent_pass(root: Path = ROOT) -> None:
         t = tree(p)
         if t is None:
             continue
-        for fn in [n for n in ast.walk(t) if isinstance(n, ast.FunctionDef)]:
+        for fn in [n for n in _walk(t) if isinstance(n, ast.FunctionDef)]:
             name = fn.name
             boolish = name.startswith(("check_", "verify_", "is_ok"))
             is_check = name.startswith(("test_", "check_", "cmd_", "verify_", "is_ok")) \
@@ -494,10 +511,10 @@ def probe_silent_pass(root: Path = ROOT) -> None:
             if not is_check:
                 continue
             last = fn.body[-1] if fn.body else None
-            for node in ast.walk(fn):
+            for node in _walk(fn):
                 if isinstance(node, ast.Try):
                     tail = node is last
-                    asserts = any(_asserts(x) for b in node.body for x in ast.walk(b))
+                    asserts = any(_asserts(x) for b in node.body for x in _walk(b))
                     for h in node.handlers:
                         ex = h.type
                         nm = getattr(ex, "id", "") or getattr(getattr(ex, "attr", None), "__str__", lambda: "")()
@@ -872,7 +889,7 @@ _WALKS = {"rglob", "glob", "iterdir", "walk"}
 def _scans(t: ast.Module):
     """모듈 → (줄, 함수, 훑는 폴더 집합) — 문장 하나에 한 번."""
     assigns: dict[str, list[ast.AST]] = {}
-    for n in ast.walk(t):
+    for n in _walk(t):
         if isinstance(n, ast.Assign) and len(n.targets) == 1 \
                 and isinstance(n.targets[0], ast.Name):
             assigns.setdefault(n.targets[0].id, []).append(n.value)
@@ -932,11 +949,11 @@ def _scans(t: ast.Module):
         return None
 
     owner: dict[int, str] = {}          # id(문장) → 둘러싼 함수. 안쪽이 이긴다
-    for fn in ast.walk(t):
+    for fn in _walk(t):
         if isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            for x in ast.walk(fn):
+            for x in _walk(fn):
                 owner[id(x)] = fn.name
-    for st in ast.walk(t):
+    for st in _walk(t):
         if not isinstance(st, ast.stmt):
             continue
         if isinstance(st, (ast.For, ast.AsyncFor)):
@@ -953,7 +970,7 @@ def _scans(t: ast.Module):
         roots: set[str] = set()
         seen_any = False
         for h in heads:
-            for x in ast.walk(h):
+            for x in _walk(h):
                 if isinstance(x, ast.Call) and (w := walked(x)) is not None:
                     seen_any = True
                     roots |= w
