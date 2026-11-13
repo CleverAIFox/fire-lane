@@ -168,3 +168,6 @@ fire-lane-*.zip
 # Zm11 — 도구가 만드는 시안(contact_sheet)과 로컬 에이전트 설정은 추적하지 않는다
 data/processed/contact/
 .claude/
+
+# wrangler 캐시 — 계정 토큰이 들어간다
+.wrangler/

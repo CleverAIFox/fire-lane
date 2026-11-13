@@ -13584,6 +13584,118 @@
   },
   "sha": "ace17327d56cc698"
  },
+ "DECISIONS/755": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "ops-worker/src/index.ts",
+   "ops-worker/src/relay.ts",
+   "ops-worker/test/relay.test.ts",
+   "src/firelane/ops/server.py",
+   "tests/test_ops_roster.py",
+   "tests/test_ops_server.py"
+  ],
+  "fp": "view-v2",
+  "kind": "read",
+  "legacy": [
+   "043fdd23ff6fb718",
+   "90ca272b264471af",
+   "a0b7f9869eb1ad9d",
+   "cd58f5c6646716ae"
+  ],
+  "parts": {
+   "ops-worker/src/index.ts": "96c749d2cffe5c12",
+   "ops-worker/src/relay.ts": "8b5c2d336b134a47",
+   "ops-worker/test/relay.test.ts": "1bd3ea37d440305d",
+   "src/firelane/ops/server.py": "3d1367ea7fb3b788",
+   "tests/test_ops_roster.py": "886b13d3efc447f3",
+   "tests/test_ops_server.py": "3c6e0bcbd70adcc4",
+   "본문": "6f801752af315f4e"
+  },
+  "sha": "cd58f5c6646716ae"
+ },
+ "DECISIONS/756": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "sources.yaml",
+   "tests/test_declaration_sync.py",
+   "tests/test_plan_blocks.py",
+   "tests/test_plan_tables.py",
+   "tools/planclose.py"
+  ],
+  "fp": "view-v2",
+  "kind": "read",
+  "legacy": [
+   "6d38fd0025aaf7ee",
+   "7b4addbb5878675b",
+   "a80516d7f2c52d81",
+   "bc538afc3e1d6f6a"
+  ],
+  "parts": {
+   "sources.yaml": "1f51dbbff5df08eb",
+   "tests/test_declaration_sync.py": "600ece1e5a10305d",
+   "tests/test_plan_blocks.py": "9704e90048e64095",
+   "tests/test_plan_tables.py": "b07f689609e8c4b2",
+   "tools/planclose.py": "b57e85539007ee27",
+   "본문": "6414b0434bc302ff"
+  },
+  "sha": "bc538afc3e1d6f6a"
+ },
+ "DECISIONS/758": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_plan_blocks.py",
+   "tools/closewords.py",
+   "tools/planclose.py",
+   "tools/scopecheck.py"
+  ],
+  "fp": "view-v2",
+  "kind": "read",
+  "legacy": [
+   "10a25f6cf20651dc",
+   "132abcb1b11b4951",
+   "9856a7810dbbdbe5",
+   "b675bdbaf6cbfcad"
+  ],
+  "parts": {
+   "tests/test_plan_blocks.py": "9704e90048e64095",
+   "tools/closewords.py": "2a8ae34146c1b5a3",
+   "tools/planclose.py": "b57e85539007ee27",
+   "tools/scopecheck.py": "3a9ea0ab993f422b",
+   "본문": "935da628c07c3238"
+  },
+  "sha": "b675bdbaf6cbfcad"
+ },
+ "DECISIONS/760": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   ".github/workflows/contract.yml",
+   "tests/test_contract_split.py",
+   "tests/test_testsplit.py",
+   "tools/testpick.py",
+   "tools/testsplit.py"
+  ],
+  "fp": "view-v2",
+  "kind": "read",
+  "legacy": [
+   "0f2798fcc41e05ca",
+   "1b950958e87f66da",
+   "4782d96ed2ecde9f",
+   "85bf85b8eb5d6e74",
+   "8807dadf467f2665",
+   "dea89061faa05b76",
+   "e71ddac462a6d23f",
+   "fb07e9433231c3ed"
+  ],
+  "parts": {
+   ".github/workflows/contract.yml": "8a8643ab0a3db3fb",
+   "tests/test_contract_split.py": "97b0ab5abf3c6b7b",
+   "tests/test_testsplit.py": "ba14771ab7cdf6b0",
+   "tools/testpick.py": "b73d116c4888ff4c",
+   "tools/testsplit.py": "f991d32f22c963ae",
+   "본문": "d7783244145ee755"
+  },
+  "sha": "8807dadf467f2665"
+ },
  "DECISIONS/78": {
   "doc": "docs/DECISIONS.md",
   "files": [
