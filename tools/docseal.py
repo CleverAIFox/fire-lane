@@ -65,6 +65,7 @@ from docsealfp import (
     parts,
     view,
     view_v1,
+    view_v2,
 )
 
 from firelane import gitq
@@ -161,10 +162,8 @@ def refs(text: str, rx: re.Pattern[str] | None = None) -> list[str]:
                    and p in _tracked() and not _generated(p)})
 
 
-
-
 #: 공식 판 → 그 판의 관점 함수. `why` 가 **저장된 판으로** 조각을 다시 낼 때 쓴다.
-FP_VIEWS = {"view-v1": view_v1, FP_METHOD: view}
+FP_VIEWS = {"view-v1": view_v1, "view-v2": view_v2, FP_METHOD: view}
 
 
 def why(now_one: dict, was_one: dict, text: str = "") -> list[str]:
