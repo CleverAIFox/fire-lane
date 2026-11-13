@@ -91,6 +91,15 @@ repos:
         pass_filenames: false
         always_run: true
 
+      # ★ 2026-11-13 (DECISIONS §732 · E1). 한 커밋이 닫는 PLAN 행은 셋까지다 — 넘으면 DECISIONS 에 사유를 더한 줄로 남겨야 통과한다.
+      #   `git diff --cached` 를 보므로 CI 에서는 볼 것이 없다(`commit-policy` 와 같은 사정 — 정본은 이 훅이다).
+      - id: closecap
+        name: 한 커밋이 닫는 행 상한
+        entry: uv run python tools/closecap.py
+        language: system
+        pass_filenames: false
+        always_run: true
+
       # ★ 2026-09-18 실측 결과 **이 도구는 남는다.** 넷 중 둘만 표준 훅으로
       #   옮겨졌다.
       #       BOM      → fix-byte-order-marker   실측 차이 0건 · 이관 완료
