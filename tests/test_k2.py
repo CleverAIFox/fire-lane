@@ -289,9 +289,10 @@ def test_verify_skips_are_real_skips():
     #   지금은 덮개가 둘이다 — `ledger_cross.py`(약속 ↔ 실측 57쌍 4축) ·
     #   `ledger_schema.ratchet_values`(대장에 앉은 못 믿을 값 `UNREADABLE`).
     #   남은 것은 **실물을 읽어야만 아는 드리프트** 하나다.
+    # ★ 2026-11-13 (DECISIONS §773-2). 「중개자 단위 시험」 — 못 도는 조건은 npm 부재 하나다(`npm run relay-test` 를 부른다 · 덮개: CI `contract-fast` 의 같은 단계).
     # ★ 2026-11-12 (DECISIONS §706). 「내비 브라우저 스모크」 — 못 도는 조건은 둘이다: npm 부재 · **헤드리스 크로미움 부재**(`chromium.launch()` 탐침이 거짓일 때).
     #   덮개가 있다 — CI 의 `contract-smoke` 가 같은 명령을 돈다(그래서 `note_hard` 가 아니라 `note`).
-    allowed = {"내비 환경 = CI", "내비 린트", "내비 타입 검사", "내비 단위 시험", "내비 브라우저 스모크",
+    allowed = {"내비 환경 = CI", "내비 린트", "내비 타입 검사", "내비 단위 시험", "내비 브라우저 스모크", "중개자 단위 시험",
                "파이프라인 전량", "golden 판정 불변", "golden 게이트 해제 경로",
                "커밋된 web/data 가 최신인가",
                "취입 계약 실물", "대장 스키마↔실물",
