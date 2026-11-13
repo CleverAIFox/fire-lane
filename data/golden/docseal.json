@@ -12324,10 +12324,10 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "4fcde503524436f1",
-   "859b599b87946051",
-   "8f9d5e7be26cee6b",
-   "ffcda064fe7f3ffc"
+   "6eb904780fce8f1c",
+   "c708f907911a8000",
+   "c872afb6769359d0",
+   "d0d2c65c9c9b7be3"
   ],
   "parts": {
    "data/_acquire.json": "4bb9d4ce09d3215f",
@@ -12335,9 +12335,9 @@
    "src/firelane/extract_decl.py": "6a2e34e026a5dd22",
    "tests/test_extract.py": "b426aaf19ab38887",
    "tools/sizetable.py": "3ebde3c505398820",
-   "본문": "572440af7636ce5a"
+   "본문": "a86d52985a3a26d5"
   },
-  "sha": "4fcde503524436f1"
+  "sha": "d0d2c65c9c9b7be3"
  },
  "DECISIONS/648": {
   "doc": "docs/DECISIONS.md",
@@ -13310,15 +13310,15 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "5401aad74678a5a6",
-   "88286a457c5da295"
+   "102d2d975012ac27",
+   "2ba07fea6d90e9af"
   ],
   "parts": {
    "tools/uicheck.py": "1eb491428e98a0d0",
-   "web/navi/test/roadLabels.test.ts": "6b097cc0ff2485a7",
+   "web/navi/test/roadLabels.test.ts": "7903d08fe4c47e17",
    "본문": "42e4d8c3acd0546d"
   },
-  "sha": "5401aad74678a5a6"
+  "sha": "2ba07fea6d90e9af"
  },
  "DECISIONS/712": {
   "doc": "docs/DECISIONS.md",
@@ -15007,14 +15007,14 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "1055e517e12e6515",
-   "21d73cceb51cde64",
-   "2b140f95bf79a6fa",
-   "38f146fc86325037",
-   "4dfc3ca2bc628109",
-   "810c9c2f3a0bcb38",
-   "a43dff0c5e52b10f",
-   "b79d1f42f6e94f30"
+   "489e23b3cc20f250",
+   "51f5ec85bda94179",
+   "d7b447aea411b11b",
+   "d8d45bdc10e73095",
+   "e8800d320328a897",
+   "edf2e5a2fe843026",
+   "f1e972f9f4e3001b",
+   "f7dff7346f545db5"
   ],
   "parts": {
    ".devcontainer/devcontainer.json": "8263815938062a90",
@@ -15052,9 +15052,9 @@
    "web/navi/src/domain/geo.ts": "5d85f2b7d3043ea8",
    "web/navi/src/domain/vehicle.ts": "5fada2911d0cbec0",
    "web/navi/src/ui/tokens.ts": "99f2021cc1aae95b",
-   "본문": "59311762d00b8836"
+   "본문": "994fc82dc9357ae9"
   },
-  "sha": "1055e517e12e6515"
+  "sha": "f1e972f9f4e3001b"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
@@ -15934,8 +15934,8 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "647b08dceba96e6c",
-   "7748ea1574b1d69e"
+   "6d838f185623a428",
+   "ff469c118d1a9e00"
   ],
   "parts": {
    "tools/sealcov.py": "e3cef685f982d1e7",
@@ -15946,7 +15946,7 @@
    "web/navi/src/app/useDemo.ts": "cede065ec8ecbb41",
    "web/navi/src/components/OpsMap.tsx": "3389712e7a345870",
    "web/navi/src/components/opsLayers.ts": "499f1f2515b51a7d",
-   "web/navi/src/components/roadLabels.ts": "7933c33a6416b20e",
+   "web/navi/src/components/roadLabels.ts": "54399a96aecc3dbe",
    "web/navi/src/config.ts": "1850a74db7fbca0b",
    "web/navi/src/domain/demo.ts": "7d02631bdc30aa1a",
    "web/navi/src/domain/motion.ts": "5a16f8e057e2e774",
@@ -15987,7 +15987,7 @@
    "web/navi/test/precomputed.test.ts": "258c9df1a7f44ca2",
    "web/navi/test/progress.test.ts": "7ba608d12ea14274",
    "web/navi/test/refOpacity.test.ts": "b1b28e5b7c02e678",
-   "web/navi/test/roadLabels.test.ts": "6b097cc0ff2485a7",
+   "web/navi/test/roadLabels.test.ts": "7903d08fe4c47e17",
    "web/navi/test/routeDerive.test.ts": "a88354afaf6b0ee4",
    "web/navi/test/routeSolve.test.ts": "4810c7d678ae7f57",
    "web/navi/test/serviceArea.test.ts": "a498bb29a06f876c",
@@ -15999,7 +15999,7 @@
    "web/navi/test/vehicleParity.ts": "1f2e8cc61e2f8eed",
    "본문": "2cdbdd459cba7952"
   },
-  "sha": "7748ea1574b1d69e"
+  "sha": "6d838f185623a428"
  },
  "MASTER/23": {
   "doc": "docs/MASTER.md",
