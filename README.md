@@ -211,7 +211,7 @@ raw + 코드 + 대장이 있으면 결정론적으로 재생성된다. 걸린 �
 
 강제자  `tests/test_guards.py::test_docs_call_the_entrypoint_through_uv`
 
-### 중개자(관제 ↔ 내비) — `ops-worker/`
+**중개자(관제 ↔ 내비) — `ops-worker/`**
 
 Cloudflare Workers(Durable Object)다. 설계 · 한도 계산은 `DECISIONS §755` · `§763` 이 든다.
 
