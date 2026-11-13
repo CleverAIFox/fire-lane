@@ -665,11 +665,8 @@ step "web/data 용량"    bash -c '
     [ "$SIZE" -lt "$LIM" ]'
 
 # ── 6·7. (철거) JS 모듈 그래프 · JS 부팅 ─────────────────────
-# ★ 2026-09-22. 옛 GIS 지도(web/js 30모듈 · index.html 패널)를 걷어냈다 — 관제 화면
-#   (web/navi ?view=ops)이 넘겨받았다. 「JS 문법·순환·import」(js_graph_check.mjs) ·
-#   「JS 부팅 스모크」(web_boot_check.mjs · jsdom)는 그 지도만 봤으므로 도구째 지웠다.
-#   영향 범위 선언 둘이 함께 빠져 tests/test_verify_scope.py 의 SCOPE_FLOOR 를 내렸다.
-#   화면 검사는 아래 7b(내비 타입 · 단위 시험)가 든다.
+# ★ 2026-09-22. 옛 GIS 지도(web/js 30모듈)를 걷어냈다 — 관제 화면(web/navi ?view=ops)이 넘겨받았다. 그 지도만 보던 「JS 문법·순환·import」
+#   · 「JS 부팅 스모크」(jsdom)는 도구째 지웠고 영향 범위 선언 둘이 빠져 tests/test_verify_scope.py 의 SCOPE_FLOOR 를 내렸다. 화면 검사는 아래 7b 가 든다.
 
 # ── 7b. 내비 검사 (web/navi) — 환경 · 린트 · 타입 · 단위 시험 · 브라우저 스모크 ────────────
 # ★ 2026-09-15 신설: 옛 6·7 은 `web/js` 만 봤고 내비(React/TS)는 컴파일하는 곳이 배포 액션 하나뿐이라, maplibre-gl 6 이
@@ -692,7 +689,6 @@ if command -v npm >/dev/null 2>&1; then
     #   시뮬레이션이 경로 자체를 따라 걸어서 폐루프가 한 번도 안 돌았다.
     scope "web/navi/*"
     step "내비 단위 시험" bash -c 'cd web/navi && npm run -s test'
-    # ★ DECISIONS §772. CI 의 `contract-fast` 「중개자(ops-worker) 단위 시험」 그대로 — 설치가 필요 없다(`node --test` 한 줄 · 0.3초). 중개자는 보안 경계다.
     scope "ops-worker/*"
     step "중개자 단위 시험" bash -c 'cd ops-worker && npm run -s relay-test'
     # ★ DECISIONS §706 · PLAN #223. CI 의 `contract-smoke` 그대로(빌드 → `npm run smoke` · 1분 남짓). 브라우저가 **띄워질 때만** 돈다(`executablePath` 는 셸만 받은 기계에서 거짓 → `launch` 탐침). 없으면 `note`(CI 가 돈다).
