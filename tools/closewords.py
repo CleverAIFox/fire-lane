@@ -25,7 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from closecap import closed_rows  # noqa: E402 — 경로를 넣은 뒤에 불러야 한다(tools/ 는 패키지가 아니다)
 
 ROOT = Path(__file__).resolve().parents[1]
-FOLLOWUP = ("안 한 것", "범위가 아니다", "확인 필요", "미결", "남은 것", "미뤘다")
+FOLLOWUP = ("안 한 것", "범위가 아니다", "확인 필요", "남은 것", "미뤘다")   # 「미결」은 뺐다 — 읽은 3건이 전부 오탐(DECISIONS §747)
 OK_WORD = "확인 불가로 닫는다"
 _REF = re.compile(r"#(\d+)")
 _PLANROW = re.compile(r"^\| (\d+) \|", re.M)
