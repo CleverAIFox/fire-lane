@@ -16,6 +16,7 @@
  * 밖    **그리는 일 · 색 · 문구는 안 한다**(`OpsApp`). 목록의 다른 쓰임(지도 마커 · 포커스)의 순서도 안 바꾼다 — 상황판만이다.
  */
 import { unitStale, type Unit } from "./opsProtocol";
+import { DEMO_BADGE } from "./demo";
 
 export type UnitStatus = "dispatching" | "lost" | "idle";
 
@@ -23,6 +24,19 @@ export type UnitStatus = "dispatching" | "lost" | "idle";
 export function unitStatus(u: Unit, now: number): UnitStatus {
   return unitStale(u, now) ? "lost" : u.last.remainM != null ? "dispatching" : "idle";
 }
+
+/**
+ * 상황판 칩 — 글자와 **어느 색 갈래인가**. 시연은 끊기지 않았을 때만 시연이다(끊김은 시연이어도 끊김 빨강).
+ * ★ 시연 차량이 초록(출동 중)으로 그려지면 관제가 거짓 상황을 본다(DECISIONS §745) — 호박색 갈래를 따로 둔다(내비의 시연 테두리 `C.warn` 과 짝).
+ */
+export function unitChip(u: Unit, now: number): { label: string; kind: UnitStatus | "demo" } {
+  const s = unitStatus(u, now);
+  if (u.last.demo && s !== "lost") return { label: DEMO_BADGE, kind: "demo" };
+  return { label: s === "lost" ? "끊김" : s === "dispatching" ? "출동 중" : "대기", kind: s };
+}
+
+/** 상단 합계 옆에 붙이는 말 — 시연 차량이 없으면 없다. 내비 띠와 같은 말(`DEMO_BADGE`)이다 */
+export const demoTag = (n: number): string | undefined => (n ? `${DEMO_BADGE} ${n}` : undefined);
 
 /** 순위(낮을수록 위). 끊김은 **나가 있었는가**로 둘로 갈린다 */
 export function unitRank(u: Unit, now: number): number {

@@ -12,7 +12,8 @@ import {
 } from "../src/domain/opsProtocol";
 import { distM } from "../src/domain/geo";
 import opsAppSrc from "../src/OpsApp.tsx?raw";
-import { liveCounts, sortUnits, unitRank, unitStatus } from "../src/domain/unitBoard";
+import { demoTag, liveCounts, sortUnits, unitChip, unitRank, unitStatus } from "../src/domain/unitBoard";
+import { DEMO_BADGE } from "../src/domain/demo";
 import { choOf, isChoQuery, preparePois, searchPois, type Poi } from "../src/domain/search";
 
 const { graph, spec } = FL;
@@ -341,6 +342,13 @@ test("시연 — 상황판에서 시연 차량은 실제 뒤에 온다(출동 �
 
 test("시연 — 관제 화면이 시연을 호박색으로 그리고 합계에서 뺀다(소스 계약)", () => {
   ok(/liveCounts\(units, now\)/.test(opsAppSrc), "OpsApp 이 liveCounts 로 센다 — 시연이 합산될 수 있다");
-  ok(/u\.last\.demo && !stale/.test(opsAppSrc) && /D\.warn/.test(opsAppSrc), "상황판 행이 시연을 호박색으로 안 가른다");
+  ok(/unitChip\(u, now\)/.test(opsAppSrc) && /demo: D\.warn/.test(opsAppSrc), "상황판 행이 시연을 호박색으로 안 가른다");
   ok(!/units\.filter\(\(u\) => !unitStale\(u, now\)\)\.length/.test(opsAppSrc), "옛 합산(시연 포함)이 돌아왔다");
+});
+
+test("시연 — 칩: 시연은 호박색 갈래 · 끊긴 시연은 끊김 · 합계 옆 말은 시연이 없으면 없다", () => {
+  ok(unitChip(unit("a", 1, 500, true), NOW).kind === "demo" && unitChip(unit("a", 1, 500, true), NOW).label === DEMO_BADGE, "시연 출동 중이 시연 칩이 아니다");
+  ok(unitChip(unit("b", 30, 500, true), NOW).kind === "lost", "끊긴 시연이 끊김이 아니다");
+  ok(unitChip(unit("c", 1, 500), NOW).kind === "dispatching" && unitChip(unit("d", 1, null), NOW).kind === "idle", "실제 칩이 달라졌다");
+  ok(demoTag(0) === undefined && demoTag(2) === `${DEMO_BADGE} 2`, "합계 옆 말");
 });
