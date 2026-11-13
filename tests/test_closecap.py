@@ -13,7 +13,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
-import closecap  # noqa: E402
+import closecap  # noqa: E402 — 경로를 넣은 뒤에 불러야 한다(tools/ 는 패키지가 아니다)
 
 
 def _rows(*ns: int) -> str:

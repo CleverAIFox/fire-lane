@@ -1,4 +1,10 @@
-"""tools/closewords.py — 닫는 문단의 후속 어휘. 카나리아는 `#144` 옛 닫는 문단(DECISIONS §696)이다."""
+"""tests/test_closewords.py — 닫는 문단의 후속 어휘. 카나리아는 `#144` 옛 닫는 문단(DECISIONS §696)이다.  (DECISIONS §733 · E2)
+
+IN    tools/closewords.py · .pre-commit-config.yaml
+OUT   없음 (검사)
+밖    인용한 행이 그 일을 **정말 드는지**(번호의 실재만 본다) · 훅이 실제 커밋에서 도는지(등록만 본다) · 목록 밖의 말로 쓴 후속
+PLAN 본문  규칙 없음 — 닫는 문단을 무는 검사이고 PLAN 의 어느 행도 이 파일을 근거로 서지 않는다
+"""
 from __future__ import annotations
 
 import sys
@@ -6,7 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
-import closewords as cw  # noqa: E402
+import closewords as cw  # noqa: E402 — 경로를 넣은 뒤에 불러야 한다(tools/ 는 패키지가 아니다)
 
 AFTER = "| 7 | x |\n| 225 | y |\n"
 

@@ -22,7 +22,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from closecap import closed_rows  # noqa: E402
+from closecap import closed_rows  # noqa: E402 — 경로를 넣은 뒤에 불러야 한다(tools/ 는 패키지가 아니다)
 
 ROOT = Path(__file__).resolve().parents[1]
 FOLLOWUP = ("안 한 것", "범위가 아니다", "확인 필요", "미결", "남은 것", "미뤘다")
