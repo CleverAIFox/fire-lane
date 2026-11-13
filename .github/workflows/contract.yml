@@ -804,17 +804,10 @@ jobs:
         env:
           PART: ${{ matrix.part }}
         run: |
-          # 무거운 열은 손으로 나눠 꽂고(PIN · 실측 소요 상위 · DECISIONS §633-3) 나머지는 정렬한 이름의 N 번째를 `N mod 4` 로 나눈다.
-          # 핀한 파일이 사라져도 무해하고, 새 파일은 자동으로 나머지 쪽에 들어간다(목록을 손으로 안 든다).
-          declare -A PIN=([tests/test_clearance_cross.py]=1 [tests/test_widthlr.py]=1 [tests/test_canary.py]=1
-                          [tests/test_fix_door.py]=2 [tests/test_cli_surface.py]=2 [tests/test_logic_print.py]=2
-                          [tests/test_place_idempotent.py]=3 [tests/test_ratchet.py]=4 [tests/test_ledger_outputs.py]=4 [tests/test_normalize_rules.py]=4)
-          mapfile -t all < <(find tests -name 'test_*.py' | LC_ALL=C sort)
-          files=(); n=0
-          for f in "${all[@]}"; do
-            if [ -n "${PIN[$f]:-}" ]; then [ "${PIN[$f]}" = "$PART" ] && files+=("$f"); continue; fi
-            n=$((n + 1)); [ $((n % 4)) = $((PART % 4)) ] && files+=("$f")
-          done
+          # ★ 2026-11-13 (DECISIONS §760). 조각은 **CI 에서 잰 파일별 시간**(`data/golden/ci_testtimes.json`)으로 `tools/testsplit.py` 가 가른다(LPT · 결정적).
+          #   종전에는 손으로 꽂은 핀 열 개 + 정렬한 이름의 `N mod 4` 였고 **시험 파일이 하나 늘 때마다 순환이 뒤섞였다** — 11-12 오전 조각이 337~498초 · 86~116초로 4~5 배 어긋났다.
+          #   장부에 없는 새 파일은 장부 중앙값으로 쳐서 어느 조각에든 든다(빠짐 · 겹침 없음은 `tests/test_contract_split.py` 가 문다).
+          mapfile -t files < <(uv run python tools/testsplit.py --part "$PART" --of 4)
           echo "조각 $PART/4 — ${#files[@]}개 파일"
           uv run pytest "${files[@]}" -q
 
