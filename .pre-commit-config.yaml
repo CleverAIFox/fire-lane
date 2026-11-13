@@ -100,6 +100,14 @@ repos:
         pass_filenames: false
         always_run: true
 
+      # ★ 2026-11-13 (DECISIONS §733 · E2). 행을 닫는 문단이 후속이 필요한 말로 닫으면 후속 행 `#M` 이 PLAN 에 실재해야 한다. 카나리아 = `#144` 옛 닫는 문단.
+      - id: closewords
+        name: 닫는 문단의 어휘 (후속이 필요한 말 → 후속 행)
+        entry: uv run python tools/closewords.py
+        language: system
+        pass_filenames: false
+        always_run: true
+
       # ★ 2026-09-18 실측 결과 **이 도구는 남는다.** 넷 중 둘만 표준 훅으로
       #   옮겨졌다.
       #       BOM      → fix-byte-order-marker   실측 차이 0건 · 이관 완료
