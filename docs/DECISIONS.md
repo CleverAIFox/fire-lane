@@ -50616,3 +50616,37 @@ CI 로그 둘을 읽었다. `배포/dry`(`stage-site`)는 **`VITE_OPS_URL` · `V
 **더 큰 사실(C2):** **`ops-worker` 를 거는 CI 검사가 없었다.** `.github/` 에 `ops-worker` 문자열이 0 이었고 `gatefast.LAYERS` 에도 없었다 — 중개자의 단위 시험 7개(`node --test`)가 CI · 푸시 게이트 어디서도 안 돌았다. 「한 이름 뒤에 둘이 숨는다」 의 반대쪽(이름 자체가 없다)이다. **고친 것:** ① `contract.yml` 의 `contract-fast` 에 단계 「중개자(ops-worker) 단위 시험」 — `cd ops-worker && npm run relay-test`(설치 불필요 · 0.3초) ② **스크립트 이름을 `relay-test` 로 따로 뒀다** — `test` 면 `navi:test` 패턴이 같이 잡아 `dup_cmds`(같은 명령 두 번)가 울고 하나가 죽어도 다른 하나가 덮는다 ③ `gate_parity.EXTERNAL` 에 토큰 `ops:test` + `gatefast.LAYERS[("ops:test","@ops-worker")] = ready` — CI 검사 86 → 87 · pushready 50 → 51 · 미선언 0.
 **의존성 정책(제안 · 설정은 이 묶음이 바꿨다):** `.github/dependabot.yml` 에 `ops-worker` 항목을 더했다 — **`applies-to: security-updates` 그룹으로 한 PR 에 묶고 `part/infra` 로 받는다**(소음 방지 · 흐름 안) · 일반 판 올리기는 월 1회 · 메이저는 배치(§215-3 와 같은 꼴). **보안 업데이트는 끄지 않는다**(중개자는 보안 경계). 참고: `undici` · `sharp` 는 `wrangler` 의 전이 의존이고 `wrangler` 는 **개발 · 배포 도구**(`devDependencies`)라 배포된 Worker 번들에는 안 든다 — 취약점의 노출은 개발 기계 쪽이고 시급도는 중간이다(`#203` 과 같은 꼴).
 **두 PR 은 건드리지 않았다**(외부 · 되돌리기 어려운 동작): 권고 — #377 이 머지되고 CI 가 초록이 된 뒤 이 둘을 닫으면 Dependabot 이 새 설정(묶음 · `part/infra`)으로 다시 낸다. 머지는 권하지 않는다(흐름 밖 · `wrangler` 4.45 → 상위 판으로 배포 도구가 바뀐다 — `npx wrangler deploy` 시험 없이는 못 본다).
+
+
+## 773. ⓳ 푸시를 막던 창 몫 — 레이크의 한글 원본명 셋(대장에 잘못 들어간 흔적을 걷었다) · 로컬 대응 없는 CI 검사 · Dependabot 27건 판정
+
+> 2026-11-13
+
+유병률  **1회** — `acquire --verify` 가 **읽기 검사인 줄 알았는데 새 파일을 대장에 쓴다**(전부 일치일 때 · `acquire.py` 의 `save_ledger`). 지난 묶음의 ⓣA1 커밋(89f28032)이 사람이 레이크에 놓은 파일 셋을 **알아채지 못한 채** 커밋했고, 그것이 시험 둘과 `treecheck` 를 같은 원인으로 빨갛게 했다. 같은 묶음의 CI 단계(`ops:test`)는 로컬 대응이 없어 `gate_parity` 가 울었다
+
+강제자  `tests/test_provider_registry.py`(`test_pattern_file_accepts_every_real_raw_name`) · `tools/treecheck.py`(D6 · 실물과 대장 양쪽) · `tools/gate_parity.py`(미선언 CI 전용) · `tests/test_verify_evidence.py`(갈래마다 같은 행). 하위 셋이 이 칸을 물려받는다
+
+### 773-1. A — 원인 한 줄 · 세 파일을 실측으로 가른 결과
+**원인:** 사람이 레이크 `raw/juso/` 에 **제공처 원본 이름 그대로** 세 파일을 놓았고(수정 시각 11-13 14:29 · `normalize_raw` 를 안 거쳤다), 대장을 고치던 중 돌린 `acquire --verify` 가 전부 일치였기에 그 셋을 `data/_acquire.json` 에 **자동으로 적었고**(`git blame` — 89f28032 · 「at」 17:52) 그것을 알아채지 못한 채 커밋했다. 그래서 시험(대장 키 ↔ 파일명 꼴)이 울었다.
+**고친 것(창 몫):** 그 세 항목을 대장에서 **뺐다**(94개 — 지난 묶음 직전 상태). 시험 둘(`test_provider_registry` · `test_chain_is_alive`)이 초록이다. **그러나 `treecheck` D6 은 그대로다** — 이제 「대장:」 이 아니라 **「실물:」(레이크 파일 자체)** 이 위반으로 나온다. 레이크 파일 이름은 창이 못 고친다(실물 이동 · 삭제는 사람 전용이고 `firelane.naming` 을 한글 · 괄호 허용으로 넓히는 것도 하지 않았다). **`acquire --verify` 는 다시 돌리면 이 셋을 또 쓴다** — 사람이 이름을 정돈하기 전까지 로컬에서 돌리지 말 것.
+**세 파일을 실측으로 갈랐다**(가: 결번이라 레이크에서 빠져야 한다 · 나: 있는 게 맞아 대장에 오른다):
+| 파일 | 실측 | 갈래 |
+|---|---|---|
+| `(도로명주소)출입구_전남광주통합특별시.zip` 19.8MB | `TL_SPBD_ENTRC_12_202611` · **722,139점** · EPSG:5179 · 칸 `BUL_MAN_NO · ENTRC_SE · ENT_MAN_NO · EQB_MAN_SN · OPERT_DE · SIG_CD` — 지금 대장의 `building_entrance`(동구 17,069점 · 20260801 판)와 **다른 새 판**이고 `#230`(출입구 마지막 접근)의 재료다 | **(나)** — 대장에 오르고 이름 꼴이 맞아야 한다 |
+| `도로명주소전자지도활용가이드.pdf` | 24쪽 · 제목 「도로명주소DB 레이아웃(도로명주소 전자지도)」 · `TL_*` 층 레이아웃 · **위 출입구 zip 의 칸 이름과 칸이 같다** | **(나)** — 문서로(출입구 · 건물 등 `TL_` 층의 열쇠) |
+| `AL_D010_12_20261109.zip` 291MB | shp 둘 — `…20261109`(**1,000,000**행) + `…20261109(2)`(**831,883**행) = 1,831,883(shp 둘로 나뉘어 있다 — 이유는 확인하지 않았다) · 칸 29(`A0~A28`) | **(가) 쪽** — 아래 |
+**★ `#232` 의 근거가 아직 서 있나 — 서 있다.** 그 PDF 가 「레이아웃」 이지만 **`TL_*`(도로명주소 전자지도)의 것**이다 — `A0`~`A28` 꼴 칸 이름이 **0건**이고 `AL_D010` 도 **0건**이다(정규식 `\bA[0-9]{1,2}\b` 0 · `AL_D010` 0). `AL_D010`(건축물대장 건물)의 `A0~A28` 뜻은 이 PDF 에 **없다.** `#232` 를 닫은 근거 ③(칸 뜻을 모른다)은 그대로이고 ①②④도 바뀌지 않았다.
+**`AL_D010` 의 갈래:** 사용하지 않기로 했고(`#232` 결정) 소비자도 레이아웃도 없다 — 그러나 「쓰지 않는다」 가 「레이크에 없어야 한다」 는 아니다(다시 여는 조건에 파일이 든다 · 제공처에서 다시 받는 비용이 크다). 지금 위반인 것은 **이름이 꼴 밖**이라는 것뿐이다. **사람이 고른다:** 레이크에서 지우거나(다시 받는다) 정규 이름으로 옮기고 대장에 `raw_only` 로 올린다.
+**사람이 하는 길(이름 정돈 · 이 묶음이 못 하는 일):** ① 세 파일을 정규 꼴 `{provider}_{dataset}_{scope}_{vintage}.{ext}` 로 옮긴다 — 제안: `juso/juso_entrc_jngj_20261112.zip`(zip 안 시각 11-12) · `juso/juso_layout_kr_20261112.pdf`(vintage 는 사람이 정한다) · `AL_D010` 은 `juso/juso_bldg_ledger_jngj_20261109.zip` 또는 삭제 ② `normalize_raw` 에 원본 이름 → 정규 이름 규칙을 더한다(**규칙은 목표 파일이 raw 에 있어야 시험이 서서** 옮긴 뒤에 같이 낸다) ③ `sources.yaml` 에 `origin_name` 으로 한글 원본명을 보존한다(`treecheck` 가 그렇게 안내한다) ④ `acquire --verify` 로 새 이름을 대장에 올린다. **이 묶음은 규칙 · 대장을 미리 쓰지 않았다**(목표 파일이 없어 `test_every_rule_places_a_file_where_raw_already_has_one` 이 울린다).
+
+### 773-2. B — ㉨ CI 미러 빨강 둘
+- **`gate_parity`:** 원인은 **지난 묶음이 더한 CI 단계 「중개자(ops-worker) 단위 시험」(`ops:test`)에 로컬 대응이 없던 것**(「미선언 CI 전용 1」 — 출력 끝에서 잘려 있던 마지막 줄이다). **고침:** `tools/verify.sh` 에 같은 단계를 더했다(`scope "ops-worker/*"` · `cd ops-worker && npm run -s relay-test` · `npm` 이 없을 때의 `note` 행도 — `test_verify_evidence` 가 갈래마다 같은 행을 문다). 면제 선언은 안 늘렸다(원리적으로 로컬에서 못 도는 검사가 아니다). `test_ci_exemptions_are_declared_with_reasons` 는 같은 원인이었고 면제 5개 선언은 그대로다.
+- **`treecheck` — 결함 3(D6):** 위 773-1 의 같은 세 파일이다. 이제 레이크 쪽 실물이 위반이고 **사람이 이름을 정돈해야 풀린다**(창이 못 고친다). 상한을 올리지 않았다 · 선언 완화도 하지 않았다.
+- **`treecheck` — 경고 5(T5 빈 디렉터리)를 읽고 왜 경고로 두나:** `ops-worker/.wrangler/state/v3/cache/` · `…/miniflare-CacheObject/` · `…/workflows/` · `ops-worker/.wrangler/tmp/` 넷은 `wrangler` 가 **실행하면 스스로 만드는 캐시 폴더**다(`.gitignore` 가 `.wrangler/` 를 뺀다 — 계정 토큰이 들어갈 수 있다). `data/interim/_mutate_hold/` 는 `mutate_guard.py` 가 상수(`HOLD_DIR`)로 정한 **변이 실행 중 보류 폴더**가 한가할 때 비어 있는 것이다. 모두 **이 기계에만 있는 산출 찌꺼기**이지 clone 에서 사라져 해가 되는 폴더가 아니다 — 도구가 다시 만든다. 그래서 결함이 아니라 경고다(「git 은 폴더를 안 추적한다 · 이 기계에만 있다」 라는 사실 알림). 지우지 않았다(실물 삭제는 사람 몫).
+
+### 773-3. C — Dependabot 알림 판정 (실측 · 행 `#236`)
+**건수부터 정정한다:** 열린 알림은 25가 아니라 **27**(API `--paginate` 로 쟀다): `undici` **21**(18 아님) · `sharp` 3 · `ws` 1 · `wrangler` 1 · `minimatch` 1(`web/navi` · 이 한 건은 `#203`). 전부 Development · 전부 `ops-worker/package-lock.json`(마지막 한 건 제외).
+**① 배포 산출물에 들어가나 — 안 들어간다(번들을 열어 봤다).** `npx wrangler deploy --dry-run --outdir <임시>` → `index.js` 5,794B(5.66KiB) · 소스맵의 소스 **둘뿐**(`ops-worker/src/relay.ts` · `ops-worker/src/index.ts`). `undici` · `sharp` · `miniflare` · `wrangler` · `node_modules` 문자열이 번들 · 소스맵에 **0건**이다. `ws` 13건은 우리 코드의 변수 이름(`if (s === ws)`)이다. 「devDependency 라서 안 든다」 는 짐작이 아니라 번들이 말한다.
+**② `wrangler pages deploy` 경로 — 한 번도 안 탄다.** 저장소 전역(문서 제외) 검색: `wrangler pages` · `pages deploy` · `pages_build_output_dir` **0건**. 우리가 부르는 `wrangler` 명령은 `whoami` · `login` · `secret put` · `deploy` · `dev --local` 다(`ops-worker/scripts/deploy.sh` · `package.json` 스크립트 · `README.md` 를 전부 읽었다). 앱은 GitHub Pages · 중개자는 Workers 라 알림 57(명령 주입)의 경로 밖이다. **선례(적용 조건):** 취약점의 **명령 경로**를 우리 호출 목록이 전수로 안 타면 「안 닿는다」 로 적을 수 있고, 그 근거는 호출 목록을 읽은 것이다 — 목록이 바뀌면(예: Pages 로 배포) 다시 본다.
+**③ 올리면 무엇이 깨지나 — 거의 안 깨진다(격리 사본에서 잠금 그대로 올렸다).** PR 375 와 PR 376 은 **같은 잠금**이다(`wrangler` 4.161.0 · `miniflare` 5.20261110.2-**beta** · `undici` 7.30.1 · `sharp` 0.35.5 · `ws` 8.21.0 — 알림의 패치 판을 모두 덮는다). 그 잠금으로: `npm ci` 3초 · `npm run relay-test` **7/7** · `wrangler deploy --dry-run` 통과(번들 5,803B — +9B · 새 번들러가 클래스 필드 한 줄 `state;` 를 더 낸다) · `wrangler dev --local` 부팅(우리 토큰 가드가 503 을 낸다 — 런타임이 산다). `contract-fast` 는 `ops-worker` 의존성을 설치하지 않아(시험은 설치 불필요) 영향이 없다. **안 한 것:** 진짜 `wrangler deploy`(계정 필요) · `miniflare` **베타 메이저**의 위험.
+**결론(행 `#236`):** 27건은 개발 도구의 것이라 **배포된 중개자의 보안은 안 움직인다** — 올리는 비용은 거의 0 이다. PR 375 · PR 376 은 중복이므로 **하나만 머지하고 하나는 닫는다**(사람 몫) — 단 둘이 `dev` 를 향해 흐름 밖에서 왔으니 새 `dependabot.yml` 항목으로 같은 내용을 `part/infra` 로 다시 내는 길이 흐름에 더 맞다. **지금 머지하지 않았다.**
