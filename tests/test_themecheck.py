@@ -56,12 +56,12 @@ def test_an_undeclared_label_layer_cries_and_a_declared_one_does_not():
 def test_the_defect_of_2026_11_13_would_have_been_caught():
     """고치기 전 소스에서 밝은 화면의 바탕 면 넷이 구분 안 되고, 관제에는 층이 없었다 — 이 검사가 그때 있었다면 울었다."""
     def show(path: str) -> str:
-        r = subprocess.run(["git", "show", f"16c6a5a9^:{path}"], capture_output=True, text=True, encoding="utf-8", cwd=ROOT)
+        r = subprocess.run(["git", "show", f"16c6a5a9^:{path}"], capture_output=True, text=True, encoding="utf-8", cwd=ROOT, timeout=30)
         return r.stdout
     tk, ops = show("web/navi/src/ui/tokens.ts"), show("web/navi/src/components/OpsMap.tsx")
     if not tk or not ops:                          # 얕은 클론 — 못 읽으면 못 쟀다고 말하고 건너뛴다(조용히 통과하지 않는다)
         import pytest
-        pytest.skip("16c6a5a9^ 가 없다(얕은 클론)")
+        pytest.skip("환경skip(산출물) — 16c6a5a9^ 가 없다(얕은 클론 · git 이력이 없어 결함 전 소스를 못 읽는다)")
     bg, land = TC.light_palette(tk)
     assert len(TC.land_faults("밝", bg, land, TC.LAND_DE_MIN)) >= 3
     assert TC.wiring_faults(ops)
