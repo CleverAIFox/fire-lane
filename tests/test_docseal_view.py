@@ -23,7 +23,9 @@ OUT   없음
 """
 from __future__ import annotations
 
+import hashlib as _h
 import importlib.util
+import json as _json
 import pathlib
 import sys
 
@@ -242,9 +244,6 @@ def test_캐시가_나무를_고치는_소비자를_안_든다(ds):
 
 
 # ── 관점 v3 (DECISIONS §776) — 좁힌 뒤에도 진짜 결함을 잡는가 · 합성 입력 ──────────────
-import hashlib as _h  # noqa: E402
-import json as _json  # noqa: E402
-
 
 def _fp(ds, path, raw, others, text):
     return _h.sha256(ds.view(path, raw, others, text)).hexdigest()
@@ -257,7 +256,8 @@ def _lock(**ver):
 def test_lock_a_version_the_section_states_still_kills_the_seal(ds):
     text = "`undici` 7.30.1 로 고쳐진다고 적었다."
     base = _lock(undici="7.14.0", sharp="0.33.5")
-    fp = lambda raw: _fp(ds, "ops-worker/package-lock.json", raw, [], text)  # noqa: E731
+    def fp(raw):
+        return _fp(ds, "ops-worker/package-lock.json", raw, [], text)
     assert fp(base) != fp(_lock(undici="7.30.1", sharp="0.33.5")), "절이 판을 말한 패키지가 바뀌었는데 안 죽는다"
     assert fp(base) == fp(_lock(undici="7.14.0", sharp="0.35.5")), "말하지 않은 패키지가 바뀌어도 죽는다 — 좁혀지지 않았다"
     assert fp(base) != fp(_lock(sharp="0.33.5")), "말한 패키지가 없어졌는데 안 죽는다"
@@ -265,7 +265,8 @@ def test_lock_a_version_the_section_states_still_kills_the_seal(ds):
 
 def test_lock_a_section_that_states_no_version_survives_dependency_bumps(ds):
     text = "`ops-worker/package-lock.json` 이 dev 에 들어왔다."
-    fp = lambda raw: _fp(ds, "ops-worker/package-lock.json", raw, [], text)  # noqa: E731
+    def fp(raw):
+        return _fp(ds, "ops-worker/package-lock.json", raw, [], text)
     assert fp(_lock(undici="7.14.0")) == fp(_lock(undici="7.30.1", sharp="0.35.5"))
 
 
@@ -275,7 +276,8 @@ RAT = (b'RATCHETS = {"SELFTEST_MIN": "up", "NO_DECL": "down"}\nSELFTEST_MIN = 95
 
 def test_ratchet_numbers_are_masked_only_when_the_section_does_not_name_them(ds):
     quiet, names = "이 도구가 있다.", "`SELFTEST_MIN` 이 95 라고 적었다."
-    fp = lambda text, raw: _fp(ds, "tools/x.py", raw, [], text)  # noqa: E731
+    def fp(text, raw):
+        return _fp(ds, "tools/x.py", raw, [], text)
     bumped = RAT.replace(b"= 95", b"= 96")
     assert fp(quiet, RAT) == fp(quiet, bumped), "기계가 쓴 수에 안 이름 든 절이 죽는다"
     assert fp(names, RAT) != fp(names, bumped), "절이 그 수를 말하는데 수가 바뀌어도 안 죽는다"
@@ -284,7 +286,8 @@ def test_ratchet_numbers_are_masked_only_when_the_section_does_not_name_them(ds)
 
 def test_index_table_single_mention_is_existence_only_but_every_other_mention_is_not(ds):
     others = [f"tools/f{i}.py" for i in range(25)]
-    fp = lambda text, raw: _fp(ds, "tools/f1.py", raw, others, text)  # noqa: E731
+    def fp(text, raw):
+        return _fp(ds, "tools/f1.py", raw, others, text)
     row_once = "| 7 | 이 행이 `tools/f1.py` 를 든다 |"
     assert fp(row_once, b"a = 1") == fp(row_once, b"a = 2"), "색인 표에서 한 번 나온 경로의 내용이 지문에 든다 — 좁혀지지 않았다"
     twice = row_once + "\n| 8 | 또 `tools/f1.py` |"
