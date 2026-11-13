@@ -30,7 +30,24 @@ export function unitRank(u: Unit, now: number): number {
   return s === "dispatching" ? 0 : s === "lost" ? (was ? 1 : 3) : 2;
 }
 
-/** 상황판 순서 — 출동 중 먼저. 입력을 바꾸지 않고 새 배열을 낸다 */
+/**
+ * 상황판 순서 — **실제가 먼저, 시연은 그 뒤**(DECISIONS §745 · ⓲I-C2). 그 안에서 출동 중 먼저. 입력을 바꾸지 않고 새 배열을 낸다.
+ * ★ 시연 차량이 실제 출동 중 차 위에 오면 관제가 가짜를 먼저 본다 — 순위(`unitRank`)보다 시연 여부가 앞선다.
+ */
 export function sortUnits(units: readonly Unit[], now: number): Unit[] {
-  return [...units].sort((a, b) => unitRank(a, now) - unitRank(b, now) || (a.unit < b.unit ? -1 : a.unit > b.unit ? 1 : 0));
+  const d = (u: Unit) => (u.last.demo ? 1 : 0);
+  return [...units].sort((a, b) => d(a) - d(b) || unitRank(a, now) - unitRank(b, now) || (a.unit < b.unit ? -1 : a.unit > b.unit ? 1 : 0));
+}
+
+/**
+ * 연결된(끊기지 않은) 차의 수 — **실제와 시연을 갈라** 센다. 관제 상단의 「출동 중 N대」 는 `real` 만 쓴다.
+ * ★ 시연을 합산하면 관제가 거짓 상황을 본다(§739). 시연은 `demo` 로 따로 나온다.
+ */
+export function liveCounts(units: readonly Unit[], now: number): { real: number; demo: number } {
+  let real = 0, demo = 0;
+  for (const u of units) {
+    if (unitStale(u, now)) continue;
+    if (u.last.demo) demo += 1; else real += 1;
+  }
+  return { real, demo };
 }

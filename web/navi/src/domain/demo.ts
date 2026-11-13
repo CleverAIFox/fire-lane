@@ -23,6 +23,9 @@
  */
 import type { Phase } from "./types";
 
+/** 시연이 켜진 동안 내비 띠가 내는 말 — **관제도 같은 말로** 시연 차량을 표한다(DECISIONS §745 · 한 곳에서 나온다) */
+export const DEMO_BADGE = "시연 중";
+
 export type GpsState = "idle" | "none" | "outside" | "live";
 /** 안내 문구와 단추가 **같이 쓰는** 이름 — 한 곳에서 바꾼다 */
 export const DEMO_START = "시연으로 주행";

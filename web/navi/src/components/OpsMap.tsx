@@ -19,6 +19,7 @@
  */
 import { useEffect, useRef } from "react";
 import * as maplibregl from "maplibre-gl";
+import { DEMO_BADGE } from "../domain/demo";
 import "maplibre-gl/dist/maplibre-gl.css";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import type { LngLat } from "../domain/geo";
@@ -347,7 +348,12 @@ export function OpsMap(props: Props) {
         }
         mk.setLngLat(pos).setRotation(u.last.brg);
         const lab = mk.getElement().querySelector("span");
-        if (lab) lab.textContent = u.last.vehicle;
+        if (lab) lab.textContent = u.last.demo ? `${DEMO_BADGE} · ${u.last.vehicle}` : u.last.vehicle;
+        // ★ 시연 차량은 호박색 — 내비의 시연 테두리(`C.warn`)와 짝이다. 같은 마커가 시연을 켜고 끄는 사이에 바뀔 수 있어 **매번** 칠한다(DECISIONS §745)
+        const body = mk.getElement().querySelector("rect");
+        if (body) body.setAttribute("fill", u.last.demo ? "#f59e0b" : "#dc2626");
+        if (lab) (lab as HTMLElement).style.background = u.last.demo ? "#f59e0b" : "#0f172a";
+        if (lab) (lab as HTMLElement).style.color = u.last.demo ? "#1b1203" : "#fff";
       }
       for (const [k, mk] of Object.entries(unitMk.current)) {
         if (!seen.has(k)) { mk.remove(); delete unitMk.current[k]; }

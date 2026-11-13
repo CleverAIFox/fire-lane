@@ -12,7 +12,7 @@ import {
 } from "../src/domain/opsProtocol";
 import { distM } from "../src/domain/geo";
 import opsAppSrc from "../src/OpsApp.tsx?raw";
-import { sortUnits, unitRank, unitStatus } from "../src/domain/unitBoard";
+import { liveCounts, sortUnits, unitRank, unitStatus } from "../src/domain/unitBoard";
 import { choOf, isChoQuery, preparePois, searchPois, type Poi } from "../src/domain/search";
 
 const { graph, spec } = FL;
@@ -272,9 +272,9 @@ test("회색 사유 — GRAY_REASON 과 web/config.js 의 reason 키 집합이 �
 // ── 관제 상황판 순서 (DECISIONS §726 · B3) ─────────────────────────────────────────────────
 /** 합성 차량 — `ago` 초 전에 마지막으로 들었고(5초 넘으면 끊김) `remainM` 이 있으면 나가 있는 차 */
 const NOW = 1_000_000;
-const unit = (name: string, ago: number, remainM: number | null): Unit => ({
+const unit = (name: string, ago: number, remainM: number | null, demo = false): Unit => ({
   unit: name, heardAt: NOW - ago * 1000, route: null, routeRev: 0,
-  last: { t: "state", unit: name, at: NOW, vehicle: name, station: null, incident: null, pos: null, brg: 0, status: "safe", title: "", remainM, etaText: null, routeRev: 0 },
+  last: { t: "state", unit: name, at: NOW, vehicle: name, station: null, incident: null, pos: null, brg: 0, status: "safe", title: "", remainM, etaText: null, routeRev: 0, demo },
 });
 
 test("상황판 — 연결된 순서가 끊김 · 출동 중 · 대기여도 출동 중이 맨 위다(끊김은 색이 할 일이지 순서가 아니다)", () => {
@@ -314,4 +314,33 @@ test("사건 검색 — 자료가 실렸는데 검색어에 맞는 것이 없으
   ok(/hits: PoiHit\[\] = useMemo\(\(\) => \(q\.trim\(\)\.length >= 1 \? searchPois/.test(opsAppSrc), "hits 의 정의가 바뀌어 빈 결과 줄의 조건과 어긋날 수 있다");
   const pois = preparePois({ type: "FeatureCollection", features: [] } as GeoJSON.FeatureCollection);
   ok(searchPois(pois, "존재하지않는이름").length === 0, "색인이 비었는데 결과가 났다");
+});
+
+
+// ── 시연 / 실제 (DECISIONS §745 · ⓲I-C2 · 안전 결함) ───────────────────────────────────────
+const stateMsg = (extra: Record<string, unknown>) => ({ t: "state", unit: "u", at: 1, routeRev: 0, ...extra });
+
+test("시연 — 메시지가 시연 여부를 싣고 받는 쪽이 읽는다 · 칸이 없으면 실제로 읽는다", () => {
+  const on = asNaviMsg(stateMsg({ demo: true })), off = asNaviMsg(stateMsg({ demo: false })), none = asNaviMsg(stateMsg({}));
+  ok(on?.t === "state" && on.demo === true, "demo:true 를 못 읽었다");
+  ok(off?.t === "state" && off.demo === false, "demo:false 를 못 읽었다");
+  ok(none?.t === "state" && none.demo === false, "칸이 없으면 false 여야 한다");
+  ok(asNaviMsg(stateMsg({ demo: "true" }))?.t === "state" && (asNaviMsg(stateMsg({ demo: "true" })) as { demo: boolean }).demo === false, "문자열 true 를 시연으로 믿었다 — 엄격히 불리언 true 만");
+});
+
+test("시연 — 관제의 「출동 중 N대」 에 시연 차량이 안 센다 · 따로 센다", () => {
+  const us = [unit("실제1", 1, 1000), unit("시연1", 1, 800, true), unit("시연끊김", 30, 800, true), unit("실제대기", 1, null)];
+  const c = liveCounts(us, NOW);
+  ok(c.real === 2 && c.demo === 1, `실제 ${c.real} · 시연 ${c.demo} (끊긴 시연은 안 센다)`);
+});
+
+test("시연 — 상황판에서 시연 차량은 실제 뒤에 온다(출동 중이어도)", () => {
+  const b = sortUnits([unit("A-시연출동", 1, 500, true), unit("B-실제대기", 1, null), unit("C-실제끊김", 30, null)], NOW);
+  ok(b.map((u) => u.unit).join() === "B-실제대기,C-실제끊김,A-시연출동", `순서 ${b.map((u) => u.unit).join()}`);
+});
+
+test("시연 — 관제 화면이 시연을 호박색으로 그리고 합계에서 뺀다(소스 계약)", () => {
+  ok(/liveCounts\(units, now\)/.test(opsAppSrc), "OpsApp 이 liveCounts 로 센다 — 시연이 합산될 수 있다");
+  ok(/u\.last\.demo && !stale/.test(opsAppSrc) && /D\.warn/.test(opsAppSrc), "상황판 행이 시연을 호박색으로 안 가른다");
+  ok(!/units\.filter\(\(u\) => !unitStale\(u, now\)\)\.length/.test(opsAppSrc), "옛 합산(시연 포함)이 돌아왔다");
 });

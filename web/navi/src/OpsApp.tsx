@@ -62,7 +62,8 @@ import { HB_MS, OPS_EMPTY, asNaviMsg, opsAck, opsReduce, unitStale, type OpsStat
 import { buildAdjacency, findRouteBetween, nearestNode, snapToEdge } from "./domain/graph";
 import { ruleSummary } from "./domain/rules";
 import { dispatchUrl as mkDispatchUrl } from "./domain/dispatch";
-import { sortUnits } from "./domain/unitBoard";
+import { liveCounts, sortUnits } from "./domain/unitBoard";
+import { DEMO_BADGE } from "./domain/demo";
 import type { RouteMode } from "./domain/handoff";
 import { alternateAccess, reachableEdges, MAX_WALK_M } from "./domain/access";
 import { addressLines, asOfDate, preparePois, searchPois, type PoiHit } from "./domain/search";
@@ -266,7 +267,8 @@ export default function OpsApp() {
   //   된 둘은 같은 수가 아니다. 가장 오래된 것의 나이를 같이 든다.
   const oldestWait = ops.feed.reduce<number | null>(
     (old, f) => (f.ackedAt ? old : Math.max(old ?? 0, now - f.at)), null);
-  const live = units.filter((u) => !unitStale(u, now)).length;
+  // ★ 시연은 합산하지 않는다(DECISIONS §745)
+  const { real: live, demo: liveDemo } = liveCounts(units, now);
   const hs = history?.summary;
   const myCenter = station ? hs?.by_center[`${station.name.replace(/119안전센터$/, "")}119안전센터`] : undefined;
   const elapsedS = incident ? (now - incident.at.getTime()) / 1000 : null;
@@ -293,7 +295,8 @@ export default function OpsApp() {
               tone={!incident ? undefined
                     : elapsedS != null && medianS != null && elapsedS > medianS ? "danger" : "warn"}
               urgent={!!incident && elapsedS != null && medianS != null && elapsedS > medianS} />
-        <Tile k="출동 중" v={`${live}대`} tone={live ? "ok" : undefined} />
+        <Tile k="출동 중" v={`${live}대`} tone={live ? "ok" : undefined}
+              sub={liveDemo ? `${DEMO_BADGE} ${liveDemo}` : undefined} />
         <Tile k="미확인 공유" v={`${waiting}건`}
               sub={oldestWait == null ? undefined : `가장 오래된 것 ${fmtDur(oldestWait / 1000)}`}
               tone={waiting ? "warn" : undefined}
@@ -561,8 +564,11 @@ export default function OpsApp() {
             )}
             {board.map((u) => {
               const stale = unitStale(u, now);
-              const st = stale ? "끊김" : u.last.remainM != null ? "출동 중" : "대기";
-              const tone = stale ? D.danger : u.last.remainM != null ? D.ok : D.sub;
+              const st0 = stale ? "끊김" : u.last.remainM != null ? "출동 중" : "대기";
+              // ★ 시연 차량은 호박색(내비의 시연 테두리 `C.warn` 과 같은 색) — 끊김이 아니면 **칩이 「시연」 이고 초록을 안 쓴다**(DECISIONS §745)
+              const demo = u.last.demo && !stale;
+              const st = demo ? DEMO_BADGE : st0;
+              const tone = stale ? D.danger : demo ? D.warn : u.last.remainM != null ? D.ok : D.sub;
               return (
                 <button key={u.unit} style={unitRow}
                         onClick={() => u.last.pos && setFocus({ n: Date.now(), at: u.last.pos, zoom: 17.2 })}>
