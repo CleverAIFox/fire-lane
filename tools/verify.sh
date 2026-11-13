@@ -692,6 +692,9 @@ if command -v npm >/dev/null 2>&1; then
     #   시뮬레이션이 경로 자체를 따라 걸어서 폐루프가 한 번도 안 돌았다.
     scope "web/navi/*"
     step "내비 단위 시험" bash -c 'cd web/navi && npm run -s test'
+    # ★ DECISIONS §772. CI 의 `contract-fast` 「중개자(ops-worker) 단위 시험」 그대로 — 설치가 필요 없다(`node --test` 한 줄 · 0.3초). 중개자는 보안 경계다.
+    scope "ops-worker/*"
+    step "중개자 단위 시험" bash -c 'cd ops-worker && npm run -s relay-test'
     # ★ DECISIONS §706 · PLAN #223. CI 의 `contract-smoke` 그대로(빌드 → `npm run smoke` · 1분 남짓). 브라우저가 **띄워질 때만** 돈다(`executablePath` 는 셸만 받은 기계에서 거짓 → `launch` 탐침). 없으면 `note`(CI 가 돈다).
     if (cd web/navi && node -e 'const t=require("@playwright/test");(async()=>{const b=await t.chromium.launch();await b.close()})().catch(()=>process.exit(1))' >/dev/null 2>&1); then
         scope "web/navi/*"
@@ -706,6 +709,7 @@ else
     note "내비 린트" "npm 이 없다"
     note "내비 타입 검사" "npm 이 없다"
     note "내비 단위 시험" "npm 이 없다"
+    note "중개자 단위 시험" "npm 이 없다"
     note "내비 브라우저 스모크" "npm 이 없다"
 fi
 
