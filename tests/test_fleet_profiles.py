@@ -17,7 +17,7 @@
   기본규격이 그렇고 동구에는 경형·소형이 없다. **갈리는 것은 전장이다.**
   그래서 이 파일은 전폭이 같은 것을 문제 삼지 않고, **전장이 같아지면** 운다.
 
-IN    web/config.js · sources.yaml · web/data/fleet.json
+IN    web/config.js · 대장 `vehicle_spec`(`ledger.vehicle_spec()`) · web/data/fleet.json
 OUT   없음
 PARAM 없음
 밖    전장을 **판정에 쓰는지**는 안 본다 — 지금 판정은 폭만 본다(`seg/vehicle.py`).
@@ -162,8 +162,7 @@ def test_every_width_says_where_it_came_from(fleet):
 
 def test_a_reference_width_is_the_reference_vehicles_not_an_invention(fleet):
     """`reference` 의 폭은 기준차(`vehicle_spec`) 값 그대로이고 요구폭은 거기에 여유를 더한 것이다 — 출처가 기준차라고 말하는데 값이 다르면 안 된다."""
-    import yaml
-    spec = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))["vehicle_spec"]
+    spec = ledger.vehicle_spec()   # 대장은 `ledger` 한 문으로 읽는다(`test_lake` 의 직접 로드 상한)
     for r in fleet:
         if r["width_basis"] == "reference":
             assert r["width_m"] == float(spec["width_m"]), f"{r['id']}: 기준차 {spec['width_m']} 인데 {r['width_m']}"
