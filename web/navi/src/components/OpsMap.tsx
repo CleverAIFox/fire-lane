@@ -96,6 +96,7 @@ function opsStyleLayers(st: Record<string, VerdictStyle>): LayerSpecification[] 
   base.splice(base.findIndex((l) => l.id === "bg") + 1, 0, ...opsLand());
   return base;
 }
+// ★ `withLanduse` 에 `bg` 하나짜리 목록을 줘 내비와 **같은 명세**를 받는다(새 이름을 내보내면 진입 청크가 9B 늘어 래칫을 넘는다 — DECISIONS §775-1).
 function opsLand() {
   return withLanduse([{ id: "bg", type: "background" }]).slice(1).map((l) => ({
     ...l, id: "ops-" + l.id,
