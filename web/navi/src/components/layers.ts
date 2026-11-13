@@ -94,6 +94,8 @@ export function sources(dataUrl: string, terrainBounds?: [number, number, number
     // ★ PLAN 행 144(닫힘). 공원 · 녹지 · 광장 · 공공공지 면(도시계획시설 `vworld_uq153` · `publish_basemap` 이 낸다) — 공터가 검게 그려지던 것을 메운다.
     //   칠하는 면일 뿐 판정이 아니다. 갈래는 속성 `cls`(green · plaza) 하나다.
     landuse: { type: "geojson", data: dataUrl + "landuse.geojson" },
+    // ★ DECISIONS §768 · PLAN 행 231. 연속지적도 **대지**를 합친 면(바탕 맨 아래 · 크기가 커 따로 낸다). 갈래는 `cls` = daeji 하나다.
+    daeji: { type: "geojson", data: dataUrl + "daeji.geojson" },
     sidewalk: { type: "geojson", data: dataUrl + "sidewalk.geojson" },
     segments: { type: "geojson", data: dataUrl + "segments.geojson" },
     poi: { type: "geojson", data: dataUrl + "poi.geojson" },
@@ -127,8 +129,17 @@ export const NAVI_OFF = [
  */
 export function landuseLayers(): LayerSpecification[] {
   return [
-    { id: "landuse", type: "fill", source: "landuse",
-      paint: { "fill-color": ["match", ["get", "cls"], "green", MAP.landGreen, MAP.landPlaza] as never } },
+    // ★ 맨 아래 — 대지(마당 · 주차장 · 공터)를 합친 면. 눈에 안 띄는 바탕이다(DECISIONS §768).
+    { id: "daeji", type: "fill", source: "daeji", paint: { "fill-color": MAP.landDaeji } },
+    // 도시계획시설(공원 · 광장 · 학교 · 청사 …)과 지적도 지목별로 합친 면. **판정 색 · 아이콘 · 길 · 건물이 이 층 위다**(`withLanduse` 가 `bg` 바로 뒤에 낀다).
+    { id: "landuse", type: "fill", source: "landuse", filter: ["==", ["geometry-type"], "Polygon"] as never,
+      paint: { "fill-color": ["match", ["get", "cls"],
+        "green", MAP.landGreen, "jm_green", MAP.landGreen, "inst", MAP.landInst, "jm_inst", MAP.landInst,
+        "jm_forest", MAP.landForest, "jm_farm", MAP.landFarm, "jm_water", MAP.landWater, "jm_paved", MAP.landPaved,
+        MAP.landPlaza] as never } },
+    // 대학(UQV35)과 틀의 10% 넘는 면은 **칠하지 않고 경계선만**(캠퍼스 안에 길이 있다).
+    { id: "landuse-campus", type: "line", source: "landuse", filter: ["==", ["geometry-type"], "LineString"] as never,
+      paint: { "line-color": MAP.landCampus, "line-width": 1.2, "line-opacity": 0.8 } },
   ];
 }
 

@@ -6,8 +6,10 @@ IN    data/processed/ngii1k_5186.gpkg (수치지형도 1:1,000 도로경계 면)
       data/processed/road_rw_5186.gpkg (도로명주소 실폭도로 면)
       data/processed/ngii1k_walk_5186.gpkg (보도 면)
       data/processed/vworld_uq153_5186.gpkg (도시계획시설 — 공원 · 녹지 · 광장 · 공공공지 면 · 행 144 · 닫힘)
+      data/processed/vworld_uq164_5186.gpkg (도시계획시설 — 학교 · 청사 · 문화 · 복지 · 대학 면 · UQV 분류 · DECISIONS §768)
+      data/processed/jijeok_5186.gpkg (연속지적도 필지 — 지목은 `A5` 끝 글자 · 지목별로 합쳐 칠한다 · DECISIONS §768)
       web/data/view.json (maxBounds — 자르는 틀)
-OUT   web/data/road_area.geojson · web/data/sidewalk.geojson · web/data/landuse.geojson
+OUT   web/data/road_area.geojson · web/data/sidewalk.geojson · web/data/landuse.geojson · web/data/daeji.geojson
 PARAM 단순화 SIMPLIFY_M · 좌표 자릿수 PREC · 크기 상한 SIZE_MAX · LANDUSE_SIZE_MAX · GREEN_WORDS
 
 ── 왜 생겼나 (2026-09-22 · DECISIONS §213-4) ─────────────────────
@@ -65,6 +67,26 @@ LANDUSE_FILE = f"{LANDUSE_STEM}_5186.gpkg"
 LANDUSE_SIZE_MAX = 256 * 1024
 #: `DGM_NM`(시설명)에 이 낱말이 들면 녹지 계열이고 나머지(공공공지 · 광장)는 포장 공지로 칠한다. **색의 갈래일 뿐 판정이 아니다.**
 GREEN_WORDS = ("공원", "녹지", "유원지")
+
+#: ★ 2026-11-13 (DECISIONS §768 · PLAN #231). 토지이용 면을 둘 더 읽는다 — 도시계획시설 `uq164`(분류 코드 `MNUM` 안의 `UQVnn`)와 연속지적도(지목 = `A5` 끝 글자).
+INST_STEM = "vworld_uq164"
+PARCEL_STEM = "jijeok"
+#: 칠하지 않고 **경계선만** 내는 `UQVnn` — 대학(캠퍼스 안에 길이 있다). 그 밖에도 **면 하나의 전체 면적이 틀의 `BIG_FRAC` 를 넘으면** 경계선만이다(같은 이유).
+CAMPUS_UQV = frozenset({"35"})
+BIG_FRAC = 0.10
+#: 지목(끝 글자) → 칠 갈래. **도로(`도`)는 뺀다**(도로면이 따로 그려진다) · **대지(`대`)는 `daeji.geojson` 이 따로 든다**(크기 — 합친 면의 약 3분의 2).
+JM_BUCKET = {
+    "임": "forest", "전": "farm", "답": "farm", "과": "farm", "목": "farm", "염": "farm", "광": "farm",
+    "천": "water", "구": "water", "유": "water", "제": "water", "양": "water",
+    "학": "inst", "종": "inst", "사": "inst", "묘": "inst",
+    "공": "green", "체": "green", "원": "green",
+}  # 그 밖(`차` `주` `창` `장` `철` `수` `잡` …)은 `paved` — `_jm_bucket`
+#: 지목 면의 단순화(m) — 합친 면이라 골목 모서리가 아니라 **마당 · 필지 경계**다. 1m 로 0.04% 만 변한다(DECISIONS §768).
+PARCEL_SIMPLIFY_M = 1.0
+#: 대지 면은 더 거칠게(m) — 마당 · 필지 경계는 정보가 아니라 바탕이다. 파일 하나라 상한을 맞추는 자리가 여기뿐이다(DECISIONS §768)
+DAEJI_SIMPLIFY_M = 2.0
+#: 대지 파일의 상한 — 지목 하나라 지목별로 더 못 쪼개고(대지가 합친 면의 약 3분의 2) 타일은 고정 틀(약 2×2km)에 과하다. 단순화 2m 로 **325KB**(DECISIONS §768)라 384KB 로 못박는다
+DAEJI_SIZE_MAX = 384 * 1024
 
 
 def _frame() -> object:
@@ -203,23 +225,22 @@ def landuse_class(name: object) -> str:
     return "green" if isinstance(name, str) and any(w in name for w in GREEN_WORDS) else "plaza"
 
 
-def build_landuse(frame) -> dict:
-    """토지이용 면 — 공원 · 녹지 · 광장 · 공공공지를 **갈래를 살려** 낸다. (행 144 · 닫힘)
+def _jm_bucket(ch: object) -> str | None:
+    """지목 끝 글자 → 칠 갈래. 도로(`도`)는 `None`(안 칠한다) · 대지(`대`)는 `daeji` 가 든다."""
+    if not isinstance(ch, str) or not ch or ch in ("도", "대"):
+        return None
+    return JM_BUCKET.get(ch, "paved")
 
-    ★ 도로면처럼 합치지(union) 않는다 — 합치면 갈래가 사라진다. 면마다 따로 격자 · 유효화 · 감김을 건다(`snap_orient`).
-    ★ **판정과 무관하다.** 폭에는 안 쓴다(`sources.yaml` 의 `used_for`). 칠하는 면일 뿐이다.
-    ★ 원천이 없으면 죽는다 — 빈 바탕을 조용히 내지 않는다(`union` 과 같은 규율).
-    """
-    path = P / LANDUSE_FILE
+
+def _read(stem: str):
+    path = P / f"{stem}_5186.gpkg"
     if not path.exists():
-        raise SystemExit(f"★ {path} 가 없다 — `ingest` 를 먼저 돌려라. 빈 토지이용 면을 조용히 내지 않는다")
-    g = gpd.read_file(path)
-    g = g[g.intersects(frame)]
-    items = []
-    for geom, name in zip(g.geometry.make_valid().intersection(frame), g.get("DGM_NM", [None] * len(g)), strict=False):
-        for q in _polys(geom.simplify(SIMPLIFY_M)):
-            if q.area >= 1.0:
-                items.append((landuse_class(name), q))
+        raise SystemExit(f"★ {path} 가 없다 — `ingest` 를 먼저 돌려라(`--only {stem}`). 빈 토지이용 면을 조용히 내지 않는다")
+    return gpd.read_file(path)
+
+
+def _fc(items, lines, name: str) -> dict:
+    """(갈래, 5186 폴리곤) 와 (갈래, 5186 선) 목록 → 결정적 FeatureCollection(4326 · 격자 · 감김 · 유효화)."""
     items.sort(key=lambda t: (-round(t[1].area, 9), round(t[1].centroid.x, 9), round(t[1].centroid.y, 9), t[0]))
     feats = []
     for cls, q in items:
@@ -228,9 +249,79 @@ def build_landuse(frame) -> dict:
         if fixed is None:
             continue
         if not fixed.is_valid:
-            raise SystemExit(f"★ landuse: 무효 기하 — 조용히 발행하지 않는다 ({cls})")
+            raise SystemExit(f"★ {name}: 무효 기하 — 조용히 발행하지 않는다 ({cls})")
         feats.append({"type": "Feature", "properties": {"cls": cls}, "geometry": _round(mapping(fixed))})
-    return {"type": "FeatureCollection", "name": "landuse", "features": feats}
+    lines.sort(key=lambda t: (t[0], -round(t[1].length, 6), round(t[1].centroid.x, 6)))
+    for cls, ln in lines:
+        out = gpd.GeoSeries([ln], crs=5186).to_crs(4326).iloc[0]
+        feats.append({"type": "Feature", "properties": {"cls": cls}, "geometry": _round(mapping(out))})
+    return {"type": "FeatureCollection", "name": name, "features": feats}
+
+
+def _lines(geom):
+    """경계선 — 틀 안에서 자른 `LineString` 조각들."""
+    if geom is None or geom.is_empty:
+        return []
+    if geom.geom_type == "LineString":
+        return [geom]
+    return [x for part in getattr(geom, "geoms", []) for x in _lines(part)]
+
+
+def build_landuse(frame) -> dict:
+    """토지이용 면 — 도시계획시설 둘(`uq153` · `uq164`)과 연속지적도 **지목별로 합친 면**(대지 · 도로 제외). (행 144 · 231)
+
+    ★ 도시계획시설은 합치지(union) 않는다 — 합치면 갈래가 사라진다. 면마다 따로 격자 · 유효화 · 감김을 건다(`snap_orient`).
+    ★ 지적도는 **필지마다가 아니라 지목마다 합친다** — 필지마다면 모자이크이고 경계선이 467km 다(DECISIONS §768). 도로 지목은 뺀다(도로면이 따로 그려진다).
+    ★ `uq164` 의 **대학(UQV35)과 면 하나가 틀의 `BIG_FRAC` 를 넘는 면은 칠하지 않고 경계선만** 낸다(`campus` — 캠퍼스 안에 길이 있다).
+    ★ **판정과 무관하다.** 폭에는 안 쓴다(`sources.yaml` 의 `used_for`). 칠하는 면일 뿐이다.
+    ★ 원천이 없으면 죽는다 — 빈 바탕을 조용히 내지 않는다(`union` 과 같은 규율).
+    """
+    path = P / LANDUSE_FILE
+    if not path.exists():
+        raise SystemExit(f"★ {path} 가 없다 — `ingest` 를 먼저 돌려라. 빈 토지이용 면을 조용히 내지 않는다")
+    g = gpd.read_file(path)
+    g = g[g.intersects(frame)]
+    items: list = []
+    lines: list = []
+    for geom, name in zip(g.geometry.make_valid().intersection(frame), g.get("DGM_NM", [None] * len(g)), strict=False):
+        for q in _polys(geom.simplify(SIMPLIFY_M)):
+            if q.area >= 1.0:
+                items.append((landuse_class(name), q))
+    # ── uq164 — UQV 분류 ──
+    u = _read(INST_STEM)
+    u = u[u.intersects(frame)]
+    for geom, mnum in zip(u.geometry.make_valid(), u["MNUM"], strict=False):
+        code = (str(mnum).split("UQV")[-1][:2]) if "UQV" in str(mnum) else ""
+        clipped = geom.intersection(frame)
+        if geom.area > BIG_FRAC * frame.area or code in CAMPUS_UQV:
+            lines += [("campus", ln) for ln in _lines(geom.boundary.intersection(frame)) if ln.length >= 1.0]
+            continue
+        for q in _polys(clipped.simplify(SIMPLIFY_M)):
+            if q.area >= 1.0:
+                items.append(("inst", q))
+    # ── 지적도 — 지목별로 합친 면(대지 · 도로 제외) ──
+    p = _read(PARCEL_STEM)
+    p = p[p.intersects(frame)].copy()
+    p["_b"] = [_jm_bucket(x[-1:] if isinstance(x, str) and x[-1:].isalpha() else None) for x in p["A5"].astype(str)]
+    for b, grp in p[p["_b"].notna()].groupby("_b"):
+        merged = grp.geometry.make_valid().intersection(frame).union_all()
+        for q in _polys(merged.simplify(PARCEL_SIMPLIFY_M)):
+            if q.area >= 1.0:
+                items.append((f"jm_{b}", q))
+    return _fc(items, lines, "landuse")
+
+
+def build_daeji(frame) -> dict:
+    """대지(지목 `대`)를 **한 덩어리로 합친** 면 — 마당 · 주차장 · 공터(빈 공간 45.0% 의 29.3%p). 필지 경계가 사라진다.
+
+    ★ 따로 낸다 — 합친 면의 약 3분의 2 라 `landuse.geojson` 에 같이 두면 상한을 못 맞춘다. 가장 낮은 바탕이라 **겹치는 자리에서는 `landuse` 가 위**다.
+    """
+    p = _read(PARCEL_STEM)
+    p = p[p.intersects(frame)].copy()
+    sel = p[[isinstance(x, str) and x[-1:] == "대" for x in p["A5"].astype(str)]]
+    merged = sel.geometry.make_valid().intersection(frame).union_all()
+    items = [("daeji", q) for q in _polys(merged.simplify(DAEJI_SIMPLIFY_M)) if q.area >= 1.0]
+    return _fc(items, [], "daeji")
 
 
 def main() -> None:
@@ -250,6 +341,12 @@ def main() -> None:
         raise SystemExit(f"★ 토지이용 면이 {len(txt.encode()) / 1024:.0f}KB — 상한 {LANDUSE_SIZE_MAX / 1024:.0f}KB 를 넘었다")
     (W / "landuse.geojson").write_text(txt, encoding="utf-8")
     print(f"  landuse.geojson  면 {len(lu['features'])} · {len(txt.encode()) / 1024:.0f}KB")
+    dj = build_daeji(frame)
+    txt = json.dumps(dj, ensure_ascii=False, separators=(",", ":"))
+    if len(txt.encode()) > DAEJI_SIZE_MAX:
+        raise SystemExit(f"★ 대지 면이 {len(txt.encode()) / 1024:.0f}KB — 상한 {DAEJI_SIZE_MAX / 1024:.0f}KB 를 넘었다")
+    (W / "daeji.geojson").write_text(txt, encoding="utf-8")
+    print(f"  daeji.geojson  면 {len(dj['features'])} · {len(txt.encode()) / 1024:.0f}KB")
 
 
 if __name__ == "__main__":

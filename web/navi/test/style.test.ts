@@ -146,5 +146,14 @@ test("토지이용 면 — 소스 · 레이어 순서(보도 · 도로면 아래
   ok(LANDUSE_RAW !== undefined, "web/data/landuse.geojson 이 없다");
   const fc = JSON.parse(LANDUSE_RAW!) as { features: { properties: { cls: string } }[] };
   ok(fc.features.length > 0, "발행물에 토지이용 면이 0개다 — 빈 바탕이다");
-  ok(fc.features.every((f) => f.properties.cls === "green" || f.properties.cls === "plaza"), "모르는 갈래가 발행물에 있다");
+  const KNOWN = ["green", "plaza", "inst", "campus", "jm_forest", "jm_farm", "jm_water", "jm_inst", "jm_green", "jm_paved"];
+  ok(fc.features.every((f) => KNOWN.includes(f.properties.cls)), "모르는 갈래가 발행물에 있다");
+  // ★ DECISIONS §768 — 대지 면(맨 아래) · 대학 경계선은 선 · 판정 색과 길이 항상 위다
+  ok(src.daeji?.type === "geojson" && String(src.daeji.data).endsWith("daeji.geojson"), "대지 소스가 안 선다");
+  ok(ids.indexOf("bg") < ids.indexOf("daeji") && ids.indexOf("daeji") < ids.indexOf("landuse"), "대지 면이 landuse 위거나 바탕 밑이다");
+  const campus = layers.find((l) => l.id === "landuse-campus") as { type?: string } | undefined;
+  ok(campus?.type === "line", "대학 경계선이 선 층이 아니다(칠하면 캠퍼스 안의 길을 가린다)");
+  ok(ids.indexOf("landuse-campus") < ids.indexOf("sidewalk"), "대학 경계선이 보도 위에 그려진다");
+  for (const k of ["landInst", "landForest", "landFarm", "landWater", "landPaved", "landDaeji"] as const)
+    ok(String(paint + JSON.stringify(layers.find((l) => l.id === "daeji")!.paint)).includes(String(MAP[k])), `갈래 색 ${k} 이 안 쓰인다`);
 });
