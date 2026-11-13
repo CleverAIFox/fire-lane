@@ -3,6 +3,8 @@
 name = "fire-lane-ops"
 main = "src/index.ts"
 compatibility_date = "2025-10-01"
+workers_dev = true
+preview_urls = false
 
 # 방 하나 = DO 하나(`idFromName("fire-lane")`). 무료 플랜은 SQLite 백엔드만 쓸 수 있다.
 [[durable_objects.bindings]]
