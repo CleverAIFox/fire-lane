@@ -13742,6 +13742,111 @@
   },
   "sha": "8ccf1870327bc2d5"
  },
+ "DECISIONS/771": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "data/_acquire.json",
+   "sources.yaml",
+   "tests/test_chain_is_alive.py",
+   "tools/deadcheck.py",
+   "tools/plan_renumber.py",
+   "tools/planclose.py",
+   "tools/sizetable.py"
+  ],
+  "fp": "view-v2",
+  "kind": "read",
+  "legacy": [
+   "0b28542a559f8874",
+   "608e4d58b708e28d",
+   "8f438fcd010afa0c",
+   "ac2b89541e03c462"
+  ],
+  "parts": {
+   "data/_acquire.json": "c81d7d5d4e7d4062",
+   "sources.yaml": "fc9e405b9bc4d46a",
+   "tests/test_chain_is_alive.py": "96c3a044c398ca70",
+   "tools/deadcheck.py": "458b5952d2f6069a",
+   "tools/plan_renumber.py": "a286630494cd2a76",
+   "tools/planclose.py": "b57e85539007ee27",
+   "tools/sizetable.py": "2283252f765fb703",
+   "본문": "ad7fee33ce5688fa"
+  },
+  "sha": "0b28542a559f8874"
+ },
+ "DECISIONS/772": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   ".github/dependabot.yml",
+   "data/_acquire.json",
+   "ops-worker/package-lock.json",
+   "sources.yaml",
+   "tests/test_chain_is_alive.py",
+   "tests/test_naviweight.py",
+   "tools/gate_parity.py",
+   "tools/gatefast.py"
+  ],
+  "fp": "view-v2",
+  "kind": "read",
+  "legacy": [
+   "318939b1a8e57c2f",
+   "7bde2d50df6082c7",
+   "89307b31b55bc5b6",
+   "9c63a274aa5c487a",
+   "9f1a159407167aae",
+   "a2fb5a1c5266ad29",
+   "ae058ed7e70c39d6",
+   "ce95e2ec4dc735e1"
+  ],
+  "parts": {
+   ".github/dependabot.yml": "c94e52fb81f72a40",
+   "data/_acquire.json": "c81d7d5d4e7d4062",
+   "ops-worker/package-lock.json": "3cc3cb1a92507c59",
+   "sources.yaml": "1f51dbbff5df08eb",
+   "tests/test_chain_is_alive.py": "b674b4cad63acdd8",
+   "tests/test_naviweight.py": "1cc42664b8ca6f69",
+   "tools/gate_parity.py": "0a3642fb11bf42e1",
+   "tools/gatefast.py": "966e72713f1a9b73",
+   "본문": "a1f864ca666be3cc"
+  },
+  "sha": "7bde2d50df6082c7"
+ },
+ "DECISIONS/773": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "data/_acquire.json",
+   "ops-worker/package-lock.json",
+   "ops-worker/scripts/deploy.sh",
+   "ops-worker/src/index.ts",
+   "ops-worker/src/relay.ts",
+   "sources.yaml",
+   "tests/test_provider_registry.py",
+   "tests/test_verify_evidence.py",
+   "tools/gate_parity.py",
+   "tools/treecheck.py",
+   "tools/verify.sh"
+  ],
+  "fp": "view-v2",
+  "kind": "read",
+  "legacy": [
+   "b201d94866d3e36b",
+   "d8ac64494b03ab00"
+  ],
+  "parts": {
+   "data/_acquire.json": "c81d7d5d4e7d4062",
+   "ops-worker/package-lock.json": "3cc3cb1a92507c59",
+   "ops-worker/scripts/deploy.sh": "40a8eff1e77dd89d",
+   "ops-worker/src/index.ts": "7788ceb3b4883684",
+   "ops-worker/src/relay.ts": "8b5c2d336b134a47",
+   "sources.yaml": "0d73c980532b0ca6",
+   "tests/test_provider_registry.py": "df65561af8a2f6d5",
+   "tests/test_verify_evidence.py": "b8794dc4803d6807",
+   "tools/gate_parity.py": "0a3642fb11bf42e1",
+   "tools/treecheck.py": "3bfc9bc975604f12",
+   "tools/verify.sh": "9864a122bd60ce7e",
+   "본문": "84d23a05effcb2d2"
+  },
+  "sha": "b201d94866d3e36b"
+ },
  "DECISIONS/78": {
   "doc": "docs/DECISIONS.md",
   "files": [
