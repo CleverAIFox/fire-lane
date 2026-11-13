@@ -21,8 +21,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from closecap import closed_rows  # noqa: E402 — 경로를 넣은 뒤에 불러야 한다(tools/ 는 패키지가 아니다)
+from closecap import (
+    closed_rows,  # 같은 tools/ 의 형제 — 스크립트로 돌 때는 tools/ 가 경로 맨 앞이고 pytest 는 `pythonpath` 가 든다
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 FOLLOWUP = ("안 한 것", "범위가 아니다", "확인 필요", "남은 것", "미뤘다")   # 「미결」은 뺐다 — 읽은 3건이 전부 오탐(DECISIONS §747)
@@ -57,7 +58,7 @@ def verdict(plan_diff: str, decisions_diff: str, plan_after: str) -> tuple[int, 
 
 
 def _git(*args: str) -> str | None:
-    r = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, encoding="utf-8")
+    r = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, encoding="utf-8", timeout=60)
     return r.stdout if r.returncode == 0 else None
 
 

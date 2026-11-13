@@ -70,7 +70,7 @@ def verdict(plan_diff: str, decisions_diff: str) -> tuple[int, str]:
 
 
 def _git(*args: str) -> str | None:
-    r = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, encoding="utf-8")
+    r = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, encoding="utf-8", timeout=60)
     return r.stdout if r.returncode == 0 else None
 
 

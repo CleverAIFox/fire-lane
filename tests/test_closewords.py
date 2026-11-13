@@ -7,12 +7,10 @@ PLAN 본문  규칙 없음 — 닫는 문단을 무는 검사이고 PLAN 의 어
 """
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "tools"))
-import closewords as cw  # noqa: E402 — 경로를 넣은 뒤에 불러야 한다(tools/ 는 패키지가 아니다)
+import closewords as cw
 
 AFTER = "| 7 | x |\n| 225 | y |\n"
 
