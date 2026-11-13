@@ -13698,6 +13698,48 @@
   },
   "sha": "8807dadf467f2665"
  },
+ "DECISIONS/769": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_plan_blocks.py",
+   "tools/planclose.py"
+  ],
+  "fp": "view-v2",
+  "kind": "read",
+  "legacy": [
+   "1983b486e9930241",
+   "44753dd7a47824ff",
+   "8a634b4528aeeec8",
+   "d183e88fcf28728d"
+  ],
+  "parts": {
+   "tests/test_plan_blocks.py": "9704e90048e64095",
+   "tools/planclose.py": "b57e85539007ee27",
+   "본문": "1fe02a17b98e0035"
+  },
+  "sha": "8a634b4528aeeec8"
+ },
+ "DECISIONS/770": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "src/firelane/contract.py",
+   "tests/test_contract_verdict_ratchets.py",
+   "tools/web_manifest.py"
+  ],
+  "fp": "view-v2",
+  "kind": "read",
+  "legacy": [
+   "8ccf1870327bc2d5",
+   "8fabfad2ac641b70"
+  ],
+  "parts": {
+   "src/firelane/contract.py": "c4d45ae0b5208581",
+   "tests/test_contract_verdict_ratchets.py": "ef4070d31edfc22e",
+   "tools/web_manifest.py": "0286fb5e3d48b396",
+   "본문": "eb154b82c6857bfb"
+  },
+  "sha": "8ccf1870327bc2d5"
+ },
  "DECISIONS/78": {
   "doc": "docs/DECISIONS.md",
   "files": [
