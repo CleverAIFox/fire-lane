@@ -294,7 +294,7 @@ def test_the_four_new_sources_get_placed_by_name():
         "C_UQ153.zip":
             ("vworld", "vworld_uq153_kr_20261001.zip"),
         "LSMD_CONT_UQ164_5174_전남광주통합특별시.zip":
-            ("vworld", "vworld_uq164_jngj_20260915.zip"),
+            ("vworld", "vworld_uq164_jngj_20261112.zip"),
         "15. 도로대장_20261006153718.csv":
             ("eais", "eais_roadledger_dm_jngj-dongmyeong_20260801.csv"),
         "202608_상세주소DB_전체분.zip":

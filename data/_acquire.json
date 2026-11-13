@@ -332,9 +332,9 @@
    "sha256": "d43eb5155ada0fb913b0bbe882642cc14de9cfd0c953aa1d0b4b077755cb49da",
    "bytes": 52383515
   },
-  "vworld/vworld_uq164_jngj_20260915.zip": {
-   "sha256": "78356e48898fb18bfa24fe06aaedba54e0c906c9fbbfc9aeda8de6039fad5d57",
-   "bytes": 905642
+  "vworld/vworld_uq164_jngj_20261112.zip": {
+   "sha256": "660aef8339ce5a0bd17a04bd521b4ba67bcbbb77f9cacac357a97897d10d15bc",
+   "bytes": 1349200
   },
   "gjcity/gjcity_oneway_donggu_jngj-donggu_20261008.xlsx": {
    "sha256": "8edbf3c6a1d1ac6cc27e5b5bac1143b851b30a63e2d816046a2697f3c4ed4bd1",
@@ -375,7 +375,19 @@
   "nfa/nfa_ems_kr_20251231.csv": {
    "sha256": "1b20dac7d9f72f8e2901a0f67d340832d57f3c42a4ebde2756207818d775ac58",
    "bytes": 1800360231
+  },
+  "juso/(도로명주소)출입구_전남광주통합특별시.zip": {
+   "sha256": "6e35ff2b976a69fa961e10f1f97b497b5baa6ac44ef5767ac9d3fab5a206e40d",
+   "bytes": 19793991
+  },
+  "juso/AL_D010_12_20261109.zip": {
+   "sha256": "3198c591e0411b48e5df1ca382e2c827f2e1abf5a9ab45d1492beb554cfddd91",
+   "bytes": 291356487
+  },
+  "juso/도로명주소전자지도활용가이드.pdf": {
+   "sha256": "f3f87d15ff19acfbf7ae22cedd5b11b06b7459506bd91e3a9ab742742980ed34",
+   "bytes": 1154628
   }
  },
- "at": "2026-11-09T00:52:39+09:00"
+ "at": "2026-11-13T17:52:18+09:00"
 }
