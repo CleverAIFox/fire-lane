@@ -17,13 +17,11 @@ OUT   종료코드 0 · 1(막음) · 2(git 이 안 된다)
 from __future__ import annotations
 
 import re
-import subprocess
 import sys
 from pathlib import Path
 
-from closecap import (
-    closed_rows,  # 같은 tools/ 의 형제 — 스크립트로 돌 때는 tools/ 가 경로 맨 앞이고 pytest 는 `pythonpath` 가 든다
-)
+# 같은 tools/ 의 형제 — 스크립트로 돌 때는 tools/ 가 경로 맨 앞이고 pytest 는 `pythonpath` 가 든다
+from closecap import closed_rows, git_out
 
 ROOT = Path(__file__).resolve().parents[1]
 FOLLOWUP = ("안 한 것", "범위가 아니다", "확인 필요", "남은 것", "미뤘다")   # 「미결」은 뺐다 — 읽은 3건이 전부 오탐(DECISIONS §747)
@@ -57,15 +55,10 @@ def verdict(plan_diff: str, decisions_diff: str, plan_after: str) -> tuple[int, 
                "  ★ `#144` 가 「uq164 는 이 행의 범위가 아니다」 로 닫힌 것이 이 꼴이었다(§729).")
 
 
-def _git(*args: str) -> str | None:
-    r = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, encoding="utf-8", timeout=60)
-    return r.stdout if r.returncode == 0 else None
-
-
 def staged() -> int:
-    plan = _git("diff", "--cached", "-U0", "--", "docs/PLAN.md")
-    dec = _git("diff", "--cached", "-U0", "--", "docs/DECISIONS.md")
-    after = _git("show", ":docs/PLAN.md")
+    plan = git_out("diff", "--cached", "-U0", "--", "docs/PLAN.md")
+    dec = git_out("diff", "--cached", "-U0", "--", "docs/DECISIONS.md")
+    after = git_out("show", ":docs/PLAN.md")
     if plan is None or dec is None or after is None:
         print("✗ git 이 안 된다 — 닫는 문단을 못 봤다. 통과로 안 읽는다")
         return 2

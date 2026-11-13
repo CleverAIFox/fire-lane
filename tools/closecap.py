@@ -69,14 +69,14 @@ def verdict(plan_diff: str, decisions_diff: str) -> tuple[int, str]:
                f"     **한 커밋에 닫은 행 {len(rows)}개(상한 {CAP}) — 사유:** (스무 자 이상 · 같은 근거로 닫히는 묶음인 까닭)")
 
 
-def _git(*args: str) -> str | None:
+def git_out(*args: str) -> str | None:
     r = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, encoding="utf-8", timeout=60)
     return r.stdout if r.returncode == 0 else None
 
 
 def staged() -> int:
-    plan = _git("diff", "--cached", "-U0", "--", "docs/PLAN.md")
-    dec = _git("diff", "--cached", "-U0", "--", "docs/DECISIONS.md")
+    plan = git_out("diff", "--cached", "-U0", "--", "docs/PLAN.md")
+    dec = git_out("diff", "--cached", "-U0", "--", "docs/DECISIONS.md")
     if plan is None or dec is None:
         print("✗ git diff 가 안 된다 — 닫은 수를 못 봤다. 통과로 안 읽는다")
         return 2
@@ -86,14 +86,14 @@ def staged() -> int:
 
 
 def history(rng: str) -> int:
-    log = _git("log", "--format=%h", rng, "--", "docs/PLAN.md")
+    log = git_out("log", "--format=%h", rng, "--", "docs/PLAN.md")
     if log is None:
         print("✗ git log 가 안 된다")
         return 2
     over: list[tuple[str, int]] = []
     total = 0
     for h in log.split():
-        d = _git("show", "-U0", "--format=", h, "--", "docs/PLAN.md") or ""
+        d = git_out("show", "-U0", "--format=", h, "--", "docs/PLAN.md") or ""
         n = len(closed_rows(d))
         total += n
         if n > CAP:
