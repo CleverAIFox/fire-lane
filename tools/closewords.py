@@ -85,6 +85,12 @@ def selftest() -> int:
 
 
 def main(argv: list[str]) -> int:
+    if "-h" in argv or "--help" in argv:
+        print(__doc__)
+        return 0
+    if any(a.startswith("-") and a != "--selftest" for a in argv):
+        print(f"✗ 모르는 깃발 {[a for a in argv if a.startswith('-')]} — `--help` 를 봐라")
+        return 2
     return selftest() if "--selftest" in argv else staged()
 
 
