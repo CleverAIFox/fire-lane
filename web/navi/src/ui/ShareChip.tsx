@@ -41,7 +41,7 @@ const chip: CSSProperties = {
   position: "absolute", zIndex: 6, top: S.guideBarH + 12, left: "50%",
   transform: "translateX(-50%)", whiteSpace: "nowrap",
   borderRadius: 12, padding: "9px 14px", display: "flex", alignItems: "center", gap: 10,
-  fontSize: 14, boxShadow: "0 4px 14px rgba(0,0,0,.18)",
+  fontSize: 24, boxShadow: "0 4px 14px rgba(0,0,0,.18)",
 };
 const retry: CSSProperties = {
   border: "none", background: C.danger, color: "#fff", borderRadius: 8,

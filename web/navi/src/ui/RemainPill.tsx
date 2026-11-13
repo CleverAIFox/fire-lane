@@ -28,4 +28,4 @@ const pill: CSSProperties = {
   display: "flex", alignItems: "center", gap: 28, minWidth: 260, justifyContent: "center",
   boxShadow: "0 -4px 16px rgba(0,0,0,.18)",
 };
-const unit: CSSProperties = { fontSize: 15, fontWeight: 700, marginLeft: 3, color: "#334155" };
+const unit: CSSProperties = { fontSize: 24, fontWeight: 700, marginLeft: 3, color: "#334155" };

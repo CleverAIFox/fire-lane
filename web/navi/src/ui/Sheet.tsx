@@ -71,7 +71,7 @@ const header: CSSProperties = {
   padding: "0 22px", boxSizing: "border-box", fontFamily: F.family,
 };
 const sheet: CSSProperties = {
-  position: "absolute", zIndex: 5, top: HEADER_H, left: 0, bottom: 0, width: S.sheetW,
+  position: "absolute", zIndex: 5, top: HEADER_H, left: 0, bottom: 0, width: S.sheetW, maxWidth: "100%",
   background: C.sheetBg, color: C.panelInk, display: "flex", flexDirection: "column",
   boxShadow: "6px 0 24px rgba(0,0,0,.18)", fontFamily: F.family,
 };

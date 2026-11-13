@@ -148,7 +148,7 @@ SHARED_LAYERS = 12
 UI_TEXT = 3384
 #: 주행 중 화면(`uidrive.DRIVE_FILES`)의 20자 넘는 말 · 24px 미만 글자 선언 수 — 현재 실측이 곧 상한이다(DECISIONS §702). 내려가는 쪽.
 DRIVE_LONG = 5
-DRIVE_SMALL_FONT = 19
+DRIVE_SMALL_FONT = 14
 
 #: `tools/ratchet.py` 가 **줄었을 때만** 이 수를 고쳐 적는다(§309).
 RATCHETS = {"SHARED_LAYERS": "down", "UI_TEXT": "down", "DRIVE_LONG": "down", "DRIVE_SMALL_FONT": "down"}
