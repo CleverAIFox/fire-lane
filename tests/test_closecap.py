@@ -50,7 +50,7 @@ def test_the_hook_is_registered():
 
 
 @pytest.mark.skipif(subprocess.run(["git", "cat-file", "-e", "5a8543ad"], cwd=ROOT, capture_output=True).returncode != 0,
-                    reason="이 복제에 그 커밋이 없다(얕은 복제)")
+                    reason="환경skip(도구) — 이 복제에 그 커밋이 없다(얕은 복제)")
 def test_the_real_history_has_commits_that_this_gate_would_have_stopped():
     """실물 앵커 — 29행을 한 커밋에 닫은 과거가 있다(고칠 수 없다 · 앞으로를 막는다)."""
     d = subprocess.run(["git", "show", "-U0", "--format=", "5a8543ad", "--", "docs/PLAN.md"], cwd=ROOT,
