@@ -82,18 +82,20 @@ const DARK = {
 
 /**
  * 관제(어두운 화면)의 토지이용 면 — 내비의 층 명세(`landuseLayers`)를 **그대로 받아 색만 어둡게 바꾼다**(DECISIONS §775 · PLAN 행 231).
- * 같은 갈래 · 같은 순서 · 같은 필터라서 두 화면이 어긋날 길이 없고, 값(아래 표)만 다르다. 어두운 바탕(`#0b1220`)보다 ΔE76 ≥ 6 밝게,
+ * 같은 갈래 · 같은 순서 · 같은 필터라서 두 화면이 어긋날 길이 없고, 값(아래 표)만 다르다. 어두운 바탕(`#0b1220`)보다 ΔE76 ≥ 12 (§778 D — 같은 명도에서 **채도를 키워** 올렸다: 명도를 올리면 판정 색 대비가 깎인다),
  * 판정 4색 대비는 바탕 위 값의 83% 이상(`tools/themecheck.py` 가 문다). id 는 `ops-` 접두 — 공유 층 래칫(12)은 같은 id 를 센다.
  * ★ 여기(관제 청크)에 산다 — 진입 청크 바이트 래칫 때문에 `tokens.ts` 에 두지 않았다.
  */
 const LAND_DARK: Record<string, string> = {
-  [MAP.landDaeji]: "#132035", [MAP.landPlaza]: "#162237", [MAP.landGreen]: "#112429", [MAP.landInst]: "#182235",
-  [MAP.landForest]: "#112527", [MAP.landFarm]: "#162428", [MAP.landWater]: "#112334", [MAP.landPaved]: "#172139",
+  [MAP.landDaeji]: "#06203e", [MAP.landPlaza]: "#0e223d", [MAP.landGreen]: "#0c252b", [MAP.landInst]: "#10223d",
+  [MAP.landForest]: "#112527", [MAP.landFarm]: "#0f252a", [MAP.landWater]: "#00243d", [MAP.landPaved]: "#13213e",
   [MAP.landCampus]: "#4a5a78",
 };
+// ★ 2026-11-14 (DECISIONS §778). 바탕 면을 껐다(되돌렸다) — 내비와 같은 사유 · 다시 켤 조건은 §778. 명세 · 색 · `themecheck` 의 검사는 그대로다.
+const LAND_ON = false;
 function opsStyleLayers(st: Record<string, VerdictStyle>): LayerSpecification[] {
   const base = baseLayers(st);
-  base.splice(base.findIndex((l) => l.id === "bg") + 1, 0, ...opsLand());
+  if (LAND_ON) base.splice(base.findIndex((l) => l.id === "bg") + 1, 0, ...opsLand());
   return base;
 }
 // ★ `withLanduse` 에 `bg` 하나짜리 목록을 줘 내비와 **같은 명세**를 받는다(새 이름을 내보내면 진입 청크가 9B 늘어 래칫을 넘는다 — DECISIONS §775-1).

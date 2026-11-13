@@ -46,7 +46,7 @@ import type { RouteLook } from "../domain/status";
 import type { LiveFix } from "../domain/types";
 import { C, S } from "../ui/tokens";
 import {
-  GLYPHS, sources, baseLayers, withLanduse, markerLayers, routeLayers, altRouteLayers, NAVI_OFF,
+  GLYPHS, sources, baseLayers, markerLayers, routeLayers, altRouteLayers, NAVI_OFF,
   stationLayers, shortenStationLabels, applyTerrain, chevronImage, cctvIcon, hydrantIcon, bumpIcon, camIcon, zoneIcon, pillImage, pillOptions,
   Z,
 } from "./layers";
@@ -162,7 +162,8 @@ export function NaviMap(props: Props) {
         //   북동면이 어둡다.
         light: { anchor: "viewport", color: "#ffffff", intensity: 0.45, position: [1.3, 210, 30] },
         sources: sources(D, p.view.terrainBounds),
-        layers: withLanduse(baseLayers(styleRef.current)),
+        // ★ 2026-11-14 (DECISIONS §778). 바탕 면(`withLanduse`)을 **껐다** — 배포본에서 건물이 녹색 면에 파묻혀 보였다. 다시 켤 조건은 §778.
+        layers: baseLayers(styleRef.current),
       },
     });
     map.current = m;
