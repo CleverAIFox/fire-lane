@@ -161,21 +161,72 @@ def test_landuse_class_is_green_only_when_the_name_says_so() -> None:
     assert [PB.landuse_class(n) for n in ("공공공지", "광장", "", None, 3)] == ["plaza"] * 5, "낱말이 없는데 녹지로 칠했다"
 
 
+def _uq164_gpkg(tmp_path: Path, rows: list[tuple[str, Polygon]]) -> None:
+    """`vworld_uq164_5186.gpkg` 꼴 — 5186 · `MNUM`(분류 코드 `UQVnn` 가 안에 든다) 한 칸."""
+    g = gpd.GeoDataFrame({"MNUM": [f"64600001211020130350UQV{c}00086000" for c, _ in rows]}, geometry=[p for _, p in rows], crs=5186)
+    g.to_file(tmp_path / f"{PB.INST_STEM}_5186.gpkg", driver="GPKG")
+
+
+def _jijeok_gpkg(tmp_path: Path, rows: list[tuple[str, Polygon]]) -> None:
+    """`jijeok_5186.gpkg` 꼴 — 5186 · `A5`(지번 + 지목 끝 글자)."""
+    g = gpd.GeoDataFrame({"A5": [n for n, _ in rows]}, geometry=[p for _, p in rows], crs=5186)
+    g.to_file(tmp_path / f"{PB.PARCEL_STEM}_5186.gpkg", driver="GPKG")
+
+
+def _sq(x: float, y: float, w: float) -> Polygon:
+    return Polygon([(x, y), (x, y + w), (x + w, y + w), (x + w, y)])                  # 시계(CW) 로 준다
+
+
 def test_build_landuse_keeps_the_class_clips_to_the_frame_and_is_valid_and_deterministic(tmp_path, monkeypatch) -> None:
-    def sq(x: float, y: float, w: float) -> Polygon:
-        return Polygon([(x, y), (x, y + w), (x + w, y + w), (x + w, y)])             # 시계(CW) 로 준다
-    _landuse_gpkg(tmp_path, [("근린공원", sq(0, 0, 40)), ("공공공지", sq(100, 0, 30)), ("소공원", sq(900, 900, 40))])
+    _landuse_gpkg(tmp_path, [("근린공원", _sq(0, 0, 40)), ("공공공지", _sq(100, 0, 30)), ("소공원", _sq(900, 900, 40))])
+    _uq164_gpkg(tmp_path, [("32", _sq(0, 100, 20))])
+    _jijeok_gpkg(tmp_path, [("1-1 임", _sq(0, 150, 20))])
     monkeypatch.setattr(PB, "P", tmp_path)
     frame = box(-10, -10, 200, 200)                                   # 셋째 면은 틀 밖이다
     fc = PB.build_landuse(frame)
-    got = {(f["properties"]["cls"]) for f in fc["features"]}
-    assert len(fc["features"]) == 2 and got == {"green", "plaza"}, f"틀 밖 면이 남았거나 갈래를 잃었다: {got}"
+    got = sorted(f["properties"]["cls"] for f in fc["features"])
+    assert got == ["green", "inst", "jm_forest", "plaza"], f"틀 밖 면이 남았거나 갈래를 잃었다: {got}"
     assert all(set(f["properties"]) == {"cls"} for f in fc["features"]), "속성이 갈래 하나가 아니다(원천 칸을 새로 흘렸다)"
     assert PB.build_landuse(frame) == fc, "같은 입력이 다른 출력을 냈다 — 바이트 안정성이 깨졌다"
     for f in fc["features"]:
         ring = f["geometry"]["coordinates"][0]
         area2 = sum(ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1] for i in range(len(ring) - 1))
         assert area2 > 0, "외곽이 시계방향이다 — RFC 7946 위반"
+
+
+def test_a_university_and_a_face_over_ten_percent_of_the_frame_are_lines_not_fills(tmp_path, monkeypatch) -> None:
+    """★ DECISIONS §768. 대학(UQV35)과 틀의 10% 넘는 면은 **칠하지 않고 경계선만** — 캠퍼스 안에 길이 있다. 작은 학교(UQV32)는 칠한다."""
+    _landuse_gpkg(tmp_path, [("근린공원", _sq(0, 0, 10))])
+    _uq164_gpkg(tmp_path, [("35", _sq(0, 20, 30)), ("32", _sq(0, 60, 20)), ("80", _sq(100, 20, 120))])    # 대학 · 학교 · 틀 10% 넘는 체육
+    _jijeok_gpkg(tmp_path, [("1-1 임", _sq(0, 150, 10))])
+    monkeypatch.setattr(PB, "P", tmp_path)
+    frame = box(0, 0, 200, 200)                                       # 면적 40,000 — 120×120(14,400 · 36%) 은 10% 를 넘는다
+    fc = PB.build_landuse(frame)
+    kinds = sorted((f["properties"]["cls"], f["geometry"]["type"]) for f in fc["features"])
+    assert ("campus", "LineString") in kinds and kinds.count(("campus", "LineString")) + kinds.count(("campus", "MultiLineString")) >= 2, kinds
+    assert not any(c == "inst" and t != "Polygon" for c, t in kinds)
+    assert sum(1 for c, _ in kinds if c == "inst") == 1, f"칠하는 학교 면이 하나(UQV32)여야 한다: {kinds}"
+
+
+def test_parcels_are_dissolved_by_land_category_and_roads_and_lots_are_left_out(tmp_path, monkeypatch) -> None:
+    """★ 필지마다가 아니라 **지목별로 합친다**(모자이크 · 경계선 467km 를 피한다). 도로(`도`)는 뺀다(도로면이 따로 그려진다) · 대지(`대`)는 `daeji` 가 든다."""
+    _landuse_gpkg(tmp_path, [("근린공원", _sq(0, 0, 10))])
+    _uq164_gpkg(tmp_path, [("32", _sq(0, 20, 10))])
+    # 임야 필지 둘이 맞닿는다 → 한 덩어리로 합쳐진다 · 도로 · 대지는 landuse 에 안 든다
+    _jijeok_gpkg(tmp_path, [("1-1 임", _sq(0, 100, 20)), ("1-2임", _sq(20, 100, 20)), ("2-1 도", _sq(0, 130, 20)), ("3-1 대", _sq(0, 160, 20))])
+    monkeypatch.setattr(PB, "P", tmp_path)
+    frame = box(-10, -10, 200, 200)
+    fc = PB.build_landuse(frame)
+    jm = [f for f in fc["features"] if f["properties"]["cls"].startswith("jm_")]
+    assert [f["properties"]["cls"] for f in jm] == ["jm_forest"], "도로 · 대지가 landuse 에 들었거나 합치지 않았다"
+    assert len(jm[0]["geometry"]["coordinates"]) == 1, "맞닿은 두 필지가 한 면으로 합쳐지지 않았다(안쪽 경계가 남는다)"
+    dj = PB.build_daeji(frame)
+    assert [f["properties"]["cls"] for f in dj["features"]] == ["daeji"], "대지가 daeji 에 안 들었다"
+
+
+def test_land_category_buckets() -> None:
+    assert PB._jm_bucket("도") is None and PB._jm_bucket("대") is None and PB._jm_bucket(None) is None
+    assert PB._jm_bucket("임") == "forest" and PB._jm_bucket("학") == "inst" and PB._jm_bucket("차") == "paved" and PB._jm_bucket("공") == "green"
 
 
 def test_build_landuse_dies_without_its_source_instead_of_publishing_an_empty_layer(tmp_path, monkeypatch) -> None:
@@ -192,3 +243,17 @@ def test_the_ledger_names_publish_basemap_as_the_consumer_and_the_code_really_re
     src = (ROOT / "src/firelane/publish_basemap.py").read_text(encoding="utf-8")
     assert f'LANDUSE_STEM = "{PB.LANDUSE_STEM}"' in src and "gpd.read_file(path)" in src and "build_landuse" in src.split("def main")[1], \
         "발행기가 대장이 적은 키를 실제로 읽어 내지 않는다 — 이름만 적은 소비처다"
+
+
+def test_the_published_land_cover_files_are_under_their_caps_and_carry_the_agreed_classes() -> None:
+    """★ DECISIONS §768. 커밋된 `landuse.geojson` · `daeji.geojson` — 상한 아래 · 갈래는 약속한 것만 · 대학 경계선이 있다 · 도로 지목(`jm_`)이 칠로 안 들었다."""
+    import json as _json
+    lu_p, dj_p = PB.W / "landuse.geojson", PB.W / "daeji.geojson"
+    assert lu_p.stat().st_size <= PB.LANDUSE_SIZE_MAX and dj_p.stat().st_size <= PB.DAEJI_SIZE_MAX
+    lu = _json.loads(lu_p.read_text(encoding="utf-8"))["features"]
+    ok = {"green", "plaza", "inst", "campus", "jm_forest", "jm_farm", "jm_water", "jm_inst", "jm_green", "jm_paved"}
+    assert {f["properties"]["cls"] for f in lu} <= ok, "약속 밖 갈래(도로 · 대지가 landuse 에 들었나)"
+    assert any(f["properties"]["cls"] == "campus" and f["geometry"]["type"].endswith("LineString") for f in lu), "대학 경계선이 없다"
+    assert not any(f["properties"]["cls"] == "inst" and f["geometry"]["type"] != "Polygon" for f in lu)
+    dj = _json.loads(dj_p.read_text(encoding="utf-8"))["features"]
+    assert dj and {f["properties"]["cls"] for f in dj} == {"daeji"}

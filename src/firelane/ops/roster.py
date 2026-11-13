@@ -29,6 +29,17 @@ from dataclasses import dataclass, field
 ROOM = "fire-lane"
 
 
+#: 마지막 한 통을 기억하는 종류 · 상한(`ops-worker/src/relay.ts` 와 같은 수).
+CACHED = ("unit", "cv")
+MAX_BUCKETS = 256
+MAX_BYTES = 64 * 1024
+
+
+def _wants(sender_kind: str) -> tuple[str, ...]:
+    """보낸 종류 → 받는 종류. `Roster.targets` 가 이 표를 쓴다."""
+    return ("unit",) if sender_kind == "ops" else ("ops", "unit") if sender_kind == "cv" else ("ops",)
+
+
 @dataclass(frozen=True)
 class Peer:
     """붙어 있는 한 쪽."""
@@ -45,13 +56,33 @@ class Roster:
     """붙어 있는 쪽들. **순수** — 소켓을 모른다."""
 
     peers: dict[str, Peer] = field(default_factory=dict)
+    #: ★ 마지막 한 통(DECISIONS §755). 버킷 이름 `종류:식별자` → (보낸 종류, **글자 그대로**). 뜻을 안 본다 — 「상태를 든다」 가 아니라 「마지막 한 통을 기억한다」 다.
+    last: dict[str, tuple[str, str]] = field(default_factory=dict)
 
     # ── 바뀌는 자리 ────────────────────────────────────────────
     def join(self, p: Peer) -> None:
         self.peers[p.cid] = p
 
     def leave(self, cid: str) -> None:
-        self.peers.pop(cid, None)
+        p = self.peers.pop(cid, None)
+        # 차량이 떠나면 그 버킷을 비운다 — 연결이 곧 명부다. 영상은 측정값이라 연결과 무관하게 남긴다.
+        # ★ 같은 차가 재접속하면 옛 연결이 늦게 닫힌다 — 같은 `unit` 이 아직 붙어 있으면 비우지 않는다.
+        if p is not None and p.kind == "unit" and not any(q.kind == "unit" and q.unit == p.unit for q in self.peers.values()):
+            self.last.pop(f"unit:{p.unit}", None)
+
+    def remember(self, sender: Peer, text: str) -> bool:
+        """마지막 한 통을 **글자 그대로** 둔다. 관제가 보낸 것(`hb` · `ack`)은 안 둔다 — 옛 `hb` 재생은 없는 관제를 있게 한다. 상한을 넘으면 안 둔다(옮기기는 그대로 한다)."""
+        if sender.kind not in CACHED or len(text) > MAX_BYTES:
+            return False
+        key = f"{sender.kind}:{sender.unit}"
+        if key not in self.last and len(self.last) >= MAX_BUCKETS:
+            return False
+        self.last[key] = (sender.kind, text)
+        return True
+
+    def replay_for(self, kind: str) -> list[str]:
+        """새로 붙은 `kind` 가 받았어야 할 마지막 글자들. 그 종류가 보낸 쪽의 수신 대상일 때만이다(`targets` 와 같은 표)."""
+        return [t for k, t in self.last.values() if kind in _wants(k)]
 
     # ── 묻는 자리 ──────────────────────────────────────────────
     def units(self) -> list[str]:
@@ -88,11 +119,6 @@ class Roster:
           `want` 에 `cv` 가 한 번도 안 들어가는 것이 그 선언이다. 받게 하면
           그 순간 카메라가 상태를 들게 되고, 상태를 든 센서는 센서가 아니다.
         """
-        if sender.kind == "ops":
-            want = ("unit",)
-        elif sender.kind == "cv":
-            want = ("ops", "unit")
-        else:
-            want = ("ops",)
+        want = _wants(sender.kind)
         return sorted(cid for cid, p in self.peers.items()
                       if p.kind in want and cid != sender.cid)

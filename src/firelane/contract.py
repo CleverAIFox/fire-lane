@@ -471,7 +471,7 @@ REAL_FAIL_RATCHET = 7
 #:   **가르는 기준은 하나**다: 대장이 「이 항목의 파일을 raw 에 안 올렸다」고 선언했느냐(`status: missing` + `missing_why`). 입력이 제자리에 있느냐는 다른 축이고 문구(`제자리 입력 4/4`)로 붙는다.
 #:   경고는 66 → **56** 이다(실측). 올린 것이 아니라 **세는 칸이 갈린 것**이고 래칫은 **조였다**(58 → 56). `REAL_FAIL_RATCHET` 은 7 = 실측 7 이다.
 #:   ★ 이 수는 실물 갈래라 레이크가 있어야 재진다 — 이제 `RATCHETS` 선언 안이고(`ratchet_values()` 가 레이크 있을 때만 낸다 · `LAKE_ONLY`), 레이크 없는 기계는 사유와 함께 건너뛴다.
-REAL_WARN_RATCHET = 56
+REAL_WARN_RATCHET = 57   # 56 → 57 (DECISIONS §770): uq164 가 결손(ABSENT)에서 경고로 — 파일이 돌아왔고 .prj 의 TOWGS84 가 지상 0.00m(상한 0.5m)
 
 #: ★ 2026-11-10 (PLAN #213 · DECISIONS §686). 실물 갈래의 래칫 둘은 **여기(`contract.py`)가 집이다** — 셈을 하는 쪽이라 `contract_verdict` 가 부르면 순환이 된다(`test_layering`).
 #:   방향은 둘 다 `down`(늘면 울고 · 줄여도 기록을 안 내리면 운다). 레이크가 있어야 재므로 `ratchet_values()` 가 레이크 없는 기계에서는 **이름을 안 낸다**(0 으로 쓰면 조용히 초록이다) —

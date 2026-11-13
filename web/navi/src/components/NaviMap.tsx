@@ -415,7 +415,7 @@ export function NaviMap(props: Props) {
       }
       if (pts.length === 1) { m.easeTo({ center: pts[0], zoom: 16.2, pitch: 45, bearing: -18, duration: 600 }); return; }
       m.fitBounds([[x0, y0], [x1, y1]], {
-        padding: { top: 110, bottom: 80, left: S.sheetW + 70, right: 110 },
+        padding: { top: 110, bottom: 80, left: Math.min(S.sheetW + 70, Math.round(window.innerWidth * 0.5)), right: 110 },
         pitch: 45, bearing: -18, duration: 700, maxZoom: 17.2,
       });
     });

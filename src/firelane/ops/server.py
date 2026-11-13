@@ -149,9 +149,16 @@ def create_app() -> FastAPI:
         socks: dict[str, WebSocket] = app.state.socks
         r.join(me)
         socks[cid] = ws
+        # ★ 새로 붙은 쪽에게 마지막 한 통들을 **글자 그대로** 재생한다(DECISIONS §755 · 뜻을 안 본다)
+        for text in r.replay_for(kind):
+            try:
+                await ws.send_text(text)
+            except Exception:  # noqa: S110, BLE001 — 한 통이 죽어도 나머지는 받는다(아래 ★ 와 같다)
+                pass
         try:
             while True:
                 text = await ws.receive_text()
+                r.remember(me, text)
                 for other in r.targets(me):
                     peer = socks.get(other)
                     if peer is None:

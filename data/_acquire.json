@@ -332,9 +332,9 @@
    "sha256": "d43eb5155ada0fb913b0bbe882642cc14de9cfd0c953aa1d0b4b077755cb49da",
    "bytes": 52383515
   },
-  "vworld/vworld_uq164_jngj_20260915.zip": {
-   "sha256": "78356e48898fb18bfa24fe06aaedba54e0c906c9fbbfc9aeda8de6039fad5d57",
-   "bytes": 905642
+  "vworld/vworld_uq164_jngj_20261112.zip": {
+   "sha256": "660aef8339ce5a0bd17a04bd521b4ba67bcbbb77f9cacac357a97897d10d15bc",
+   "bytes": 1349200
   },
   "gjcity/gjcity_oneway_donggu_jngj-donggu_20261008.xlsx": {
    "sha256": "8edbf3c6a1d1ac6cc27e5b5bac1143b851b30a63e2d816046a2697f3c4ed4bd1",
@@ -377,5 +377,5 @@
    "bytes": 1800360231
   }
  },
- "at": "2026-11-09T00:52:39+09:00"
+ "at": "2026-11-13T17:52:18+09:00"
 }

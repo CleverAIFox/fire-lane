@@ -211,6 +211,20 @@ raw + 코드 + 대장이 있으면 결정론적으로 재생성된다. 걸린 �
 
 강제자  `tests/test_guards.py::test_docs_call_the_entrypoint_through_uv`
 
+**중개자(관제 ↔ 내비) — `ops-worker/`**
+
+Cloudflare Workers(Durable Object)다. 설계 · 한도 계산은 `DECISIONS §755` · `§763` 이 든다.
+
+```bash
+cd ops-worker && npm ci
+printf 'FIRE_LANE_OPS_TOKEN=devtoken-local\n' > .dev.vars     # 커밋 안 됨
+npx wrangler dev --local --port 8787 && npm test             # 로컬 · 계정 없이
+bash scripts/deploy.sh                                       # 배포 — 사람이 친다(로그인 · 비밀 입력)
+```
+
+화면은 `VITE_OPS_URL=ws://127.0.0.1:8787 VITE_OPS_TOKEN=devtoken-local npm run dev`(`web/navi`)로 붙인다. 배포 주소는 저장소 변수 `FIRE_LANE_OPS_URL`, 토큰은 시크릿 `FIRE_LANE_OPS_TOKEN`(Worker 비밀과 **같은 값**).
+**운영 규칙 — 시연판을 상시 켜 두지 않는다.** 내비의 `state` 가 0.5초마다 와서 DO 가 쉬지 못한다 — 하루 종일 켜 두면 지속시간이 무료 한도의 약 83% 다(128MB 가정의 계산 · 문서로 재확인 안 했다). 출동이나 발표 때만 켠다.
+
 ---
 
 ## 루트에서 내린 것

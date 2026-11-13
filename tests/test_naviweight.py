@@ -159,9 +159,9 @@ def test_the_entry_ratchet_is_declared_and_wired():
     ★ 빌드본을 재는 일은 `naviweight --build` 하나가 한다. 여기가 무는 것은
       「선언이 있고 관문에 배선됐는가」 — 소스만 보면 답이 나오는 것들이다.
     """
-    assert isinstance(NW.ENTRY_KB, int) and NW.ENTRY_KB > 0, "래칫이 수가 아니다"
-    assert "ENTRY_KB" not in NW.RATCHETS, (
-        "`ENTRY_KB` 를 래칫 규약에 태웠다 — 어디서나 잴 수 있는 수가 아니다(§313-1 ①)")
+    assert isinstance(NW.ENTRY_BYTES, int) and NW.ENTRY_BYTES > 10_000, "래칫이 바이트 수가 아니다(KB 로 되돌아갔나)"
+    assert "ENTRY_BYTES" not in NW.RATCHETS, (
+        "`ENTRY_BYTES` 를 래칫 규약에 태웠다 — 어디서나 잴 수 있는 수가 아니다(§313-1 ①)")
     sh = (ROOT / "tools" / "verify.sh").read_text(encoding="utf-8")
     assert "npm run -s build" in sh, "관문이 빌드본을 안 짓는다 — 새 클론이 늘 빨갛다"
     assert sh.index("npm run -s build") < sh.index("tools/naviweight.py --build"), \

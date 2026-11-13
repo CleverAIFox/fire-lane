@@ -206,7 +206,7 @@ TIMEOUT = 180
 #   ★ 교훈은 절차다: 측정이 빨간 상태에서 조이면 가짜로 조여지고 막는 것이 없다. 전말 · 재현은 DECISIONS §657-3.
 #: ★ 2026-11-08 (PLAN #198 · DECISIONS §657-13). 82 → **83.** 과녁이 옮겨 간
 #:   증가이고 **구멍이 아니다** — 사유와 실측은 §657-13 이 든다.
-SURVIVORS = 83
+SURVIVORS = 82
 #: 흔든 수 — 올라가는 쪽으로만. 분모를 안 잠그면 생존 수는 수가 아니다.
 # ★ 2026-10-11 — 124 → 128 (DECISIONS §478-1). **조이는 쪽이다.** 도구가
 #   31 → 32 로 늘어 흔든 수가 넷 늘었다(`tools/selftests.py`). `SURVIVORS` 가
@@ -243,7 +243,7 @@ RATCHET_HELD = 26   # ★ 2026-10-09 (§445) 22 → 23 — `canary.NO_CANARY`
 #     §509    63 → 64   자기검사의 합성 좌표 — 행동을 안 바꾼다
 #     532     65 → 61   **조인 쪽** — `__main__` 가드 넷이 `SILENCED` 로 갔다. §445 가 「아직 안 가른 것」으로 적은 그 자리다
 #     §657    57 → 58   **되돌림** — 위 `SURVIVORS` 와 같은 생존자(`sealcov.py:186` 등가 변이) 하나가 아직 안 가른 쪽에 든다
-UNSORTED = 57
+UNSORTED = 56
 #: ★ 침묵한 과녁 수(`SILENCED`)는 **옆집이 든다** — `mutatesilent`. 그 축을
 #:   아는 도구가 제 래칫을 드는 것이 이 저장소의 꼴이다(DECISIONS 532-3).
 RATCHETS = {"SURVIVORS": "down", "MUTANTS": "up", "UNCATCHABLE": "down",

@@ -3282,7 +3282,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 3,316 전수 · **분모(blank) 0절** · 물림(inherit) 2,074절.
+★ **강제자 칸의 분모.** 절 3,420 전수 · **분모(blank) 0절** · 물림(inherit) 2,153절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -4882,6 +4882,8 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `tools/after_squash.py` | **열차가 만든 상태를 다시 본다.** 스쿼시 뒤의 강제자다 |
 | `tools/branch_tidy.sh` | 가지와 PR 정리. **산출물에 안 닿는다** |
 | `tools/closecap.py` | **한 커밋이 닫는 PLAN 행은 셋까지다.** 스테이지된 diff 에서 지워진 행을 세고, 넘으면 DECISIONS 에 더한 사유 줄이 있어야 통과한다. 과거는 보고만 한다 | 닫힌 행이 **옳게** 닫혔는지(`planclose` · 사람의 읽기) · CI(스테이지가 없다) |
+| `tools/testsplit.py` | **`contract-tests` 의 조각을 CI 에서 잰 파일별 시간(`data/golden/ci_testtimes.json`)으로 가른다**(LPT · 결정적 · 새 파일은 장부 중앙값). 워크플로가 `--part N --of 4` 로 부른다 | 장부의 초가 CI 실측과 맞는지(푸시 뒤 첫 CI 가 그 오차) · 러너 속도 |
+| `ops-worker/scripts/deploy.sh` | **중개자를 Cloudflare 에 올리는 스크립트 — 사람이 친다**(로그인 · 비밀 입력). GitHub 변수 · 비밀은 안 건드리고 다음 명령만 찍는다. `ops-worker/` 가 `server.py` 와 같은 표면(DECISIONS §755) | 계정 · 실제 배포(사람 몫) |
 | `tools/closewords.py` | **행을 닫는 문단의 후속 어휘**(`안 한 것` · `범위가 아니다` · `확인 필요` · `남은 것` · `미뤘다`)는 PLAN 에 실재하는 열린 행 `#M` 을 인용해야 한다. `확인 불가로 닫는다` 는 허용. 카나리아는 `#144` 옛 닫는 문단 | 인용한 행이 그 일을 **정말 드는지**(번호의 실재만 본다) · CI |
 | `tools/contact_sheet.py` | 접촉인화 — 구간 한 장에 폴리곤과 단면을 그려 **사람이 눈으로 폭 산출을 확인**한다(`--no-ortho` 는 배경 없이). 아무것도 안 바꾼다 |
 | `tools/cv_queue.py` | 영상판정을 **어느 구간부터** 붙일지 순서만 정한다. 판정은 안 한다 |
@@ -4907,6 +4909,8 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | 파일 | 무엇을 묻나 |
 | --- | --- |
 | `tests/test_closecap.py` | 셋은 통과 · 넷은 사유 없이 막힘 · 사유는 기록된 더한 줄이고 수가 같고 스무 자 이상일 때만 · 훅이 달려 있다 · 실물 과거(29행을 한 커밋에 닫은 것)를 이 문이 막았을 것이다 |
+| `tests/test_testsplit.py` | LPT 가 균형 · 결정적 · 빠짐 없음 · 새 파일도 든다 · 장부 꼴(`ci_testtimes.json`) |
+| `ops-worker/test/relay.test.ts` | 중개자의 순수 규칙(`ops-worker/src/relay.ts`) — 누가 누구에게 · **마지막 한 통은 글자 그대로** · 관제 것은 안 기억 · 상한 · 인증. `node --test` 로 돈다 |
 | `tests/test_closewords.py` | `#144` 옛 닫는 문단이 막힌다 · 실재 행을 인용하면 통과 · 없는 행 · 닫은 행 자신은 후속이 못 된다 · `확인 불가` 허용 · 안 닫으면 안 본다 · 훅이 달려 있다 |
 | `tests/test_acquire.py` | **두 파생기가 같은 답을 내는가** |
 | `tests/test_ledger_extract.py` | 범용 추출 선언 도구가 **대장 텍스트를 안전하게 고치는가** — 같은 선언은 멱등 · 다른 선언은 `--replace` 없이 거절 · 주석 있는 블록은 거절 · **잘못된 선언은 파일에 안 쓴다**(정규화 뒤 이름 · schema 에 없는 칸 · 상한 < 하한) |

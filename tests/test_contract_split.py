@@ -12,15 +12,17 @@ test_contract_split.py — `contract` 를 속도로 쪼갠 모양과 「혼자�
 
 IN    .github/workflows/contract.yml · .github/CODEOWNERS · tests/
 OUT   없음
-밖    **조각의 시간 균형은 안 본다**(파일 이름 순환이라 근사다 — §633-3 이 실측). 시험이 서로 독립인지는 안 본다.
+밖    **CI 러너의 실제 속도는 안 본다**(장부 값은 로컬에서 CI 조건으로 잰 상대 시간이다 — DECISIONS §760). 시험이 서로 독립인지는 안 본다.
 """
 from __future__ import annotations
 
 import re
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
+import testsplit as ts
 from ruamel.yaml import YAML
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -38,11 +40,19 @@ def _split_or_skip() -> dict:
     return jobs
 
 
+def _ledger() -> dict[str, float]:
+    import json
+    p = ROOT / "data" / "golden" / "ci_testtimes.json"
+    return {k: float(v) for k, v in json.loads(p.read_text(encoding="utf-8"))["seconds"].items()} if p.is_file() else {}
+
+
 def _piece(jobs: dict, part: int) -> list[str]:
-    step = next(s for s in jobs["contract-tests"]["steps"] if "declare -A PIN" in s.get("run", ""))
-    body = "\n".join(ln for ln in step["run"].splitlines() if not ln.lstrip().startswith(("uv run pytest", "echo")))
-    return subprocess.run(["bash", "-c", body + '\nprintf "%s\\n" "${files[@]}"'], cwd=ROOT, text=True, capture_output=True,
-                          env={"PATH": "/usr/bin:/bin", "PART": str(part)}, check=True, timeout=30).stdout.split()
+    # ★ 2026-11-13 (DECISIONS §760). 조각은 `tools/testsplit.py`(실측 시간 LPT)가 가른다 — 워크플로가 부르는 **그 줄을 그대로** 돌린다.
+    step = next(s for s in jobs["contract-tests"]["steps"] if "testsplit.py" in s.get("run", ""))
+    line = next(ln for ln in step["run"].splitlines() if "testsplit.py" in ln and not ln.lstrip().startswith("#"))
+    assert "--part" in line and "--of 4" in line, f"워크플로가 testsplit 을 이상하게 부른다: {line}"
+    return subprocess.run([sys.executable, "tools/testsplit.py", "--part", str(part), "--of", "4"], cwd=ROOT, text=True, capture_output=True,
+                          check=True, timeout=60).stdout.split()
 
 
 def test_the_four_pieces_cover_every_test_file_once():
@@ -54,7 +64,12 @@ def test_the_four_pieces_cover_every_test_file_once():
     flat = [f for pc in pieces for f in pc]
     assert sorted(flat) == every, "조각의 합이 `tests/**/test_*.py` 와 다르다 — 빠진 파일은 CI 에서 안 돈다"
     assert len(set(flat)) == len(flat), "같은 파일이 두 조각에 들어갔다"
-    assert max(map(len, pieces)) - min(map(len, pieces)) <= 8, "조각의 파일 수가 크게 어긋난다"
+    # ★ 파일 수가 아니라 **실측 시간**이 균형이다(§760): 장부(`ci_testtimes.json`)로 센 조각 합의 최대/최소가 2 배 안이어야 한다.
+    sec = _ledger()
+    if sec:
+        med = sorted(sec.values())[len(sec) // 2]
+        sums = [sum(sec.get(Path(f).name, med) for f in pc) for pc in pieces]
+        assert max(sums) <= 2 * min(sums), f"조각의 예상 시간이 2 배 넘게 어긋난다: {[round(x) for x in sums]}"
 
 
 def test_the_required_name_aggregates_both_halves_even_when_they_fail():
@@ -73,3 +88,12 @@ def test_the_solo_exception_ends_when_a_second_person_appears():
     assert len(owners) == 1, (
         f"CODEOWNERS 의 소유자가 {sorted(owners)} 로 둘 이상이다 — `part/**` 직접 푸시 예외(DECISIONS §633-4)의 종료 조건이다. "
         "예외 절을 닫고 PR 경로로 간다(룰셋은 이미 서 있다).")
+
+
+def test_the_workflow_pieces_pass_the_same_judge_the_tool_uses():
+    """워크플로가 부르는 줄이 낸 조각을 `testsplit.defects` 로 민다 — 깨끗하면 비고 합성 결함이면 운다."""
+    jobs = _split_or_skip()
+    pieces = [_piece(jobs, p) for p in jobs["contract-tests"]["strategy"]["matrix"]["part"]]
+    files, sec = ts.test_files(), ts.load_seconds()
+    assert not ts.defects(files, pieces, sec)
+    assert ts.defects(files, [pieces[0][1:], *pieces[1:]], sec)

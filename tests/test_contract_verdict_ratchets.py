@@ -134,7 +134,7 @@ def test_the_real_ratchets_live_in_contract_and_are_declared_lake_only_and_the_s
     from firelane import contract as C
     assert set(C.RATCHETS) == set(C.LAKE_ONLY) == {"REAL_FAIL_RATCHET", "REAL_WARN_RATCHET"}
     assert {p.name for p, _ in RT.owners()} >= {"contract.py", "contract_verdict.py"}
-    assert (C.REAL_FAIL_RATCHET, C.REAL_WARN_RATCHET) == (7, 56)
+    assert (C.REAL_FAIL_RATCHET, C.REAL_WARN_RATCHET) == (7, 57)
 
 
 def test_on_a_lake_machine_the_real_ratchets_equal_the_measure():

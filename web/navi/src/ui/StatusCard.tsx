@@ -14,9 +14,9 @@ export function StatusCard({ chip, title, lines, foot }: {
   return (
     <div style={card}>
       <span style={chipS}>{chip}</span>
-      <div style={{ fontSize: 22, fontWeight: 800, color: C.panelInk, margin: "10px 0 6px" }}>{title}</div>
+      <div style={{ fontSize: 24, fontWeight: 800, color: C.panelInk, margin: "10px 0 6px" }}>{title}</div>
       {lines.map((l) => (
-        <div key={l} style={{ fontSize: 14, color: C.panelSub, lineHeight: 1.5 }}>{l}</div>
+        <div key={l} style={{ fontSize: 24, color: C.panelSub, lineHeight: 1.5 }}>{l}</div>
       ))}
       <div style={spinWrap}>
         <div style={spin} />

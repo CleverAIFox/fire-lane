@@ -235,6 +235,8 @@ def test_ops_arriving_late_still_receives(base: str) -> None:
         with _ws(base, "/ops") as ops:
             _settle(base, {"room": ROOM, "ops": True, "units": ["a"]})
             a.send("관제 켜진 뒤")
+            # ★ 2026-11-13 (DECISIONS §755). 늦게 켜진 관제는 **차의 마지막 한 통을 먼저 받는다**(글자 그대로) — 종전에는 이 줄이 없어 첫 글자가 「켜진 뒤」 였다.
+            assert ops.recv(timeout=WAIT_S) == "관제 없을 때"
             assert ops.recv(timeout=WAIT_S) == "관제 켜진 뒤"
 
 

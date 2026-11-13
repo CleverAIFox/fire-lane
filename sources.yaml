@@ -932,51 +932,47 @@ datasets:
       columns: ['PRESENT_SN', 'LCLAS_CL', 'MLSFC_CL', 'SCLAS_CL', 'ATRB_SE', 'WTNNC_SN', 'NTFC_SN', 'DGM_NM', 'DGM_AR', 'DGM_LT', 'SIGNGU_SE', 'DRAWING_NO', 'EXCUT_SE', 'CREATE_DAT']
       features: 66067
   vworld_uq164:
-    status: missing
-    missing_why: |
-      2026-11-02 — **받지 않기로 했다.** 2026-10-30 에 F드라이브 레이크를 잃었고
-      재취득 경로는 DECISIONS §602 가 든다.
-      대장이 sha256·바이트를 들고 있어 받은 뒤 acquire --verify 로 동일본인지 즉시 판별된다.
-      ★ 받았던 기록은 남는다 — data/_acquire.json 이 vworld/vworld_uq164_jngj_20260915.zip 의
-        sha 78356e48… · 905,642 B 를 들고 있다
-        (2026-10-14 반입 · DECISIONS §433).
-        **sha 가 없어서 내리는 것이 아니다** — 받지 않기로 한 것이다.
-      ★ retired 로 안 옮긴 사유 — 그 칸은 「받아서 보관 중인 원본」이다
-        (MASTER §18 · docs/MASTER.md:3645). 실물이 없는 것은 **부재**이고
-        부재의 어휘는 ledger.ABSENCE 가 든다.
-      ★ 다시 받는 조건 — 없다. 필요해지면 새 행으로 세운다.
     feeds:
       - src/firelane/normalize_raw.py
+      - src/firelane/publish_basemap.py
     feeds_note: '[]'
     stem: vworld_uq164
     ext: [zip]
-    kind: raw_only
+    kind: shp_zip
+    layer: '*UQ164*.shp'
     scope: jngj
-    updated: '2026-09-15'            # 제공처가 찍은 갱신일
+    updated: '2026-11-12'            # 제공처가 찍은 갱신일
     notified: '2026-08-06'           # ★ 실측 — dbf `NTFDATE` 최댓값(524/2,063 채워짐)
-    survey_year: '2026-09'           # ★ zip 안 파일명 `…_202609` = 기준 연월
+    survey_year: '2026-11'           # ★ zip 안 파일명 `…_202611` = 기준 연월
     authority: 국토교통부 공간정보 오픈플랫폼 (V-World)
-    origin_name: LSMD_CONT_UQ164_5174_전남광주통합특별시.zip
-    crs_native: 5174                 # prj 실측. **파일명의 5174 는 좌표계 코드다** — 지역명이 아니다
+    origin_name: LSMD_CONT_UQ164_전남광주통합특별시.zip
+    crs_native: 5186                 # prj 실측(Korea 2000 / Central Belt 2010)
     encoding: cp949                  # cpg 가 `EUC-KR` 로 명시한다
     what: |
-      도시계획시설 — 학교 · 청사 · 문화체육 · 사회복지. 전남광주 면 2,063.
-      동명동 bbox 안 18면 — 국립아시아문화전당 120,182 m2 · 율곡초등학교 ·
-      청사(국가) 9,379 등.
+      도시계획시설 — 학교 · 청사 · 연구 · 문화체육 · 사회복지 · 대학. 전남광주 면 2,064(2026-11-12 판).
+      동명동 표출 범위에 걸친 면 17 — 국립아시아문화전당 120,182 m2 · 율곡초등학교 · 청사(국가) 등. 분류 코드는 `MNUM` 의 `UQVnn`.
     feeds_why: |
-      ★ 미투입이다. UQ153 과 같은 용도 — 지도에서 큰 부지가 검게 남는 것을 메운다.
+      ★ 토지이용 면이다. `publish_basemap` 이 읽어 바탕으로 칠한다 — 지도에서 큰 부지가 비어 남는 것을 메운다(행 231). **대학(`UQV35`)과 면 하나가 틀의 10% 를 넘는 면은 칠하지 않고 경계선만** 낸다(캠퍼스 안에 길이 있다).
     used_for: |
       ★ **폭에는 안 쓴다.** UQ153 과 같이 쟀고 §379-4 여덟 중 **0곳**이다.
         전체 구간 중 닿는 것 10 (0.8% · 2026-11-04 이전 판).
       ★ 「동명동에 학교 용지가 있나」 는 이것으로 답한다 — 다만 **초등학교 1면**뿐이고
         중 · 고등학교는 없다. 정보공개청구에서 학교 용지를 빼는 근거로 쓰기엔 모자란다.
     note: |
-      ★ 속성 `ALIAS` · `REMARK` 가 1,685/2,063 결측이다. 이름으로 거를 수 없다.
-      ★ 면 하나가 1,325,524 m2 다(동명동 전체급). 무엇인지 미확인 — 배선 전에 본다.
+      ★ 이력(2026-11-13 활성화): 2026-11-02 **받지 않기로 했다**(DECISIONS §602 · 레이크 분실 · 근거 없음 — §749 가 정정) → 2026-11-12 판(`LSMD_CONT_UQ164_12_202611` · 1,349,200 B ·
+        sha 660aef83… · 2,064면 · EPSG:5186)이 레이크에 들어와 **활성화했다**. 옛 판(2026-09-15 · 78356e48… · 905,642 B · 2,063면)과 다른 판이다. 「970MB」 주장은 틀린 수였다(§749).
+      ★ 속성 `ALIAS` · `REMARK` 가 결측이 대부분이다(2026-11-12 판: 2,064면 중 1,684면). **이름이 없어도 분류된다** — 분류 코드가 `MNUM` 안의 `UQVnn` 이다(예 `…UQV3300086000` = 중등학교 UQV33 · `UQV80` 체육 · `UQV35` 대학). 이것이 이 자료를 쓰는 길이다.
+      ★ 면 하나가 1,325,524 m2 다(동명동 전체급) — **`UQV35`(대학) 1면이다**(2026-11-13 확정 · DECISIONS §762). 칠하면 캠퍼스 안의 길을 가리므로 경계선만 그린다.
     contract:
-      rows: 2063
+      rows: 2064
       required_cols: [MNUM, ALIAS, NTFDATE, COL_ADM_SE]
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      layers: ['LSMD_CONT_UQ164_12_202611']
+      layer_glob: '*UQ164*.shp'
+      layer_used: 'LSMD_CONT_UQ164_12_202611.shp'
+      columns: ['SGG_OID', 'COL_ADM_SE', 'MNUM', 'ALIAS', 'REMARK', 'NTFDATE']
+      features: 2064
   nfa_bldgcomm_guide:
     feeds:
       - src/firelane/normalize_raw.py
@@ -1090,7 +1086,7 @@ datasets:
     feeds_why: |
       ★ 미투입이다. **지오코딩이 전건이다** — 전건이 안 풀리면 쓸 자리가 없다.
     used_for: |
-      ★ `#53`(폭 셋이 서로 안 맞는다)의 셋째 축 후보다. 다만 **아직 못 쓴다**:
+      ★ 폭 셋 대조 행(닫힘 · DECISIONS §756)의 셋째 축 후보였다. 다만 **아직 못 쓴다**:
         ① 너비가 0 또는 결측인 행이 **29 중 12** 다
         ② 「도로너비**합계**」라 한 필지에 도로가 둘이면 합산값이고 구간 폭이 아니다
         ③ 단위가 **필지**(`동명동 11-15번지`)인데 우리 구간은 **선**이다.
@@ -2715,6 +2711,7 @@ datasets:
     feeds:
       - tools/jijeok_probe.py
       - tools/jijeok_review.py
+      - src/firelane/publish_basemap.py
     on_demand: true             # ★ 전량에서 건너뛴다. `--only jijeok` 으로 만든다
     stem: nsdi_jijeok
     ext: [zip]
@@ -2749,6 +2746,9 @@ datasets:
         OOM 은 파일 크기가 아니라 7장을 전부 올린 뒤 자르던 순서였다.
         **조각마다 데이터셋으로 쪼개지 않는다** — 7장이 zip 하나 안에 있어
         글롭이 같은 zip 을 잡고, 층 선택이 `startswith` 라 쪼개도 각자 7장을 다 읽는다.
+      ★ 2026-11-13 (DECISIONS §762 · §768 · PLAN #231). **소비자가 생겼다 — `publish_basemap`.** 지목별로 합친 면(`landuse.geojson` · `daeji.geojson`)을 표출에 내서 빈 공간(표출 범위의 45.0%)을 메운다. 위 「판정도 화면도 안 읽는다」 는 **판정은 아직 맞고 화면은 낡았다.**
+        `on_demand` 는 **그대로 둔다** — 전량에서 건너뛰므로 `publish_basemap` 전에 `--only jijeok` 가 한 번 돌아 있어야 한다(없으면 `publish_basemap` 이 죽는다 · 조용히 빈 면을 안 낸다).
+        **동구 새 파일(LDREG · 36,495필지)은 필요 없다** — 이 일곱 도엽 가운데 하나가 표출 범위를 99.9% 덮고(틀 안 14,063필지) **지목이 `A5`(지번)의 끝 글자로 이미 붙어 있다**(`168-13 대`). 더 넓은 동구 전체가 필요해지면 그때 사람이 받는다.
 
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       layers: ['AL_D002_12_20260808', 'AL_D002_12_20260808(2)', 'AL_D002_12_20260808(3)', 'AL_D002_12_20260808(4)', 'AL_D002_12_20260808(5)', 'AL_D002_12_20260808(6)', 'AL_D002_12_20260808(7)']

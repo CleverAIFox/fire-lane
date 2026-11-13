@@ -291,3 +291,54 @@ def test_the_camera_door_exists_and_carries_the_camera_name() -> None:
     src = (ROOT / "src" / "firelane" / "ops" / "server.py").read_text(encoding="utf-8")
     assert '@app.websocket("/cv/{cam}")' in src, "영상 문이 없다"
     assert '_serve(ws, "cv", cam)' in src, "문이 카메라 이름을 안 넘긴다"
+
+
+# ── 마지막 한 통 (DECISIONS §755 · ⓲L-A2) ─────────────────────────────────
+def test_the_last_message_is_replayed_verbatim_to_a_newcomer() -> None:
+    """차량의 마지막 글자가 새로 붙은 관제에게 **글자 그대로** 간다 · 영상은 관제와 차량 둘 다 · 차량끼리는 안 닿는다."""
+    r = Roster()
+    a, b, cam = Peer("1", "unit", "A"), Peer("2", "unit", "B"), Peer("3", "cv", "cam1")
+    for p in (a, b, cam):
+        r.join(p)
+    r.remember(a, "{old"); r.remember(a, "{깨진 json"); r.remember(b, "b"); r.remember(cam, "w")
+    assert r.replay_for("ops") == ["{깨진 json", "b", "w"], "마지막 한 통 · 글자 그대로(해석 안 함)"
+    assert r.replay_for("unit") == ["w"]
+    assert r.replay_for("cv") == []
+
+
+def test_ops_messages_are_never_remembered() -> None:
+    """관제의 `hb` · `ack` 는 지금의 신호다 — 옛 `hb` 를 재생하면 없는 관제가 있는 것으로 읽힌다."""
+    r = Roster()
+    assert r.remember(Peer("1", "ops", ""), '{"t":"hb"}') is False
+    assert r.last == {}
+
+
+def test_a_unit_leaving_clears_its_bucket_but_a_reconnect_does_not() -> None:
+    r = Roster()
+    old, new, cam = Peer("1", "unit", "A"), Peer("2", "unit", "A"), Peer("3", "cv", "cam1")
+    r.join(old); r.join(cam); r.remember(old, "a"); r.remember(cam, "w")
+    r.join(new)                      # 재접속
+    r.leave("1")                     # 옛 연결이 늦게 닫힌다
+    assert r.replay_for("ops") == ["a", "w"], "같은 차가 아직 붙어 있는데 버킷을 비웠다"
+    r.leave("2")
+    assert r.replay_for("ops") == ["w"], "떠난 차의 버킷이 남았다(유령 차)"
+
+
+def test_the_cache_is_bounded() -> None:
+    from firelane.ops.roster import MAX_BUCKETS, MAX_BYTES
+    r = Roster()
+    assert r.remember(Peer("0", "unit", "big"), "x" * (MAX_BYTES + 1)) is False
+    for i in range(MAX_BUCKETS):
+        assert r.remember(Peer(str(i), "unit", f"u{i}"), "t")
+    assert r.remember(Peer("n", "unit", "new"), "t") is False, "상한을 넘어 들였다"
+    assert r.remember(Peer("0", "unit", "u0"), "t2") is True, "이미 있는 버킷은 갱신된다"
+
+
+def test_python_and_worker_share_the_same_limits_and_table() -> None:
+    """말의 집이 둘이 되지 않게 — 파이썬 상수와 `ops-worker/src/relay.ts` 의 수 · 표가 같다."""
+    from firelane.ops.roster import CACHED, MAX_BUCKETS, MAX_BYTES
+    ts = (Path(__file__).resolve().parents[1] / "ops-worker" / "src" / "relay.ts").read_text(encoding="utf-8")
+    assert int(re.search(r"MAX_BUCKETS = (\d+)", ts).group(1)) == MAX_BUCKETS
+    assert eval(re.search(r"MAX_BYTES = ([\d* ]+);", ts).group(1)) == MAX_BYTES  # noqa: S307 — 수식 `64 * 1024` 만 읽는다
+    assert re.search(r'CACHED: readonly Kind\[\] = \[("[a-z]+"(?:, )?)+\]', ts)
+    assert tuple(re.findall(r'"([a-z]+)"', re.search(r"CACHED: readonly Kind\[\] = \[(.*?)\]", ts).group(1))) == CACHED

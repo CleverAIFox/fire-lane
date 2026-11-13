@@ -82,6 +82,7 @@ gate_parity.py — **로컬 관문과 CI 가 같은 것을 보는가.** 3족의 
     navi:typecheck                             web/navi 타입 검사
     navi:test                                  web/navi 단위 시험
     navi:smoke                                 web/navi 브라우저 스모크 (CI 만)
+    ops:test                                   ops-worker 중개자 단위 시험
 
 ★ 주석은 걷어낸다. 주석에 적힌 도구 이름은 **호출이 아니다** — 그것을 세면
   `web_manifest.py` 처럼 "CI 가 본다" 고 적어놓기만 한 것이 통과한다.
@@ -151,6 +152,9 @@ EXTERNAL: dict[str, tuple[str, str]] = {
     "navi:test": (r"npm run\s+(?:-s\s+)?test\b", "npm run -s test"),
     # ★ 2026-09-28 (§279-4). React 훅 규칙. 저장소에 eslint 가 없던 동안
     #   `eslint-disable-line` 28개가 **아무것도 안 막고** 있었다
+    # ★ 2026-11-13 (DECISIONS §772). 중개자(`ops-worker`) 단위 시험. **스크립트 이름을 `relay-test` 로 따로 뒀다** — `test` 면 `navi:test` 패턴이 같이 잡고
+    #   「같은 명령이 두 번」(`dup_cmds`)이 울거나(작업 디렉터리를 안 보는 축) 하나가 죽어도 다른 하나가 덮는다(한 이름 뒤에 둘이 숨는 패턴)
+    "ops:test": (r"npm run\s+(?:-s\s+)?relay-test\b", "npm run relay-test"),
     "navi:lint": (r"npm run\s+(?:-s\s+)?lint\b", "npm run -s lint"),
     # ★ 2026-11-12 (DECISIONS §700 · PLAN #223). 브라우저 스모크 — 진짜 브라우저로 두 화면이 뜨는가 · 콘솔이 조용한가. CI 만 돈다
     "navi:smoke": (r"npm run\s+(?:-s\s+)?smoke\b", "npm run smoke"),

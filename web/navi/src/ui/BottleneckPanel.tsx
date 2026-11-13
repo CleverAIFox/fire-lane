@@ -110,7 +110,7 @@ const tab: CSSProperties = {
   display: "grid", placeItems: "center", boxShadow: "-3px 3px 12px rgba(0,0,0,.25)",
 };
 const btn: CSSProperties = {
-  minHeight: TARGET, minWidth: TARGET, borderRadius: 10, padding: "0 6px", fontWeight: 800, fontSize: 14, cursor: "pointer",
+  minHeight: TARGET, minWidth: TARGET, borderRadius: 10, padding: "0 6px", fontWeight: 800, fontSize: 24, cursor: "pointer",
   fontFamily: F.family,
 };
 const ghost: CSSProperties = { ...btn, flex: 1, border: `1.5px solid ${C.cta}`, background: "#fff", color: C.cta };
