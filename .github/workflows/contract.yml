@@ -644,6 +644,13 @@ jobs:
           cd web/navi
           npm run test
 
+      - name: ★ 중개자(ops-worker) 단위 시험
+        # ★ 2026-11-13 (DECISIONS §772). 중개자는 **보안 경계**인데 CI 가 한 줄도 안 돌았다 — Dependabot 보안 PR(undici · sharp)이 올라와도 초록 · 빨강이
+        #   중개자와 무관했다(다른 잡이 빨갰을 뿐). 시험은 `node --test` 한 줄이라 설치가 필요 없다(wrangler 는 배포에만 쓴다).
+        run: |
+          cd ops-worker
+          npm run relay-test
+
       - name: 의존성 취약점 — 알림(막지 않는다)
         # ★ 2026-09-22 (§218-4 · 하토르 모범). `|| true` 가 아니라 `continue-on-error` 다 —
         #   `|| true` 는 취약점이 있어도 초록이라 알림조차 아니었다. 이것은 노란 표시로 남는다.

@@ -85,6 +85,30 @@ updates:
       navi-all:
         patterns: ["*"]
 
+  # ── 중개자 (ops-worker/package-lock.json) ──────────────────
+  # ★ 2026-11-13 (DECISIONS §772). **이 항목이 없어서** 잠금이 들어오자마자 저장소 설정의 보안 업데이트가 `dev` 를 향해 PR 둘(undici · sharp)을 따로 열었다 —
+  #   흐름(feat → part → dev)밖이고 묶이지도 않았다. 중개자는 **보안 경계**라 방치하지 않는다(보안 업데이트는 계속 온다). 다만 **한 PR 로 묶고 `part/infra` 로 받는다.**
+  #   · `applies-to: security-updates` 그룹 — 보안 PR 이 취약점마다 하나씩 열리지 않는다
+  #   · 일반 판 올리기는 월 1회 · 메이저는 배치로(`wrangler` 4 → 5 같은 것은 배포 도구를 바꾼다 — 사람이 계획한다)
+  - package-ecosystem: npm
+    directory: /ops-worker
+    target-branch: part/infra
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 2
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    commit-message:
+      prefix: "deps(ops)"
+    groups:
+      ops-worker-security:
+        applies-to: security-updates
+        patterns: ["*"]
+      ops-worker-all:
+        applies-to: version-updates
+        patterns: ["*"]
+
   # ── GitHub Actions ─────────────────────────────────────────
   # ★ `setup-uv@v7` 처럼 메이저만 박힌 것들. 액션이 조용히 바뀌면 CI 가
   #   어제와 다른 것을 검사한다.

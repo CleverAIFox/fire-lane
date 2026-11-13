@@ -73,6 +73,7 @@ _SMOKE = "브라우저가 필요하고 1분 남짓 걸린다(헤드리스 크로
 _NPM = "npm · node_modules 가 필요하다(`npm ci` 는 망)"
 _NPM_TEST = ("`vitest` 전수 — 12.8초 · 망이 아니다(`node_modules` 만 있으면 된다) · 발행 산출물(`web/data` · `data/golden`)을 정적 import 로 먹는다. 재잠금이 움직이는 수를 "
              "pytest 그물(`testpick`)이 못 본다 — CI 에서야 터졌다(DECISIONS §719). 훅 예산(30초)에는 안 든다")
+_OPS_TEST = "중개자(`ops-worker`) 단위 시험 — `node --test` 한 줄 · 0.3초 · 설치 불필요(wrangler 는 배포에만 쓴다). 스크립트 이름을 `relay-test` 로 따로 둬 `navi:test` 와 **이름이 겹치지 않는다**(DECISIONS §772 · §720 의 패턴 — 작업 디렉터리 축에만 기대지 않았다)"
 _PRECOMMIT = "다른 층이 이미 든다 — 커밋 훅이 같은 `pre-commit` 설정을 돈다(`--all-files` 전수는 느리다)"
 _CTX = "CI 문맥이 필요하다(PR 본문 · 기준 커밋 `$BASE`)"
 _WRITES1 = "읽기 전용이 아니다 — `data/interim/lineage.mmd`(추적 밖 산출물)를 쓴다 · 0.6초"
@@ -90,6 +91,7 @@ LAYERS: dict[tuple[str, str], tuple[str, str]] = {
     ("navi:smoke", "@web/navi"): ("ci", _SMOKE),
     ("navi:test", "@web/navi"): ("ready", _NPM_TEST),
     ("navi:typecheck", "@web/navi"): ("ci", _NPM),
+    ("ops:test", "@ops-worker"): ("ready", _OPS_TEST),
     ("pre-commit", "run --all-files --show-diff-on-failure"): ("ci", _PRECOMMIT),
     ("pytest", "${files[@]} -q"): ("axis", _AXIS_T),
     ("ruff", "check $FILES --config .ruff-strict.toml"): ("ready", _STRICT),
