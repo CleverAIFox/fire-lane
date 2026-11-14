@@ -14240,10 +14240,10 @@
   "fp": "view-v3",
   "kind": "read",
   "legacy": [
-   "1cff57fec95c5128",
-   "29573a7965422cd1",
-   "bb2638e6b68e15ab",
-   "dc35349617323f77"
+   "0f8004fcf2210162",
+   "34cebf867afb07f7",
+   "5f4bd6c74e5ba9a1",
+   "b4684f6943852475"
   ],
   "parts": {
    "tests/test_branch_tidy_green.py": "72512b4f32ccfec6",
@@ -14254,7 +14254,7 @@
    "tests/test_lock_closure.py": "c642cc92bd1ea6e6",
    "tests/test_processed_env.py": "b0c32e1f2bb697df",
    "tests/test_pushready.py": "0389c8cddb01be23",
-   "tests/test_ratchet.py": "da9ebd499bbee585",
+   "tests/test_ratchet.py": "63cadc37bc2abae7",
    "tests/test_scope_tier.py": "5972b1be4d35fba5",
    "tests/test_scopecheck.py": "d7d9fd954030c209",
    "tools/merge_batch.sh": "a2c71a9979023da6",
@@ -14262,7 +14262,7 @@
    "tools/sizetable.py": "9e9b2a23f52004f9",
    "본문": "31b5edaa79ac7658"
   },
-  "sha": "29573a7965422cd1"
+  "sha": "0f8004fcf2210162"
  },
  "DECISIONS/781": {
   "doc": "docs/DECISIONS.md",
