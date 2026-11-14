@@ -81,7 +81,7 @@ def test_the_nearest_of_several_entrances_is_the_building_node(tree):
 def test_building_denominator_leaves_judgment_files_untouched(tree):
     """평가는 읽기만 한다 — 판정 산출물은 바이트 동일."""
     names = ("segments.geojson", "route_vehicle.csv", "_manifest.json")
-    h = lambda: [hashlib.sha256((tree / "processed" / n).read_bytes()).hexdigest() for n in names]  # noqa: E731
+    h = lambda: [hashlib.sha256((tree / "processed" / n).read_bytes()).hexdigest() for n in names]  # noqa: E731 — 두 번 부르는 한 줄 헬퍼다
     before = h()
     _build(tree)
     assert h() == before

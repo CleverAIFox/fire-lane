@@ -135,7 +135,7 @@ def test_w13_24_pytest_summary_has_no_wall_clock_and_still_parses():
 
 def test_w13_24_expectcheck_parses_expect_without_time(tmp_path):
     sys.modules.setdefault("deliver", DL)
-    import expectcheck as ec  # noqa: PLC0415
+    import expectcheck as ec  # noqa: PLC0415 — `tools` 를 sys.path 에 깐 뒤에야 import 된다
     want = DL.parse("# h\nbase.sha=\npytest=3 passed · 새 빨간불 0\nunexercised=0\n")
     assert want["pytest"].startswith("3 passed")
     assert ec.drift(want, {"closure.ingest": "x", "closure.segments": "y", "webdata": "unchanged"}) == []

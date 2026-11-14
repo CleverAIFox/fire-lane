@@ -53,7 +53,7 @@ def _local_only_names() -> set[str]:
     """추적 안 되고 `.gitignore` 에 걸린 **실존** 파일 중 `data/` · 루트의 것 — 경로와 이름 둘 다."""
     out: set[str] = set()
     for p in _git("ls-files", "--others", "--ignored", "--exclude-standard"):
-        if p and (p.startswith("data/") and not p.startswith("data/interim/") or "/" not in p) and not p.endswith(".py"):
+        if p and ((p.startswith("data/") and not p.startswith("data/interim/")) or "/" not in p) and not p.endswith(".py"):
             out |= {p, Path(p).name}
     return out
 
@@ -71,12 +71,12 @@ def test_the_four_unreproducible_branches_are_counted_and_each_counter_is_alive(
     skips = dict.fromkeys(SKIP_NAMES, 0)
     ignored_files: dict[str, list[str]] = {}
     local_only = _local_only_names()
-    for f in sorted(TESTS.glob("*.py")):
+    for f in sorted(p for d in (TESTS, ROOT / "src", ROOT / "tools") for p in d.rglob("*.py")):   # skip · 로컬 전용 이름은 시험에 산다 — 셋을 다 훑어도 0 이 느는 것은 없다
         src = f.read_text(encoding="utf-8")
         for k, v in count_skips(src).items():
             skips[k] += v
         if (m := ignored_names_in(src, local_only)):
-            ignored_files[f.name] = m
+            ignored_files[f.name] = m  # 파일 이름만 센다(같은 이름이 둘이면 하나로 — 상한이다)
     env_files = sorted(p for p in _git("ls-files", ".githooks", "tools", "src", "tests")
                        if p and Path(p).suffix in ("", ".py", ".sh") and count_env_branches((ROOT / p).read_text(encoding="utf-8", errors="replace")))
     exempt = count_ci_exempt((ROOT / "tools" / "verify.sh").read_text(encoding="utf-8"))
