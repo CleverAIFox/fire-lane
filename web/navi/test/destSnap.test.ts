@@ -19,7 +19,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { prepare, snap } from "../src/domain/snap";
-import { addressLines, asOfDate, farFromRoadNote, preparePois, searchPois, SNAP_MAX_M } from "../src/domain/search";
+import { addressLines, asOfDate, farFromRoadNote, preparePois, searchPois, SNAP_MAX_M, walkNote } from "../src/domain/search";
 import graph from "../../data/navi_graph.json";
 import view from "../../data/view.json";
 import type { NaviGraph } from "../src/domain/types";
@@ -66,6 +66,11 @@ describe("목적지 → 스냅", () => {
     expect(farFromRoadNote(SNAP_MAX_M)).toBeNull();
     expect(farFromRoadNote(0)).toBeNull();
     expect(farFromRoadNote(Number.NaN)).toBeNull();
+  });
+
+  it("남은 직선거리 한 마디는 대체 접근 안내와 같은 말이다(화면 글자를 안 늘린다)", () => {
+    expect(walkNote(123.6)).toBe("도보 약 124m(직선)");
+    expect(farFromRoadNote(SNAP_MAX_M + 1)).toBe(walkNote(SNAP_MAX_M + 1));
   });
 
   it("같은 단지의 동은 뭉개지지 않는다", () => {
