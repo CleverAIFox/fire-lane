@@ -181,7 +181,7 @@
   "test_r2.py": 0.16,
   "test_r3.py": 0.26,
   "test_ratchet.py": 61.4,
-  "test_ratchetstore.py": 56.79,
+  "test_ratchetstore.py": 34.94,
   "test_rawdiff_code.py": 0.1,
   "test_reach_overlay.py": 0.09,
   "test_read_branches.py": 0.93,
