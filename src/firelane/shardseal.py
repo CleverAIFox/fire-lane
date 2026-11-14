@@ -181,7 +181,7 @@ def _lock_graph() -> dict[str, tuple[str, set[str]]]:
     return out
 
 
-def lock_deps(start: str = "firelane.ingest") -> list[str]:
+def lock_deps(start: str = "firelane.ingest", verdict_only: bool = False) -> list[str]:
     """`start` 의 폐포가 **실제로 기대는** 패키지 — `이름==판` 정렬 (DECISIONS §345).
 
     종전에는 `uv.lock` **파일 전체**를 해시했고 주석은 「geopandas 판이 바뀌면
@@ -233,7 +233,23 @@ def lock_deps(start: str = "firelane.ingest") -> list[str]:
             continue
         seen.add(cur)
         stack.extend(d for d in graph[cur][1] if d not in seen and d in graph)
+    if verdict_only:
+        # ★ `golden` 만 쓴다. 기준은 「직접 import 하는가」가 **아니다**(그 기준은 틀렸다 — DECISIONS §780 정정 · §781): **「판정 수를 움직일 수 있는가」**다.
+        #   전이까지 다 세고 `VERDICT_BLIND` 에 **증거와 함께 적힌 것만** 뺀다. `pyogrio`(GDAL/OGR — 기하를 읽는 엔진)는 전이 의존이지만 든다.
+        seen -= set(VERDICT_BLIND)
     return sorted(f"{n}=={graph[n][0]}" for n in seen)
+
+
+#: 판정 지문(`golden`)에서 **빼는** 패키지 → 근거. 「안 닿는다」는 증거가 있어야 여기 든다 — 짐작으로 안 뺀다(DECISIONS §781).
+#: 증거는 격리 사본에서 판정 단계(`firelane.segments.main`)를 추적기(`sys.monitoring` · 감사 훅)를 달고 처음부터 돌려 잰 것이다(2026-11-14 · 구간 1,287).
+#: ★ 여기에 이름을 더하려면 같은 측정을 다시 해라. 수치 · 기하 · 좌표에 닿는 것은 전이 의존이어도 못 뺀다.
+VERDICT_BLIND = {
+    "certifi": "TLS 루트 번들. `where()` 가 임포트 때 한 번 불려 PROJ 에 번들 경로를 줄 뿐이고 실행 단계 호출 0. 번들을 반으로 자른 것으로 바꿔 돌려도 산출물이 바이트 동일(sha 0ee826c3)",
+    "python-dateutil": "날짜 파서. 임포트 때 모듈만 서고 판정 실행 단계에서 불린 함수 0(전 구간) — 판정은 날짜를 안 읽는다",
+    "tzdata": "시간대 자료. 실행된 코드 0 · 열린 파일 0",
+}
+#: 뺄 후보였으나 **안 뺀 것**(같은 측정): `pyogrio`(실행 단계 함수 31 — GDAL 환경을 세우고 기하를 읽는다) · `packaging`(실행 단계에서 `Version.__ge__` 가 불린다 — 판 비교가
+#: `pandas` · `geopandas` 의 갈래를 정한다) · `six`(실행 단계에서 임포트 훅 `find_spec` 이 불린다 — 호출 경로가 있어 「안 닿는다」를 못 보였다).
 
 
 #: 봉인이 거는 축. **여기가 집이다** — `ingest.py` · `golden.py` · `ortho.py` 가
@@ -242,7 +258,7 @@ def lock_deps(start: str = "firelane.ingest") -> list[str]:
 SEALED_AXES = ("firelane.ingest", "firelane.segments", "firelane.ortho")
 
 
-def lock_print(start: str = "firelane.ingest") -> str:
+def lock_print(start: str = "firelane.ingest", verdict_only: bool = False) -> str:
     """위 목록의 지문. 잠금이 없으면 빈 문자열 — 호출부가 그때 줄을 안 넣는다.
 
     ★ `ROOT` 를 **호출 때** 읽는다. 모듈 적재 때 묶으면 합성 트리 시험이 진짜
@@ -250,7 +266,7 @@ def lock_print(start: str = "firelane.ingest") -> str:
     """
     if not (ROOT / "uv.lock").is_file():
         return ""
-    return _short("\n".join(lock_deps(start)))
+    return _short("\n".join(lock_deps(start, verdict_only)))
 
 
 def code_print(start: str = "firelane.ingest") -> str:

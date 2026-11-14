@@ -256,3 +256,117 @@ def test_upsample_of_a_flat_field_is_flat():
 
     a = np.full((5, 6), 42.0)
     assert np.allclose(upsample(a, 3), 42.0)
+
+
+# ── 지형 타일 — 굽는 줌 · 읽는 줌 · 구운 폴더 (PLAN 행 237 · 2026-11-14) ─────────
+# ★ 위 물음(정사영상)과 **같은 물음**을 지형에 묻는다. 지형은 그동안 이 검사 밖이었다 — `terrain.py` 의 `TILE_Z` 와
+#   `layers.ts` 의 `dem` 소스 `maxzoom` 이 손사본 둘이었고, z16 을 더하는 날 한쪽만 고치면 **구운 48장을 아무도 안 받거나**
+#   (읽는 쪽이 낮다) **없는 타일을 달라고 해 404 가 난다**(읽는 쪽이 높다 — 지형은 그 자리에서 절벽처럼 끊긴다).
+TERRAIN = ROOT / "src" / "firelane" / "terrain.py"
+LAYERS_TS = ROOT / "web" / "navi" / "src" / "components" / "layers.ts"
+TERRAIN_TILES = ROOT / "web" / "data" / "terrain"
+
+
+def _terrain_const(name: str):
+    tree = ast.parse(TERRAIN.read_text(encoding="utf-8"))
+    for node in ast.walk(tree):
+        if (isinstance(node, ast.Assign) and node.targets
+                and getattr(node.targets[0], "id", None) == name):
+            return ast.literal_eval(node.value)
+    raise AssertionError(f"`terrain.py` 에서 `{name}` 을 못 찾았다 — 이 검사가 빈 그물이 됐다")
+
+
+def _dem_source(src: str) -> tuple[int, int, str]:
+    """`layers.ts` 의 `dem` 소스 (minzoom, maxzoom, encoding). 주석 줄은 떼고 읽는다(주석 속 숫자에 안 속는다)."""
+    m = re.search(r"\bdem\s*:\s*\{", src)
+    assert m, "`layers.ts` 에 dem 소스 선언이 없다"
+    body = "\n".join(ln for ln in src[m.start():m.start() + 900].splitlines() if not ln.lstrip().startswith("//"))
+    lo = re.search(r"minzoom\s*:\s*(\d+)", body)
+    hi = re.search(r"maxzoom\s*:\s*(\d+)", body)
+    enc = re.search(r'encoding\s*:\s*"(\w+)"', body)
+    assert lo and hi and enc, f"dem 소스에 minzoom/maxzoom/encoding 이 없다 — {body[:80]}"
+    return int(lo.group(1)), int(hi.group(1)), enc.group(1)
+
+
+def test_terrain_reader_and_baker_agree_on_zooms_and_encoding():
+    z = tuple(_terrain_const("TILE_Z"))
+    lo, hi, enc = _dem_source(LAYERS_TS.read_text(encoding="utf-8"))
+    assert (lo, hi) == (min(z), max(z)), (
+        f"`terrain.py` 는 줌 {sorted(z)} 를 굽는데 `layers.ts` 의 dem 소스는 {lo}..{hi} 를 읽는다.\n"
+        "  읽는 쪽이 낮으면 구운 타일을 아무도 안 받고, 높으면 없는 타일을 요청해 404 가 난다. 둘을 같이 고쳐라.")
+    assert z == tuple(range(min(z), max(z) + 1)), f"굽는 줌 {z} 에 빈 줌이 있다 — 그 줌에서 지형이 끊긴다"
+    assert enc == "mapbox", "읽는 쪽 인코딩이 mapbox(0.1m)가 아니다 — `terrain.encode_rgb` 와 같이 바꿔라"
+    assert min(z) <= _terrain_const("BOUNDS_Z") <= max(z)
+
+
+def test_the_dem_probe_cries_on_a_mismatch():
+    """★ 합성 결함 — 읽는 줌만 옛 값(15)으로 되돌린 소스에서 추출기가 15 를 읽어 내는가(주석의 16 에 안 속는가)."""
+    fake = 'dem: { type: "raster-dem" as const, tiles: [u + "terrain/{z}/{x}/{y}.png"],\n  // 굽는 줌 12~16\n  tileSize: 256, minzoom: 12, maxzoom: 15, encoding: "mapbox" as const },'
+    assert _dem_source(fake) == (12, 15, "mapbox")
+    assert _dem_source(fake)[1] != max(_terrain_const("TILE_Z"))
+
+
+def test_baked_terrain_folders_match_the_declaration_and_cover_the_same_ground():
+    """구운 폴더 = `TILE_Z` · `BOUNDS_Z` 위 줌은 그 줌 타일의 **자식 전부**(빠진 자식 = 404 = 절벽)."""
+    if not TERRAIN_TILES.is_dir():
+        import pytest
+        pytest.skip(f"환경skip(산출물) — {TERRAIN_TILES} 가 없다. 구운 줌을 실물로 못 댔다")
+    z = tuple(_terrain_const("TILE_Z"))
+    bz = _terrain_const("BOUNDS_Z")
+    have = {int(d.name): {(int(p.parent.name), int(p.stem)) for p in d.rglob("*.png")}
+            for d in TERRAIN_TILES.iterdir() if d.is_dir() and d.name.isdigit()}
+    assert sorted(have) == sorted(z), f"구운 폴더 {sorted(have)} 와 `TILE_Z` {sorted(z)} 가 다르다 — 선언을 고쳤으면 다시 굽거나 지워라"
+    for zz in (x for x in z if x > bz):
+        d = zz - bz
+        want = {((x << d) + i, (y << d) + j) for x, y in have[bz] for i in range(1 << d) for j in range(1 << d)}
+        assert have[zz] == want, f"z{zz} 타일이 z{bz} 타일의 자식 전부가 아니다 — 빠짐 {len(want - have[zz])} · 남음 {len(have[zz] - want)}"
+
+
+def test_tile_range_doubles_per_zoom_and_refuses_the_base_zoom():
+    import pytest
+
+    from firelane.terrain import BOUNDS_Z, tile_range
+    xr, yr = tile_range(BOUNDS_Z + 1, 10, 13, 5, 7)
+    assert (xr.start, xr.stop, yr.start, yr.stop) == (20, 28, 10, 16)
+    xr2, _ = tile_range(BOUNDS_Z + 2, 10, 13, 5, 7)
+    assert len(xr2) == 2 * len(xr) == 16
+    with pytest.raises(ValueError):
+        tile_range(BOUNDS_Z, 10, 13, 5, 7)
+
+
+def test_tile_heights_are_smooth_not_blocks_and_stay_inside_the_input_range():
+    """★ 본체(PLAN 행 237). 선형 비탈을 구우면 **이웃 픽셀이 같은 값으로 뭉치지 않는다** — 최근접 뽑기는 한 칸을 여러 픽셀에 복제해
+    0 · 0 · 0 · 큰 값 꼴의 차를 냈다(실물 z15 에서 가로 같은 값 길이 중앙 3픽셀 · 2차 차 p99 4.0m). 쌍3차는 차가 고르다."""
+    import numpy as np
+    import rasterio
+
+    from firelane.terrain import encode_rgb, tile_heights
+    # 3857 위 11.25m 격자 64×64 — 동쪽으로 1m 에 0.1m 오르는 비탈(= 한 칸에 1.125m). 타일 z16 (55870, 25923) 의 왼쪽 위 모서리에 놓는다
+    origin = np.pi * 6378137.0
+    span = 2 * origin / 2 ** 16
+    x0, y0 = -origin + 55870 * span, origin - 25923 * span
+    tr = rasterio.Affine(11.25, 0, x0 - 60, 0, -11.25, y0 + 60)
+    up = (np.arange(64, dtype="float32")[None, :] * 1.125 + 50).repeat(64, axis=0)
+    h = tile_heights(up, tr, "EPSG:3857", 16, 55870, 25923, float(up.min()), float(up.max()))
+    assert h.shape == (256, 256) and not np.isnan(h).any()
+    row = h[128]
+    d = np.diff(row)
+    px = span / 256
+    assert np.allclose(d, 0.1 * px, atol=0.02), f"비탈이 고르게 안 오른다 — 이웃 차 {d.min():.3f}~{d.max():.3f} (기대 {0.1 * px:.3f})"
+    assert (d > 0).all(), "같은 값이 이어지는 픽셀이 있다 — 최근접 복제(블록)다"
+    assert h.min() >= up.min() and h.max() <= up.max(), "입력 범위를 넘었다 — 없는 언덕 · 골을 만든다"
+    # 인코딩 왕복 — 0.1m 양자화 안에서 같다
+    rgb = encode_rgb(h).astype(np.int64)
+    back = -10000 + (rgb[..., 0] * 65536 + rgb[..., 1] * 256 + rgb[..., 2]) * 0.1
+    assert np.abs(back - h).max() <= 0.05 + 1e-6
+
+
+def test_tile_heights_outside_the_dem_are_nan_not_invented():
+    import numpy as np
+    import rasterio
+
+    from firelane.terrain import tile_heights
+    up = np.full((8, 8), 42.0, dtype="float32")
+    tr = rasterio.Affine(11.25, 0, 0, 0, -11.25, 0)          # 적도 · 본초자오선 근처 — 아래 타일과 수천 km 떨어져 있다
+    h = tile_heights(up, tr, "EPSG:3857", 16, 55870, 25923, 42.0, 42.0)
+    assert np.isnan(h).all()

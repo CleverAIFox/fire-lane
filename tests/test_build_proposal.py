@@ -51,15 +51,16 @@ COVER = """# 기획서
 
 최종 수정 2026. 09. 01.
 
-모든 수치는 2026-09-01 기준으로 적는다.
+수치 기준일 2026-09-01
 """
 
 
 def test_the_cover_date_moves_to_the_given_day(bp):
     got = bp.touched(COVER, "2026-10-12")
     assert "최종 수정 2026. 10. 12." in got, got
-    assert "모든 수치는 2026-10-12 기준으로" in got, got
-    assert "2026. 09. 01." not in got and "2026-09-01" not in got, "옛 날짜가 남았다"
+    # ★ W13-28 — 수치 기준일은 도구가 안 올린다(재산출했을 때만 사람이)
+    assert "수치 기준일 2026-09-01" in got, "도구가 수치 기준일을 올렸다 — 재산출 없이"
+    assert "2026. 09. 01." not in got, "옛 최종 수정일이 남았다"
 
 
 def test_moving_the_date_twice_gives_the_same_text(bp):

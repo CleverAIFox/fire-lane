@@ -28,7 +28,7 @@ OUT   web/data/  — 아래 열일곱. ★ 중괄호 축약을 쓰지 않는다.
         보존하고 다시 쓴다 — writes 가 아니라 **mutates** 다
       ★ markers.geojson 은 **내지 않는다.** 286줄이 남은 것을 지운다 —
         종전에 이 줄이 산출물로 적혀 있었다(2026-09-03 정정)
-PARAM 좌표 정밀도(PREC) · web/data 40MB 상한(CI · commit_policy · pipeline)
+PARAM 좌표 정밀도(PREC) · web/data 두 축 바이트 래칫(CI · commit_policy · pipeline)
 
 ★ **이 블록들을 루프로 묶지 않는다**(2026-10-08 · DECISIONS §435 · PLAN #99 닫힘).
   「손으로 쌓였으니 대장 플래그로 돌리자」가 9월부터 행으로 있었다. 세어 보니
@@ -48,59 +48,59 @@ from firelane import webmanifest
 from firelane.paths import PROCESSED, ROOT
 
 OUT = PROCESSED
-P, W = ROOT/"data"/"processed", ROOT/"web"/"data"
-# ★ 2026-09-24 (PLAN §13 W12-2). `EMD_CD` 가 네 곳에 손으로 박혀 있었다.
-#   정본은 `seg/params.py` 다 — 그 파일은 **판정 지문** 안이라 값이 거기
-#   살아야 맞고, 나머지는 읽기만 한다. 대상 행정동이 바뀔 때 한 곳만 고치면
+P, W = PROCESSED, ROOT/"web"/"data"
+# ★ 2026-09-24 (PLAN §13 W12-2). `EMD_CD` 가 네 곳에 손으로 박혀 있었다. 정본은 `seg/params.py` 다 — 그 파일은 **판정 지문** 안이라 값이 거기 살아야 맞고, 나머지는 읽기만 한다. 대상 행정동이 바뀔 때 한 곳만 고치면
 #   되고, 한쪽만 고쳐 발행물과 대조표가 **다른 동**을 보는 일이 없어진다.
 from firelane.seg.params import EMD_CD
 
-# ★ CCTV_RADIUS 는 삭제했다(2026-08-23). 여기서 0회 참조였고, 커버리지
-#   원의 반경 정본은 web/config.js 의 markers[].cover.radius 다.
-#   판정 임계(`CCTV_RANGE`)의 정본은 seg/params.py 다. 같은 숫자를
+# ★ CCTV_RADIUS 는 삭제했다(2026-08-23). 여기서 0회 참조였고, 커버리지 원의 반경 정본은 web/config.js 의 markers[].cover.radius 다. 판정 임계(`CCTV_RANGE`)의 정본은 seg/params.py 다. 같은 숫자를
 #   세 곳에 두면 반드시 한 곳만 고치고 잊는다.
 
 #: ★ 2026-11-13 (DECISIONS §776 · PLAN #232). 도로명주소 건물 윤곽이 **안 가진** 건물 — 건축물대장 윤곽(`AL_D010`)에만 있는 동명동 323면. **표시용으로 더한다.**
 #: 판정 입력(`building_5186.gpkg`)은 그대로다 — 화면에만 뜨고 판정은 이 건물을 안 본다(그래서 「저 건물 앞은 왜 빨강」에 답할 수 없는 건물이다 · 목록은 DECISIONS §776).
 GAP_BUILDINGS = ROOT / "data" / "extra" / "bldg_gap_dongmyeong.geojson"
 GAP_ID0 = 100_000        # 발행 건물 번호(20~38,762)와 안 겹치는 자리
+#: ★ 2026-11-14 (PLAN #244 · #245 · DECISIONS §786 · §787-I). 동명동 **밖** 빠진 면 4,296 — `firelane.bldg_fill`(칸 `src` = `AL_D010`). 전부 얹는다(덮임 · 도로 위 걸름만 남는다). 발행 칸이 다섯뿐이라 번호 ≥ `GAP_ID0` 가 곧 `AL_D010` 이다(`drop_gap`)
+FILL_BUILDINGS = ROOT / "data" / "extra" / "bldg_gap_move.geojson"
 
 
 def _add_gap_buildings(b: gpd.GeoDataFrame, road) -> gpd.GeoDataFrame:
-    """빠진 건물 면을 더한다. 파일이 없으면 그대로 돌려준다(건너뛰었다고 찍는다). 이미 10% 넘게 덮인 면은 뺀다 — 출처가 나중에 그 건물을 갖게 되면 겹쳐 그리지 않는다. **절반 넘게 도로면 위인 면도 뺀다**(도로 위 건물 상한 · `test_building_road_overlap` — 복개 · 측량 차이를 새로 들이지 않는다)."""
-    if not GAP_BUILDINGS.is_file():
+    """빠진 건물 면을 더한다. 파일이 없으면 그대로 돌려준다(건너뛰었다고 찍는다). 이미 10% 넘게 덮인 면은 뺀다 — 출처가 나중에 그 건물을 갖게 되면 겹쳐 그리지 않는다. **절반 넘게 도로면 위인 면도 뺀다**(도로 위 건물 상한 · `test_building_road_overlap` — 복개 · 측량 차이를 새로 들이지 않는다). 파일은 둘이다 — 동명동(`GAP_BUILDINGS`) · 동명동 밖(`FILL_BUILDINGS` · 이름도). 번호는 `GAP_ID0` 부터 이어 붙인다."""
+    files = [f for f in (GAP_BUILDINGS, FILL_BUILDINGS) if f.is_file()]
+    if not files:
         print("  ! 빠진 건물 파일 없음 — 더하지 않는다")
         return b
-    x = gpd.read_file(GAP_BUILDINGS).to_crs(b.crs)
+    x = pd.concat([gpd.read_file(f).to_crs(b.crs).assign(_src=f.name) for f in files], ignore_index=True)
     cover = x.geometry.intersection(b.geometry.union_all()).area / x.geometry.area
     on_road = x.geometry.intersection(road).area / x.geometry.area
     x = x[(cover < 0.1) & (on_road <= 0.5)].copy()
     x["flo"] = x.flo.astype(float).clip(lower=1)
     x["h"] = (x.flo * 3.3).round(1)
     x["BUL_MAN_NO"] = range(GAP_ID0, GAP_ID0 + len(x))
-    x["BULD_NM"] = None
+    x["BULD_NM"] = x["nm"].where(x["nm"].fillna("") != "", None) if "nm" in x.columns else None
     if "z" in b.columns:       # 지반 높이 — 가장 가까운 발행 건물의 값(60m 안). 없으면 비워 둔다
         near = gpd.sjoin_nearest(x[["geometry"]], b[["z", "geometry"]], max_distance=60, how="left")
         x["z"] = near.groupby(level=0).z.first()
-    print(f"  빠진 건물 {len(x)}면 더함(표시용 · 판정 입력 불변)")
+    print(f"  빠진 건물 {len(x)}면 더함(표시용 · 판정 입력 불변) — " + " · ".join(f"{k} {v}" for k, v in x["_src"].value_counts().items()))
     return pd.concat([b, x[[c for c in b.columns if c in x.columns]]], ignore_index=True)
 
+def drop_gap(b: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """발행 건물에서 `_add_gap_buildings` 가 얹은 면(번호 ≥ `GAP_ID0`)을 뺀다. ★ 그 번호를 **만드는 자리가 여기**라 가르는 것도 여기가 든다 — 밖에서 그 칸을 읽지 않는다(DECISIONS §320)."""
+    if "BUL_MAN_NO" not in b.columns:
+        raise ValueError("칸 `BUL_MAN_NO` 이 없다 — 조용히 덜 하지 않는다")
+    return b[b["BUL_MAN_NO"] < GAP_ID0]
+
+
 PREC = dict(driver="GeoJSON", COORDINATE_PRECISION=6)
-# ★ 건물 발행 예산(§181-2). 스코프 판 2.18MB · web/data 32MB / 상한 40MB 에서 잡았다.
-# ★ 2026-09-22 (§218-3) — 6.0 **MiB** 였는데 커밋 정책(`tools/commit_policy.py` MAX_FILE_MB)은 5.0 **MB**
-#   (10진)라 둘 사이(5.0MB~6.0MiB)에 떨어진 발행물이 파이프라인은 통과하고 커밋에서 막혔다.
-#   단위를 정책에 맞추고 여유 0.1 을 둔다.
-BLDG_MB = 4.9
+# ★ 건물 발행 예산(§181-2 · §218-3 단위를 정책 MAX_FILE_MB 에 맞춘다). 2026-11-14 (§787-G) 4.9 → **7.0** · 정책은 5.0 → 8.0 — 둘 사이 1MB 간격(단위 사고 때문)
+BLDG_MB = 7.0
 BLDG_TOL = (0.3, 0.6, 1.0)          # m · EPSG:5186
 
 def main():
     W.mkdir(parents=True, exist_ok=True)
     # z 는 terrain.py 산출물이다. DEM 이 없으면 안 생기므로 선택 컬럼으로 둔다.
     _seg = gpd.read_file(P/"segments.geojson")
-    # seg_no — 도로명 안에서의 구간 순번. 화면 표기 전용이다.
-    # seg_uid 는 사람이 읽을 정보가 없고(DM-193399-284228-9UPP), seg_id 는
-    # 실행 간 유지되지 않아 외부 참조 금지다(MASTER §11). 팝업 머리글에
-    # seg_id 를 쓰고 있었던 것은 그 금지를 화면이 어긴 것이다.
+    # seg_no — 도로명 안에서의 구간 순번. 화면 표기 전용이다. seg_uid 는 사람이 읽을 정보가 없고(DM-193399-284228-9UPP), seg_id 는 실행 간 유지되지 않아 외부 참조 금지다(MASTER §11). 팝업 머리글에 seg_id 를 쓰고 있었던 것은 그 금지를 화면이 어긴 것이다.
     # ★ 순번은 노딩 규칙이 바뀌면 밀린다. 표기용이지 키가 아니다.
     _rep = _seg.geometry.representative_point()
     _seg = _seg.assign(_ox=_rep.x, _oy=_rep.y)
@@ -186,9 +186,8 @@ def main():
     scope = gpd.read_file(P/"scope_5186.gpkg").to_crs(5186).geometry.iloc[0]
     (W/"scope.geojson").unlink(missing_ok=True)
 
-    # 표출 범위(시설 · 상가를 자르는 틀)와 동명동 경계 — 4326
+    # 표출 범위(시설 · 상가를 자르는 틀) — 4326
     from shapely.geometry import box
-    emd4 = emd.to_crs(4326).geometry.iloc[0]
     scope4 = gpd.GeoSeries([scope], crs=5186).to_crs(4326).iloc[0]
 
     # ── 캐시 무효화 스탬프 ──────────────────────────────────────
@@ -418,8 +417,13 @@ def main():
     # ★ 2026-09-17 (DECISIONS §183-1 · 사용자). 목적지는 **동명동 경계 안만**이다. 화재 발생 후보지 스코프가
     #   동명동이다. N1.1 은 지도 이동 범위로 잘라 동구청 · 동부소방서가 목적지로 떴다. 지도(건물 · 라벨)는
     #   지금처럼 안전센터 · 회랑까지 넓게 둔다 — 넓은 것은 표출이고 목적지는 판정 스코프다.
+    # ★ 2026-11-14 (PLAN #227 · DECISIONS §730-3 의 2 · 사람이 골랐다). 위 §183-1 을 **뒤집었다** —
+    #   목적지도 **지도 이동 범위**(`move4` = view.maxBounds)로 자른다. 판정 범위와 검색 범위는
+    #   다른 축이다. 지도에 관공서 38이 보이는데 검색은 2였다. 지점(config.js landmarks)도 색인에 든다.
+    #   도로에서 먼 점(60m 밖 · 전부 관공서와 지점)은 **안 뺀다** — 이유는 `destinations.build_index`.
     # ★ 입력이 없으면 죽는다. 빠진 채 발행하면 검색에서 법원이 또 조용히 사라진다.
     from firelane import destinations as _dest
+    from firelane.publish_navi import landmarks as navi_landmarks
     for _need in (P/"navi_build.csv", P/"navi_jibun.csv", P/"civil_office.geojson"):
         if not _need.exists():
             raise FileNotFoundError(f"{_need.name} 없음 — ingest 를 먼저(목적지 색인 원천)")
@@ -428,10 +432,11 @@ def main():
     _rd = dict(dtype=str, keep_default_na=False, encoding="utf-8-sig")
     dest, _st = _dest.build_index(
         _store, pd.read_csv(P/"navi_build.csv", **_rd), pd.read_csv(P/"navi_jibun.csv", **_rd),
-        gpd.read_file(P/"civil_office.geojson"), emd4)
+        gpd.read_file(P/"civil_office.geojson"), move4, landmarks=navi_landmarks(), faces=gpd.read_file(P/"building_5186.gpkg").to_crs(4326))
     dest.to_file(W/"dest.geojson", **PREC)
     _nv = _st["navi"]
-    print(f"  목적지 {_st['total']:,} — 상가 {_st['store']:,} · 주소/건물 {_st['build']:,} · 관공서/학교 {_st['civil']:,}")
+    print(f"  목적지 {_st['total']:,} — 상가 {_st['store']:,} · 주소/건물 {_st['build']:,} · 관공서/학교 {_st['civil']:,}"
+          f" · 지점 {_st.get('landmark', 0):,} · 건물 면 이름 {_st.get('facility', 0):,}")
     print(f"    내비DB {_nv['rows']:,}행 — 출입구 {_nv['entrance']:,} · 중심점 {_nv['center']:,} · "
           f"좌표 없음(뺌) {_nv['no_coord']:,} · 같은 주소(뺌) {_nv['same_addr']:,}")
 

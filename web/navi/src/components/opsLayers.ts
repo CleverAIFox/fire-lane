@@ -294,19 +294,23 @@ export function landmarkSource(lms?: Landmark[]): StyleSpecification["sources"][
 export function landmarkLayers(): LayerSpecification[] {
   return [
     { id: "landmark-ring", type: "circle", source: "landmarks",
+      // ★ 2026-11-14 (PLAN 행 241 · 242). 「핀이 안 뜬다」 를 헤드리스로 갈랐다 — 고리 · 글자는 **그려진다**(줌 15.4~18.5 × 3D · 평면 · 지형 켬 · 끔 16경우 전부).
+      //   3D 건물은 뒤에 얹힌 2D 층을 못 가린다(MapLibre 는 첫 3D 층 뒤의 층을 깊이 검사 없이 그린다) · 글자도 겹침 규칙에 안 밀렸다.
+      //   안 보인 까닭은 둘이다 — ① 관제 첫 화면에서 핀 자리가 「범례 · 레이어」 패널 밑이다(창 폭 1536 이하에서는 통째로 · 1920 에서 반쯤)
+      //   ② 고리가 작고(반지름 6.5 · 선 2.5) 글자가 11px 라 어두운 3D 건물 위에서 묻힌다. 여기서 고치는 것은 ② 다(키웠다). ① 은 화면 배치(`OpsApp.tsx`)의 몫이다.
       paint: {
-        "circle-radius": 6.5,
+        "circle-radius": 9,
         "circle-color": "rgba(0,0,0,0)",
-        "circle-stroke-width": 2.5,
-        "circle-stroke-color": "#e2e8f0",
+        "circle-stroke-width": 3,
+        "circle-stroke-color": "#ffffff",
       } },
     { id: "lbl-landmark", type: "symbol", source: "landmarks",
       layout: {
         "text-field": ["get", "name"],
-        "text-font": FONT, "text-size": 11, "text-offset": [0, 1.2],
+        "text-font": FONT, "text-size": 14, "text-offset": [0, 1.2],
         "text-anchor": "top", "text-allow-overlap": false, "text-padding": 4,
         "text-pitch-alignment": "viewport",
       },
-      paint: { "text-color": "#e2e8f0", "text-halo-color": "#0b1220", "text-halo-width": 1.6 } },
+      paint: { "text-color": "#ffffff", "text-halo-color": "#0b1220", "text-halo-width": 2 } },
   ];
 }

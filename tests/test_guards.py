@@ -486,30 +486,24 @@ def test_lineage_is_pipeline_concern_not_step_concern():
 #   대해 이미 하고 있는 일을, 남은 자리에도 한다.
 
 def test_webdata_limit_is_one_number():
-    """web/data 용량 상한이 세 곳에서 같아야 한다.
+    """web/data 용량 **래칫**(두 축 바이트 — 정사영상 · 나머지)이 세 곳에서 같아야 한다. (DECISIONS §787-F′)
 
-    ★ 실제로 갈라져 있었다 — contract.yml 40 · commit_policy 40 · pipeline 60.
-      PLAN #12 가 "60 → 40 으로 조정" 이라 적었는데 pipeline 만 안 고쳤다.
-      40~60 구간에서 **로컬 파이프라인은 초록불이고 CI 만 빨간불**이 된다.
-      값이 무엇이냐보다 하나냐가 중요하다.
+    ★ 값이 무엇이냐보다 하나냐가 중요하다 — 옛 40MB 는 contract 40 · commit_policy 40 · pipeline 60 으로 갈라져 있었다(로컬 초록 · CI 만 빨강).
     """
     import re
 
-    from firelane.expectation import WEB_MAX_MB  # ← pipeline (§431 · PLAN #157)
+    from firelane import expectation as ex  # ← pipeline (§431 · PLAN #157)
 
     ci = (ROOT / ".github/workflows/contract.yml").read_text(encoding="utf-8")
-    m = re.search(r'SIZE"?\s*-ge\s*(\d+)', ci) or re.search(r'-ge\s*"?(\d+)"?', ci)
-    assert m, "contract.yml 에서 web/data 상한을 못 찾았다"
-    ci_mb = int(m.group(1))
-
+    mo, mr = re.search(r"ORTHO_MAX=(\d+)", ci), re.search(r"REST_MAX=(\d+)", ci)
+    assert mo and mr, "contract.yml 에서 web/data 래칫(ORTHO_MAX · REST_MAX)을 못 찾았다"
     pol = (ROOT / "tools/commit_policy.py").read_text(encoding="utf-8")
-    m2 = re.search(r"MAX_WEBDATA_MB\s*=\s*(\d+)", pol)
-    assert m2, "commit_policy.py 에서 MAX_WEBDATA_MB 를 못 찾았다"
-    pol_mb = int(m2.group(1))
-
-    assert WEB_MAX_MB == ci_mb == pol_mb, (
-        f"web/data 상한이 갈렸다 — expectation {WEB_MAX_MB} · "
-        f"contract.yml {ci_mb} · commit_policy {pol_mb}")
+    po, pr = re.search(r"WEBDATA_ORTHO_BYTES\s*=\s*([\d_]+)", pol), re.search(r"WEBDATA_REST_BYTES\s*=\s*([\d_]+)", pol)
+    assert po and pr, "commit_policy.py 에서 WEBDATA_ORTHO_BYTES · WEBDATA_REST_BYTES 를 못 찾았다"
+    got = {"expectation": (ex.WEB_ORTHO_BYTES, ex.WEB_REST_BYTES), "contract.yml": (int(mo[1]), int(mr[1])),
+           "commit_policy": (int(po[1].replace("_", "")), int(pr[1].replace("_", "")))}
+    assert len(set(got.values())) == 1, f"web/data 래칫이 갈렸다 — {got}"
+    assert "MAX_WEBDATA_MB" not in pol, "40MB 상한(MAX_WEBDATA_MB)이 되살아났다 — 래칫으로 바꿨다(DECISIONS §787-F′)"
 
 
 def test_ci_watches_the_working_branch():
@@ -776,9 +770,9 @@ def test_local_verify_covers_ci():
         f"CI 가 돌리는데 verify.sh 가 안 돌리는 검사: {missing}\n"
         "  로컬이 CI 의 부분집합이면 '내 기계에서는 됐는데' 가 나온다.")
 
-    if "du -sm web/data" in ci:
-        assert "web/data" in vs and "du -sm" in vs, \
-            "CI 가 web/data 용량을 보는데 verify.sh 는 안 본다"
+    if "ORTHO_MAX" in ci:     # 40MB `du -sm` 상한 → 두 축 래칫(DECISIONS §787-F′) — CI 는 `ORTHO_MAX` 를 선언하고 verify.sh 는 `web_size_verdict` 를 부른다
+        assert "web/data" in vs and "web_size_verdict" in vs, \
+            "CI 가 web/data 래칫을 보는데 verify.sh 는 안 본다"
 
 
 def test_scan_data_sizes_add_up():
@@ -860,7 +854,7 @@ def test_tidy_never_touches_data():
         "규칙에 넣었더니 실제로 잡혔다 — NEVER 가 무력하다"
 
 
-def test_tidy_knows_the_leftovers_that_bit_us():
+def test_tidy_knows_the_leftovers_that_bit_us(tmp_path, monkeypatch):
     """실제로 사고를 낸 찌꺼기를 `tidy` 가 알고 있는가.
 
     규칙 목록이 추상적인 위생 항목이 되면 다음에 또 같은 것에 물린다.
@@ -877,17 +871,14 @@ def test_tidy_knows_the_leftovers_that_bit_us():
     #   실제로 그랬다 — `fix-*.sh` 를 `*.sh` 로 넓히자 `apply.sh` 문자열이
     #   사라져 빨간불이 됐다. **규칙이 나아졌는데 검사가 막는 건 잘못이다.**
     #   문자열이 아니라 **행동**을 본다: 루트에 옛 패처를 놓고 잡히는가.
-    probe = tidy.ROOT / "apply.sh"
-    made = not probe.exists()
-    if made:
-        probe.write_text("#!/bin/bash\necho old\n", encoding="utf-8")
-    try:
-        hit = {p.name for _, p, _, _ in tidy.scan_fs()}
-        assert "apply.sh" in hit, \
-            "루트의 옛 패처를 tidy 가 안 잡는다 (08-23 — 새 스크립트를 가렸다)"
-    finally:
-        if made:
-            probe.unlink()
+    # ★ PLAN #219 ②. 프로브를 **실제 루트에 만들지 않는다** — 임시 뿌리로 `tidy.ROOT` 를 바꿔 거기서 잡는다(`scan_fs` 는 `.git` 을 안 읽는다 — `main()` 만 읽는다).
+    #   종전에는 추적 안 된 루트에 `apply.sh` 를 잠깐 만들어, `tidy` 를 읽는 다른 시험이 그 사이를 볼 수 있었다.
+    monkeypatch.setattr(tidy, "ROOT", tmp_path)
+    (tmp_path / "apply.sh").write_text("#!/bin/bash\necho old\n", encoding="utf-8")
+    hit = {p.name for _, p, _, _ in tidy.scan_fs()}
+    assert "apply.sh" in hit, \
+        "루트의 옛 패처를 tidy 가 안 잡는다 (08-23 — 새 스크립트를 가렸다)"
+    monkeypatch.undo()
 
     # tools/ 의 이름 있는 도구는 잡으면 안 된다
     assert not any(p.parent.name == "tools" and p.suffix == ".sh"
@@ -2703,14 +2694,19 @@ def test_sheet_pick_refuses_to_guess_between_equal_candidates(tmp_path, monkeypa
 #   초록인가」밖에 못 묻고, 상한을 1000 으로 올려도 통과한다(§17-0).
 
 
-def test_web_size_verdict_bites_at_the_boundary():
-    """상한이 **경계에서** 운다. 그리고 상한 자체가 정본에서 온다."""
+def test_web_size_verdict_bites_at_the_boundary(tmp_path):
+    """래칫이 **경계에서** 운다 — 두 축이 따로. `web_axes` 는 정사영상을 나머지와 가른다."""
     from firelane import expectation as m
-    assert m.web_size_verdict(m.WEB_MAX_MB - 0.1) == [], "상한 밑인데 운다"
-    over = m.web_size_verdict(m.WEB_MAX_MB)
-    assert len(over) == 1, "경계에서 안 문다 — `>` 와 `>=` 를 섞었다"
-    assert str(m.WEB_MAX_MB) in over[0], "할 말에 상한이 없다 — 사람이 무엇을 넘었는지 모른다"
-    assert m.web_size_verdict(m.WEB_MAX_MB * 10), "한참 넘었는데 안 문다"
+    O, R = m.WEB_ORTHO_BYTES, m.WEB_REST_BYTES
+    assert m.web_size_verdict(O, R) == [] and m.web_size_verdict(0, 0) == [], "같거나 줄었는데 운다 — 래칫은 「늘지 않는다」다"
+    o_over, r_over = m.web_size_verdict(O + 1, R), m.web_size_verdict(O, R + 1)
+    assert len(o_over) == 1 and "정사영상" in o_over[0], "정사영상 축이 경계에서 안 문다"
+    assert len(r_over) == 1 and "나머지" in r_over[0] and f"{R:,}" in r_over[0], "나머지 축이 경계에서 안 문다"
+    assert len(m.web_size_verdict(O * 10, R * 10)) == 2, "한참 넘었는데 둘 다 안 문다"
+    (tmp_path / "ortho" / "1").mkdir(parents=True)
+    (tmp_path / "ortho" / "1" / "a.jpg").write_bytes(b"x" * 7)
+    (tmp_path / "b.json").write_bytes(b"y" * 3)
+    assert m.web_axes(tmp_path) == (7, 3), "정사영상과 나머지가 안 갈린다"
 
 
 def test_verify_returns_what_it_found_instead_of_printing_it():

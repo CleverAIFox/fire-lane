@@ -468,6 +468,38 @@ def test_manifest_keeps_lineage():
         "  복구된다(약 300초). golden 은 이 상태를 초록불로 통과시킨다.")
 
 
+def ledger_rel(w: Path, root: Path, processed: Path) -> str:
+    """`Step.writes` 의 경로 → 대장이 적는 **논리 경로**(`data/processed/…`). 순수 함수.
+
+    ★ 2026-11-14 (PLAN #215). `FIRE_LANE_PROCESSED` 가 산출 디렉터리를 저장소 밖으로 돌리면 `Step.writes` 는 그 밖의 절대 경로다 — 종전의
+      `w.relative_to(ROOT)` 는 거기서 ValueError 로 죽었다(등재 누락이 아니라 시험이 죽은 것이다). 대장은 **어디에 놓였는가**가 아니라
+      **무슨 산출물인가**를 적으므로 산출 디렉터리 아래의 것은 `data/processed/` 로 되돌려 같은 표와 비교한다.
+      산출 디렉터리도 저장소도 아닌 곳은 절대 경로 그대로 둔다 — 대장에 없으니 **운다**(건너뛰지 않는다).
+    """
+    if not w.is_absolute():
+        return str(w)
+    if w.is_relative_to(processed):
+        return str(Path("data/processed") / w.relative_to(processed))
+    return str(w.relative_to(root)) if w.is_relative_to(root) else str(w)
+
+
+def test_ledger_rel_maps_a_redirected_output_dir_back_and_never_hides_a_stray_path():
+    root, inside, outside = Path("/repo"), Path("/repo/data/processed"), Path("/scratch/out")
+    assert ledger_rel(inside / "a.gpkg", root, inside) == "data/processed/a.gpkg" == ledger_rel(outside / "a.gpkg", root, outside)
+    assert ledger_rel(root / "web/x.json", root, outside) == "web/x.json" and ledger_rel(Path("data/y.csv"), root, outside) == "data/y.csv"
+    assert ledger_rel(Path("/elsewhere/z.gpkg"), root, outside) == "/elsewhere/z.gpkg", "둘 다 밖인 경로를 지우면 등재 누락이 숨는다"
+
+
+def test_step_writes_survive_an_output_dir_outside_the_repo(tmp_path):
+    """환경변수 모드의 회귀 — 저장소 밖 `FIRE_LANE_PROCESSED` 에서 아래 시험이 죽지 않고 **같은 판정**을 낸다(자식 인터프리터 · 파이프라인은 안 돈다)."""
+    import os
+    import subprocess
+    import sys
+    r = subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", f"{Path(__file__).name}::test_step_writes_are_declared_in_the_ledger"],
+                       cwd=ROOT / "tests", env={**os.environ, "FIRE_LANE_PROCESSED": str(tmp_path / "밖")}, capture_output=True, text=True, timeout=240, check=False)
+    assert r.returncode == 0 and "1 passed" in r.stdout, r.stdout[-1500:] + r.stderr[-500:]
+
+
 def test_step_writes_are_declared_in_the_ledger():
     """`pipeline.Step.writes` 가 대장 `outputs` 에 있는가. **파이프라인 없이.**
 
@@ -491,11 +523,12 @@ def test_step_writes_are_declared_in_the_ledger():
     sys.modules["pipeline"] = m
     spec.loader.exec_module(m)
 
+    from firelane import paths
     known = {str(Path(x)) for x in declared_paths()}
     bad = []
     for s in m.STEPS:
         for w in (*s.writes, *s.mutates):
-            rel = str(w.relative_to(ROOT)) if w.is_absolute() else str(w)
+            rel = ledger_rel(w, ROOT, paths.PROCESSED)
             if "*" in rel or not Path(rel).suffix:
                 continue
             if rel.startswith(prefixes("ledger-skip")) or rel.endswith("_manifest.json"):

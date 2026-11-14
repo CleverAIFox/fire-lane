@@ -41,16 +41,16 @@ from shapely.geometry import MultiPolygon, box, mapping
 from shapely.geometry.polygon import orient
 
 from firelane.cli import no_args
-from firelane.paths import ROOT
+from firelane.paths import PROCESSED, ROOT
 
-P = ROOT / "data" / "processed"
+P = PROCESSED
 W = ROOT / "web" / "data"
 
 #: 단순화(m). 0.4m 면 골목 모서리가 살고 파일이 1/3 이 된다
 SIMPLIFY_M = 0.4
 #: 좌표 자릿수. publish_web · publish_navi 와 같은 6자리(약 11cm)
 PREC = 6
-#: 산출 상한(두 파일 합). web/data 40MB 예산 안에서 이 몫을 못박는다
+#: 산출 상한(두 파일 합). web/data 래칫(DECISIONS §787-F′) 안에서 이 몫을 못박는다
 SIZE_MAX = 2 * 1024 * 1024
 
 SOURCES = {

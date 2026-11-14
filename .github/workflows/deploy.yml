@@ -85,6 +85,7 @@ permissions:
   pages: write
   id-token: write
   pull-requests: write
+  actions: read     # ★ 2026-11-14 — `gate`(contract.yml)가 「이 나무를 푸시로 이미 쟀는가」를 실행 목록에서 **읽는다.** 읽기뿐 · 호출자는 피호출자의 권한을 덮어야 한다(§196-4)
 
 # ★ 사이트가 하나다. 동시에 덮어쓰지 않는다.
 concurrency:

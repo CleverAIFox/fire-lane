@@ -101,3 +101,32 @@ test("단추 문구(switchTag)는 safe · fast 둘뿐이고 그 문구는 **상�
   }
   ok(!bar("approach").includes("undefined") && bar("approach").includes("안전 경로"), "switchTag 가 아닌 상태의 태그(approach)는 그대로 그려져야 한다");
 });
+
+
+// ── 상단 안내 막대: 글자는 전부 24px 이상 · 배지와 시각 칸은 한 줄에 한 항목 (PLAN 행 224 ④ · 2026-11-14) ─────────────
+/** 렌더된 마크업에서 `font-size` 가 `floor` 미만인 선언들. */
+const smallFonts = (h: string, floor = 24) => [...h.matchAll(/font(?:-size)?:(?:[^;"]*?\s)?(\d+(?:\.\d+)?)px/g)].map((m) => Number(m[1])).filter((x) => x < floor);
+const worst = { vehicleKind: "펌프차 (중형)", turnKind: "left", nextDistM: 12500, roadName: "동명로14번길 123-45", etaText: "14:12", incidentText: "14:01",
+  arrivedText: "14:12", injected: true, onSwitchRoute: () => {}, vars: { last: "14:03:21", vehicle: "펌프차 (중형)", need: "3.5", road: "동명로14번길", len: "120", walk: "120" } };
+
+test("상단 막대 — 상태 18개 어디에도 24px 미만 글자가 없다(주행 중 한 시선 규범) · 자는 실제로 작은 글자를 잡는다", () => {
+  ok(smallFonts('<i style="font-size:14px">x</i><b style="font-size:24px">y</b><u style="font:800 13px/32px a">z</u>').join() === "14,13", "자가 14px · 줄임꼴(`font:`)의 13px 를 못 잡는다 — 이 시험은 빈 그물이다");
+  const keys = Object.keys(STATUS) as StatusKey[];
+  ok(keys.length === 18, `상태가 18개가 아니다: ${keys.length}`);
+  for (const k of keys) {
+    const h = bar(k, worst);
+    ok(/font(-size)?:/.test(h), `${k}: 글자 크기 선언을 하나도 못 읽었다`);
+    ok(smallFonts(h).length === 0, `${k}: 24px 미만 글자 ${smallFonts(h).join(",")}px`);
+  }
+});
+
+test("상단 막대 — 경로 바꾸기 단추는 배지 전체를 덮는다(터치 76 이상) · 상태 부제는 말줄임이 아니라 두 줄까지 꺾인다", () => {
+  const h = bar("safe", worst);
+  const btn = h.match(/<button[^>]*style="([^"]*)"[^>]*>➤ 빠른 경로 안내<\/button>/);
+  ok(!!btn && /position:absolute/.test(btn[1]) && /inset:0/.test(btn[1]), `단추가 배지를 안 덮는다: ${btn?.[1] ?? "단추 없음"}`);
+  const sub = bar("noDetour", worst).match(/<div data-turn="road" style="([^"]*)"/);
+  ok(!!sub && /max-height:53px/.test(sub[1]) && !/white-space:nowrap/.test(sub[1]), `상태 부제가 한 줄 말줄임이다(두 줄 높이 53px 까지 꺾여야 한다): ${sub?.[1]}`);
+  // 회전 안내의 도로명은 한 줄 그대로다(지시 두 줄이 먼저다)
+  const road = bar("safe", worst).match(/<div data-turn="road" style="([^"]*)"/);
+  ok(!!road && /white-space:nowrap/.test(road[1]), "도로명 줄이 꺾인다 — 회전 안내 세 줄이 막대 높이를 넘는다");
+});

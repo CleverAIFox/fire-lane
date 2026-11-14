@@ -5,6 +5,7 @@ tools/evalset.py — 0판 평가셋을 **뽑는다**(그리고 사람이 채운 
     uv run python tools/evalset.py              평가셋을 뽑아 data/field/evalset_2610.csv · .key.json 을 쓴다
     uv run python tools/evalset.py --score      ★ 사람이 채운 뒤에만 — 채점한다 (채우기 전에는 거부한다)
     uv run python tools/evalset.py --selftest   판별식이 살아 있나
+    uv run python tools/evalset.py --roadview[-check]  거리뷰 가설 판독표(가설 셋 · 최소폭 표본 지점 40곳)를 쓴다 · [-check] 칸 · 허용값 · 좌표를 보고 다 채운 가설을 가른다(키 파일은 안 연다)
 
 ── 목적 — 이 표 하나로 여섯 물음에 답한다 ─────────────────────
   Q1  `width_med_m` 이 실제 대표폭(전폭)과 맞나
@@ -54,12 +55,29 @@ from __future__ import annotations
 
 import csv
 import json
+import math
 import random
 import sys
 from pathlib import Path
 
 from evalgen import SEED
 from ledgercross import _midpoints, gap, is_step, steps_of
+from rvsheet import (  # 판독표 선언 — 줄 수 상한 때문에 옮겼다(DECISIONS §788). 아래 `rv_*` 가 쓴다
+    RV_ALLOWED,
+    RV_ALPHA,
+    RV_COLS,
+    RV_FILE,
+    RV_HUMAN,
+    RV_HYPO,
+    RV_MIN_LEN,
+    RV_N,
+    RV_NAMED,
+    RV_NEED,
+    RV_Q2_HYP,
+    RV_Q2_WHEN,
+    RV_RULES,
+    RV_TOL_M,
+)
 from statkit import num, quartiles
 
 from firelane import regime as R
@@ -304,6 +322,210 @@ def score(rows: list[dict], samples_by: dict[str, list[dict]], filled: list[dict
     return res
 
 
+# ── 거리뷰 판독표 — 가설 검정 (PLAN #187 · 묶음 ㉘) ─────────────────────
+# 전수 조사가 아니다. 데이터만으로 못 가른 가설 셋을, 가설을 가를 최소 표본(가설군 + 대조군)만 뽑아 그 구간의 **최소폭 표본 지점**에서 묻는다.
+# ★ 표에 우리 폭 · 대장폭 · 판정 · **어느 행이 대조군인지**를 안 싣는다(눈금이 끌린다). 가설군 · 대조군은 열쇠 파일이 아니라 아래 규칙(`RV_HYPO`)으로 다시 나온다 — `rv_role`.
+
+
+def rv_links(lat: float, lon: float) -> tuple[str, str]:
+    """(카카오 로드뷰 바로가기 · 네이버 지도 좌표 검색)."""
+    return f"https://map.kakao.com/link/roadview/{lat:.6f},{lon:.6f}", f"https://map.naver.com/p/search/{lat:.6f},{lon:.6f}"
+
+
+def rv_point(coords: list, frac: float) -> tuple[float, float, str]:
+    """구간 선 위에서 길이 비율 `frac` 인 점 — (위도, 경도, 보는방향). 방위는 표본 위치가 느는 쪽이다(접지 않는다)."""
+    k = math.cos(math.radians(coords[0][1]))
+    pairs = list(zip(coords, coords[1:], strict=False))
+    d = [math.hypot((b[0] - a[0]) * k, b[1] - a[1]) for a, b in pairs]
+    want, run = max(0.0, min(1.0, frac)) * sum(d), 0.0
+    for i, ((a, b), x) in enumerate(zip(pairs, d, strict=True)):
+        if x > 0 and (run + x >= want or i == len(d) - 1):
+            t = min(1.0, (want - run) / x)
+            brg = math.degrees(math.atan2((b[0] - a[0]) * k, b[1] - a[1])) % 360
+            name = ("북", "북동", "동", "남동", "남", "남서", "서", "북서")[int((brg + 22.5) // 45) % 8]
+            return round(a[1] + (b[1] - a[1]) * t, 6), round(a[0] + (b[0] - a[0]) * t, 6), f"{name} {brg:.0f}°"
+        run += x
+    raise SystemExit("★ 길이가 0 인 구간이다 — 표본 지점을 못 낸다")
+
+
+def rv_samples(path: Path | None = None) -> dict[str, list[dict]]:
+    """seg_uid → 그 구간의 표본 행(파일 순서 — `width_min_sample_idx` 가 이 순서의 번호다)."""
+    by: dict[str, list[dict]] = {}
+    with (SAMPLES if path is None else path).open(encoding="utf-8-sig", newline="") as f:
+        for r in csv.DictReader(f):
+            by.setdefault(r["seg_uid"], []).append(r)
+    return by
+
+
+def rv_minrow(p: dict, rows: list[dict]) -> dict | None:
+    """발행 최소폭을 낸 **그 표본 행**. 번호가 없거나 그 표본의 폭이 발행값과 안 맞거나(`RV_TOL_M`) 구간이 `RV_MIN_LEN` 보다 짧으면 None — 그런 구간은 지점을 댈 수 없어 안 뽑는다."""
+    i, w = p.get("width_min_sample_idx"), num(p.get("width_min_m"))
+    r = rows[int(i)] if i is not None and 0 <= int(i) < len(rows) else None
+    if r is None or w is None or (num(p.get("length_m")) or 0.0) < RV_MIN_LEN or num(p.get("width_med_m")) is None or num(p.get("road_bt_m")) is None or num(r.get("w_m")) is None:
+        return None
+    return r if abs(num(r["w_m"]) - w) <= RV_TOL_M else None
+
+
+def rv_role(hyp: str, p: dict, rows: list[dict]) -> str | None:
+    """그 구간이 가설 `hyp` 에서 「가설군」인가 「대조군」인가 — 규칙으로만 정한다(표에도 열쇠 파일에도 없다). 지명 둘은 「지명」(검정에서 뺀다)."""
+    if rv_minrow(p, rows) is None:
+        return None
+    if p["seg_uid"] in RV_NAMED:
+        return "지명" if hyp == "가" else None
+    w, m, b = p["width_min_m"], p["width_med_m"], p["road_bt_m"]
+    return "가설군" if RV_HYPO[hyp][2](w, m, b) else "대조군" if RV_HYPO[hyp][3](w, m, b) else None
+
+
+def rv_draw(feats: list[dict], samples: dict[str, list[dict]], seed: int = SEED) -> list[tuple[str, str]]:
+    """(가설, seg_uid) 명단 — 지명 → 가 → 나 → 다 순으로 뽑고 앞에서 쓴 구간은 뒤에서 뺀다. 후보는 seg_uid 순으로 놓고 시드로 뽑은 뒤 시드로 섞는다(폭 · 판정으로 정렬하지 않는다)."""
+    props = sorted((f["properties"] for f in feats), key=lambda p: p["seg_uid"])
+    out = [("가", p["seg_uid"]) for p in props if rv_role("가", p, samples.get(p["seg_uid"], [])) == "지명"]
+    used = set(RV_NAMED)
+    for k, (hyp, h) in enumerate(RV_HYPO.items()):
+        for j, role in enumerate(("가설군", "대조군")):
+            pool = [p["seg_uid"] for p in props if p["seg_uid"] not in used and rv_role(hyp, p, samples.get(p["seg_uid"], [])) == role]
+            if len(pool) < h[j]:
+                raise SystemExit(f"★ 가설 {hyp} 의 {role} 후보가 {len(pool)} — {h[j]} 을 못 뽑는다")
+            got = random.Random(seed + 10 * k + j).sample(pool, h[j])  # noqa: S311 — 씨앗을 박은 재현용 표집이다. 암호가 아니다
+            used.update(got)
+            out += [(hyp, u) for u in got]
+    random.Random(seed + 99).shuffle(out)  # noqa: S311 — 위와 같다(행 순서가 가설군 · 대조군을 흘리지 않게 섞는다)
+    return out
+
+
+def rv_at(f: dict, rows: list[dict]) -> tuple[float, float, str]:
+    """그 구간의 최소폭 표본 지점 — s_m ÷ 구간 길이의 비율로 구간 선 위를 보간한다."""
+    p = f["properties"]
+    return rv_point(f["geometry"]["coordinates"], float(rv_minrow(p, rows)["s_m"]) / float(p["length_m"]))
+
+
+def rv_build(feats: list[dict], samples: dict[str, list[dict]], picks: list[tuple[str, str]]) -> list[dict]:
+    """판독표 행. 좌표는 구간 중점이 아니라 **최소폭 표본 지점**이다. 사람 칸은 비운다."""
+    by = {f["properties"]["seg_uid"]: f for f in feats}
+    table = []
+    for i, (hyp, u) in enumerate(picks, 1):
+        p = by[u]["properties"]
+        lat, lon, brg = rv_at(by[u], samples[u])
+        kk, nv = rv_links(lat, lon)
+        table.append({**dict.fromkeys(RV_COLS, ""), "순번": i, "가설": hyp, "seg_id": p["seg_id"], "seg_uid": u, "위도": f"{lat:.6f}", "경도": f"{lon:.6f}",
+                      "도로명": p.get("road_name") or "", "보는방향": brg, "카카오로드뷰": kk, "네이버지도": nv, "묻는것": RV_HYPO[hyp][4]})
+    return table
+
+
+def rv_read(path: Path) -> tuple[list[str], list[dict]]:
+    with path.open(encoding="utf-8-sig", newline="") as f:
+        rd = csv.DictReader([ln for ln in f if not ln.startswith("#")])
+        return list(rd.fieldnames or []), list(rd)
+
+
+def rv_write(table: list[dict], path: Path) -> None:
+    with path.open("w", encoding="utf-8", newline="") as f:               # BOM 없이 · LF (evalset 표와 같은 꼴)
+        f.write("\n".join(RV_RULES) + "\n")
+        w = csv.DictWriter(f, fieldnames=list(RV_COLS), lineterminator="\n")
+        w.writeheader()
+        w.writerows(table)
+
+
+def rv_filled(r: dict) -> bool:
+    return any((r.get(c) or "").strip() for c in RV_HUMAN)
+
+
+def rv_missing(hyp: str, v: dict) -> list[str]:
+    """채운 행에서 그 가설이 요구하는데 빈 칸. 거리뷰가 「없다」(가 · 다)면 답 · 포장폭 · 촬영시점 · 답2 는 요구하지 않는다(보지 못한 행)."""
+    if "거리뷰" in RV_NEED[hyp] and v["거리뷰"] == "없다":
+        return []
+    miss = [c for c in RV_NEED[hyp] if not v[c]]
+    if hyp == RV_Q2_HYP and v["답"] in RV_Q2_WHEN and not v["답2"]:
+        miss.append("답2")
+    return miss
+
+
+def rv_complete(hyp: str, r: dict) -> bool:
+    """검정에 쓸 수 있게 **다 채운** 행인가 — 요구 칸이 전부 있거나 「거리뷰 없다」로 닫혔다. 아무것도 안 채운 행은 아니다."""
+    v = {c: (r.get(c) or "").strip() for c in RV_HUMAN}
+    return rv_filled(r) and not rv_missing(hyp, v) and bool(v["답"] or (("거리뷰" in RV_NEED[hyp]) and v["거리뷰"] == "없다"))
+
+
+def rv_fisher(a: int, n1: int, b: int, n0: int) -> float:
+    """피셔 정확검정 한쪽 p — 가설군 n1 중 a · 대조군 n0 중 b 가 「그 답」일 때, 비율이 같다면 가설군에 a 이상이 몰릴 확률."""
+    k = a + b
+    return sum(math.comb(n1, x) * math.comb(n0, k - x) for x in range(a, min(n1, k) + 1) if 0 <= k - x <= n0) / math.comb(n1 + n0, k)
+
+
+def rv_check(path: Path, feats: list[dict], samples: dict[str, list[dict]], n: int | None = None) -> tuple[list[str], dict]:
+    """(결함 목록, 진행 · 판정). 칸 · 행 수 · 허용값 · 좌표가 최소폭 표본 지점인가 · 가설군/대조군 수 · 앞뒤를 본다. 빈 행은 결함이 아니다(아직 안 본 행). 판정은 **다 채운 가설만** 낸다."""
+    import re
+    bad: list[str] = []
+    cols, rows = rv_read(path)
+    if tuple(cols) != RV_COLS:
+        return [f"칸이 다르다 — 있어야 할 것 {list(RV_COLS)} · 있는 것 {cols}"], {}
+    if len(rows) != (RV_N if n is None else n):
+        bad.append(f"행 수 {len(rows)} ≠ {RV_N if n is None else n}")
+    by = {f["properties"]["seg_uid"]: f for f in feats}
+    if len({r["seg_uid"] for r in rows}) != len(rows):
+        bad.append("같은 구간이 두 번 들었다")
+    tally: dict[str, dict[str, list[dict]]] = {h: {"가설군": [], "대조군": [], "지명": []} for h in RV_HYPO}
+    for i, r in enumerate(rows, 1):
+        tag, hyp, f = f"{i}행({r.get('seg_uid')})", r.get("가설"), by.get(r.get("seg_uid"))
+        role = rv_role(hyp, f["properties"], samples.get(r["seg_uid"], [])) if f and hyp in RV_HYPO else None
+        if role is None:
+            bad.append(f"{tag}: 지금 발행본에 없는 구간이거나 가설 「{hyp}」의 규칙 밖이다(재발행으로 밀렸다) — 표를 다시 뽑는다")
+            continue
+        tally[hyp][role].append(r)
+        lat, lon, brg = rv_at(f, samples[r["seg_uid"]])
+        if (r["위도"], r["경도"], r["보는방향"]) != (f"{lat:.6f}", f"{lon:.6f}", brg) or (r["카카오로드뷰"], r["네이버지도"]) != rv_links(lat, lon) or r["묻는것"] != RV_HYPO[hyp][4]:
+            bad.append(f"{tag}: 좌표가 그 구간의 최소폭 표본 지점({lat:.6f}, {lon:.6f})이 아니거나 링크 · 보는방향 · 묻는것이 안 맞는다")
+        v = {c: (r.get(c) or "").strip() for c in RV_HUMAN}
+        cov, ans, a2, wid, when = v["거리뷰"], v["답"], v["답2"], v["포장폭"], v["촬영시점"]
+        for c, val, allowed in (("거리뷰", cov, RV_ALLOWED["거리뷰"]), ("답", ans, RV_HYPO[hyp][5]), ("답2", a2, RV_ALLOWED["답2"]), ("포장폭", wid, RV_ALLOWED["포장폭"])):
+            if val and val not in allowed:
+                bad.append(f"{tag}: {c} 「{val}」 — 가설 {hyp} 의 허용값은 {' · '.join(allowed)}")
+        if when and not re.fullmatch(r"(19|20)\d\d-(0[1-9]|1[0-2])", when):
+            bad.append(f"{tag}: 촬영시점 「{when}」 — YYYY-MM 꼴이 아니다")
+        if rv_filled(r):
+            miss = rv_missing(hyp, v)
+            if miss:
+                bad.append(f"{tag}: 채우다 만 행이다 — 가설 {hyp} 는 {' · '.join(RV_NEED[hyp])}{'(+ 가-1 이 한쪽 · 양쪽이면 답2)' if hyp == RV_Q2_HYP else ''} 가 있어야 한다 · 빠진 것: {' · '.join(miss)}")
+            if a2 and (hyp != RV_Q2_HYP or ans not in RV_Q2_WHEN or cov == "없다"):
+                bad.append(f"{tag}: 답2 는 가설 {RV_Q2_HYP} 에서 가-1 이 {' · '.join(RV_Q2_WHEN)}일 때만 적는다")
+            if "거리뷰" in RV_NEED[hyp] and cov == "없다" and (ans or wid):
+                bad.append(f"{tag}: 채우다 만 행이다 — 거리뷰 「없다」면 답 · 답2 · 포장폭을 비운다")
+    stat: dict = {"행": len(rows), "채운 행": sum(1 for r in rows if rv_filled(r))}
+    for hyp, g in tally.items():
+        h = RV_HYPO[hyp]
+        if (len(g["가설군"]), len(g["대조군"])) != h[:2] and n is None:
+            bad.append(f"가설 {hyp}: 가설군 · 대조군 수가 {len(g['가설군'])} · {len(g['대조군'])} — {h[0]} · {h[1]} 이어야 한다")
+        every = [r for v in g.values() for r in v]
+        if not every or not all(rv_complete(hyp, r) for r in every):
+            stat[hyp] = f"{sum(1 for r in every if rv_complete(hyp, r))}/{len(every)} 채움 — 다 채우면 가른다"
+            continue
+        # 로드뷰로 보는 가설(가 · 다)은 거리뷰 「있다」인 행만 센다 · 지도로 보는 가설(나)은 거리뷰 칸과 무관하다
+        views = "거리뷰" in RV_NEED[hyp]
+        seen = {k: [r["답"].strip() for r in v if (r["거리뷰"].strip() == "있다" or not views) and r["답"].strip() not in ("", "가림")] for k, v in g.items()}
+        a, n1, b, n0 = sum(x in h[6] for x in seen["가설군"]), len(seen["가설군"]), sum(x in h[6] for x in seen["대조군"]), len(seen["대조군"])
+        pv = rv_fisher(a, n1, b, n0) if n1 and n0 else None
+        stat[hyp] = {"가설": h[7], "가설군": f"{a}/{n1}", "대조군": f"{b}/{n0}", "못 본 행(거리뷰 없다 · 가림)": len(g["가설군"]) + len(g["대조군"]) - n1 - n0, "p": None if pv is None else round(pv, 4),
+                     "판정": "못 가른다 — 볼 수 있는 행이 한쪽에 없다" if pv is None else "귀무가설을 기각한다 — 가설을 받친다" if pv <= RV_ALPHA else "귀무가설을 기각하지 못한다 — 가설을 받칠 근거가 없다(표본이 작아 「가설이 거짓」이라는 뜻은 아니다)",
+                     "지명": [r["답"].strip() for r in g["지명"]],
+                     **({"가-2(턱 있다 / 답2 를 쓴 행)": " | ".join(f"{sum(r['답2'].strip() == '턱 있다' for r in g[k])}/{sum(bool(r['답2'].strip()) for r in g[k])}" for k in ('가설군', '대조군'))} if hyp == RV_Q2_HYP else {}), "포장폭(가설군 | 대조군)": " | ".join(" ".join(r["포장폭"].strip() or "–" for r in g[k]) for k in ("가설군", "대조군"))}
+    return bad, stat
+
+
+def rv_main(check: bool, force: bool, out_dir: Path | None = None) -> int:
+    path = (OUT_CSV.parent if out_dir is None else out_dir) / RV_FILE
+    feats, samples = json.loads(SEG.read_text(encoding="utf-8"))["features"], rv_samples()
+    if check:
+        bad, stat = rv_check(path, feats, samples) if path.exists() else (["없다 — `--roadview` 로 뽑는다"], {})
+        print(f"{'✓' if not bad else '✗'} {RV_FILE}: {json.dumps(stat, ensure_ascii=False, indent=1)}" + "".join(f"\n    ✗ {x}" for x in bad))
+        return 1 if bad else 0
+    if path.exists() and (any(rv_filled(r) for r in rv_read(path)[1]) or not force):
+        print(f"{RV_FILE}: 이미 있다 — 채워진 행이 있으면 --force 로도 안 덮는다. 건너뛴다")
+        return 0
+    rv_write(rv_build(feats, samples, rv_draw(feats, samples)), path)
+    print(f"{RV_FILE}: {RV_N}행 → {path}")
+    return 0
+
+
 def selftest() -> int:
     bad: list[str] = []
     rows = [{"seg_id": f"DM{i:05d}", "road_name": "x", "length_m": 30.0, "ecc_rel_med_m": (i % 10) / 10, "road_bt_m": 8.0,
@@ -337,9 +559,13 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--score", action="store_true", help="채점 — 사람이 채운 뒤에만")
     ap.add_argument("--selftest", action="store_true", help="판별식이 살아 있나")
     ap.add_argument("--force", action="store_true", help="이미 뽑은 표를 다시 뽑는다 — 채워진 행이 있으면 그래도 거부한다")
+    ap.add_argument("--roadview", action="store_true", help="거리뷰 가설 판독표를 쓴다(PLAN #187) — 있으면 건너뛴다")
+    ap.add_argument("--roadview-check", action="store_true", help="거리뷰 가설 판독표의 칸 · 허용값 · 좌표를 보고 다 채운 가설을 가른다")
     a = ap.parse_args(argv)
     if a.selftest:
         return selftest()
+    if a.roadview or a.roadview_check:
+        return rv_main(a.roadview_check, a.force)
     rows, by = load()
     if a.score:
         filled = read_filled()

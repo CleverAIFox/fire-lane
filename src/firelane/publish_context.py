@@ -37,9 +37,9 @@ import pandas as pd
 
 from firelane import ledger, localplane, quantile
 from firelane.cli import no_args
-from firelane.paths import ROOT
+from firelane.paths import PROCESSED, ROOT
 
-P = ROOT / "data" / "processed"
+P = PROCESSED
 W = ROOT / "web" / "data"
 
 PREC = 6

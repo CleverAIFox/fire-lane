@@ -50,8 +50,8 @@ repos:
         # ★ 윈도우가 직접 읽는 파일은 CRLF 를 유지한다.
         #   정본은 encoding_check.py 의 CRLF_OK = {.wslconfig .bat .cmd .ps1}
         exclude: '(^|/)\.wslconfig$|\.(bat|cmd|ps1)$'
-      - id: check-added-large-files        # commit_policy 의 MAX_FILE_MB = 5.0
-        args: [--maxkb=5000]
+      - id: check-added-large-files        # commit_policy 의 MAX_FILE_MB = 8.0
+        args: [--maxkb=8000]
       - id: detect-private-key             # 전역 훅의 자격증명 검사를 저장소 층에서도
       # ★ 2026-09-18 (W1b). 옛 `.githooks/pre-commit` 이 스테이지된 .py 에
       #   `py_compile` 을 돌렸다. 위임하면서 그 덮개를 잃지 않도록 옮긴다.
@@ -77,7 +77,7 @@ repos:
   - repo: local
     hooks:
       # ★ 저장소 고유 규칙. 표준 훅에 대응물이 없다 —
-      #   web/data 40MB 합계 상한 · processed 산출물 · .stale_* 격리 ·
+      #   web/data 두 축 래칫(합계) · processed 산출물 · .stale_* 격리 ·
       #   루트 일회성 스크립트 · 계보 기록. 각 규칙이 **왜** 를 같이 출력한다.
       # ★ 2026-09-24 (PLAN §13 W13-11). 이 훅은 `git diff --cached` 를 본다.
       #   CI 의 `pre-commit run --all-files` 는 **스테이지가 비어 있어** 아무것도

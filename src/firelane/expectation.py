@@ -16,12 +16,14 @@ IN    data/golden/segments.fingerprint.json   기대 판정의 **정본**
       data/processed/_manifest.json           대장 건수
       web/data · data/processed 의 산출물과 스키마
 OUT   없음 — **깨진 것을 목록으로 돌려준다.** 종료 코드는 부르는 쪽이 정한다
-PARAM `INGEST_EXPECT` · `INGEST_TOL` · `WEB_MAX_MB`
+PARAM `INGEST_EXPECT` · `INGEST_TOL` · `WEB_ORTHO_BYTES` · `WEB_REST_BYTES`
 밖    **기대 불일치를 세지 않는다.** 그것은 「예보와 실제의 대조」이고 사람이
       읽는 수다(§13-5 규칙 2). 여기는 기계적으로 답이 하나인 것만 든다.
       판정 폐포 **밖**이다 — `firelane.segments` 는 이 파일을 안 든다.
 """
 from __future__ import annotations
+
+from pathlib import Path
 
 from firelane.console import col
 from firelane.paths import GOLDEN, PROCESSED, WEB
@@ -56,10 +58,13 @@ INGEST_EXPECT = {"ngii1k": 14336, "ngii_road": 216, "road_link": 1508,
 # 건수 허용 오차. contract.py 의 rows_tolerance 와 같은 값이다.
 INGEST_TOL = 0.30
 
-# web/data 용량 상한(MB). ★ 세 곳이 같은 값을 봐야 한다 —
-#   .github/workflows/contract.yml · tools/commit_policy.py · 여기.
-#   tests/test_guards.py::test_webdata_limit_is_one_number 가 강제한다.
-WEB_MAX_MB = 40
+# web/data 용량 **래칫**(바이트). ★ 2026-11-14 (DECISIONS §787-F). 40MB 상한을 없앴다 — 상한은 「거기까지 마음껏」이라 경보로 틀린 도구였다.
+#   **두 축이다** — 정사영상(`ortho/`)은 의도적으로 큰 것이라(전체의 67%) 한 눈금에 섞으면 나머지가 안 보인다.
+#   값은 지금 실측(ortho 24,758,570 · 나머지 12,184,206 — **바이트 합 · du 가 아니다**)을 10KB 로 올림한 것이다. 올리는 것은 사람이 하고 **왜**를 §787 에 적는다.
+#   ★ 세 곳이 같은 값을 봐야 한다 — `.github/workflows/contract.yml` · `tools/commit_policy.py` · 여기.
+#   `tests/test_guards.py::test_webdata_limit_is_one_number` 가 강제한다.
+WEB_ORTHO_BYTES = 24_760_000
+WEB_REST_BYTES = 12_190_000
 
 
 def expect() -> dict:
@@ -150,14 +155,29 @@ def _ran_after_segments(stage: str) -> bool:
         return False
 
 
-def web_size_verdict(mb: float) -> list[str]:
-    """`web/data` 크기 판정. 순수 함수 — 시험이 합성 수로 경계를 민다(§426-4).
+def web_size_verdict(ortho_bytes: int, rest_bytes: int) -> list[str]:
+    """`web/data` 크기 판정 — **두 축 래칫**(정사영상 · 나머지). 순수 함수 — 시험이 합성 수로 경계를 민다(§426-4).
 
-    실물을 훑으면 「지금 초록인가」만 묻고 상한을 1000 으로 올려도 통과한다(§17-0).
+    ★ 선언값을 **넘을 때만** 운다(같으면 통과 — 래칫은 「늘지 않는다」이지 「정확히 같다」가 아니다).
+    실물을 훑으면 「지금 초록인가」만 묻고 선언을 1000 배로 올려도 통과한다(§17-0).
     """
-    if mb >= WEB_MAX_MB:
-        return [f"web/data {mb:.1f}MB — CI 상한 {WEB_MAX_MB}MB 를 넘었다. CI 가 막는다"]
-    return []
+    out = []
+    for name, got, lim in (("정사영상(ortho/)", ortho_bytes, WEB_ORTHO_BYTES), ("나머지(ortho 제외)", rest_bytes, WEB_REST_BYTES)):
+        if got > lim:
+            out.append(f"web/data {name} {got:,}B — 래칫 {lim:,}B 를 넘었다(+{got - lim:,}B). 늘린 이유를 DECISIONS §787 에 적고 선언을 올려라")
+    return out
+
+
+def web_axes(web: Path) -> tuple[int, int]:
+    """`web/data` 의 (정사영상, 나머지) 바이트. 디스크의 파일 크기 합이다 — `du` 가 아니다(블록 올림)."""
+    ortho = rest = 0
+    for f in web.rglob("*"):
+        if f.is_file():
+            if f.relative_to(web).parts[0] == "ortho":
+                ortho += f.stat().st_size
+            else:
+                rest += f.stat().st_size
+    return ortho, rest
 
 
 def verify() -> list[str]:
@@ -199,13 +219,11 @@ def verify() -> list[str]:
         if d.is_dir():
             print(f"  {label} {sum(1 for _ in d.rglob('*') if _.is_file())}장")
     if WEB.is_dir():
-        mb = sum(f.stat().st_size for f in WEB.rglob("*") if f.is_file()) / 1e6
-        # ★ 상한 정본은 하나여야 한다. contract.yml · tools/commit_policy.py 가
-        #   40 인데 여기만 60 이었다(PLAN #12 에서 60→40 으로 내리면서 누락).
-        #   40~60 구간에서 파이프라인은 초록불이고 CI 만 빨간불이 된다 —
-        #   "로컬에서는 되는데 CI 가 막는다" 가 정확히 이런 자리에서 나온다.
-        over = web_size_verdict(mb)
-        warn = col(f"  ★ CI 상한 {WEB_MAX_MB}MB 초과", "r") if over else ""
-        print(f"  web/data {mb:.0f} MB{warn}")
+        o_b, r_b = web_axes(WEB)
+        # ★ 선언 정본은 하나여야 한다. contract.yml · tools/commit_policy.py 가 40 인데 여기만 60 이었다(PLAN #12 에서 누락) —
+        #   로컬은 초록인데 CI 만 빨갛다. 지금은 두 축 래칫이고 세 곳이 같은 수를 본다(test_webdata_limit_is_one_number).
+        over = web_size_verdict(o_b, r_b)
+        warn = col("  ★ web/data 래칫 초과", "r") if over else ""
+        print(f"  web/data {(o_b + r_b) / 1e6:.2f} MB (ortho {o_b / 1e6:.2f} · 나머지 {r_b / 1e6:.2f}){warn}")
         bad += over
     return bad

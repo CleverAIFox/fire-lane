@@ -21,7 +21,7 @@ themecheck.py — **「면이 들어갔다」가 아니라 「화면에서 구�
    빠지는 일을 막는다).
 
 PARAM `LAND_DE_MIN` · `VERDICT_RETAIN_PCT` — 둘 다 **올라가는 쪽으로만** 래칫이다(`tools/ratchet.py`).
-IN    web/navi/src/ui/tokens.ts · components/OpsMap.tsx · components/layers.ts 등(소스) · web/data/navi_graph.json
+IN    web/navi/src/ui/tokens.ts · components/OpsMap.tsx · components/landuse.ts · layers.ts 등(소스) · web/data/navi_graph.json
 OUT   표준출력 · 종료 코드
 밖    **화면이 예쁜가는 안 본다**(수가 하한을 넘는다는 것이 구분된다는 보증이다 · 어느 색이 좋은지는 사람의 판단).
       **WebGL 에 실제로 그려졌는가는 안 본다** — 그것은 브라우저 스모크(`web/navi/e2e`)와 사람 눈이다.
@@ -180,7 +180,7 @@ def stack_faults(base_ids: list[str], insert_after: str, land_types: list[str]) 
 def land_stack() -> tuple[list[str], str, list[str]]:
     """실물: `baseLayers` 의 층 순서 · `withLanduse` 가 끼우는 기준 층 · `landuseLayers` 가 내는 층의 종류."""
     import re as _re
-    src = (SRC / "components" / "layers.ts").read_text(encoding="utf-8")
+    src = (SRC / "components" / "landuse.ts").read_text(encoding="utf-8")   # ★ PLAN 행 235 — 면의 명세는 진입 청크 밖(`landuse.ts`)에 산다
     base = uicheck.layer_ids().get("baseLayers", [])
     m = _re.search(r"export function withLanduse.*?findIndex\(\(l\) => l\.id === \"([\w-]+)\"\)", src, _re.S)
     block = src[src.index("export function landuseLayers"):src.index("export function withLanduse")]
@@ -191,7 +191,7 @@ def land_state() -> str:
     """바탕 면이 지금 켜져 있나(되돌린 상태를 말해 준다 — 실패가 아니다)."""
     navi = (SRC / "components" / "NaviMap.tsx").read_text(encoding="utf-8")
     ops = (SRC / "components" / "OpsMap.tsx").read_text(encoding="utf-8")
-    return ("내비 " + ("켜짐" if "withLanduse(" in navi else "꺼짐")
+    return ("내비 " + ("꺼짐" if "const LAND_ON = false" in navi else "켜짐")
             + " · 관제 " + ("꺼짐" if "const LAND_ON = false" in ops else "켜짐"))
 
 

@@ -78,7 +78,14 @@ def _dem_zip():
     return hits[0]
 ZOOM = 8          # 보간 배율. 90m -> 11.25m. 표현용이므로 정보량은 그대로다.
 LAYERS = ["segments", "building", "cctv", "hydrant_point", "fire_station"]
-TILE_Z = (12, 13, 14, 15)   # 원본이 90m 라 z15 면 이미 과표본이다. 그 이상은 무의미
+# ★ 2026-11-14 (PLAN 행 237). z16 까지 굽는다. 종전 주석은 「z15 면 이미 과표본이라 그 이상은 무의미」였다 — **정보**로는 맞다(원본 90m).
+#   그런데 화면은 z17~18 에서 본다. z15 타일 한 픽셀이 3.9m 라 4~8배로 늘어났고, 그때 보이는 것은 지형이 아니라 **타일 픽셀**이었다.
+#   z16(1.95m/픽셀)은 세부를 더하지 않는다 — 늘어나는 배율을 반으로 줄일 뿐이다. 읽는 쪽(`layers.ts` 의 `dem` 소스 `maxzoom`)과 같아야 한다
+#   (`tests/test_tile_zoom_agreement.py` 가 문다).
+TILE_Z = (12, 13, 14, 15, 16)
+#: 타일 **범위**의 기준 줌. 이 줌까지는 DEM 이 닿는 타일을 굽고, 그 위 줌은 이 줌 타일의 **자식 전부**를 굽는다 — 그래야 `terrainBounds`
+#: (이 줌의 타일 테두리 · `view.json` → `navi_graph.json`)가 줌을 더해도 안 움직이고, 그 범위 안에서 404(구멍 · 절벽)가 안 난다.
+BOUNDS_Z = 15
 TILE_PX = 256
 
 
@@ -94,6 +101,47 @@ def upsample(a: np.ndarray, k: int) -> np.ndarray:
           + a[np.ix_(y0, x1)] * (1 - wy) * wx      + a[np.ix_(y1, x1)] * wy * wx)
 
 
+def tile_range(z: int, x0: int, x1: int, y0: int, y1: int) -> tuple[range, range]:
+    """줌 `z` 에서 구울 타일의 (x 범위, y 범위). `x0..y1` 은 **`BOUNDS_Z` 에서** DEM 이 닿는 타일의 양끝이다.
+
+    `BOUNDS_Z` 위 줌은 그 타일들의 자식 전부다(한 줌에 가로 · 세로 2배) — 범위가 줌마다 같은 땅을 덮는다.
+    """
+    d = z - BOUNDS_Z
+    if d <= 0:
+        raise ValueError(f"tile_range 는 BOUNDS_Z({BOUNDS_Z}) 위 줌에만 쓴다 — z={z}")
+    return range(x0 << d, ((x1 + 1) << d)), range(y0 << d, ((y1 + 1) << d))
+
+
+def tile_heights(up32, tr, src_crs, z: int, tx: int, ty: int, lo: float, hi: float) -> np.ndarray:
+    """타일 한 장의 표고(m · float32 · 256×256). DEM 밖은 NaN.
+
+    ★ 2026-11-14 (PLAN 행 237). **쌍3차로 뽑는다.** 종전에는 3857 로 한 번 옮긴 격자(약 13.8m)를 `merc[ri, ci]` **정수 색인(최근접)** 으로 뽑았다 —
+      z15 타일(3.9m/픽셀)에 한 칸이 약 3.5픽셀씩 복제되어 **12m 블록**이 구워졌고, 화면이 그것을 4~8배로 늘려 계단으로 보였다.
+      지금은 원 격자(`dem_scope.tif` 와 같은 배열)에서 **타일 격자로 곧장** 쌍3차 재표본한다(재투영 한 번 · GDAL `cubic`).
+    ★ 쌍3차는 입력 범위를 살짝 넘을 수 있다(오버슈트) — `[lo, hi]` 로 자른다. **없는 언덕 · 없는 골을 만들지 않는다.**
+    ★ 세부는 안 는다. 원본은 90m 다 — 매끈해질 뿐이다.
+    """
+    import math
+
+    from rasterio.warp import Resampling, reproject
+
+    origin = math.pi * 6378137.0
+    span = 2 * origin / 2 ** z
+    px = span / TILE_PX
+    ttr = rasterio.Affine(px, 0.0, -origin + tx * span, 0.0, -px, origin - ty * span)
+    out = np.full((TILE_PX, TILE_PX), np.nan, dtype="float32")
+    reproject(source=up32, destination=out, src_transform=tr, src_crs=src_crs,
+              dst_transform=ttr, dst_crs="EPSG:3857",
+              resampling=Resampling.cubic, src_nodata=np.nan, dst_nodata=np.nan)
+    return np.clip(out, lo, hi)
+
+
+def encode_rgb(vals: np.ndarray) -> np.ndarray:
+    """표고(m) → mapbox Terrain-RGB(0.1m). 머리말의 식의 역이다 — 가장 가까운 0.1m 로 **반올림**한다(종전은 버림이라 5cm 낮게 치우쳤다)."""
+    v = np.clip(np.rint((vals.astype("float64") + 10000.0) * 10.0).astype(np.int64), 0, 256**3 - 1)
+    return np.dstack([(v >> 16) & 255, (v >> 8) & 255, v & 255]).astype("uint8")
+
+
 def build_terrain_tiles(up, tr, src_crs):
     """DEM 을 WebMercator 로 재투영해 Terrain-RGB XYZ 타일로 굽는다.
 
@@ -103,20 +151,18 @@ def build_terrain_tiles(up, tr, src_crs):
     import math
 
     from PIL import Image
-    from rasterio.warp import Resampling, calculate_default_transform, reproject
+    from rasterio.warp import calculate_default_transform
 
     dst_crs = "EPSG:3857"
     h, w = up.shape
     left, top = tr * (0, 0)
     right, bottom = tr * (w, h)
+    # 3857 에서 DEM 이 덮는 네모(타일 범위를 정하는 데만 쓴다 — 값은 `tile_heights` 가 원 격자에서 곧장 뽑는다)
     dtr, dw, dh = calculate_default_transform(
         src_crs, dst_crs, w, h, left=min(left, right), bottom=min(top, bottom),
         right=max(left, right), top=max(top, bottom))
-    merc = np.full((dh, dw), np.nan, dtype="float32")
-    reproject(source=up.astype("float32"), destination=merc,
-              src_transform=tr, src_crs=src_crs,
-              dst_transform=dtr, dst_crs=dst_crs,
-              resampling=Resampling.bilinear, src_nodata=np.nan, dst_nodata=np.nan)
+    up32 = up.astype("float32")
+    lo, hi = float(np.nanmin(up32)), float(np.nanmax(up32))
 
     R = 6378137.0
     ORIGIN = math.pi * R                       # 20037508.34
@@ -124,40 +170,33 @@ def build_terrain_tiles(up, tr, src_crs):
     if tdir.exists():
         shutil.rmtree(tdir)
 
+    def natural(z: int) -> tuple[int, int, int, int]:
+        """줌 z 에서 DEM 네모가 닿는 타일의 (x 작은 끝, x 큰 끝, y 작은 끝, y 큰 끝)."""
+        span = 2 * ORIGIN / 2 ** z             # 타일 한 변의 미터
+        xs = (int((dtr.c + ORIGIN) / span), int((dtr.c + dw * dtr.a + ORIGIN) / span))
+        ys = (int((ORIGIN - dtr.f) / span), int((ORIGIN - (dtr.f + dh * dtr.e)) / span))
+        return min(xs), max(xs), min(ys), max(ys)
+
     count = 0
     bounds_xyz = []
     for z in TILE_Z:
-        n = 2 ** z
-        span = 2 * ORIGIN / n                  # 타일 한 변의 미터
-        x0 = int((dtr.c + ORIGIN) / span)
-        x1 = int((dtr.c + dw * dtr.a + ORIGIN) / span)
-        y0 = int((ORIGIN - dtr.f) / span)
-        y1 = int((ORIGIN - (dtr.f + dh * dtr.e)) / span)
-        for tx in range(min(x0, x1), max(x0, x1) + 1):
-            for ty in range(min(y0, y1), max(y0, y1) + 1):
-                # 타일 픽셀 중심의 머케이터 좌표
-                mx = -ORIGIN + (tx + (np.arange(TILE_PX) + .5) / TILE_PX) * span
-                my = ORIGIN - (ty + (np.arange(TILE_PX) + .5) / TILE_PX) * span
-                MX, MY = np.meshgrid(mx, my)
-                cc = (MX - dtr.c) / dtr.a
-                rr = (MY - dtr.f) / dtr.e
-                ci = np.clip(cc.astype(int), 0, dw - 1)
-                ri = np.clip(rr.astype(int), 0, dh - 1)
-                vals = merc[ri, ci]
-                inside = (cc >= 0) & (cc < dw) & (rr >= 0) & (rr < dh) & ~np.isnan(vals)
+        if z <= BOUNDS_Z:
+            x0, x1, y0, y1 = natural(z)
+            xr, yr = range(x0, x1 + 1), range(y0, y1 + 1)
+        else:
+            xr, yr = tile_range(z, *natural(BOUNDS_Z))
+        for tx in xr:
+            for ty in yr:
+                vals = tile_heights(up32, tr, src_crs, z, tx, ty, lo, hi)
                 # ★ 빈 타일도 최저 표고로 채워서 굽는다.
                 #   건너뛰면 브라우저가 404 를 내고 그 자리에 구멍이 생긴다.
                 #   지형은 타일이 하나라도 비면 그 경계에서 절벽처럼 끊긴다.
-                if not inside.any():
-                    vals = np.full_like(vals, np.nanmin(merc))
-                    inside = np.ones_like(inside, dtype=bool)
                 # 범위 밖은 최저 표고로 채운다. 타일 경계에서 절벽이 생기지 않게.
-                vals = np.where(inside, vals, np.nanmin(merc))
-                v = np.clip(((vals + 10000.0) * 10.0).astype(np.int64), 0, 256**3 - 1)
-                rgb = np.dstack([(v >> 16) & 255, (v >> 8) & 255, v & 255]).astype("uint8")
+                vals = np.where(np.isnan(vals), lo, vals)
+                rgb = encode_rgb(vals)
                 out = tdir / str(z) / str(tx)
                 out.mkdir(parents=True, exist_ok=True)
-                Image.fromarray(rgb, "RGB").save(out / f"{ty}.png")
+                Image.fromarray(rgb, "RGB").save(out / f"{ty}.png", optimize=True)
                 bounds_xyz.append((z, tx, ty))
                 count += 1
     # 실제로 구운 범위를 view.json 에 기록한다.
@@ -165,7 +204,7 @@ def build_terrain_tiles(up, tr, src_crs):
     vj = ROOT / "web" / "data" / "view.json"
     if vj.exists() and bounds_xyz:
         import json as _j
-        z0 = TILE_Z[-1]; n = 2 ** z0; sp = 2 * ORIGIN / n
+        z0 = min(BOUNDS_Z, TILE_Z[-1]); n = 2 ** z0; sp = 2 * ORIGIN / n
         xs = [t[1] for t in bounds_xyz if t[0] == z0]
         ys = [t[2] for t in bounds_xyz if t[0] == z0]
         from firelane.mercator import to_lonlat as _ll

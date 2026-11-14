@@ -658,11 +658,7 @@ step "스코프 벗어남"    uv run python tools/scopecheck.py
 # ci-exempt: tools/tidy.py 로컬 작업 트리의 찌꺼기를 센다. CI 는 매번 새 트리라 물음이 성립하지 않는다
 step "로컬 찌꺼기"      uv run python tools/tidy.py
 scope "web/data/* tools/*"
-step "web/data 용량"    bash -c '
-    SIZE=$(du -sm web/data | cut -f1)
-    LIM=$(grep -oP "MAX_WEBDATA_MB\s*=\s*\K\d+" tools/commit_policy.py)
-    echo "web/data ${SIZE}MB / 상한 ${LIM}MB"
-    [ "$SIZE" -lt "$LIM" ]'
+step "web/data 용량"    uv run python -c 'import sys; from pathlib import Path; from firelane.expectation import web_axes, web_size_verdict; o, r = web_axes(Path("web/data")); v = web_size_verdict(o, r); print(f"web/data ortho {o:,}B · 나머지 {r:,}B"); print(*v, sep="\n"); sys.exit(1 if v else 0)'
 
 # ── 6·7. (철거) JS 모듈 그래프 · JS 부팅 ─────────────────────
 # ★ 2026-09-22. 옛 GIS 지도(web/js 30모듈)를 걷어냈다 — 관제 화면(web/navi ?view=ops)이 넘겨받았다. 그 지도만 보던 「JS 문법·순환·import」
@@ -695,8 +691,11 @@ if command -v npm >/dev/null 2>&1; then
     if (cd web/navi && node -e 'const t=require("@playwright/test");(async()=>{const b=await t.chromium.launch();await b.close()})().catch(()=>process.exit(1))' >/dev/null 2>&1); then
         scope "web/navi/*"
         step "내비 브라우저 스모크" bash -c 'cd web/navi && npm run -s build >/dev/null && CI=1 npm run -s smoke'
+        scope "web/navi/* web/data/* tools/*"
+        step "첫 화면 전송량" uv run python tools/firstscreen.py
     else
         note "내비 브라우저 스모크" "헤드리스 크로미움이 없다 — cd web/navi && npx playwright install --only-shell chromium (CI 의 contract-smoke 가 같은 검사를 돈다)"
+        note "첫 화면 전송량" "헤드리스 크로미움이 없다 — CI 의 contract-smoke 가 같은 검사를 돈다"
     fi
 else
     # ★ 2026-09-22 (DECISIONS §218-5). 종전에는 셋 중 「내비 타입 검사」 한 행만 남겼다.
@@ -707,6 +706,7 @@ else
     note "내비 단위 시험" "npm 이 없다"
     note "중개자 단위 시험" "npm 이 없다"
     note "내비 브라우저 스모크" "npm 이 없다"
+    note "첫 화면 전송량" "npm 이 없다"
 fi
 
 # ── 8. 파이프라인 전량 + 판정 불변 ───────────────────────────

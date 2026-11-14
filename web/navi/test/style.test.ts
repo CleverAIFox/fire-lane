@@ -20,7 +20,7 @@ import {
 } from "../src/components/opsLayers";
 import { CLEARANCE_SCALE } from "../src/ui/clearanceMeaning";
 import { MAP } from "../src/ui/tokens";
-import { withLanduse, landuseLayers } from "../src/components/layers";
+import { withLanduse, landuseLayers, landuseSources, attachLanduse } from "../src/components/landuse";
 import { CLEARANCE_WIDE_M, type ClearanceBand } from "../src/domain/clearance";
 import { TUNING } from "../src/domain/vehicle";
 
@@ -33,7 +33,7 @@ const LANDUSE_RAW = Object.values(
 
 function check(name: string, layers: StyleSpecification["layers"]) {
   const src = {
-    ...sources("../data/", [126.9, 35.14, 126.94, 35.16]),
+    ...sources("../data/", [126.9, 35.14, 126.94, 35.16]), ...landuseSources("../data/"),
   } as StyleSpecification["sources"];
   // 앱이 실행 중에 붙이는 geojson 원천(경로 · 미리보기 · 이력)은 빈 것으로 세운다 — 여기서 보는 것은 **식**이다
   const used = new Set(layers.map((l) => ("source" in l ? l.source : undefined)).filter(Boolean) as string[]);
@@ -130,7 +130,10 @@ test("검증기가 살아 있다 — 줌 보간을 + 로 감싼 옛 식은 운�
  *   소스 이름만 적고 레이어가 없거나, 레이어만 있고 데이터가 안 맞으면 읽는 코드가 아니다.
  */
 test("토지이용 면 — 소스 · 레이어 순서(보도 · 도로면 아래) · 갈래 색 · 발행물의 갈래", () => {
-  const src = sources("../data/", [126.9, 35.14, 126.94, 35.16]) as Record<string, { type: string; data?: unknown }>;
+  // ★ PLAN 행 235 — 두 소스는 층과 함께 `landuse.ts` 에 산다. 진입 청크가 받는 `sources()` 에 도로 들어오면 운다(꺼 둔 층의 578KB 를 첫 화면이 받는다).
+  const entry = sources("../data/", [126.9, 35.14, 126.94, 35.16]) as Record<string, unknown>;
+  ok(!("landuse" in entry) && !("daeji" in entry), "토지이용 소스가 첫 스타일(`sources()`)에 들었다 — 미룬 청크의 몫이다");
+  const src = landuseSources("../data/") as Record<string, { type: string; data?: unknown }>;
   ok(src.landuse?.type === "geojson" && String(src.landuse.data).endsWith("landuse.geojson"), "토지이용 소스가 안 선다");
   ok(!baseLayers(style).some((l) => l.id === "landuse"), "관제 화면과 나눠 쓰는 baseLayers 에 landuse 가 들었다(공유 층 래칫이 오른다)");
   check("landuse", landuseLayers());
@@ -156,4 +159,54 @@ test("토지이용 면 — 소스 · 레이어 순서(보도 · 도로면 아래
   ok(ids.indexOf("landuse-campus") < ids.indexOf("sidewalk"), "대학 경계선이 보도 위에 그려진다");
   for (const k of ["landInst", "landForest", "landFarm", "landWater", "landPaved", "landDaeji"] as const)
     ok(String(paint + JSON.stringify(layers.find((l) => l.id === "daeji")!.paint)).includes(String(MAP[k])), `갈래 색 ${k} 이 안 쓰인다`);
+});
+
+/**
+ * ★ PLAN 행 235. 내비는 토지이용 면을 **뜬 지도에 나중에** 얹는다(`attachLanduse` · 미룬 청크). 목록에 끼우는 `withLanduse` 와
+ *   **같은 순서**가 나와야 한다 — 다르면 면이 길 · 건물 위로 올라온다(DECISIONS §778 C). 가짜 지도로 `addLayer(층, before)` 를 그대로 흉내 낸다.
+ */
+test("토지이용 면 — 뜬 지도에 얹어도 목록에 끼운 것과 같은 순서 · 두 번 불러도 한 번", () => {
+  const order = baseLayers(style).map((l) => l.id);
+  const srcs: Record<string, unknown> = {};
+  const fake = {
+    getLayersOrder: () => [...order],
+    getSource: (id: string) => srcs[id],
+    addSource: (id: string, s: unknown) => { ok(!(id in srcs), `소스 ${id} 를 두 번 세웠다`); srcs[id] = s; },
+    getLayer: (id: string) => (order.includes(id) ? { id } : undefined),
+    addLayer: (l: { id: string }, before?: string) => {
+      ok(!order.includes(l.id), `층 ${l.id} 를 두 번 얹었다`);
+      const at = before === undefined ? order.length : order.indexOf(before);
+      ok(at >= 0, `없는 층 ${before} 앞에 얹으려 했다`);
+      order.splice(at, 0, l.id);
+    },
+  };
+  attachLanduse(fake as never, "../data/");
+  attachLanduse(fake as never, "../data/");
+  ok(JSON.stringify(order) === JSON.stringify(withLanduse(baseLayers(style)).map((l) => l.id)),
+     `얹은 순서가 끼운 순서와 다르다: ${order.slice(0, 6).join(" > ")}`);
+  ok(Object.keys(srcs).sort().join() === "daeji,landuse", "두 소스가 다 안 섰다");
+});
+
+/**
+ * ★ PLAN 행 239. 지형(`setTerrain`)이 켜진 두 화면에서 건물 압출의 `base` 는 **상수 0** 이다. MapLibre 는 지형이 켜지면 건물을 발자국 중심의 지형 표고에 올리고
+ *   `base > 0` 은 그 위에 더한다 — `z`(해발 기준 지반고)를 `base` 로 주면 건물이 그만큼 뜬다(§216-2 · 2026-11-14 헤드리스 재확인). `base` 0 일 때만 벽이 지형 아래로 내려가 틈을 막는다.
+ */
+test("건물 압출 — 지형 위에서 base 는 상수 0 이고 높이는 h 하나다(지반고 z 를 더하면 뜬다)", () => {
+  const bldg = baseLayers(style).find((l) => l.id === "bldg") as { type: string; paint: Record<string, unknown> };
+  ok(bldg.type === "fill-extrusion", "bldg 가 압출 층이 아니다");
+  ok(bldg.paint["fill-extrusion-base"] === 0, `base 가 0 이 아니다: ${JSON.stringify(bldg.paint["fill-extrusion-base"])}`);
+  ok(JSON.stringify(bldg.paint["fill-extrusion-height"]) === JSON.stringify(["get", "h"]), "높이가 h 하나가 아니다");
+  ok(!JSON.stringify(bldg.paint).includes('"z"'), "압출 식에 지반고 z 가 들어왔다 — 지형이 이미 올려 준 높이를 한 번 더 더한다");
+});
+
+/**
+ * ★ PLAN 행 241 · 242. 지점 핀은 **안전센터 점보다 작지 않고**(센터 반지름 7) 글자는 건물 이름(12.5px)보다 작지 않다 — 어두운 3D 건물 위에서 묻혔던 것이 원인의 반이다.
+ *   채우지 않은 고리라는 꼴(판정 색을 안 먹는다 · §444)은 그대로다.
+ */
+test("지점 핀 — 고리는 안전센터 점보다 작지 않고 속이 비었으며 글자는 건물 이름보다 작지 않다", () => {
+  const [ring, lbl] = landmarkLayers() as { id: string; paint: Record<string, unknown>; layout?: Record<string, unknown> }[];
+  ok(ring.id === "landmark-ring" && lbl.id === "lbl-landmark", "지점 층 둘의 이름 · 순서가 바뀌었다");
+  ok(Number(ring.paint["circle-radius"]) >= 7 && Number(ring.paint["circle-stroke-width"]) >= 2.5, "고리가 안전센터 점(7)보다 작다");
+  ok(ring.paint["circle-color"] === "rgba(0,0,0,0)", "고리 속을 채웠다 — 채운 점은 안전센터의 꼴이다");
+  ok(Number(lbl.layout!["text-size"]) >= 12.5, "지점 글자가 건물 이름(12.5px)보다 작다");
 });

@@ -87,15 +87,12 @@ export function sources(dataUrl: string, terrainBounds?: [number, number, number
     //   건물 · 선 · 마커는 **그 위에 앉는다.** 건물에 z 를 더하지 않는다(평면에서 뜬다 · §216-2).
     ...(terrainBounds ? {
       dem: { type: "raster-dem" as const, tiles: [dataUrl + "terrain/{z}/{x}/{y}.png"],
-             tileSize: 256, minzoom: 12, maxzoom: 15, encoding: "mapbox" as const, bounds: terrainBounds },
+             // ★ PLAN 행 237. 굽는 줌(`terrain.py` 의 `TILE_Z` = 12~16)과 **같아야** 한다 — 위로 다르면 404, 아래로 다르면 구운 타일을 아무도 안 받는다(`tests/test_tile_zoom_agreement.py`).
+             tileSize: 256, minzoom: 12, maxzoom: 16, encoding: "mapbox" as const, bounds: terrainBounds },
     } : {}),
     buildings: { type: "geojson", data: dataUrl + "buildings.geojson" },
     road_area: { type: "geojson", data: dataUrl + "road_area.geojson" },
-    // ★ PLAN 행 144(닫힘). 공원 · 녹지 · 광장 · 공공공지 면(도시계획시설 `vworld_uq153` · `publish_basemap` 이 낸다) — 공터가 검게 그려지던 것을 메운다.
-    //   칠하는 면일 뿐 판정이 아니다. 갈래는 속성 `cls`(green · plaza) 하나다.
-    landuse: { type: "geojson", data: dataUrl + "landuse.geojson" },
-    // ★ DECISIONS §768 · PLAN 행 231. 연속지적도 **대지**를 합친 면(바탕 맨 아래 · 크기가 커 따로 낸다). 갈래는 `cls` = daeji 하나다.
-    daeji: { type: "geojson", data: dataUrl + "daeji.geojson" },
+    // ★ PLAN 행 235. 토지이용 · 대지 소스(`landuse` · `daeji`)는 여기 없다 — 층과 함께 `components/landuse.ts` 로 갔다(꺼 둔 층의 578KB 를 첫 화면이 받고 있었다).
     sidewalk: { type: "geojson", data: dataUrl + "sidewalk.geojson" },
     segments: { type: "geojson", data: dataUrl + "segments.geojson" },
     poi: { type: "geojson", data: dataUrl + "poi.geojson" },
@@ -123,31 +120,8 @@ export const NAVI_OFF = [
   "bldg-contact", "bldg-flat", "seg-tint", "lbl-bldg", "lbl-poi",
 ] as const;
 
-/**
- * 토지이용 면(PLAN 행 144(닫힘)) — 공원 · 녹지 · 광장 · 공공공지. 내비가 이 값으로 깔고, 관제는 같은 층 명세를 **어두운 값으로 바꿔** 깐다(`OpsMap.tsx` 의 `opsLand` ·
- * id `ops-` · DECISIONS §775 — 그 전에는 관제에 없었다. 공유 층 래칫 12 는 같은 id 만 센다). 바탕(`bg`) 바로 위, 보도 · 도로면 아래에 들어간다 — `withLanduse`.
- */
-export function landuseLayers(): LayerSpecification[] {
-  return [
-    // ★ 맨 아래 — 대지(마당 · 주차장 · 공터)를 합친 면. 눈에 안 띄는 바탕이다(DECISIONS §768).
-    { id: "daeji", type: "fill", source: "daeji", paint: { "fill-color": MAP.landDaeji } },
-    // 도시계획시설(공원 · 광장 · 학교 · 청사 …)과 지적도 지목별로 합친 면. **판정 색 · 아이콘 · 길 · 건물이 이 층 위다**(`withLanduse` 가 `bg` 바로 뒤에 낀다).
-    { id: "landuse", type: "fill", source: "landuse", filter: ["==", ["geometry-type"], "Polygon"] as never,
-      paint: { "fill-color": ["match", ["get", "cls"],
-        ["green", "jm_green"], MAP.landGreen, ["inst", "jm_inst"], MAP.landInst,
-        "jm_forest", MAP.landForest, "jm_farm", MAP.landFarm, "jm_water", MAP.landWater, "jm_paved", MAP.landPaved,
-        MAP.landPlaza] as never } },
-    // 대학(UQV35)과 틀의 10% 넘는 면은 **칠하지 않고 경계선만**(캠퍼스 안에 길이 있다).
-    { id: "landuse-campus", type: "line", source: "landuse", filter: ["==", ["geometry-type"], "LineString"] as never,
-      paint: { "line-color": MAP.landCampus, "line-width": 1.2, "line-opacity": 0.8 } },
-  ];
-}
-
-/** 바탕 층 목록의 `bg` 바로 뒤에 토지이용 면을 끼운다 — 길 · 건물 아래다. */
-export function withLanduse(base: LayerSpecification[]): LayerSpecification[] {
-  const i = base.findIndex((l) => l.id === "bg");
-  return [...base.slice(0, i + 1), ...landuseLayers(), ...base.slice(i + 1)];
-}
+// ★ PLAN 행 235. 토지이용 면의 층 명세(`landuseLayers` · `withLanduse`)는 `components/landuse.ts` 에 산다 — 이 파일은 진입 청크에 통째로 실리므로
+//   첫 화면 뒤에 얹는 층은 여기 두지 않는다(내비는 `map.on('load')` 뒤 동적 import · 관제는 제 청크에서 정적 import).
 
 export function baseLayers(style: Record<string, VerdictStyle>): LayerSpecification[] {
   const tint = (k: string) => shade(style[k]?.color ?? "rgb(120,128,140)");
@@ -207,6 +181,11 @@ export function baseLayers(style: Record<string, VerdictStyle>): LayerSpecificat
     // ★ 지붕 판(`bldg-roof`)을 뺐다. 같은 12,736동을 **한 번 더** 압출하는 레이어였고,
     //   소프트웨어 렌더에서 프레임 시간의 큰 몫이었다(§216-2 계측). 윗면 명도는
     //   vertical-gradient 가 낸다.
+    // ★ 2026-11-14 (PLAN 행 239). **`base` 는 0 이어야 한다 — 지형을 켠 지금도.** 「경사에서 건물이 묻히니 `base` 를 지반고 `z` 로」 는 틀린 고침이다:
+    //   MapLibre 의 압출 셰이더는 지형이 켜지면 건물을 **발자국 중심 한 점의 지형 표고**에 올리고(`get_elevation(a_centroid)`), `base > 0` 이면 그 위에 **더한다**
+    //   (`base = max(0, base) + 지형`). `z`(0~130m · 중앙 16.7m)를 넣으면 건물이 그만큼 **뜬다**(헤드리스로 구워 확인했다 — §216-2 의 16m 뜸과 같은 병).
+    //   `base` 가 0 일 때만 벽이 지형 아래 10m 까지 내려가 내리막 쪽 틈을 막는다. 오르막 쪽이 묻히는 것은 「중심 한 점」 규칙의 몫이라 이 층의 값으로는 못 고친다
+    //   (새 타일 기준 1m 넘게 묻히는 건물 215동 · 3m 넘게 23동 — 고치려면 건물마다 「발자국 아래 최고 지반 − 중심 지반」 을 발행물에 실어 높이에 더해야 한다).
     { id: "bldg", type: "fill-extrusion", source: "buildings", minzoom: 14.5,
       paint: {
         "fill-extrusion-color": ["interpolate", ["linear"], ["get", "flo"],

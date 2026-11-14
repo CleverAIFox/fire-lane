@@ -1,8 +1,9 @@
 """
-destinations.py — 내비 목적지 검색 색인. 상가 · 주소/건물 · 관공서/학교 셋을 하나로.
+destinations.py — 내비 목적지 검색 색인. 상가 · 주소/건물 · 관공서/학교 · 지점을 하나로.
 
 IN    processed/poi_store.geojson · processed/navi_build.csv ·
       processed/navi_jibun.csv · processed/civil_office.geojson
+      web/config.js 의 landmarks (publish_web 이 `publish_navi.landmarks` 로 읽어 넘긴다)
 OUT   web/data/dest.geojson   (publish_web 이 부른다 — 여기서는 쓰지 않고 표를 돌려준다)
 PARAM 열 번호 — 내비게이션용DB 활용방법 붙임 1 · 2 (DECISIONS §181-1)
 
@@ -128,17 +129,107 @@ def from_store(g: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return o[COLS]
 
 
+def from_landmarks(rows: list[dict]) -> gpd.GeoDataFrame:
+    """지점(`web/config.js` landmarks → `publish_navi.landmarks`) → 목적지.
+
+    ★ 2026-11-14 (PLAN #227). 지도에 이름이 찍히는 점인데 검색에는 없었다 —
+      「광주 인공지능사관학교」를 쳐도 안 떴다. 좌표는 여기서 **다시 적지 않는다**
+      (정본은 config.js 한 곳 · §444). 주소는 없다 — 지어내지 않는다.
+    ★ `note` 는 안 싣는다. 화면 설명글이지 검색어가 아니다.
+    """
+    return gpd.GeoDataFrame({
+        "name": [str(r["name"]).strip() for r in rows],
+        "cat": "지점", "sub": "", "addr": "", "alt": "", "src": "landmark",
+    }, geometry=gpd.points_from_xy([r["lng"] for r in rows], [r["lat"] for r in rows]),
+        crs=4326)[COLS]
+
+
+# ── 건물 면의 이름 (PLAN #244 · DECISIONS §785) ─────────────────────────
+# `BDTYP_CD` 앞 두 자리 → 용도군. 건축법 번호가 **아니다**(§785-B) — 동명동 대장과 맞대 07=의료 · 10=업무를
+# 확인했고 05 · 06 · 09 는 이름으로 맞춘 추정이다. 여기서는 **용도를 가르는 것이 아니라 이름을 읽을 면을 고르는** 데만 쓴다.
+FACILITY_GROUPS = {"05": "문화집회", "06": "판매", "07": "의료", "08": "교육연구", "09": "운동", "10": "업무"}
+# 이름 칸이 이름이 아닌 꼴 — 지번 + 용도(`서석동 126-1 제1종근린생활시설 (주식회사이인)`) · 건축주 괄호 · 지번만
+_NOT_A_NAME = r"(?:^\S*동\s*-?\d+(?:-\d+)?(?:\s|$))|(?:\([^)]*\)\s*$)|(?:^제?\d+호?$)"
+
+
+def _norm_name(s: pd.Series) -> pd.Series:
+    return s.str.replace(r"\s+", "", regex=True)
+
+
+def from_facility_faces(bld: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """건물 면(`building.geojson`)의 **이름** → 목적지. 이름당 한 점.
+
+    ★ 이름 칸은 둘이다 — `BULD_NM` · `POS_BUL_NM`. **둘 다 읽는다**(전남의대부속병원 / 전남대학교병원 처럼 다른 면이 많다).
+      칸마다 따로 한 이름이 된다.
+    ★ 여섯 용도(`FACILITY_GROUPS`) 면만. 같은 이름의 면이 여럿이면(조선대학교 17면) 면적 최대 면의 대표점 하나다.
+      지번이 이름 자리에 든 면은 뺀다(`_NOT_A_NAME`).
+    ★ `BULD_NM_DC`(동 상세명 — 광주지방법원은 이름이 `광주지방.고등법원` 이고 이 칸에 `광주지방법원` 이 있다)는
+      이름으로 올리지 않고 **`alt` 칸**에 싣는다(검색이 읽는다 · 점수 3). 「본관」 「창고」 같은 말이 이름 행을 늘리지 않게.
+    ★ `src` 는 `build` — 검색이 이미 읽는 값이라 `search.ts` 를 안 건드린다(진입 청크 불변). 주소 칸은 비운다 —
+      면에는 주소 글자가 없고 지어내지 않는다.
+    """
+    g = bld[bld["BDTYP_CD"].astype(str).str[:2].isin(FACILITY_GROUPS)].copy()
+    dc = _txt(g["BULD_NM_DC"])
+    parts = []
+    for col in ("BULD_NM", "POS_BUL_NM"):
+        q = g.assign(name=_txt(g[col]), alt=dc)
+        parts.append(q[q["name"].ne("") & ~q["name"].str.contains(_NOT_A_NAME, regex=True)])
+    g = pd.concat(parts)
+    if g.empty:
+        return gpd.GeoDataFrame({c: [] for c in COLS[:-1]}, geometry=[], crs=4326)[COLS]
+    g = gpd.GeoDataFrame(g, crs=bld.crs)
+    g["_k"] = _norm_name(g["name"])
+    g["_a"] = g.to_crs(5186).area
+    # ★ 동률(같은 이름 · 같은 면적)을 가르는 열쇠는 **원천 건물관리번호 `BD_MGT_SN`**(25자리 · 14,618면 전부 있고 고유 — DECISIONS §789)다.
+    #   재발행하면 달라지는 지역 번호는 열쇠로 안 쓴다(§320 · §781).
+    g = g.sort_values(["_k", "_a", "BD_MGT_SN"], ascending=[True, False, True], kind="stable").drop_duplicates("_k")
+    alt = g["alt"].where((g["alt"].str.len() >= 4) & (_norm_name(g["alt"]) != g["_k"]), "")
+    pt = g.to_crs(5186).geometry.representative_point()
+    return gpd.GeoDataFrame({
+        "name": g["name"].values,
+        "cat": "건물",
+        "sub": g["BDTYP_CD"].astype(str).str[:2].map(FACILITY_GROUPS).values,
+        "addr": "", "alt": alt.values, "src": "build",
+    }, geometry=pt.to_crs(4326).values, crs=4326)[COLS]
+
+
 def build_index(store: gpd.GeoDataFrame, build: pd.DataFrame, jibun: pd.DataFrame,
-                civil: gpd.GeoDataFrame, clip) -> tuple[gpd.GeoDataFrame, dict]:
-    """세 원천을 합쳐 `clip`(4326 도형) 안만 남긴다. 이름 없는 행은 뺀다."""
+                civil: gpd.GeoDataFrame, clip,
+                landmarks: list[dict] | None = None,
+                faces: gpd.GeoDataFrame | None = None) -> tuple[gpd.GeoDataFrame, dict]:
+    """원천을 합쳐 `clip`(4326 도형) 안만 남긴다. 이름 없는 행은 뺀다.
+
+    ★ 2026-11-14 (PLAN #227 · DECISIONS §730-3 의 2). `clip` 은 **지도 이동 범위**다
+      (`view.maxBounds`). 판정 범위(동명동)와 검색 범위는 다른 축이다 — 폭 판정을
+      안 해도 「저 건물로 가라」는 할 수 있다.
+    ★ 도로에서 먼 점을 **여기서 빼지 않는다.** 도로망은 판정 스코프만 덮어서 지도
+      가장자리의 관공서(동구청 124m · 광주세무서 410m)는 스냅 한도 60m 밖이다.
+      빼면 사람이 뜨라고 한 동구청이 빠진다. 남기고, 화면이 「도로에서 멀다」를
+      말한다(`search.ts::farFromRoadNote`). 어느 점이 먼지는
+      `web/navi/test/destSnap.test.ts` 가 수로 문다.
+    """
     b, st = from_navi(build, jibun)
     parts = {"store": from_store(store), "build": b, "civil": from_civil(civil)}
+    if landmarks:
+        parts["landmark"] = from_landmarks(landmarks)
     stats = {"navi": st}
     kept = []
     for k, p in parts.items():
         p = p[p.within(clip) & p["name"].ne("")]
         stats[k] = len(p)
         kept.append(p)
+    if faces is not None:
+        # ★ 건물 면의 이름은 **다른 원천에 같은 이름이 없을 때만** 더한다(정규화 · 공백 제거) — 있으면 그쪽이 정본이다.
+        f = from_facility_faces(faces)
+        f = f[f.within(clip)]
+        have = set(_norm_name(pd.concat([p["name"] for p in kept])))
+        f = f[~_norm_name(f["name"]).isin(have)]
+        # ★ 같은 기관이 **더 긴 이름**으로 민원기관에 있으면(`서석초등학교` ⊂ `광주서석초등학교`) 그쪽이 정본이다 — 안 빼면
+        #   더 짧은 이름이 먼저 떠 학교가 두 줄이 된다(`destSnap.test.ts` 가 서석초를 친다). 관공서 · 학교 이름과만 견준다.
+        civ = list(_norm_name(parts["civil"]["name"]))
+        f = f[[not any(n in c for c in civ) for n in _norm_name(f["name"])]]
+        stats["facility"] = len(f)
+        kept.append(f)
     out = gpd.GeoDataFrame(pd.concat(kept, ignore_index=True), crs=4326)
     # ★ 결정적 순서 — 같은 입력에 같은 산출물(web/data 계보 지문)
     out = out.sort_values(["src", "name", "addr"], kind="stable").reset_index(drop=True)

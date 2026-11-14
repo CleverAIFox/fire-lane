@@ -3,6 +3,9 @@
  *
  * ★ 2026-09-17 (DECISIONS §181). 색인이 `poi.geojson`(상가 2,077)에서 `dest.geojson` 으로
  *   바뀌었다 — 상가 + 주소/건물(내비게이션용DB) + 관공서/학교(민원행정기관), 지도 이동 범위 안.
+ * ★ 2026-11-14 (PLAN #227 · DECISIONS §730-3 의 2). 범위가 **지도 이동 범위**로 돌아왔고
+ *   (그 사이에는 동명동 안만이었다) 지점(`src: "landmark"` · config.js landmarks)이 색인에 든다.
+ *   도로망은 판정 스코프만 덮으므로 가장자리 관공서는 도로에서 멀다 — `farFromRoadNote`.
  *   필드는 같고(name · cat · sub · addr) `alt`(지번) · `src`(원천) 가 더해졌다.
  *   서버 없이 통째로 메모리에 올려 찾는다.
  *
@@ -18,7 +21,7 @@
  */
 import type { LngLat } from "./geo";
 
-export type PoiSrc = "civil" | "build" | "store";
+export type PoiSrc = "civil" | "build" | "store" | "landmark";
 
 export interface Poi {
   name: string;
@@ -39,7 +42,7 @@ export interface PoiHit extends Poi {
 }
 
 /** 같은 점수면 관공서 · 이름 있는 건물이 상가보다 앞선다 — 법원을 치면 법원 앞 김밥집이 먼저 뜨지 않게 */
-const SRC_RANK: Record<PoiSrc, number> = { civil: 0, build: 1, store: 2 };
+const SRC_RANK: Record<PoiSrc, number> = { landmark: 0, civil: 0, build: 1, store: 2 };
 
 /** GeoJSON → 검색용 배열. **한 번만 호출한다.** */
 export function preparePois(fc: GeoJSON.FeatureCollection): Poi[] {
@@ -48,7 +51,7 @@ export function preparePois(fc: GeoJSON.FeatureCollection): Poi[] {
     if (f.geometry?.type !== "Point") continue;
     const p = (f.properties ?? {}) as Record<string, string>;
     if (!p.name) continue;
-    const src = (p.src === "civil" || p.src === "build") ? p.src : "store";
+    const src = (p.src === "civil" || p.src === "build" || p.src === "landmark") ? p.src : "store";
     out.push({
       name: p.name, cat: p.cat ?? "", sub: p.sub ?? "", addr: p.addr ?? "",
       alt: p.alt ?? "", src,
@@ -126,6 +129,26 @@ export function searchPois(pois: Poi[], q: string, limit = 20): PoiHit[] {
     || SRC_RANK[a.src] - SRC_RANK[b.src]
     || a.name.length - b.name.length);
   return hits.slice(0, limit);
+}
+
+/** `OpsApp.onRoad` 의 스냅 한도와 같은 수다 — 이보다 멀면 색인 원좌표를 그대로 쓴다. */
+export const SNAP_MAX_M = 60;
+
+/**
+ * 고른 목적지가 **도로망에서 먼가** — 멀면 한 줄, 아니면 null. (PLAN #227)
+ *
+ * 검색 범위(지도 이동 범위)가 도로망(판정 스코프)보다 넓다. 동구청은 가장 가까운
+ * 구간에서 124m 다 — 경로는 그 구간에서 끝나고 나머지는 도로 자료가 없다.
+ * 말하지 않으면 「건물 앞까지 간다」로 읽힌다. `m` 은 경로 끝 → 목적지 직선거리.
+ */
+export function farFromRoadNote(m: number): string | null {
+  if (!Number.isFinite(m) || m <= SNAP_MAX_M) return null;
+  return walkNote(m);
+}
+
+/** 경로 끝 → 목적지의 남은 직선거리 한 마디. ★ 화면 글자를 늘리지 않으려고(`uicheck` `UI_TEXT`) 대체 접근 안내와 **같은 말**을 쓴다. */
+export function walkNote(m: number): string {
+  return `도보 약 ${Math.round(m)}m(직선)`;
 }
 
 /**

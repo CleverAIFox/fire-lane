@@ -39,10 +39,10 @@ import math
 import geopandas as gpd
 from shapely.geometry import Point
 
-from firelane.paths import ROOT
+from firelane.paths import PROCESSED, ROOT
 from firelane.seg.params import NODE_TOL
 
-P = ROOT / "data" / "processed"
+P = PROCESSED
 #: 사람이 확인한 일방통행 방향 표(DECISIONS §653). `ow=2`(방향 모름)인 구간에만 읽는다.
 OW_FIELD = ROOT / "data" / "field" / "oneway_direction_2611.csv"
 
@@ -131,7 +131,8 @@ def oneway(m: gpd.GeoDataFrame, field_path=None) -> tuple[list[int], dict]:
     """
     out = [0] * len(m)
     stat = {"oneway": 0, "dir_known": 0, "nl_twoway": 0,
-            "nl_none": 0, "nl_split": 0, "nl_absent": 0, "dir_field": 0, "dir_field_stale": 0}
+            "nl_none": 0, "nl_split": 0, "nl_absent": 0, "dir_field": 0, "dir_field_stale": 0,
+            "dir_field_refused": 0}
     why: dict[int, str] = {}       # 모름으로 남은 구간의 사유 — 표가 정하면 그 사유 수에서 뺀다
     src = P / "ngii1k_center_5186.gpkg"
     if not src.exists():
@@ -182,7 +183,13 @@ def oneway(m: gpd.GeoDataFrame, field_path=None) -> tuple[list[int], dict]:
     if rows and "seg_uid" in m.columns:
         for i, uid in enumerate(m["seg_uid"]):
             r = rows.get(uid)
-            if r is None or out[i] != 2:
+            if r is None:
+                continue
+            if out[i] != 2:
+                # ★ 「적용」이라 적힌 행인데 구간이 `ow=2` 가 아니다(양방향 0 이거나 표준노드링크가 ±1 로 정했다).
+                #   **안 덮는다**(§653) — 다만 조용히 건너뛰지 않고 센다. 사람이 후보 행을 더했을 때
+                #   그 행이 안 먹은 것을 발행 줄에서 바로 본다(PLAN #1 (a) · (d)).
+                stat["dir_field_refused"] += 1
                 continue
             sign = _field_sign(_line(m.geometry.iloc[i]), r)
             if sign is None:
