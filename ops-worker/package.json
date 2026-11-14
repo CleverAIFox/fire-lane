@@ -11,6 +11,6 @@
     "relay-test": "node --experimental-strip-types --test test/relay.test.ts"
   },
   "devDependencies": {
-    "wrangler": "4.45.0"
+    "wrangler": "4.160.0"
   }
 }
