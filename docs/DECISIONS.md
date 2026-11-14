@@ -6768,7 +6768,7 @@ DECISIONS · 핸드오프에 적힌 `PLAN #N` 은 행이 지워질 때마다 다
 ### 163-3. `part/**` 계층을 유지한다
 
 행 「`part/**` 계층이 1인 파트에 오버헤드인가」 를 **유지**로 닫았다.
-행이 적은 대로 계층을 걷으면 룰셋 · 브로드캐스트 · `MASTER §12-8c` · 협업 화면이
+행이 적은 대로 계층을 걷으면 룰셋 · 파트 동기화(사람이 침) · `MASTER §12-8c` · 협업 화면이
 함께 움직여야 한다. 1인이 치르는 비용은 PR 한 번이고, 팀에 돌려주는 사본이 팀
 구조와 같게 남는 값이 그보다 크다. 1인 작업은 `part/infra` 하나로 흐른다 —
 배치 B 가 그 경로로 PR #24 를 열었다.
@@ -47350,7 +47350,7 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 - **원래 도착 조건과의 차.** ① `npm -v` 가 같다 — 로컬 10.9.9 와 CI(12.2.0 으로 적혀 있었다)는 **메이저가 아직 다르다.** ② `verify` 가 엔진을 검사한다 · ③ 양성 대조 — **없다.** 닫는 근거를 「같은 lock 에서 같은 설치본이 나온다」로 낮췄고 그것은 사람이 정했다. 엔진 지문이 없으므로 로컬 npm 이 다시 어긋나도 `verify` 는 모른다(같은 병의 재발은 안 막힌다).
 - **그래서 `#203` 의 전건이 풀렸다.** 같은 엔진 조건이 아니라 같은 설치본 조건에서 `eslint` 갱신을 시도한다.
 
-## 668. PLAN #203 — eslint 10 으로 올려도 minimatch 경고는 안 사라진다, 되돌렸다 (판정 불변 · `web/navi` 변경 0)
+## 668. PLAN #203(닫힘) — eslint 10 으로 올려도 minimatch 경고는 안 사라진다, 되돌렸다 (판정 불변 · `web/navi` 변경 0)
 
 > 2026-11-08
 
@@ -47431,7 +47431,7 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 
 > 2026-11-08
 
-유병률  **1회** — main → part/* 브로드캐스트가 원격만 갱신했고 로컬 `part/infra` 가 그 위에 열여섯 커밋을 쌓아 푸시가 non-fast-forward 로 거절됐다. 그날 확인한 「0 0」 은 원격끼리의 비교였다.
+유병률  **1회** — main → part/* 동기화(사람이 치는 `tools/merge_batch.sh` 의 단계 · 자동 워크플로 없음)가 원격만 갱신했고 로컬 `part/infra` 가 그 위에 열여섯 커밋을 쌓아 푸시가 non-fast-forward 로 거절됐다. 그날 확인한 「0 0」 은 원격끼리의 비교였다.
 
 강제자  `tests/test_pushready.py` — 합성 저장소(원격 + 클론 둘)로 로컬이 뒤인 꼴을 만들어 ㉧ 이 막고 받을 명령(`git merge <업스트림>`)을 대는지 · 앞서기만 하면 안 막는지 · 업스트림이 없으면 막지 않고 적기만 하는지 · 못 읽으면 닫힌 쪽인지 · `fetch` 계열을 안 부르는지를 본다.
 
@@ -49338,7 +49338,7 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
         **하위 하나**가 이 칸을 물려받는다
 
 ### 731-1. 세운 행과 실측
-`PLAN` 행 `#225`. 실측(`grep` 으로 `ROOT / "data" / "processed"` 직접 조립을 센 것): `datalog.py` · `publish_basemap.py` · `publish_context.py` · `publish_navi.py` · `publish_rules.py` · `publish_web.py` — **여섯**이다. 지난 행의 「`expectation.py` 등」 은 **틀렸다** — `expectation.py` 는 `from firelane.paths import PROCESSED` 로 이미 환경변수를 따른다. 격리 환경변수를 준 채 `publish` · `datalog` 를 돌리면 읽기와 쓰기가 메인 `data/processed` 로 간다. 닫는 조건은 행에 적었다. `paths.py` 를 다시 건드리면 재잠금 · 재봉인이 따라오므로 사람이 판을 정한다 — 이 행은 구획 `Zs` 에 실었다.
+`PLAN` 행 `#225`(닫힘). 실측(`grep` 으로 `ROOT / "data" / "processed"` 직접 조립을 센 것): `datalog.py` · `publish_basemap.py` · `publish_context.py` · `publish_navi.py` · `publish_rules.py` · `publish_web.py` — **여섯**이다. 지난 행의 「`expectation.py` 등」 은 **틀렸다** — `expectation.py` 는 `from firelane.paths import PROCESSED` 로 이미 환경변수를 따른다. 격리 환경변수를 준 채 `publish` · `datalog` 를 돌리면 읽기와 쓰기가 메인 `data/processed` 로 간다. 닫는 조건은 행에 적었다. `paths.py` 를 다시 건드리면 재잠금 · 재봉인이 따라오므로 사람이 판을 정한다 — 이 행은 구획 `Zs` 에 실었다.
 
 
 ## 732. E1 한 커밋이 닫는 PLAN 행은 셋까지다 — 닫는 순간의 diff 를 본다 (`tools/closecap.py`)
@@ -51150,3 +51150,100 @@ mv 'AL_D010_12_20261109.zip'                  juso_bldg_ledger_jngj_20261109.zip
 - **D③ 광주 인공지능사관학교 핀 — 지점 목록에 들어 있다.** **확인:** `web/config.js` 의 `landmarks` 수동 선언 1건(126.9222428, 35.1465902)이 `publish_navi._landmarks` 로 `web/data/navi_graph.json` 의 `landmarks` 에 **실려 있다**(1건 · 직접 읽었다). `civil_office` 64 · `dest` 1,592 · 건물 `BULD_NM` 어디에도 없는 것은 **정상이다** — 출처가 수동 선언이라서다. 「광주지방.고등검찰청」 라벨은 `buildings.geojson` 의 `BULD_NM`(건물 2동)에서 오는 **다른 출처**라 지점 목록의 증거가 아니다. 핀은 **관제에만** 있다(§412-3 설계 · `themecheck.py:66` 이 비대칭을 선언한다) — 내비에서 안 뜨는 것은 정상이다. 관제에서도 안 뜬다면 가설 둘(확인 못 했다): 점이 높이 26.4m 건물 발자국 안이라 3D 건물이 고리를 가린다 · 라벨만 빠지면 `text-allow-overlap: false`. **크기:** 확인 0.3 + 대응 0.3~1. 새 좌표는 만들지 않았다. `#241` · `#242`.
 
 **E — 끝낸 꼴.** 코드는 `tools/pushready.py` 한 곳(병렬 · 시험 셋)만 고쳤다 — 판정 폐포 · 판정 네 수 · 시험 느슨함 · 결함 상한 · 훅 예산 30초는 안 건드렸다. 사람 전용 넷(`docseal stamp` · `golden lock` · `baseline freeze` · `mutate --write`)은 안 쳤다. 푸시 · PR 은 안 했다. 새 도구 0 · 새 절 1(이 절).
+
+## 780. ㉖ G1 · 바퀴 비용부터 — 26행 중 18행을 닫았다 · CI 중복을 같은 트리 단위로 없앴다 · 못 닫은 여덟의 이유와 사람이 칠 것
+
+> 2026-11-14
+
+유병률  **1회** — 행을 닫는 조건을 글자 그대로 대면 코드는 끝났는데 **사람 몫 한 줄이 남은 행**이 한 묶음의 3분의 1이다(재생성 · 재잠금 · 실배포). 같은 모양: 「코드가 섰다」와 「행이 닫혔다」는 다른 문장이다
+
+강제자  `tests/test_contract_split.py`(같은 트리의 성공 푸시가 있을 때만 전체 테스트를 건너뜀 · 건너뛰는 단계는 하나뿐 · 집계는 네 잡 success 를 요구) · `tests/test_deliver_guards.py` · `tests/test_pushready.py` · `tests/test_lock_closure.py` · `tests/test_ratchet.py` · `tests/test_processed_env.py` · `tests/test_branch_tidy_green.py`. 하위 없음
+
+★ **닫는다고 적은 18행은 조건을 글자 그대로 댄 것이다.** 닫지 못한 8행(PLAN 에 남겼다)은 아래에 이유와 명령을 적었다. 「26행을 닫는다」는 목표였고 실제는 18이다 — 남긴 여덟은 코드로 못 닫는 몫(사람 전용 도구 · 실배포 · 폐포 파일)이 있어서다.
+
+**한 커밋에 닫은 행 6개(상한 3) — 사유:** 같은 묶음(판계획 ㉖ · G1)의 PLAN §1 행 여섯(`#203` `#221` `#225` `#228` `#229` `#233`)을 같은 근거(행마다 아래 근거를 하나씩 읽고 닫았다 · 코드와 시험이 한 커밋 앞에 이미 들어 있다)로 한 번에 닫는다.
+
+**닫은 PLAN §1 행(6)**
+- **`#203` 사유 선언으로 닫는다**(사람이 정했다). 원인: `@typescript-eslint/typescript-estree` · `@eslint/config-array` 가 `minimatch@^10` 을 묶고 고친 판은 11.0.1 부터라 상류가 안 올렸다. 근거: 개발 의존이고 `web/navi/dist` 에 0건(번들 밖) · `overrides` 로 11 을 밀면 `glob@7` 이 깬다(§668). 알림은 27 → 1 이고 그 1 이 이 행이다.
+- **`#225`** 원인: `datalog` 와 `publish_*` 다섯이 `paths.PROCESSED` 대신 `ROOT / "data" / "processed"` 를 직접 조립해 `FIRE_LANE_PROCESSED` 가 일부만 따라왔다. 고침: 여섯 모듈이 `PROCESSED` 를 쓴다. 시험: `tests/test_processed_env.py` 가 `src/firelane` 전체를 AST 로 훑어 직접 조립을 막는다(합성 결함 둘). 번짐: 여섯 모듈은 판정 폐포(22파일)에 없고 `golden.py stale` 불필요 · 도장은 15절이 낡았다.
+- **`#228`** 원인: 두 갈래 중 하나(`triage` 의 칸 짐작)는 이미 풀렸고(`triage.py:174-177` 이 대장 `ledger.point_cols` 를 먼저 읽는다) 나머지(json · zip 표 값 프로필)는 **안 잰 표 6개에 `none:` 선언도 프로필도 0건**이라 지금 해로운 곳이 없다. 고침: `none:` 이 안 잰 갈래에 붙으면 우는 시험(`tests/test_ledger_coords.py`). 판단: 프로필을 json · zip 으로 넓히지 않기로 했다.
+- **`#229`** 원인: 도입(11-13) 뒤 12실행의 조각별 실측(중앙값 236 · 273 · 217.5 · 190초)에서 조각 3 이 가장 긴 것은 12번 중 1번이다. 도착 조건 「조각 3 이 더 길면 핀을 옮기고 아니면 닫는다」 의 아니다 쪽이다. 조각 2 가 만성으로 긴 것은 이 행 밖이다. 6조각 추정(조각당 약 138초)은 CI 한 번이 증명한다.
+- **`#233`** 원인: §612-6 의 ①~⑤ 가 행 없이 서술로만 남았다. 가른 결과: 전부 풀렸다(① §613-1 이 (ii) 주소부로 정함 ② `scopetier.py` · 발행 칸 `scope_tier` ③ `opsLayers.ts` · `OpsMap.tsx` ④ `tests/test_scope_tier.py` 17 + `tests/test_scopecheck.py` 29 ⑤ `docgen` · `docnum_check`). 열린 것이 없다.
+- **`#221`** 원인: 단계 이름 「브로드캐스트」가 사람 손(`tools/merge_batch.sh`)임을 안 말했다. 고침: `pushready` 머리말 · 문서 세 곳(`MASTER` 2072행 · `DECISIONS` 6771 · 47434행)을 「파트 동기화(사람이 침)」으로. 시험: `.github/workflows` 에 가지를 옮기는 명령이 실행 줄로 0곳 · 코드에서 그 낱말이 나오면 근처에 「사람이」가 있다.
+
+**닫은 §13-3 결함(12)** — 근거만 적는다(원인 한 줄은 PLAN 행에 있었다).
+- `W13-17` `tests/test_ratchet.py::test_declared_ratchet_names_equal_produced_names_per_tool`(축 이름 집합이 같은가 · 값은 안 본다).
+- `W13-18` `proposalcheck.pane_faults`(칸 수 = 켜는 규칙 수 = 라디오 수 · 합성 결함 · 헤드리스는 실제로 돌아 칸별 글자 수 2,087 · 18,674 · 12,079 · 34,252). `--headless` 는 느려서 훅에 안 넣었다.
+- `W13-19` `delivercheck.base_verdict` — base 가 끝과 같거나 조상이 아니거나 못 읽히면 `pack` 이 패치를 뜨기 전에 멈춘다.
+- `W13-20` `branch_tidy.sh --prune-green [--green-days N]`(기본은 읽기만 · 삭제는 명시했을 때만 · `--auto` 는 안 켠다). 지금 원격 `refs/green/*` 는 **3개(25일)** 이다 — 행이 적은 0 은 낡았다. 30일 기준으로는 0개가 걸린다.
+- `W13-21` `deliver._py_cmd` — `.venv` 가 없으면 `uv run --project ROOT` 를 거친다(사람이 정한 방향). 합성 증명이고 `.venv` 없는 워크트리에서 `pack` 전 경로를 돌려 본 것은 아니다.
+- `W13-22` `delivercheck.extras_missing` — 없는 `--extra` 는 `rmtree` 전에 운다. `--out` 안의 파일은 임시로 보관했다 되돌린다.
+- `W13-23` `contract.yml` 「문서 정합 도장」에 봇 PR 만 건너뛰는 `if`(푸시 · main 게이트에서는 그대로 돈다). 도구 안에서 봇을 거르는 길은 로컬 훅과 CI 가 갈려 안 갔다.
+- `W13-24` `deliver._scan_pytest` 가 `in N.NNs (H:MM:SS)` 를 걷는다. `expectcheck` 왕복 시험이 시간 없는 EXPECT 를 읽는다.
+- `W13-25` **하지 않았다 — 중복이다.** §776 ③ ⓐ 의 지문 v3 이 닫는 법 둘 중 둘째(「절별 관점을 줄인다」)를 이미 했다: 잠금은 절이 버전 줄에 백틱으로 든 패키지의 항목만 본다. PR 378 · 382 의 잠금으로 재서 무효 6 → 3 이었고 남은 셋(`DECISIONS/430` `vite` · `DECISIONS/773` `undici` 등 · `PLAN/10` `vitest`)은 절이 그 패키지의 판을 말하는 정당한 무효다. `DECISIONS/430` 은 잠금 항목에 기대는 의도로 가른 절이라 기반에서 통째로 빼면 죽는다 — 첫째 길(기반에서 뺀다)은 안 간다. 닫는 법의 둘째 길이 이미 섰으므로 이 행은 닫는다.
+- `W13-26` 이미 닫혀 있었다 — `#198` 이 래칫 값을 소스 밖(`data/golden/ratchets.json` · `tools/ratchetstore.py`)으로 뺐다. 이번에 「느슨해지면 운다 · 줄면 조이라고 운다 · `--write` 는 값 파일만 조인다」 시험을 더했다.
+- `W13-28` `build_proposal.TOUCH` 에서 수치 기준일 패턴을 뺐다(`--touch-today` 는 「최종 수정」 한 줄만) · `docs/proposal.md` 에 「수치 기준일」 줄을 갈랐다 · `web/proposal.html` 재생성.
+- `W13-29`(사람이 정했다: 직접 의존만) `shardseal.lock_print(direct_only=True)` 를 `golden` 만 부른다. 지문에 든 12 패키지 중 `firelane.segments` 가 직접 import 하는 것은 6(`geopandas` `networkx` `numpy` `pandas` `pyproj` `shapely`)이고 `certifi` 는 `pyogrio` · `pyproj` · `rasterio` 의 전이로 들었다. 증명: 합성 잠금에서 `certifi` 만 올리면 새 지문은 불변 · 옛 지문은 가변, 직접 의존(`geopandas` · `pyyaml`)을 올리면 새 지문도 가변. 샤드 봉인 기본값은 안 바꿨다(영향 0). **위험:** `pyogrio`(GDAL 번들)가 지문에서 빠졌다 — GDAL 만 올라가는 경우는 이제 못 잡는다(사람이 정한 기준). 이 값은 판정 폐포 파일(`seg/*` · `segments.py`)을 안 건드렸다.
+
+**못 닫은 여덟(PLAN 에 남겼다 — 행 본문에 진행을 적었다)**
+- `#205` `params.py:117` 주석이 「국가 기준 · 바꾸지 말 것」을 든다. **판정 폐포 파일이라 주석 한 줄도 안 건드렸다.** 나머지 사용처(`proposal.md:886` · `turn.ts:27` · `MASTER` 4263)는 고쳤다.
+- `#215` 열거 ③ 이 반만 됐다(`git archive` 스크래치 7파일 68건 통과 · 환경변수 모드는 `test_ledger_outputs` 가 저장소 밖 경로에서 죽는다).
+- `#219` 열거 ③ 은 지켜보는 일이다. ①(길 없음 + AST 로 센 11파일 21호출 표) · ②(`apply.sh` 프로브를 거울로)는 했다.
+- `#220` 읽기 · 쓰기 실측이 없다(사람 전용 도구를 안 돌렸다). 순서는 `㉢ ㉠ ㉤ ㉡` 로 바뀌었다.
+- `#236` 실배포 ③ 한 번이 남았다.
+- `W13-2` 레이크에서 한 번(아래 블록).
+- `W13-27` `canary` 는 닫았고 `docseal.py:205` 분기는 시험이 이미 죽이지만 장부 생존 수를 줄이려면 `docseal.py` 자기검사에 걸어야 한다 — 그 파일이 줄 예외 699 에 붙어 있다. 상한 상향은 사람 몫이다.
+- `W13-30` 코드와 시험은 끝났고 `eval.json` 을 사람이 다시 쓴다(아래). 판정 범위 안 건물 7,556동 중 3,257동(43%)에 출입구 기록이 없다 — 분모에서 안 뺐고 `_gaps` 항으로 적었다. E-1 만 움직인다: 쌍 2,178 → 8,155 · 진입 실패 97.4% → 96.4% · 실거리비 중앙 1.141 → 1.126.
+
+**CI 중복 — 같은 트리를 두 번 검사하지 않게 했다(검사를 빼지 않았다).**
+- 원인: `refs/green/<tree>` 는 열차(`fl.sh`)가 스쿼시 직전에만 적는다. 열차를 안 거치는 `part/**` 푸시 · dev 푸시 · main 게이트에는 증거가 없어 매번 pytest 4조각을 다시 돌았다.
+- 증명(실행 100건 + 배포 60건을 `git rev-parse <sha>^{tree}` 로 대조): 72시간 75실행 중 고유 트리 27 · 같은 sha 중복 52 · 같은 트리 중복 62.
+- 고침: `contract.yml` 의 `contract-tests` 단계 「이 나무가 이미 초록이었나」 — `refs/green` 이 없으면 `contract.yml` 과 `deploy.yml` 의 **성공한 푸시 실행의 머리 커밋 나무**가 지금 나무와 같은지 API 로 묻고 같으면 전체 테스트 단계만 건너뛴다. PR 실행은 증거로 안 친다(머지 합성 커밋이라 머리 나무와 같다는 보장이 없다) · `schedule` · `workflow_dispatch` · API 사망은 언제나 돈다. fast · heavy · smoke · strict · 집계 잡은 안 건드렸다(나무 밖 입력 — PR 본문 · base 간극 · 커밋 정책을 읽는다). 조회에 `actions: read` 를 두 워크플로 최상위에 더했다(읽기 전용).
+- 「빠진 검사가 없는가」 합성 증명(`tests/test_contract_split.py`): 새 나무는 모든 잡이 돈다 · 같은 나무의 성공 푸시(계약 쪽 · 배포 쪽)가 있을 때만 건너뛴다 · `FL_GREEN` 을 읽는 단계는 전체 테스트 하나뿐 · main strict 는 무조건 · 집계는 네 잡 success 를 요구 · 배포 gate 는 push 전건. 합성 결함: 트리 비교를 항상 참으로 바꾸면 1건 · schedule 예외까지 지우면 2건이 울었다.
+- 추정 효과: 같은 규칙으로 과거 75건을 시뮬레이션하면 51건에서 pytest 가 빠진다 — 약 49,000 러너초 · 한 번당 벽시계 약 130초. **못 한 것:** 푸시를 못 해 실제 Actions 를 못 돌렸고 `actionlint` 가 이 기계에 없다 — 새 단계의 문법은 CI 의 「워크플로 린트」 가 처음 검증한다. 그래서 이 일은 행으로 닫지 않았다.
+
+**사람이 칠 것 — 사슬은 §779 의 순서(도장 없음 → 래칫 → 장부 → 낡은 도장)로.** 앞 둘이 서야 뒤가 서므로 순서대로다.
+```
+# 0. 이 묶음이 만든 상태 확인
+uv run python tools/pushready.py
+
+# 1. 도장 없음(㉢) — 이 절(DECISIONS/780)이 처음 찍힌다. 읽고 맞으면
+uv run python tools/docseal.py status
+uv run python tools/docseal.py stamp --only DECISIONS/780
+
+# 2. 래칫(㉠) — 조이는 쪽만 쓴다
+uv run python tools/ratchet.py --write
+
+# 3. 변이 장부(㉤)
+uv run python tools/mutate.py --write --stale
+
+# 4. 낡은 도장(㉡) — 읽고 맞는 것만
+mapfile -t S < <(uv run python tools/docseal.py check --invalid-list)
+A=(); for s in "${S[@]}"; do A+=(--only "$s"); done
+uv run python tools/docseal.py stamp "${A[@]}"
+
+# 5. 판정 지문 재잠금(W13-29 · golden 의 uv.lock 칸이 직접 의존만으로 바뀌었다 — 판정 네 수는 안 움직인다)
+uv run python tools/golden.py stale    # rc 1 · 어긋난 것은 data/golden/.code_fingerprint 한 칸
+uv run python tools/golden.py lock
+
+# 6. W13-30 — E-1 분모를 건물로 바꾼 평가를 다시 쓴다
+uv run python tools/evalgate.py && uv run python tools/evalgen.py
+```
+**`W13-2` — 레이크가 붙은 기계에서 한 번(복사해서 친다):**
+```
+cd ~/projects/fire-lane            # FIRE_LANE_DATA 가 레이크 raw 를 가리키는 기계
+uv run python tools/ledger_schema.py                 # 계획만 — 도엽 zip 74장이 읽히는지 본다
+uv run python tools/ledger_schema.py --apply         # sources.yaml 의 datasets[*].schema 에 기록
+uv run python tools/ledger_schema.py --check         # 대장과 실물이 같은지
+git add sources.yaml && git commit -m "data: ledger_schema --apply — ngii1k 도엽 zip 안 레이어를 대장에 적었다 (W13-2)"
+```
+**`#236` — 실배포 한 번(사람 · 토큰 입력):**
+```
+cd ops-worker && npm ci && bash scripts/deploy.sh
+curl https://fire-lane-ops.<서브도메인>.workers.dev/health          # {"ok":true}
+curl "https://fire-lane-ops.<서브도메인>.workers.dev/units?t=<토큰>"   # {"room":"fire-lane","ops":false,"units":[]}
+```
+**CI 확인 한 번(푸시한 뒤):** 같은 트리의 두 번째 푸시 실행에서 `contract-tests` 의 「이 나무가 이미 초록이었나」 가 notice 를 내고 pytest 단계가 `skipped` 이면 성공이다.
+**`W13-27` 의 `docseal.py`:** `tools/sizetable.py` 의 `docseal.py` 줄 예외 상한을 올릴지 정한다(올리면 자기검사에 분기를 걸 수 있다).
+**`#205`:** `src/firelane/seg/params.py:117` 의 주석을 폐포 재잠금과 같이 「2차 자료 · 판정 문턱이 아니다」로 고친다.
+**알려진 환경 한계:** 환경변수로 저장소 밖 산출물 경로를 주는 모드에서는 `tests/test_ledger_outputs.py::test_step_writes_are_declared_in_the_ledger` 가 `relative_to(ROOT)` 에서 죽는다(모드의 인공물일 수 있다 · 안 고쳤다).
