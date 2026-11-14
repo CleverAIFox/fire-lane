@@ -16,7 +16,7 @@
     "framebench": "node scripts/framebench.mjs"
   },
   "dependencies": {
-    "maplibre-gl": "^6.16.0",
+    "maplibre-gl": "^6.17.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
@@ -26,14 +26,14 @@
     "@types/geojson": "^7946.0.16",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.1.2",
+    "@vitejs/plugin-react": "^6.3.0",
     "eslint": "^9.39.5",
     "eslint-plugin-react-hooks": "^6.1.1",
     "fontnik": "^0.7.7",
     "typescript": "^5.5.0",
-    "typescript-eslint": "^8.72.1",
-    "vite": "^8.3.5",
-    "vitest": "^5.0.5"
+    "typescript-eslint": "^8.72.2",
+    "vite": "^8.3.7",
+    "vitest": "^5.1.0"
   },
   "engines": {
     "node": ">=22"
