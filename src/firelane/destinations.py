@@ -180,7 +180,9 @@ def from_facility_faces(bld: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     g = gpd.GeoDataFrame(g, crs=bld.crs)
     g["_k"] = _norm_name(g["name"])
     g["_a"] = g.to_crs(5186).area
-    g = g.sort_values(["_k", "_a", "BUL_MAN_NO"], ascending=[True, False, True], kind="stable").drop_duplicates("_k")
+    # ★ 동률(같은 이름 · 같은 면적)을 가르는 열쇠는 **원천 건물관리번호 `BD_MGT_SN`**(25자리 · 14,618면 전부 있고 고유 — DECISIONS §789)다.
+    #   재발행하면 달라지는 지역 번호는 열쇠로 안 쓴다(§320 · §781).
+    g = g.sort_values(["_k", "_a", "BD_MGT_SN"], ascending=[True, False, True], kind="stable").drop_duplicates("_k")
     alt = g["alt"].where((g["alt"].str.len() >= 4) & (_norm_name(g["alt"]) != g["_k"]), "")
     pt = g.to_crs(5186).geometry.representative_point()
     return gpd.GeoDataFrame({

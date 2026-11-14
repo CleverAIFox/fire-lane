@@ -45,7 +45,7 @@ def _sq(dx: float, s: float = 0.0004):
 def _faces(rows):
     """rows: (건물번호, BDTYP_CD, BULD_NM, POS_BUL_NM, BULD_NM_DC, 도형)"""
     return gpd.GeoDataFrame(
-        {"BUL_MAN_NO": [r[0] for r in rows], "BDTYP_CD": [r[1] for r in rows], "BULD_NM": [r[2] for r in rows],
+        {"BD_MGT_SN": [f"{r[0]:025d}" for r in rows], "BDTYP_CD": [r[1] for r in rows], "BULD_NM": [r[2] for r in rows],
          "POS_BUL_NM": [r[3] for r in rows], "BULD_NM_DC": [r[4] for r in rows]},
         geometry=[r[5] for r in rows], crs=4326)
 
@@ -102,7 +102,7 @@ def test_faces_are_optional_and_clipped():
 
 def _dest():
     if not DEST.is_file():
-        pytest.skip("발행물 없음 — publish_web 뒤에만 돈다")
+        pytest.skip("환경skip(산출물) — web/data/dest.geojson 이 없다(publish_web 뒤에만 돈다)")
     return json.loads(DEST.read_text(encoding="utf-8"))["features"]
 
 

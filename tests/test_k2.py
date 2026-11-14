@@ -292,7 +292,8 @@ def test_verify_skips_are_real_skips():
     # ★ 2026-11-13 (DECISIONS §773-2). 「중개자 단위 시험」 — 못 도는 조건은 npm 부재 하나다(`npm run relay-test` 를 부른다 · 덮개: CI `contract-fast` 의 같은 단계).
     # ★ 2026-11-12 (DECISIONS §706). 「내비 브라우저 스모크」 — 못 도는 조건은 둘이다: npm 부재 · **헤드리스 크로미움 부재**(`chromium.launch()` 탐침이 거짓일 때).
     #   덮개가 있다 — CI 의 `contract-smoke` 가 같은 명령을 돈다(그래서 `note_hard` 가 아니라 `note`).
-    allowed = {"내비 환경 = CI", "내비 린트", "내비 타입 검사", "내비 단위 시험", "내비 브라우저 스모크", "중개자 단위 시험",
+    # ★ 2026-11-14 (DECISIONS §787-H · §789). 「첫 화면 전송량」 — 같은 두 조건(npm 부재 · 헤드리스 크로미움 부재)이고 같은 덮개다: CI `contract-smoke` 가 `tools/firstscreen.py` 를 돈다.
+    allowed = {"내비 환경 = CI", "내비 린트", "내비 타입 검사", "내비 단위 시험", "내비 브라우저 스모크", "첫 화면 전송량", "중개자 단위 시험",
                "파이프라인 전량", "golden 판정 불변", "golden 게이트 해제 경로",
                "커밋된 web/data 가 최신인가",
                "취입 계약 실물", "대장 스키마↔실물",
