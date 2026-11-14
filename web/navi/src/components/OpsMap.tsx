@@ -26,11 +26,12 @@ import type { LngLat } from "../domain/geo";
 import type { Landmark, VerdictStyle, View } from "../domain/types";
 import type { FeedItem, Unit } from "../domain/opsProtocol";
 import {
-  GLYPHS, sources, baseLayers, withLanduse, applyTerrain, markerLayers, stationLayers, shortenStationLabels,
+  GLYPHS, sources, baseLayers, applyTerrain, markerLayers, stationLayers, shortenStationLabels,
   cctvIcon, hydrantIcon, bumpIcon, camIcon, zoneIcon, pillImage, pillOptions,
   Z,
 } from "./layers";
 import { attachRoadLabels } from "./roadLabels";
+import { withLanduse, landuseSources } from "./landuse";
 import {
   opsSegLayers, opsHistoryLayers, refOpacity, refFilter, andFilter, OPS_SEG_OPACITY, opsOverlayLayers, hillshadeLayer,
   landmarkSource, landmarkLayers,
@@ -98,7 +99,7 @@ function opsStyleLayers(st: Record<string, VerdictStyle>): LayerSpecification[] 
   if (LAND_ON) base.splice(base.findIndex((l) => l.id === "bg") + 1, 0, ...opsLand());
   return base;
 }
-// ★ `withLanduse` 에 `bg` 하나짜리 목록을 줘 내비와 **같은 명세**를 받는다(새 이름을 내보내면 진입 청크가 9B 늘어 래칫을 넘는다 — DECISIONS §775-1).
+// ★ `withLanduse` 에 `bg` 하나짜리 목록을 줘 내비와 **같은 명세**를 받는다(명세의 집은 `components/landuse.ts` — 진입 청크 밖이다 · PLAN 행 235).
 function opsLand() {
   return withLanduse([{ id: "bg", type: "background" }]).slice(1).map((l) => ({
     ...l, id: "ops-" + l.id,
@@ -182,6 +183,7 @@ export function OpsMap(props: Props) {
         version: 8, glyphs: GLYPHS,
         sources: {
           ...sources(D, v.terrainBounds),
+          ...(LAND_ON ? landuseSources(D) : {}),   // ★ PLAN 행 235 — 꺼 둔 동안은 두 소스(578KB)도 안 받는다
           ortho: {
             type: "raster", tiles: [D + "ortho/{z}/{x}/{y}.jpg"], tileSize: 256,
             minzoom: 15, maxzoom: 19,

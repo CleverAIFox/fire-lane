@@ -3,6 +3,15 @@
  *
  *   [회전·제목·부제] [마이크] [모드 배지] [현재 시간 · 예상 도착 · 사건 접수] [헤드셋]
  *
+ * ★ 2026-11-14 (PLAN 행 224 ④). **배치를 다시 짰다 — 글자는 전부 24px 이상이고 가로로 잘리는 말이 없다(1280 폭 · 상태 18개).**
+ *   종전 배치는 배지 · 시각 칸이 각각 **두 줄**(위 줄에 14px 칩 둘 · 아래 줄에 15px 두 항목)이라 글자만 24px 로 키우면 가로가 터졌다
+ *   (잘리는 상태 8 → 17 · DECISIONS §761). 지금은 두 칸 다 **세 줄 · 한 줄에 한 항목**이다 —
+ *       배지   ① 태그(또는 경로 바꾸기 단추의 띠)  ② 상태 글씨(27px) 또는 주의(24px)  ③ 차종 칩 · 시연
+ *       시각   ① 현재 시간(28px)  ② 예상 도착 / 도착 시간  ③ 사건 접수
+ *   칸 폭이 준 만큼(362+340 → 약 332+246) 제목 칸이 넓어졌고(글자 폭 244 → 약 368), 상태 제목은 32px 한 줄 · 부제는 **두 줄까지 꺾인다**(말줄임 대신).
+ *   막대 높이(124)는 그대로다 — 세 줄(32px × 3)이 안쪽 104px 에 들도록 안쪽 여백을 조였다.
+ * ★ 경로 바꾸기 단추는 **배지 전체가 누르는 범위**다(약 332×104 — 종전 단추는 높이 29px 로 76 미만이던 마지막 터치 타깃이었다). 보이는 것은 맨 위 띠다.
+ *
  * ★ **이 파일은 상태를 모른다.** `domain/status.ts` 의 표 한 줄(`StatusSpec`)과
  *   회전 안내 · 시각을 받아 그리기만 한다. 18장의 화면이 이 컴포넌트 하나다.
  *
@@ -90,14 +99,12 @@ export function TopBar(p: TopBarProps) {
               <div data-turn="word" style={turnLine}>{turn.word}</div>
             </>
           ) : (
-            <div style={{ fontSize: 40, fontWeight: 800, lineHeight: 1.1, letterSpacing: -0.5,
-                          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            <div style={{ ...turnLine, ...cut, fontSize: 32 }}>
               {title}
             </div>
           )}
           {sub && (
-            <div data-turn="road" style={{ fontSize: 24, color: C.topBarSub, marginTop: turn ? 2 : 6, lineHeight: 1.1, whiteSpace: "nowrap",
-                          overflow: "hidden", textOverflow: "ellipsis" }}>
+            <div data-turn="road" style={turn ? { ...subLines, ...cut } : subLines}>
               {sub}
             </div>
           )}
@@ -110,52 +117,42 @@ export function TopBar(p: TopBarProps) {
         <span style={disc}><MicIcon off={p.voiceOn === false} /></span>
       </button>
 
-      {/* ── 모드 배지 ────────────────────────────────────── */}
+      {/* ── 모드 배지 — 세 줄: 태그 · 상태(또는 주의) · 차종 ─── */}
       <div style={{ ...badge, background: TONE_BG[s.tone] }}>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          {tagIsButton ? (
-            <button onClick={p.onSwitchRoute} style={{ ...tag, background: tagBg, cursor: "pointer" }}>
-              ➤ {s.tag}
-            </button>
-          ) : s.switchTag ? null /* ★ 단추 문구는 단추가 있을 때만 — 없으면 상태 칩으로 그리지 않는다(§724 · B1) */
-          : s.tone === "white" ? (
-            <span style={{ ...tagPlain, fontSize: 12 }}>{s.tag}</span>
-          ) : (
-            <span style={{ ...tag, background: tagBg }}>{s.tag}</span>
-          )}
-          <span style={chip}><Truck /> {p.vehicleKind}</span>
-          {p.injected && <span style={injected}>시연</span>}
+        {tagIsButton ? (
+          // 누르는 범위는 배지 전체 · 보이는 것은 맨 위 띠(단추 글씨가 그 띠에 선다). 띠 밖은 비쳐서 아래 두 줄이 그대로 보인다.
+          <button onClick={p.onSwitchRoute} style={{ ...tagBtn, background: `linear-gradient(${tagBg},${tagBg}) 0 0/100% 36px no-repeat` }}>
+            ➤ {s.tag}
+          </button>
+        ) : null}
+        {/* ★ 단추 문구는 단추가 있을 때만 — 없으면 상태 칩으로 그리지 않는다(§724 · B1). 그 줄은 비워 둔다(단추가 덮는 자리 · 세 줄 높이가 안 흔들린다). */}
+        <div style={line}>
+          {tagIsButton || s.switchTag ? null : <span style={s.tone === "white" ? undefined : { ...chip, background: tagBg }}>{s.tag}</span>}
         </div>
-        {s.caution ? (
-          <div style={{ fontSize: 13, fontWeight: 700, color: C.toneInk, marginTop: 6 }}>
-            <span style={{ color: C.warn }}>⚠</span> {s.caution}
-          </div>
-        ) : (
-          <div style={{ fontSize: 27, fontWeight: 800, color: C.toneInk, marginTop: 6,
-                        textAlign: "center", letterSpacing: -0.3 }}>
-            {s.label}
-          </div>
-        )}
+        <div style={s.caution ? line : { ...line, fontSize: 27, letterSpacing: -0.3 }}>
+          {s.caution ? <><span style={{ color: C.warn }}>⚠</span> {s.caution}</> : s.label}
+        </div>
+        <div style={line}>
+          <span style={{ ...chip, color: "#fff" }}><Truck size={22} /> {p.vehicleKind}</span>
+          {p.injected && <span style={{ ...chip, color: "#ffd166", marginLeft: 8 }}>시연</span>}
+        </div>
       </div>
 
-      {/* ── 시각 ─────────────────────────────────────────── */}
+      {/* ── 시각 — 세 줄: 현재 · 도착 · 접수 ─────────────────── */}
       <div style={timeBox}>
-        <div style={{ fontSize: 28, fontWeight: 800, color: C.timeGreen, lineHeight: 1.1 }}>
+        <div style={{ ...line, fontSize: 28, color: C.timeGreen }}>
           현재 시간 {p.nowText}
         </div>
-        <div style={{ display: "flex", gap: 14, marginTop: 8, fontSize: 15, color: "#cfd8e6",
-                      whiteSpace: "nowrap" }}>
-          {s.eta !== "none" && (
-            <span>
-              {s.eta === "arrivedAt" ? "도착 시간 " : "예상 도착 "}
-              <b style={{ fontSize: 22, color: "#fff" }}>{eta}</b>
-            </span>
-          )}
-          {s.eta === "none" && s.blankRemain && !s.icon && (
-            <span>예상 도착 <b style={{ fontSize: 17, color: "#fff" }}>—</b></span>
-          )}
-          {p.incidentText && <span><Doc /> 사건 접수 {p.incidentText}</span>}
-        </div>
+        {s.eta !== "none" && (
+          <div style={timeLine}>
+            {s.eta === "arrivedAt" ? "도착 시간 " : "예상 도착 "}
+            <b style={{ color: "#fff" }}>{eta}</b>
+          </div>
+        )}
+        {s.eta === "none" && s.blankRemain && !s.icon && (
+          <div style={timeLine}>예상 도착 <b style={{ color: "#fff" }}>—</b></div>
+        )}
+        {p.incidentText && <div style={timeLine}><Doc size={20} /> 사건 접수 {p.incidentText}</div>}
       </div>
 
       {/* ── 헤드셋 ───────────────────────────────────────── */}
@@ -203,29 +200,29 @@ const disc: CSSProperties = {
   width: 64, height: 64, borderRadius: 999, background: "#fff",
   display: "grid", placeItems: "center", boxShadow: "0 2px 8px rgba(0,0,0,.18)",
 };
+/** 한 줄로 두고 넘치면 말줄임 — 상태 제목과 회전 안내의 도로명. */
+const cut: CSSProperties = { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
+/** 부제 — 상태 부제는 **두 줄까지 꺾는다**(말줄임이 아니다 · 낱말 가운데서 안 끊는다). 회전 안내의 도로명은 여기에 `cut` 을 얹어 한 줄이다. */
+const subLines: CSSProperties = {
+  fontSize: 24, color: C.topBarSub, marginTop: 3, lineHeight: 1.1, wordBreak: "keep-all", maxHeight: 53, overflow: "hidden",
+};
+/** 배지 · 시각 칸의 한 줄(32px). 세 줄 96 + 위아래 4×2 = 104 = 막대 안쪽 높이(124 − 20). 안 꺾는다 — 길면 칸이 넓어지고 제목 칸이 그만큼 준다. */
+const line: CSSProperties = { height: 32, font: `800 24px/32px ${F.family}`, color: C.toneInk, whiteSpace: "nowrap" };
 const badge: CSSProperties = {
-  flex: "0 0 auto", minWidth: 330, borderRadius: 16, padding: "10px 16px",
+  position: "relative", flex: "0 0 auto", minWidth: 312, borderRadius: 16, padding: "4px 10px",
   boxShadow: "0 3px 12px rgba(0,0,0,.2)",
 };
-const tag: CSSProperties = {
-  border: "none", borderRadius: 8, padding: "5px 10px", fontSize: 14, fontWeight: 800,
-  color: C.toneInk, fontFamily: F.family, whiteSpace: "nowrap",
+/** 경로 바꾸기 단추 — 배지 전체를 덮는다(터치 76 이상). 글씨는 맨 위 줄에 서고 그 줄만 띠(`background`)로 칠한다. */
+const tagBtn: CSSProperties = {
+  ...line, position: "absolute", inset: 0, height: "100%", width: "100%", boxSizing: "border-box", border: "none", borderRadius: 16, padding: "4px 20px", cursor: "pointer",
+  display: "flex", alignItems: "flex-start",
 };
-const tagPlain: CSSProperties = {
-  fontWeight: 800, color: C.toneInk, whiteSpace: "nowrap",
-};
-const chip: CSSProperties = {
-  background: C.toneInk, color: "#fff", borderRadius: 8, padding: "5px 10px",
-  fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", marginLeft: "auto",
-};
-const injected: CSSProperties = {
-  background: "rgba(11,27,58,.75)", color: "#ffd166", borderRadius: 6,
-  padding: "2px 6px", fontSize: 11, fontWeight: 800,
-};
+/** 칩 — 태그 · 차종 · 시연. 바탕은 쓰는 자리가 덮어쓴다. */
+const chip: CSSProperties = { background: C.toneInk, borderRadius: 8, padding: "0 10px" };
 const timeBox: CSSProperties = {
-  flex: "0 0 auto", background: C.timeBox, borderRadius: 14, padding: "12px 20px",
-  minWidth: 300,
+  flex: "0 0 auto", background: C.timeBox, borderRadius: 14, padding: "4px 12px", minWidth: 222,
 };
+const timeLine: CSSProperties = { ...line, fontWeight: 400, color: "#cfd8e6" };
 const pBadge: CSSProperties = {
   width: 68, height: 68, borderRadius: 999, border: "3px solid #fff",
   display: "grid", placeItems: "center", fontSize: 36, fontWeight: 800,

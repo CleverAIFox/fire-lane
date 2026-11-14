@@ -81,7 +81,7 @@ DIST = ROOT / "web" / "navi" / "dist"
 #: ★ 2026-09-29 (§311). `opsLayers.ts` 가 갈라져 나온 날, 이 도구가 `layers.ts` 만
 #:   보고 있었다. 공유 수는 우연히 그대로였고(바탕 층이 안 옮겨갔다) **그래서 더
 #:   나빴다** — 초록인 채로 그물에 구멍이 났다. 아래 자기검사가 그것을 문다.
-LAYER_FILES = ("layers.ts", "opsLayers.ts", "roadLabels.ts")
+LAYER_FILES = ("layers.ts", "opsLayers.ts", "roadLabels.ts", "landuse.ts")   # `landuse.ts` — 토지이용 면이 진입 청크 밖으로 갈라졌다(PLAN 행 235)
 LAYERS = SRC / "components" / "layers.ts"
 
 #: 전환 깃발. `serve.py` 가 루트에 박고, 번들이 읽어야 한다. 한쪽만 있으면 안 된다.
@@ -148,7 +148,7 @@ SHARED_LAYERS = 12
 UI_TEXT = 3384
 #: 주행 중 화면(`uidrive.DRIVE_FILES`)의 20자 넘는 말 · 24px 미만 글자 선언 수 — 현재 실측이 곧 상한이다(DECISIONS §702). 내려가는 쪽.
 DRIVE_LONG = 5
-DRIVE_SMALL_FONT = 14
+DRIVE_SMALL_FONT = 6   # 2026-11-14 (PLAN 행 224 ④) 14 → 6: 상단 안내 막대(`TopBar`)의 여덟 선언이 전부 24px 이상이 됐다(배치를 세 줄로 다시 짰다). 남은 6 = `Legend` 3 · `StatusCard` 2 · 공유 칩 1
 
 #: `tools/ratchet.py` 가 **줄었을 때만** 이 수를 고쳐 적는다(§309).
 RATCHETS = {"SHARED_LAYERS": "down", "UI_TEXT": "down", "DRIVE_LONG": "down", "DRIVE_SMALL_FONT": "down"}

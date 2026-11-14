@@ -51,6 +51,7 @@ import {
   Z,
 } from "./layers";
 import { dataBase } from "../infra/dataBase";
+import { maxPitchFrom } from "../infra/mapPitch";
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -103,6 +104,8 @@ interface Props {
   onUserPan?: () => void;
 }
 
+// ★ 2026-11-14 (DECISIONS §778). 바탕 면(토지이용)을 **끈 채로 둔다** — 켜는 것은 사람이 구운 그림을 눈으로 본 뒤다(PLAN 행 240). 관제의 같은 이름 상수(`OpsMap.tsx`)와 짝이다.
+const LAND_ON = false;
 const LERP_POS = 0.20;
 const LERP_BRG = 0.08;
 const DRIVE_ZOOM = 18.2;
@@ -139,7 +142,7 @@ export function NaviMap(props: Props) {
 
     const m = new maplibregl.Map({
       container: box.current,
-      center: home, zoom: 15.6, pitch: 45, maxPitch: 75,
+      center: home, zoom: 15.6, pitch: 45, maxPitch: maxPitchFrom(location.search),
       minZoom: p.view.minZoom ?? 13, maxZoom: p.view.maxZoom ?? 20,
       maxBounds: p.view.maxBounds,
       attributionControl: { compact: true },
@@ -162,7 +165,7 @@ export function NaviMap(props: Props) {
         //   북동면이 어둡다.
         light: { anchor: "viewport", color: "#ffffff", intensity: 0.45, position: [1.3, 210, 30] },
         sources: sources(D, p.view.terrainBounds),
-        // ★ 2026-11-14 (DECISIONS §778). 바탕 면(`withLanduse`)을 **껐다** — 배포본에서 건물이 녹색 면에 파묻혀 보였다. 다시 켤 조건은 §778.
+        // ★ 2026-11-14 (DECISIONS §778). 바탕 면을 **껐다** — 배포본에서 건물이 녹색 면에 파묻혀 보였다. 다시 켤 조건은 §778. 켜는 자리는 아래 `LAND_ON`(첫 스타일이 아니라 `load` 뒤다 · PLAN 행 235).
         layers: baseLayers(styleRef.current),
       },
     });
@@ -215,6 +218,8 @@ export function NaviMap(props: Props) {
       }
       // ★ DECISIONS §711 — 도로명은 화면 기준으로 이름마다 한 점(가로). **미룬 청크다** — 진입 청크 래칫(111KB)이 이 3KB 를 못 받는다(첫 화면에 안 필요하다).
       void import("./roadLabels").then((r) => r.attachRoadLabels(m, Z.road));
+      // ★ PLAN 행 235. 토지이용 바탕 면도 **미룬 청크**다(층 명세 약 0.6KB · 소스 두 파일 578KB 를 첫 화면이 안 받는다). 꺼 둔 동안은 번들러가 이 줄을 통째로 걷는다.
+      if (LAND_ON) void import("./landuse").then((r) => r.attachLanduse(m, D));
       ready.current = true;
       const q = pending.current; pending.current = [];
       for (const f of q) f(m);

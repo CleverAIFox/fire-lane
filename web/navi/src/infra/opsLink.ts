@@ -31,11 +31,12 @@ export type Who = { kind: "ops" } | { kind: "unit"; unit: string };
 /**
  * ★ 재접속 간격 **고정 1초**다. 지수 백오프를 안 쓴다 — 출동 중에 간격이
  *   2·4·8초로 늘면 그 시간 동안 관제가 차를 잃는다. 관제 화면은
- *   `HB_TTL_MS`(4초)로 「끊김」을 띄우므로, 재접속이 그보다 느려지면 멀쩡한
- *   차가 끊긴 것으로 보인다. 중개자는 한 대이고 **우리 것이다** — 폭주를
- *   걱정할 상대가 아니다.
+ *   `UNIT_STALE_MS`(5초)로 「끊김」을 띄우므로(`domain/opsProtocol.ts::unitStale` — 종전 주석은
+ *   `HB_TTL_MS`(4초)라 적었으나 그것은 **내비가 관제를 보는** 자다 · PLAN #234), 재접속이 그보다
+ *   느려지면 멀쩡한 차가 끊긴 것으로 보인다. 중개자는 한 대이고 **우리 것이다** — 폭주를
+ *   걱정할 상대가 아니다. 이 수와 두 자의 관계는 `test/opsUplink.test.ts` 가 문다.
  */
-const RETRY_MS = 1000;
+export const RETRY_MS = 1000;
 
 function path(who: Who): string {
   const p = who.kind === "ops" ? "/ops" : `/unit/${encodeURIComponent(who.unit)}`;
@@ -45,7 +46,7 @@ function path(who: Who): string {
   return OPS_TOKEN ? `${p}?t=${encodeURIComponent(OPS_TOKEN)}` : p;
 }
 
-function openLinkWs(base: string, who: Who, onMsg: (data: unknown) => void): Link {
+function openLinkWs(base: string, who: Who, onMsg: (data: unknown) => void, onOpen?: () => void): Link {
   let ws: WebSocket | null = null;
   let timer: ReturnType<typeof setTimeout> | null = null;
   let closed = false;
@@ -62,6 +63,9 @@ function openLinkWs(base: string, who: Who, onMsg: (data: unknown) => void): Lin
       return;
     }
     ws = sock;
+    // ★ 붙은 **그 순간**을 부르는 쪽에 알린다(PLAN #234). 종전에는 붙은 뒤 다음 주기(0.5초 · 뒤 탭이면 1초)를
+    //   기다려 첫 말이 나갔다 — 재접속 한 번의 빈 시간이 그만큼 길었다. 무엇을 보낼지는 여기가 모른다.
+    sock.onopen = () => { if (!closed && ws === sock) onOpen?.(); };
     sock.onmessage = (e) => {
       // ★ **글자로 받아 여기서 푼다.** 서버는 뜻을 안 보고 글자를 옮기므로
       //   (`server.py`), 푸는 자리는 받는 쪽이다. 깨진 글자는 버린다 —
@@ -119,9 +123,10 @@ function openLinkChannel(onMsg: (data: unknown) => void): Link {
  *
  * @param onMsg 받은 말. WebSocket 쪽은 JSON 을 풀어서 준다
  * @param who   내가 관제인가 차인가. 중개자의 문이 갈린다
+ * @param onOpen 소켓이 붙을 때마다(재접속 포함). 탭끼리 전송은 늘 붙어 있어 **안 부른다**
  */
-export function openLink(onMsg: (data: unknown) => void, who: Who): Link {
-  return OPS_URL ? openLinkWs(OPS_URL, who, onMsg) : openLinkChannel(onMsg);
+export function openLink(onMsg: (data: unknown) => void, who: Who, onOpen?: () => void): Link {
+  return OPS_URL ? openLinkWs(OPS_URL, who, onMsg, onOpen) : openLinkChannel(onMsg);
 }
 
 /** 한 탭 안의 차례. 36^4 에서 돈다 — 그때는 시각이 이미 움직였다 */
