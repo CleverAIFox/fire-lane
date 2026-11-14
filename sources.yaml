@@ -5072,8 +5072,8 @@ outputs:
     produced_by: tools/evalset.py --roadview (최소폭 표본 지점 · 링크 · 묻는것을 깐다) · 사람 (거리뷰로 다섯 칸을 채운다)
     path: data/field/roadview_hypo_2611.csv
     inputs: [segments]      # width_samples.csv 는 segments 의 derives 다(별도 키가 아니다)
-    consumers: [tools/evalset.py]
-    what: 거리뷰 가설 판독표 40행(PLAN #187 · DECISIONS §782). 데이터로 못 가른 가설 셋(가 경계 정의 · 나 병목 실재 · 다 터진 포장)을 40지점에서 묻는다 — 좌표는 구간 중점이 아니라 발행 최소폭을 낸 표본 지점이다. 가설군 · 대조군은 표에 없고 tools/evalset.py 의 RV_HYPO 규칙으로 다시 나온다. 구간의 키는 seg_uid 다
+    consumers: [tools/rvsheet.py]      # 파일 이름 `RV_FILE` 을 든 곳 — `tools/evalset.py` 의 `rv_*` 가 이 상수로 읽는다(DECISIONS §788)
+    what: 거리뷰 가설 판독표 40행(PLAN #187 · DECISIONS §782). 데이터로 못 가른 가설 셋(가 경계 정의 · 나 병목 실재 · 다 터진 포장)을 40지점에서 묻는다 — 좌표는 구간 중점이 아니라 발행 최소폭을 낸 표본 지점이다. 가설군 · 대조군은 표에 없고 tools/rvsheet.py 의 RV_HYPO 규칙으로 다시 나온다. 구간의 키는 seg_uid 다
     verified: false
     known_issues:
     - ★ 채워지기 전에는 비어 있다(빈 양식이라 지문에서 빠져 있다). 한 칸이라도 채우면 `tools/fieldseal.py --write` 로 지문을 박는다(사람이 친다)

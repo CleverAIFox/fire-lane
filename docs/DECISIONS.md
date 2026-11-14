@@ -51738,7 +51738,7 @@ PLAN #244 의 도착 조건 ② · ③(A) · ④ 를 닫는다(§785 가 가른 
 
 > 2026-11-14
 
-`destinations.from_facility_faces`(§786-A)가 같은 이름 · 같은 면적의 면을 가를 때 `BUL_MAN_NO` 로 정렬했다 — **재발행하면 값이 달라지는 지역 번호**다(§320). 앞선 묶음에서 `evalgen` 이 같은 칸을 조인 열쇠로 썼다가 고쳤다(§781). 같은 함정을 내가 되풀이했고 `tests/test_classify_published.py` 가 pushready 에서 잡았다.
+`destinations.from_facility_faces`(§786-A)가 같은 이름 · 같은 면적의 면을 가를 때 `BUL_MAN_NO` 로 정렬했다 — **재발행하면 값이 달라지는 지역 번호**다(§320). 앞선 묶음에서 `evalgen` 이 같은 칸을 조인 열쇠로 썼다가 고쳤다(§781). 같은 함정이 되풀이됐고 `tests/test_classify_published.py` 가 pushready 에서 잡았다.
 
 강제자  `tests/test_classify_published.py::test_the_published_building_number_is_not_used_as_a_join_key`(글자 그대로 그 칸을 읽는 줄을 센다 — 고친 줄의 주석에도 그 이름을 못 쓴다) · `tests/test_dest_facility.py`(합성 면이 `BD_MGT_SN` 으로 선다). 하위 없음
 
