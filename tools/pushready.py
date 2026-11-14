@@ -3,6 +3,7 @@
 pushready.py — 「푸시해도 되는가」 **한 명령.**  (PLAN #207)
 
     uv run python tools/pushready.py        rc 0 = 푸시 가능 · rc 1 = 막는 것이 있다(목록과 사람이 칠 명령)
+    uv run python tools/pushready.py --edges <감사 디렉터리> [<사슬 전 커밋>]    사람이 감사 훅을 켜고 사슬을 돈 로그 → 단계별 읽기 · 쓰기와 `EDGES` 각 변의 실측(읽기만 · PLAN #220)
 
 ★ **읽기만 한다.** 아무것도 안 쓰고 아무것도 안 찍는다 — 도장 · 래칫 · 변이 장부는 이 도구가 고치지 않는다.
   막는 것마다 **사람이 칠 명령**을 적는다.
@@ -27,11 +28,11 @@ pushready.py — 「푸시해도 되는가」 **한 명령.**  (PLAN #207)
   ㉨ **훅 게이트 전부**(시험 묶음 · 도장은 ㉥ · ㉡ 가 더 세게) + `gatefast` 의 `ready` 층(CI **다섯 잡**의 검사 중 훅 예산에 못 든 것 · (열쇠, 인자) 단위) — **글자 그대로** 돈다(PLAN #216 · 병렬 4 · 둘 다 도출이라 사본이 없다 → pushready ≥ 훅)
   ㉧ 로컬이 **로컬에 있는 원격 추적 가지**(`@{u}`)보다 뒤인가 — 뒤면 받을 명령을 댄다(PLAN #211). `fetch` 는 **안 한다**(사람이 정했다: 읽기 전용이 정체성이다)
 ★ **몇 바퀴 남았나**(PLAN #220): 막는 것 목록 끝에 `forecast` 가 「이번에 치면 다음에 무엇이 또 낡는가」를 말한다 — 되먹임 변 다섯(`EDGES` · 실측 · 서술을 달았다)만으로 **확정 바퀴 · 가능한 바퀴**를 센다.
-  모델이다: 고정점을 증명하지 않고, 가능한 자기 루프 때문에 상한(`LAP_CAP`)에서 자른다. 표본은 사람이 돈 다섯 바퀴 한 건이다. 이 도구는 여전히 **아무것도 안 친다**.
+  모델이다: 고정점을 증명하지 않고, 가능한 자기 루프 때문에 상한(`LAP_CAP`)에서 자른다. 표본은 옛 순서 다섯 바퀴 한 건 · 새 순서 한 바퀴 세 건이다(`SAMPLE_LAPS` · `SAMPLE_NEW_ORDER`). 이 도구는 여전히 **아무것도 안 친다**.
 순서는 사슬이다 — **받기 → 시험 → 등재 의무 → CI 미러 → 도장 없는 절(㉢) → 래칫(㉠) → 변이 장부(㉤) → 낡은 도장(㉡) → 커밋.** (2026-11-14 · PLAN #220: 사람이 이 순서로 쳐서 확정 바퀴가 2 → 1 로 줄었다 — `㉢` 이 `UNSEALED` 를 조이므로 래칫 **앞**이다) 목록은 그 순서로 낸다(받으면 트리가 바뀌어 뒤의 것이 다 낡으므로 ㉧ 이 맨 앞이다).
 
 부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398 — 아직 어느 관문에도 안 올렸다: 2분이 예산 30초에 안 든다)
-IN    `tools/ratchet.py` · `tools/docseal.py` · `tools/mutate.py` 의 출력과 종료 코드 · `git status --porcelain`
+IN    `tools/ratchet.py` · `tools/docseal.py` · `tools/mutate.py` 의 출력과 종료 코드 · `git status --porcelain` · (`--edges`) `FIRE_LANE_AUDIT_DIR/log`
 OUT   화면 · 종료 코드(가능 0 · 불가 1). 파일은 안 쓴다.
 밖    **푸시할 ref 가 무엇인지는 안 본다**(그것은 `.githooks/pre-push` 의 몫) · **원격 상태를 안 본다**(네트워크 없음 — ㉧ 은 마지막 `git fetch` 가 받아 둔 로컬 ref 만 비교한다) ·
       **CI 가 도는 시험 전체를 안 돈다** — 전수 `pytest` 는 25분이고 이 도구는 그 대신이 아니다. 이 도구가 「가능」이라고
@@ -322,6 +323,9 @@ def notes(root: Path = ROOT, run: Runner = real_run) -> list[str]:
 #: **되먹임 그래프**(2026-11-11 · `#220` 의 실측). 사슬은 도장 없는 절(㉢) → 래칫(㉠) → 변이 장부(㉤) → 낡은 도장(㉡) 순서다(2026-11-14 — 종전 ㉠ ㉤ ㉡ ㉢ 에서는 ㉢→㉠ 이 뒤로 가는 변이라 확정 2바퀴였다). 그래도 뒤가 앞이 읽는 것을 **쓰는** 변이 있어 위상 정렬이 안 된다.
 #: 각 변은 `(from, to, 확정인가, 앞으로 가는가, 사유)` 다. **앞으로 가는 변**(순서에서 to 가 뒤)은 같은 바퀴에서 풀리고, **뒤로 가는 변**은 바퀴를 늘린다.
 #: 근거 — `실측`: 감사 훅으로 읽기 · 쓰기를 쟀다(`fix.sh` 를 복사본에서 돌려 래칫이 `data/golden/{mutation,docseal}.json` 을 읽는 것까지) · `서술`: 도구 머리말만 근거다(그 도구는 사람 몫이라 안 돌렸다).
+#: `서술` 셋(㉠→㉤ · ㉠→㉡ · ㉤→㉤)을 `실측`으로 바꾸는 길은 `measured_edges` 다 — 사람이 `FIRE_LANE_AUDIT_DIR` · `FIRE_LANE_AUDIT_TAG=<칸>` 을 켜고 사슬을 돈 로그를 `--edges` 가 읽는다(이 도구는 그 사슬을 안 친다).
+#: ★ 순서 `㉢ → ㉠ → ㉤ → ㉡` 는 **실증됐다**(2026-11-14): 커밋 942bd48e(본문이 그 순서와 「2 → 1 확인」을 적었다) · 8f231eae · 70f353ac — 사슬 세 번이 각각 **커밋 하나**로 끝났다(되돌아온 사슬 커밋이 없다).
+#:   그 셋의 diff 가 쓴 것은 `data/golden/` 의 장부뿐이고 `tools/*.py` 는 0 이다 — 그 세 번에는 ㉠ 의 소스 상수 쓰기 · ㉤→㉤ 이 **안 밟혔다**(커밋 단위 쓰기 실측 · 읽기와 단계별 귀속은 아직 없다).
 EDGES: list[tuple[str, str, bool, str]] = [
     ("㉠", "㉤", True, "`ratchet --write` 가 도구 소스의 상수를 쓴다 → 그 도구의 변이 지문이 어긋난다(서술 · `mutate.catch_print`)"),
     ("㉠", "㉡", False, "그 도구를 지목한 절이 있으면 도장도 낡는다(서술 — 절마다 다르다)"),
@@ -331,8 +335,10 @@ EDGES: list[tuple[str, str, bool, str]] = [
 ]
 ORDER = ["㉢", "㉠", "㉤", "㉡"]       # 사람이 칠 순서(㉣ 커밋은 늘 맨 끝 — 바퀴 밖)
 LAP_CAP = 4
-#: 표본 — 2026-11-10~11 사람이 돈 바퀴. **한 건이다** · 단계별 기록은 없다. 모델의 확정 바퀴는 이 표본보다 작다 — 되돌아올 수 있는 변이 실제로 밟혔다는 뜻이다.
+#: 표본 — 2026-11-10~11 사람이 **옛 순서**(㉠ ㉤ ㉡ ㉢)로 돈 바퀴. **한 건이다** · 단계별 기록은 없다. 모델의 확정 바퀴는 이 표본보다 작다 — 되돌아올 수 있는 변이 실제로 밟혔다는 뜻이다.
 SAMPLE_LAPS = 5
+#: 표본 — 2026-11-14 **새 순서**(`ORDER`)로 친 사슬 (건수, 건마다 바퀴). 커밋 942bd48e · 8f231eae · 70f353ac. 모델의 확정 1바퀴와 같다 — 세 건이고 고정점의 증명은 아니다.
+SAMPLE_NEW_ORDER = (3, 1)
 
 
 @dataclass
@@ -388,9 +394,55 @@ def forecast(blocks: list[Block]) -> Forecast:
     steps = [f"{names[k]}({k})" for k in ORDER if k in start]
     L = [f"이번에 {' → '.join(steps)} 순으로 치면 **확정 {sure}바퀴**" + (f" · 되돌아올 수 있는 변까지 밟으면 **{LAP_CAP}바퀴 이상**(가능한 자기 루프 — 고정점은 증명 안 됨)" if capped else f" · 가능한 변까지 밟으면 {most}바퀴"),
          *[f"    · {n}" for n in notes]]
-    L.append(f"    · 표본: 2026-11-10~11 사람이 **{SAMPLE_LAPS}바퀴**를 돌았다(한 건 · 단계별 기록 없음) — 확정만 센 수는 그보다 작다. 되돌아올 수 있는 변이 실제로 밟혔다는 뜻이다")
+    L.append(f"    · 표본: 옛 순서(래칫 먼저)로 2026-11-10~11 사람이 **{SAMPLE_LAPS}바퀴**를 돌았다(한 건 · 단계별 기록 없음) — 되돌아올 수 있는 변이 실제로 밟혔다는 뜻이다. "
+             f"지금 순서로는 2026-11-14 사슬 {SAMPLE_NEW_ORDER[0]}건이 각각 **{SAMPLE_NEW_ORDER[1]}바퀴**에 끝났다(확정 바퀴와 같다 · 고정점의 증명은 아니다)")
     L.append("    · 이 도구는 치지 않았다 — 말하기만 한다. 한 바퀴를 친 뒤 이 명령을 다시 돌리면 남은 바퀴가 줄어든 채 다시 나온다")
     return Forecast(sure, most, capped, L)
+
+
+# ── 되먹임 변의 실측 (PLAN #220 도착 열거 ① ②) ─────────────────
+#: 장부 디렉터리. **제 장부**를 읽고 쓰는 것은 그 단계의 일이지 되먹임이 아니다 — 같은 도구끼리(자기 루프 · ㉢↔㉡ 는 둘 다 `docseal stamp`)는 이 아래 파일을 변의 증거로 안 친다.
+_LEDGERS = "data/golden/"
+_SAME_TOOL = {frozenset(("㉢", "㉡"))}
+
+
+def audit_rows(audit_dir: Path) -> list[tuple[str, str, str]]:
+    """`FIRE_LANE_AUDIT_DIR/log`(`tests/audit_site/fsaudit.py` 가 쓴다 · `종류\\t경로\\t꼬리표\\t이벤트`) → (종류, 경로, 꼬리표). **읽기만 한다.** 로그가 없으면 죽는다 — 빈 실측을 「변이 없다」로 읽지 않는다."""
+    rows = [ln.split("\t") for ln in (audit_dir / "log").read_text(encoding="utf-8", errors="replace").splitlines()]
+    return [(p[0], p[1], p[2]) for p in rows if len(p) == 4]
+
+
+def measured_edges(rows: list[tuple[str, str, str]], kept: set[str] | None = None) -> dict:
+    """감사 로그 줄 → 단계별 읽기 · 쓰기 집합(`steps`) · `EDGES` 각 변의 판정(`edges`) · 모델에 없는 쓰기→읽기 쌍(`extra`). 순수 함수 — 꼬리표가 `ORDER` 의 칸(`FIRE_LANE_AUDIT_TAG=㉠`)인 줄만 센다.
+
+    변 `a→b` 의 증거는 **a 가 쓴 추적 파일 ∩ b 가 읽은 추적 파일**이다. 판정 셋: `밟혔다`(교집합이 있다) · `안 밟혔다`(둘 다 돌았는데 비었다 — 이번 실행의 사실이지 변이 없다는 증명이 아니다) · `안 쟀다`(한쪽 칸의 줄이 0).
+    ★ `kept` = 사슬 뒤에 **실제로 달라진** 추적 파일(`git diff --name-only <사슬 전 커밋>`). 주면 거기 없는 쓰기는 `u`(썼다 되돌렸다)로 갈라 증거로 안 친다 — `mutate` 는 과녁을 제자리에서 흔들고 되돌리는데 훅은 그 쓰기도 쓰기로 적는다.
+    ★ 못 보는 것은 감사 훅과 같다 — 파이썬이 아닌 자식 · 사슬 안에서 도는 `pytest`(제 감사 디렉터리를 새로 만든다 · `tracked_guard`) · 추적 안 된 파일."""
+    steps: dict[str, dict[str, set[str]]] = {k: {"r": set(), "w": set(), "u": set()} for k in ORDER}
+    for kind, path, tag in rows:
+        if tag in steps and kind in ("r", "w"):
+            steps[tag]["u" if kind == "w" and kept is not None and path not in kept else kind].add(path)
+    ran = {k for k in ORDER if any(steps[k].values())}
+
+    def via(a: str, b: str) -> list[str]:
+        own = a == b or frozenset((a, b)) in _SAME_TOOL
+        return sorted(p for p in steps[a]["w"] & steps[b]["r"] if not (own and p.startswith(_LEDGERS)))
+
+    edges = [(a, b, sure, "안 쟀다" if not {a, b} <= ran else "밟혔다" if via(a, b) else "안 밟혔다", via(a, b)) for a, b, sure, _why in EDGES]
+    known = {(a, b) for a, b, *_ in EDGES}
+    extra = [(a, b, via(a, b)) for a in ORDER for b in ORDER if (a, b) not in known and via(a, b)]
+    return {"steps": steps, "edges": edges, "extra": extra}
+
+
+def render_edges(m: dict) -> str:
+    """`measured_edges` 의 결과를 `EDGES` 근거 문구에 그대로 옮길 수 있는 줄로."""
+    def some(fs: list[str]) -> str:
+        return ", ".join(fs[:4]) + (f" 외 {len(fs) - 4}" if len(fs) > 4 else "")
+    L = ["── 사슬의 읽기 · 쓰기 실측 (PLAN #220 · 감사 훅 로그 — 이 도구는 읽기만 했다)"]
+    L += [f"  {k} 읽기 {len(m['steps'][k]['r'])} · 썼다 되돌린 것 {len(m['steps'][k]['u'])} · 쓰기 {len(m['steps'][k]['w'])}" + (f": {some(sorted(m['steps'][k]['w']))}" if m["steps"][k]["w"] else "") for k in ORDER]
+    L += [f"  {a}→{b} {'[확정]' if sure else '[가능]'} 실측 — {verdict}" + (f": {some(fs)}" if fs else "") for a, b, sure, verdict, fs in m["edges"]]
+    L += [f"  {a}→{b} [모델에 없다] 쓰기→읽기 쌍: {some(fs)} — 변인지는 읽고 정한다" for a, b, fs in m["extra"]]
+    return "\n".join(L)
 
 
 #: 사슬 순서 — 도장 없는 절 → 래칫 → 변이 장부 → 낡은 도장 → 커밋(`ORDER` 와 같다 — 시험이 맞춘다). **싼 것을 앞에 두지 않는다**(사람이 칠 순서가 목록 순서다).
@@ -463,6 +515,13 @@ def render(blocks: list[Block], notes: list[str] | None = None) -> str:
 def main(argv: list[str] | None = None) -> int:
     if argv is None:
         argv = sys.argv[1:]
+    if len(argv) in (2, 3) and argv[0] == "--edges":
+        rc, out = real_run(["git", "diff", "--name-only", argv[2] if len(argv) == 3 else "HEAD"], ROOT)       # 읽기만 — 사슬 뒤에 실제로 달라진 파일
+        if rc != 0:
+            print(f"✗ `git diff --name-only` 가 죽었다 — 썼다 되돌린 것을 못 가른다\n{out.strip()[-300:]}")
+            return 1
+        print(render_edges(measured_edges(audit_rows(Path(argv[1])), {x for x in out.splitlines() if x})))
+        return 0
     if argv:
         print(__doc__)
         return 2

@@ -443,3 +443,100 @@ def test_the_branch_sync_is_named_as_a_human_step_and_no_workflow_moves_branches
         if u:
             bad[rel] = u
     assert not bad, f"「브로드캐스트」가 사람 손임을 안 말한다: {bad}"
+
+
+# ── #220 도착 열거 ① ② — 사람이 감사 훅을 켜고 돈 사슬의 로그에서 `EDGES` 의 근거를 읽는다(합성 로그 · 이 시험은 사슬을 안 친다) ──────────
+
+def _rows(*triples):
+    return [(k, p, t) for k, p, t in triples]
+
+
+def test_measured_edges_reads_each_verdict_from_a_synthetic_chain_log():
+    m = P.measured_edges(_rows(
+        ("r", "data/golden/docseal.json", "㉢"), ("w", "data/golden/docseal.json", "㉢"),
+        ("r", "data/golden/docseal.json", "㉠"), ("r", "data/golden/mutation.json", "㉠"), ("w", "tools/suppress.py", "㉠"),
+        ("r", "tools/suppress.py", "㉤"), ("r", "tools/mutate.py", "㉤"), ("r", "data/golden/mutation.json", "㉤"), ("w", "data/golden/mutation.json", "㉤"),
+        ("r", "tools/gatefast.py", "㉡"), ("r", "data/golden/docseal.json", "㉡"), ("w", "data/golden/docseal.json", "㉡"),
+        ("w", "tools/suppress.py", "test_x.py"), ("r", "tools/suppress.py", "인코딩·개행"),            # 사슬 칸이 아닌 꼬리표는 안 센다
+    ))
+    got = {(a, b): (verdict, fs) for a, b, _sure, verdict, fs in m["edges"]}
+    assert got[("㉠", "㉤")] == ("밟혔다", ["tools/suppress.py"])
+    assert got[("㉠", "㉡")] == ("안 밟혔다", []), "㉡ 이 그 도구를 안 읽었으면 이번에는 안 밟힌 것이다"
+    assert got[("㉤", "㉠")] == ("밟혔다", ["data/golden/mutation.json"]) and got[("㉢", "㉠")] == ("밟혔다", ["data/golden/docseal.json"])
+    assert got[("㉤", "㉤")] == ("안 밟혔다", []), "제 장부를 읽고 쓰는 것은 자기 루프의 증거가 아니다"
+    assert m["extra"] == [("㉡", "㉠", ["data/golden/docseal.json"])], "㉢ · ㉡ 은 같은 도구라 도장 파일을 주고받는 것은 변이 아니다 — 그러나 ㉡ 이 쓴 도장 파일을 래칫이 읽는 쌍은 모델에 없으니 낸다"
+    assert m["steps"]["㉠"]["w"] == {"tools/suppress.py"} and len(m["steps"]["㉠"]["r"]) == 2
+    assert set(got) == {(a, b) for a, b, *_ in P.EDGES}, "EDGES 의 변마다 판정이 하나씩 있어야 한다"
+
+
+def test_measured_edges_sees_the_self_loop_an_unmodelled_pair_and_an_unmeasured_step():
+    m = P.measured_edges(_rows(
+        ("r", "tools/mutate.py", "㉤"), ("w", "tools/mutate.py", "㉤"), ("w", "data/golden/mutation.json", "㉤"),
+        ("r", "tools/mutate.py", "㉡"), ("w", "data/golden/docseal.json", "㉡"),
+    ))
+    got = {(a, b): (verdict, fs) for a, b, _sure, verdict, fs in m["edges"]}
+    assert got[("㉤", "㉤")] == ("밟혔다", ["tools/mutate.py"]), "제 소스를 쓰고 읽으면 자기 루프가 밟힌 것이다"
+    assert got[("㉠", "㉤")][0] == got[("㉠", "㉡")][0] == got[("㉢", "㉠")][0] == "안 쟀다", "한쪽 칸의 줄이 0 이면 「안 밟혔다」가 아니라 「안 쟀다」다"
+    assert m["extra"] == [("㉤", "㉡", ["tools/mutate.py"])], "모델에 없는 쓰기→읽기 쌍은 따로 낸다"
+    out = P.render_edges(m)
+    assert "㉤→㉤ [가능] 실측 — 밟혔다: tools/mutate.py" in out and "㉤→㉡ [모델에 없다]" in out and "㉠→㉤ [확정] 실측 — 안 쟀다" in out
+    assert all(v == "안 쟀다" for _a, _b, _s, v, _f in P.measured_edges([])["edges"]), "빈 로그는 변이 없다는 뜻이 아니다"
+
+
+def test_a_write_that_was_undone_is_not_evidence_of_an_edge():
+    """`mutate` 는 과녁 도구를 제자리에서 흔들고 되돌린다 — 훅은 그것도 쓰기로 적는다. 사슬 뒤에 실제로 달라진 파일(`kept`)에 없으면 증거로 안 친다."""
+    rows = _rows(("w", "tools/suppress.py", "㉤"), ("r", "tools/suppress.py", "㉤"), ("w", "tools/mutate.py", "㉤"), ("r", "tools/mutate.py", "㉤"), ("w", "data/golden/mutation.json", "㉤"))
+    naive = {(a, b): fs for a, b, _s, _v, fs in P.measured_edges(rows)["edges"]}
+    assert naive[("㉤", "㉤")] == ["tools/mutate.py", "tools/suppress.py"], "거르지 않으면 흔든 과녁이 전부 자기 루프로 보인다(이 시험이 막는 오독)"
+    m = P.measured_edges(rows, kept={"tools/mutate.py", "data/golden/mutation.json"})
+    assert {(a, b): (v, fs) for a, b, _s, v, fs in m["edges"]}[("㉤", "㉤")] == ("밟혔다", ["tools/mutate.py"])
+    assert m["steps"]["㉤"]["u"] == {"tools/suppress.py"} and m["steps"]["㉤"]["w"] == {"tools/mutate.py", "data/golden/mutation.json"}
+    assert "썼다 되돌린 것 1 · 쓰기 2" in P.render_edges(m)
+    only_undone = P.measured_edges(_rows(("w", "tools/suppress.py", "㉤")), kept=set())
+    assert {(a, b): v for a, b, _s, v, _f in only_undone["edges"]}[("㉤", "㉤")] == "안 밟혔다", "되돌린 쓰기뿐이어도 그 칸은 돈 것이다(안 쟀다가 아니다)"
+
+
+def test_the_edges_reader_reads_a_log_that_real_tagged_children_wrote_and_runs_nothing(tmp_path: Path, monkeypatch, capsys):
+    """복사 블록과 같은 길을 작은 임시 뿌리에서 걷는다 — `fsaudit.prepare` → `PYTHONPATH`(`sitecustomize`) → `FIRE_LANE_AUDIT_TAG=<칸>` 자식 둘 → `--edges`."""
+    import importlib.util
+    import os
+    import sys
+    site = ROOT / "tests" / "audit_site"
+    spec = importlib.util.spec_from_file_location("fsaudit_for_pushready", site / "fsaudit.py")
+    fsaudit = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = fsaudit
+    spec.loader.exec_module(fsaudit)
+    root, audit = tmp_path / "repo", tmp_path / "audit"
+    (root / "tools").mkdir(parents=True)
+    (root / "tools" / "x.py").write_text("N = 1\n", encoding="utf-8")
+    (root / "untracked.txt").write_text("u\n", encoding="utf-8")
+    fsaudit.prepare(str(audit), str(root), {"tools/x.py"})
+    env = {**os.environ, "FIRE_LANE_AUDIT_DIR": str(audit), "PYTHONPATH": str(site)}
+    for tag, code in (("㉠", "open('tools/x.py', 'w', encoding='utf-8').write('N = 2\\n'); open('untracked.txt', 'w', encoding='utf-8').write('v')"),
+                      ("㉤", "open('tools/x.py', encoding='utf-8').read(); open('untracked.txt', encoding='utf-8').read()")):
+        r = subprocess.run([sys.executable, "-c", code], cwd=root, env={**env, "FIRE_LANE_AUDIT_TAG": tag}, capture_output=True, text=True, timeout=60, check=False)
+        assert r.returncode == 0, r.stderr
+    assert P.audit_rows(audit) == [x[:3] for x in fsaudit.read_log(str(audit))], "로그 꼴을 `fsaudit.read_log` 와 다르게 읽는다"
+    m = P.measured_edges(P.audit_rows(audit))
+    assert ("㉠", "㉤", True, "밟혔다", ["tools/x.py"]) in m["edges"], m["edges"]
+    assert m["steps"]["㉠"]["w"] == {"tools/x.py"}, "추적 안 된 파일은 안 센다"
+    ran: list[list[str]] = []
+    monkeypatch.setattr(P, "real_run", lambda argv, cwd: (ran.append(argv), (0, "tools/x.py\n"))[1])
+    assert P.main(["--edges", str(audit), "abc123"]) == 0
+    assert ran == [["git", "diff", "--name-only", "abc123"]], f"--edges 는 읽는 git 한 줄만 돈다 — {ran}"
+    assert "㉠→㉤ [확정] 실측 — 밟혔다: tools/x.py" in capsys.readouterr().out
+    monkeypatch.setattr(P, "real_run", lambda argv, cwd: (0, ""))                # 사슬 뒤에 달라진 것이 없다 = 썼다 되돌렸다
+    assert P.main(["--edges", str(audit)]) == 0 and "㉠→㉤ [확정] 실측 — 안 밟혔다" in capsys.readouterr().out
+    monkeypatch.setattr(P, "real_run", lambda argv, cwd: (128, "fatal: bad revision"))
+    assert P.main(["--edges", str(audit), "없는커밋"]) == 1, "git 이 죽으면 닫힌 쪽 — 거르지 않은 실측을 내지 않는다"
+    capsys.readouterr()
+    import pytest
+    with pytest.raises(OSError):
+        P.audit_rows(tmp_path / "없는 디렉터리")       # 로그가 없으면 죽는다 — 빈 실측으로 안 읽는다
+
+
+def test_the_forecast_names_both_samples_the_old_order_and_the_new_one():
+    line = next(x for x in P.forecast([_blk("㉠", [WRITE])]).lines if "표본" in x)
+    assert f"{P.SAMPLE_LAPS}바퀴" in line and "옛 순서" in line and f"사슬 {P.SAMPLE_NEW_ORDER[0]}건" in line and f"{P.SAMPLE_NEW_ORDER[1]}바퀴" in line
+    assert "증명은 아니다" in line, "표본을 고정점의 증명처럼 적지 않는다"
+    assert P.SAMPLE_NEW_ORDER[1] == P.forecast([_blk(k) for k in ("㉢", "㉤", "㉡")] + [_blk("㉠", [WRITE])]).sure, "실증 표본이 모델의 확정 바퀴와 다르면 문구가 거짓이다"
