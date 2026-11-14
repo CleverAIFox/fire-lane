@@ -5547,22 +5547,22 @@
    "web/navi/src/components/NaviMap.tsx",
    "web/navi/src/components/layers.ts"
   ],
-  "fp": "view-v2",
+  "fp": "view-v3",
   "kind": "read",
   "legacy": [
-   "0cb59043dbb8f7b1",
-   "4e87ab44e776a408",
-   "c9a7a5f185c97798",
-   "f739f4b099722783"
+   "28f27dbbc3f7d028",
+   "409e036ba2b68249",
+   "67c39504bf4a1ee6",
+   "fcb079e54a3c2fc7"
   ],
   "parts": {
    "tests/test_uicheck.py": "4a6e43b1fcd6b46d",
    "tools/ratchet.py": "247f92f9431f573c",
-   "web/navi/src/components/NaviMap.tsx": "a3d76f20b9ef5281",
+   "web/navi/src/components/NaviMap.tsx": "c0cc1f731047914d",
    "web/navi/src/components/layers.ts": "3affa9bfce9346c8",
    "본문": "fd69d9710c69bd48"
   },
-  "sha": "0cb59043dbb8f7b1"
+  "sha": "67c39504bf4a1ee6"
  },
  "DECISIONS/312": {
   "doc": "docs/DECISIONS.md",
@@ -13967,18 +13967,20 @@
   "fp": "view-v3",
   "kind": "read",
   "legacy": [
-   "14864fb6c4c5e292",
-   "42b46bd194f93082",
-   "acc7072ac7bc2393",
-   "d95f201604b1aa53"
+   "0282893a0a34e516",
+   "6afa25a1d3348c8c",
+   "88a9df2f3cc84371",
+   "b07f6fbbcb52024a",
+   "c95ac6db135bed5e",
+   "c9de06b6d9d571d5"
   ],
   "parts": {
    "tests/test_themecheck.py": "2f99e1e002716f4b",
    "tools/serve.py": "704693153e2a2f72",
-   "tools/themecheck.py": "44224a94846c5ead",
+   "tools/themecheck.py": "d14488d3312d75f9",
    "본문": "b9f6556904633076"
   },
-  "sha": "14864fb6c4c5e292"
+  "sha": "88a9df2f3cc84371"
  },
  "DECISIONS/776": {
   "doc": "docs/DECISIONS.md",
@@ -14009,6 +14011,25 @@
    "본문": "1f21844b85f6ed38"
   },
   "sha": "f4d45856a69b0d47"
+ },
+ "DECISIONS/778": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_themecheck.py",
+   "tools/themecheck.py"
+  ],
+  "fp": "view-v3",
+  "kind": "read",
+  "legacy": [
+   "2eb621d2697ec7c1",
+   "372dd64ea43e974f"
+  ],
+  "parts": {
+   "tests/test_themecheck.py": "ef6b44cc3575957c",
+   "tools/themecheck.py": "d1adf99618e64894",
+   "본문": "d14f3467c4cbcc86"
+  },
+  "sha": "372dd64ea43e974f"
  },
  "DECISIONS/78": {
   "doc": "docs/DECISIONS.md",
@@ -15433,18 +15454,18 @@
   "fp": "view-v3",
   "kind": "read",
   "legacy": [
-   "233caa767de629e0",
-   "3048f85d4d55fa54",
-   "3fe4b65f2f8fff77",
-   "66e551a56a8265f7",
-   "6a887811095e6af9",
-   "6b2263e03e62f394",
-   "6d1eb1f8f6e55c55",
-   "9fef24872e8a0d7f",
-   "c003fe3fc9732352",
-   "d4bc3ea4ed8d940f",
-   "d725af1487670bb6",
-   "d74fd359b386d881"
+   "0ac2d88a34bc3cb1",
+   "0ec4135929442ccc",
+   "1a6af88644bd19c2",
+   "1d4ec3a4c8d0eb20",
+   "71e61da3b064d630",
+   "7d328df7c745ad81",
+   "7db33d5a05f570ac",
+   "7f504971cab0584a",
+   "9fdfd3e74077b228",
+   "a283dbd18a514e07",
+   "a9e4c63b882bc2b6",
+   "f97c558654f8264d"
   ],
   "parts": {
    ".devcontainer/devcontainer.json": "b7e90d1b7282ad4e",
@@ -15482,9 +15503,9 @@
    "web/navi/src/domain/geo.ts": "83c9ea1316faa851",
    "web/navi/src/domain/vehicle.ts": "416f5631b2fa2139",
    "web/navi/src/ui/tokens.ts": "771c1573e8b768ca",
-   "본문": "2452dd5a1e2eed3c"
+   "본문": "bd22ac116020778d"
   },
-  "sha": "d74fd359b386d881"
+  "sha": "1a6af88644bd19c2"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
@@ -16361,75 +16382,77 @@
    "web/navi/test/turning.test.ts",
    "web/navi/test/vehicleParity.ts"
   ],
-  "fp": "view-v2",
+  "fp": "view-v3",
   "kind": "read",
   "legacy": [
-   "1296f3723d201fda",
-   "60aa6a716ec8ee1d"
+   "08e29c44a167c2c3",
+   "2424b1752d658709",
+   "e07554fa32074cb8",
+   "e133cc4a417c3e5e"
   ],
   "parts": {
-   "tools/sealcov.py": "e3cef685f982d1e7",
-   "tools/uidrive.py": "fee78d02165d23f6",
-   "web/config.js": "62e9c33a0c8290b3",
+   "tools/sealcov.py": "016d2a52a04d843d",
+   "tools/uidrive.py": "822c4371c5e10ba2",
+   "web/config.js": "55791e20068de1be",
    "web/navi/eslint.config.js": "396eefe59e025014",
    "web/navi/src/App.tsx": "6f4b8830c10d20ed",
-   "web/navi/src/app/useDemo.ts": "cede065ec8ecbb41",
-   "web/navi/src/components/OpsMap.tsx": "cde9020909d71522",
-   "web/navi/src/components/opsLayers.ts": "499f1f2515b51a7d",
-   "web/navi/src/components/roadLabels.ts": "54399a96aecc3dbe",
-   "web/navi/src/config.ts": "1850a74db7fbca0b",
-   "web/navi/src/domain/demo.ts": "7d02631bdc30aa1a",
-   "web/navi/src/domain/motion.ts": "5a16f8e057e2e774",
-   "web/navi/src/domain/serviceArea.ts": "8f2e99a4a051e422",
-   "web/navi/src/domain/unitBoard.ts": "4a9da664d0be7f56",
-   "web/navi/src/main.tsx": "f2ba9e834c7592cf",
-   "web/navi/src/ui/BottleneckDetail.tsx": "e38570e7160e6bad",
-   "web/navi/src/ui/BottleneckPanel.tsx": "ae9d99c94d08e8be",
-   "web/navi/src/ui/DemoStrip.tsx": "8a53ae122a45845c",
-   "web/navi/src/ui/DevBar.tsx": "cb9db88a53df535d",
-   "web/navi/src/ui/Legend.tsx": "02c9afc11f6a2a18",
-   "web/navi/src/ui/MapControls.tsx": "f46bf094b715b4ba",
-   "web/navi/src/ui/OpsBits.tsx": "fb99ff6c923c1d39",
-   "web/navi/src/ui/RemainPill.tsx": "8ce6013832ff79a6",
-   "web/navi/src/ui/SegCard.tsx": "f787a712e7a7b65a",
-   "web/navi/src/ui/ShareChip.tsx": "a4e6368e21db2ba5",
-   "web/navi/src/ui/StatusCard.tsx": "7f4103aedc942ed8",
-   "web/navi/src/ui/TopBar.tsx": "9fe5ef35afb64446",
-   "web/navi/src/ui/TurnArrow.tsx": "11c5f8dca6359a5a",
-   "web/navi/src/ui/VehicleArt.tsx": "8c77d0a77ab75527",
-   "web/navi/src/ui/appShell.tsx": "a8d2b3db9798537d",
-   "web/navi/src/ui/clearanceMeaning.ts": "db2ef0df9c981dff",
-   "web/navi/src/ui/deferred.tsx": "388d436451a1c54d",
-   "web/navi/src/ui/icons.tsx": "920ea51c0b9447de",
-   "web/navi/src/ui/routeOption.ts": "7cb3bd7897ba6ba2",
-   "web/navi/src/ui/verdictMeaning.ts": "eb9ba8d9ddc38830",
-   "web/navi/src/vite-env.d.ts": "65996936fbb04291",
-   "web/navi/test/adjacency.test.ts": "e2e1cd7fd8bfee4c",
-   "web/navi/test/contact.test.ts": "a905bc2c4269971f",
-   "web/navi/test/context.test.ts": "3c8cc44139421ceb",
-   "web/navi/test/dataSource.test.ts": "6f172e6ca3413a2c",
-   "web/navi/test/demo.test.ts": "521eeda6d28a6246",
-   "web/navi/test/destSnap.test.ts": "b71429c81a50d109",
-   "web/navi/test/edgeSnap.test.ts": "aa0acde367945f2b",
-   "web/navi/test/egobox.test.ts": "505386827465d017",
-   "web/navi/test/geo.test.ts": "c25ca949cb735d17",
-   "web/navi/test/pointRoute.test.ts": "8a009ff549bd7c9c",
-   "web/navi/test/precomputed.test.ts": "258c9df1a7f44ca2",
-   "web/navi/test/progress.test.ts": "7ba608d12ea14274",
-   "web/navi/test/refOpacity.test.ts": "b1b28e5b7c02e678",
-   "web/navi/test/roadLabels.test.ts": "7903d08fe4c47e17",
-   "web/navi/test/routeDerive.test.ts": "a88354afaf6b0ee4",
-   "web/navi/test/routeSolve.test.ts": "4810c7d678ae7f57",
-   "web/navi/test/serviceArea.test.ts": "a498bb29a06f876c",
-   "web/navi/test/simulation.test.ts": "4e55cde26eb0d61f",
-   "web/navi/test/speech.test.ts": "25ca8188c6a2ca17",
-   "web/navi/test/speed.test.ts": "4f813586d99d010c",
-   "web/navi/test/status.test.ts": "7be2b9eb0dbef731",
-   "web/navi/test/turning.test.ts": "4fe2979d2f580414",
-   "web/navi/test/vehicleParity.ts": "1f2e8cc61e2f8eed",
+   "web/navi/src/app/useDemo.ts": "211bb082de9c6fee",
+   "web/navi/src/components/OpsMap.tsx": "3d9e1bcd148518c7",
+   "web/navi/src/components/opsLayers.ts": "2f028603944c8083",
+   "web/navi/src/components/roadLabels.ts": "a03c045bfcad4bb3",
+   "web/navi/src/config.ts": "d2d5364f6be0d372",
+   "web/navi/src/domain/demo.ts": "8c0f1309423aced2",
+   "web/navi/src/domain/motion.ts": "1bb7be291f3b62ef",
+   "web/navi/src/domain/serviceArea.ts": "ca1ce841647bf8d9",
+   "web/navi/src/domain/unitBoard.ts": "cf20de64115ecb3a",
+   "web/navi/src/main.tsx": "7978f6f69745f46e",
+   "web/navi/src/ui/BottleneckDetail.tsx": "df0d24a54abec57e",
+   "web/navi/src/ui/BottleneckPanel.tsx": "d9f08380ad538dec",
+   "web/navi/src/ui/DemoStrip.tsx": "b26e2c47746c4278",
+   "web/navi/src/ui/DevBar.tsx": "df41440b3731ec2a",
+   "web/navi/src/ui/Legend.tsx": "8a1cde9b7da9ccc5",
+   "web/navi/src/ui/MapControls.tsx": "fcab28fd32552936",
+   "web/navi/src/ui/OpsBits.tsx": "e485ddb6bdab9085",
+   "web/navi/src/ui/RemainPill.tsx": "6be8598ee84e6303",
+   "web/navi/src/ui/SegCard.tsx": "4effe59905ba6762",
+   "web/navi/src/ui/ShareChip.tsx": "33c5945c364ceabe",
+   "web/navi/src/ui/StatusCard.tsx": "97d5040851c1ea5f",
+   "web/navi/src/ui/TopBar.tsx": "8130bc3d935feda2",
+   "web/navi/src/ui/TurnArrow.tsx": "6078c9f1fe569fbc",
+   "web/navi/src/ui/VehicleArt.tsx": "4bb94c5b8ea5ab1e",
+   "web/navi/src/ui/appShell.tsx": "6e7095a7066c0804",
+   "web/navi/src/ui/clearanceMeaning.ts": "b49cda0de4db5e76",
+   "web/navi/src/ui/deferred.tsx": "a08b4d529bf19e3a",
+   "web/navi/src/ui/icons.tsx": "c5aaacb61773246f",
+   "web/navi/src/ui/routeOption.ts": "227a010cbdfe4ab7",
+   "web/navi/src/ui/verdictMeaning.ts": "40f4dace8f7cfd19",
+   "web/navi/src/vite-env.d.ts": "18ac2daf334d67c8",
+   "web/navi/test/adjacency.test.ts": "99c78233ba042dcd",
+   "web/navi/test/contact.test.ts": "ea19845e1834c700",
+   "web/navi/test/context.test.ts": "e9ae3b396ee10bc9",
+   "web/navi/test/dataSource.test.ts": "e6048b26e9227bc8",
+   "web/navi/test/demo.test.ts": "8cba1a08b4731721",
+   "web/navi/test/destSnap.test.ts": "8b60da646fe515b8",
+   "web/navi/test/edgeSnap.test.ts": "ce64231350cbb3f5",
+   "web/navi/test/egobox.test.ts": "8052a6a806324247",
+   "web/navi/test/geo.test.ts": "bb2ea6f1e5ceaffc",
+   "web/navi/test/pointRoute.test.ts": "7dd414468b8c06c3",
+   "web/navi/test/precomputed.test.ts": "977a3d1bb47a224d",
+   "web/navi/test/progress.test.ts": "e9eba7c255cbec0a",
+   "web/navi/test/refOpacity.test.ts": "8fe201297e097f70",
+   "web/navi/test/roadLabels.test.ts": "3d89e6863c9362d4",
+   "web/navi/test/routeDerive.test.ts": "49cccef3830844a1",
+   "web/navi/test/routeSolve.test.ts": "5f4e4b95fcd0f82e",
+   "web/navi/test/serviceArea.test.ts": "286a0e71a9f23266",
+   "web/navi/test/simulation.test.ts": "739e7fd8a7f1aef4",
+   "web/navi/test/speech.test.ts": "3c194fad50225e84",
+   "web/navi/test/speed.test.ts": "ba9afc7f8065b165",
+   "web/navi/test/status.test.ts": "5099bdd69bcd73d7",
+   "web/navi/test/turning.test.ts": "ab20cbecea6d89d4",
+   "web/navi/test/vehicleParity.ts": "19f24142f7c2940e",
    "본문": "2cdbdd459cba7952"
   },
-  "sha": "60aa6a716ec8ee1d"
+  "sha": "e133cc4a417c3e5e"
  },
  "MASTER/23": {
   "doc": "docs/MASTER.md",
@@ -17275,18 +17298,18 @@
   "fp": "view-v3",
   "kind": "read",
   "legacy": [
-   "1400c593f6855ebc",
-   "19d904b6704ec1cd",
-   "36930eaa05d4b184",
-   "37458d44da036e6f",
-   "38fb1c2445af19f7",
-   "3eb60ed427dfc1a4",
-   "62f5345c7d3d4a37",
-   "68303e218acb0344",
-   "767776d39a42e71d",
-   "a36afd8286d0b211",
-   "ad67c3e790fc255e",
-   "e4e6bfd1f5d7b51f"
+   "107119aac7f52ffa",
+   "1d4fcd156d0dc202",
+   "23f5402785ef32ea",
+   "4920fa1c737f10ef",
+   "51c8c0314fad7751",
+   "521d96961d0eec2f",
+   "6a3de873779fa450",
+   "6c32e6c7fc4da30e",
+   "8fcbb7bf83f4d660",
+   "b120011d9677a9dc",
+   "c288f9ea514c7b9e",
+   "c62789349d5bb4fb"
   ],
   "parts": {
    ".github/actions/build-navi/action.yml": "5acce6d51d17654b",
@@ -17324,9 +17347,9 @@
    "web/navi/src/components/layers.ts": "33fe3a277598d18d",
    "web/navi/test/clearance.test.ts": "9a3b411b0eedf91c",
    "web/navi/vite.config.ts": "55089b7ca7dc72b8",
-   "본문": "2203e0b33e1c2fca"
+   "본문": "0293699492677071"
   },
-  "sha": "37458d44da036e6f"
+  "sha": "6c32e6c7fc4da30e"
  },
  "PLAN/1-27": {
   "doc": "docs/PLAN.md",
