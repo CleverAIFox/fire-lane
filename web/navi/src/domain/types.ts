@@ -201,7 +201,7 @@ export interface NaviGraph {
  *
  * ★ 경로가 **안 지난다.** 그래프에 이을 자리가 없는 점이라(최근접 구간이
  *   100m 넘게 떨어져 있다) 이으면 없는 길을 만드는 것이다 — 위치만 보여준다.
- *   `route` 칸이 발행에 안 오는 이유가 그것이다(`publish_navi._landmarks` 가
+ *   `route` 칸이 발행에 안 오는 이유가 그것이다(`publish_navi.landmarks` 가
  *   `route:true` 를 거부한다).
  */
 export interface Landmark {

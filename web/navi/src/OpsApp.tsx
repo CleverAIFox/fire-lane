@@ -65,7 +65,7 @@ import { dispatchUrl as mkDispatchUrl } from "./domain/dispatch";
 import { demoTag, liveCounts, sortUnits, unitChip } from "./domain/unitBoard";
 import type { RouteMode } from "./domain/handoff";
 import { alternateAccess, reachableEdges, MAX_WALK_M } from "./domain/access";
-import { addressLines, asOfDate, preparePois, searchPois, type PoiHit } from "./domain/search";
+import { addressLines, asOfDate, farFromRoadNote, preparePois, searchPois, walkNote, type PoiHit } from "./domain/search";
 import { dataBase } from "./infra/dataBase";
 import { DISPATCH_FIXED_S, dispatchToArrivalSeconds, travelSeconds } from "./domain/speed";
 import { requiredWidth } from "./domain/vehicle";
@@ -421,9 +421,9 @@ export default function OpsApp() {
                         통행 규칙 — {ruleSummary(plan.plan.rules)}
                       </div>
                     )}
-                    {plan.alt && (
+                    {(plan.alt || farFromRoadNote(plan.walkM)) && ( /* ★ #227 — 도로망 밖 목적지도 말한다 */
                       <div style={{ fontSize: 12, color: D.warn, fontWeight: 800, marginTop: 4 }}>
-                        차량 경로 없음 → 대체 접근 지점 + 도보 약 {Math.round(plan.walkM)}m(직선)
+                        {plan.alt ? `차량 경로 없음 → 대체 접근 지점 + ${walkNote(plan.walkM)}` : farFromRoadNote(plan.walkM)}
                       </div>
                     )}
                   </>

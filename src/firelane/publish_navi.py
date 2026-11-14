@@ -21,7 +21,9 @@ golden 지문이 걸려 있다. **새 파일로 내면 기존 열여섯은 한 �
   landmarks [{name, lng, lat, note}]                  web/config.js 에서 추출(§444)
                                                       **경로에 안 붙는다** — 위치만 보여준다
   nodes  [[lon, lat], ...]                             접합된 교차점
-  edges  [{seg_uid, a, b, verdict, width_min_m, coords, ow?, ...}]
+  edges  [{seg_uid, a, b, verdict, width_min_m, coords, ow?, park, ecam, hyd, cctv, ...}]
+  checkpoints {hyd: [[lon, lat], ...], cctv: [...], snap_m}   엣지의 `hyd` · `cctv` 번호가 가리키는
+                                                      지점(`publish_checkpoints` · PLAN #72)
   turns  [[들어오는 엣지, 노드, 나가는 엣지, TURN_TYPE], ...]   회전 금지
 
 ── 통행 규칙 (2026-09-22 · DECISIONS §215-1) ──────────────────────
@@ -101,6 +103,8 @@ from shapely.geometry import Point
 #   거기 산다. 이 파일은 그 답을 **칸에 옮기기만** 한다.
 from firelane.cli import no_args
 from firelane.paths import PROCESSED, ROOT
+from firelane.publish_checkpoints import KINDS as _CP_KINDS
+from firelane.publish_checkpoints import checkpoints as _checkpoints
 from firelane.publish_rules import oneway, turns
 from firelane.seg.params import NODE_TOL
 from firelane.seg.unionfind import find as _uf_find
@@ -196,7 +200,7 @@ _LM_ROW = re.compile(
     r'\s*route\s*:\s*(true|false)\s*,\s*note\s*:\s*"([^"]*)"', re.S)
 
 
-def _landmarks(txt: str | None = None) -> list[dict]:
+def landmarks(txt: str | None = None) -> list[dict]:
     """`web/config.js` 의 `landmarks` — **경로에 안 붙는 점**들.
 
     ★ 블록이 없으면 **빈 목록이 아니라 죽는다.** 빈 목록을 내면 선언을 지운
@@ -424,6 +428,16 @@ def main() -> None:
     for e, n, c in zip(edges, park, ecam, strict=True):
         e["park"] = n
         e["ecam"] = c
+    # ★ 2026-11-14 (PLAN #72). 소화전 · CCTV 를 **엣지 칸**으로 — 수가 아니라 지점 번호 목록이다
+    #   (교차점 곁의 한 지점이 여러 엣지에 붙는다 · 경로의 수는 합집합). 원천이 없으면 `null`.
+    cp_per, cp_pts, cp_stat = _checkpoints(m)
+    for kind in _CP_KINDS:
+        for e, ks in zip(edges, cp_per[kind] or [None] * len(edges), strict=True):
+            e[kind] = ks
+    cp_ll = {}
+    for kind in _CP_KINDS:
+        ll = gpd.GeoSeries([Point(p) for p in cp_pts[kind]], crs=5186).to_crs(4326)
+        cp_ll[kind] = [[round(p.x, PREC), round(p.y, PREC)] for p in ll]
 
     # 결측(도로명 없음) · 0(도로명은 있고 찍힌 것이 없음)을 **발행물이 스스로 센다.**
     # 이 수가 있으면 「없음 110건」 같은 오독을 도구가 기계로 잡는다.
@@ -450,11 +464,18 @@ def main() -> None:
                    #   못 붙은 몫이다. 이것이 크면 `park`·`ecam` 의 0 은 「없다」가
                    #   아니라 「붙은 것 중에 없다」다 — 읽는 쪽이 그것을 알아야 한다.
                    "park_unplaced_rows": pk_stat["rows"] - pk_stat["matched"],
-                   "ecam_unplaced_sites": ec_stat["sites"] - ec_stat["matched"]},
+                   "ecam_unplaced_sites": ec_stat["sites"] - ec_stat["matched"],
+                   # ★ #72. `*_sites` 는 어느 엣지에든 붙은 지점 수 · `*_src_sites` 는 원천(구 전체)의
+                   #   자리 수 — 차이는 대부분 그래프 범위 밖이다(못 붙인 결함이 아니다).
+                   **{f"{k}_{s}": cp_stat[k][t] for k in _CP_KINDS for s, t in
+                      (("sites", "sites"), ("src_sites", "src_sites"),
+                       ("null", "null_edges"), ("zero", "zero_edges"))}},
         "style": style,
         "terrain": _terrain(),
         # ★ 2026-10-09 (§444 · #148). 경로에 안 붙는 점. 화면이 핀으로 찍는다.
-        "landmarks": _landmarks(),
+        "landmarks": landmarks(),
+        # ★ #72. 엣지의 `hyd` · `cctv` 번호가 가리키는 지점 좌표와 붙인 거리(m).
+        "checkpoints": {**cp_ll, "snap_m": {k: v[1] for k, v in _CP_KINDS.items()}},
         "nodes": nodes,
         "edges": edges,
         "turns": [list(t) for t in turn_list],
@@ -467,7 +488,7 @@ def main() -> None:
     print(f"  navi_graph.json  노드 {len(nodes)} · 엣지 {len(edges)}"
           f" · 자기루프 {loops} · 노드 최대이동 {dmax:.3f}m"
           f" · 판정색 {len(style)}종 · {size / 1024:.0f}KB")
-    print(f"  통행 규칙  일방통행 {ow_stat['oneway']} (방향 확정 {ow_stat['dir_known'] + ow_stat['dir_field']} — 표 {ow_stat['dir_field']} · 낡은 표 {ow_stat['dir_field_stale']})"
+    print(f"  통행 규칙  일방통행 {ow_stat['oneway']} (방향 확정 {ow_stat['dir_known'] + ow_stat['dir_field']} — 표 {ow_stat['dir_field']} · 낡은 표 {ow_stat['dir_field_stale']} · 표가 적용이라는데 안 덮은 것 {ow_stat['dir_field_refused']})"
           f" · 회전 금지 {tr_stat['rules']}건 중 {tr_stat['mapped']} 을 그래프에")
     # ★ 2026-10-03 (§367). **모름의 사유를 가른다.** 종전에는 「양방향 N」 하나만
     #   찍어서, 56건이 왜 모름인지가 어디에도 없었다. 넷으로 가르면 다음에 무엇을
@@ -484,6 +505,10 @@ def main() -> None:
     print(f"  단속 카메라  {ec_stat['sites']}지점({ec_stat['rows']}방향) 중 도로명이 맞는"
           f" {ec_stat['matched']}지점 · 도로 {ec_stat['roads']}"
           f" · 구간 결측 {ec_stat['null_edges']} · 0지점 {ec_stat['zero_edges']}")
+    for kind in _CP_KINDS:
+        s = cp_stat[kind]
+        print(f"  체크포인트 {kind}  원천 {s['src_sites']}자리 중 엣지 곁({_CP_KINDS[kind][1]:g}m) {s['sites']}"
+              f" · 구간 결측 {s['null_edges']} · 0곳 {s['zero_edges']}")
     if size > SIZE_MAX:
         raise SystemExit(
             f"★ navi_graph.json 이 상한을 넘었다 {size / 1024 / 1024:.1f}MB "

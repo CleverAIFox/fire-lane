@@ -296,10 +296,34 @@ def test_contract_counts_navi_as_consumer():
     assert {"navi_graph.json", "poi.geojson"} <= got, "프로브가 죽었다"
 
 
-def test_destinations_are_clipped_to_dongmyeong_only():
-    """§183-1 — 목적지는 동명동 경계(emd4)로 자른다. 건물 · 라벨은 지도 이동 범위(move)로 넓다."""
+def test_destinations_are_clipped_to_map_move_bounds():
+    """§730-3 의 2(PLAN #227) — 목적지도 **지도 이동 범위**(move4)로 자른다. §183-1(동명동만)을 뒤집었다.
+
+    ★ 판정 범위와 검색 범위는 다른 축이다. `emd4` 로 돌아가면 지도에 보이는 동구청이 검색에서 또 빠진다.
+    """
     pub = (ROOT / "src/firelane/publish_web.py").read_text(encoding="utf-8")
     call = pub[pub.index("_dest.build_index("):]
     call = call[:call.index("\n    dest.to_file")]
-    assert call.rstrip().endswith("emd4)"), "목적지가 동명동이 아닌 범위로 잘린다"
+    assert "move4, landmarks=navi_landmarks())" in call, "목적지가 지도 이동 범위가 아닌 것으로 잘리거나 지점이 빠졌다"
+    assert "emd4" not in call, "목적지가 동명동으로 잘린다 — §183-1 로 되돌아갔다"
+    assert '"maxBounds": [[round(minx-m, 4), round(miny-m, 4)], [round(maxx+m, 4), round(maxy+m, 4)]]' in pub
+    assert "move4 = box(round(minx-m, 4), round(miny-m, 4), round(maxx+m, 4), round(maxy+m, 4))" in pub, (
+        "색인을 자르는 틀이 view.maxBounds 와 같은 식이 아니다")
     assert "b.intersects(move)" in pub, "건물은 지도 이동 범위 그대로여야 한다"
+
+
+def test_landmarks_join_the_index_and_far_points_stay():
+    """PLAN #227 — 지점(config.js landmarks)이 색인에 들고, 범위 밖 지점은 빠지고 **센다**."""
+    store = gpd.GeoDataFrame({"name": ["가게"], "cat": ["음식"], "sub": ["한식"], "addr": ["x"]},
+                             geometry=[Point(126.926, 35.151)], crs=4326)
+    lms = [{"name": "광주 인공지능사관학교", "lng": 126.9222428, "lat": 35.1465902, "note": "설명"},
+           {"name": "범위 밖 지점", "lng": 126.99, "lat": 35.2, "note": ""}]
+    out, st = D.build_index(store, _build(), _jibun(), _civil(), MOVE, landmarks=lms)
+    lm = out[out["src"].eq("landmark")]
+    assert st["landmark"] == 1 and list(lm["name"]) == ["광주 인공지능사관학교"]
+    r = lm.iloc[0]
+    assert (r["cat"], r["addr"], r["alt"]) == ("지점", "", ""), "없는 주소를 지어냈다"
+    assert abs(r.geometry.x - 126.9222428) < 1e-9 and abs(r.geometry.y - 35.1465902) < 1e-9
+    assert list(out.columns) == D.COLS
+    base, st0 = D.build_index(store, _build(), _jibun(), _civil(), MOVE)
+    assert "landmark" not in st0 and len(base) == len(out) - 1, "지점을 안 줬는데 색인이 달라졌다"

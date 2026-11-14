@@ -1,8 +1,9 @@
 """
-destinations.py — 내비 목적지 검색 색인. 상가 · 주소/건물 · 관공서/학교 셋을 하나로.
+destinations.py — 내비 목적지 검색 색인. 상가 · 주소/건물 · 관공서/학교 · 지점을 하나로.
 
 IN    processed/poi_store.geojson · processed/navi_build.csv ·
       processed/navi_jibun.csv · processed/civil_office.geojson
+      web/config.js 의 landmarks (publish_web 이 `publish_navi.landmarks` 로 읽어 넘긴다)
 OUT   web/data/dest.geojson   (publish_web 이 부른다 — 여기서는 쓰지 않고 표를 돌려준다)
 PARAM 열 번호 — 내비게이션용DB 활용방법 붙임 1 · 2 (DECISIONS §181-1)
 
@@ -128,11 +129,39 @@ def from_store(g: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return o[COLS]
 
 
+def from_landmarks(rows: list[dict]) -> gpd.GeoDataFrame:
+    """지점(`web/config.js` landmarks → `publish_navi.landmarks`) → 목적지.
+
+    ★ 2026-11-14 (PLAN #227). 지도에 이름이 찍히는 점인데 검색에는 없었다 —
+      「광주 인공지능사관학교」를 쳐도 안 떴다. 좌표는 여기서 **다시 적지 않는다**
+      (정본은 config.js 한 곳 · §444). 주소는 없다 — 지어내지 않는다.
+    ★ `note` 는 안 싣는다. 화면 설명글이지 검색어가 아니다.
+    """
+    return gpd.GeoDataFrame({
+        "name": [str(r["name"]).strip() for r in rows],
+        "cat": "지점", "sub": "", "addr": "", "alt": "", "src": "landmark",
+    }, geometry=gpd.points_from_xy([r["lng"] for r in rows], [r["lat"] for r in rows]),
+        crs=4326)[COLS]
+
+
 def build_index(store: gpd.GeoDataFrame, build: pd.DataFrame, jibun: pd.DataFrame,
-                civil: gpd.GeoDataFrame, clip) -> tuple[gpd.GeoDataFrame, dict]:
-    """세 원천을 합쳐 `clip`(4326 도형) 안만 남긴다. 이름 없는 행은 뺀다."""
+                civil: gpd.GeoDataFrame, clip,
+                landmarks: list[dict] | None = None) -> tuple[gpd.GeoDataFrame, dict]:
+    """원천을 합쳐 `clip`(4326 도형) 안만 남긴다. 이름 없는 행은 뺀다.
+
+    ★ 2026-11-14 (PLAN #227 · DECISIONS §730-3 의 2). `clip` 은 **지도 이동 범위**다
+      (`view.maxBounds`). 판정 범위(동명동)와 검색 범위는 다른 축이다 — 폭 판정을
+      안 해도 「저 건물로 가라」는 할 수 있다.
+    ★ 도로에서 먼 점을 **여기서 빼지 않는다.** 도로망은 판정 스코프만 덮어서 지도
+      가장자리의 관공서(동구청 124m · 광주세무서 410m)는 스냅 한도 60m 밖이다.
+      빼면 사람이 뜨라고 한 동구청이 빠진다. 남기고, 화면이 「도로에서 멀다」를
+      말한다(`search.ts::farFromRoadNote`). 어느 점이 먼지는
+      `web/navi/test/destSnap.test.ts` 가 수로 문다.
+    """
     b, st = from_navi(build, jibun)
     parts = {"store": from_store(store), "build": b, "civil": from_civil(civil)}
+    if landmarks:
+        parts["landmark"] = from_landmarks(landmarks)
     stats = {"navi": st}
     kept = []
     for k, p in parts.items():
