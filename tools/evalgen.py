@@ -83,6 +83,7 @@ from firelane import ledger as _led
 from firelane.hashing import sha256 as _sha256
 from firelane.manifest import write_stable as _ws
 from firelane.seg import vehicle as V
+from firelane.seg.graph import station_node
 
 # ★ 2026-10-08 (PLAN #122). 도메인은 대장을 직접 안 읽는다 — **진입점이**
 #   주입한다. 안 부르면 `V.spec()` 이 `SpecMissing` 으로 죽는다(조용히
@@ -118,12 +119,9 @@ ENTRANCE_SNAP_M = 5.0      # 출입구 → 건물 면. 실측(출입구 12,737):
 #       현행         807      342      283     34,483
 #       낙관       1,090      625        0     62,500
 #
-#   비관이 현행보다 55배, 낙관보다 100배 낫다. 셋을 다 내는 것은 그대로다 —
-#   **대표를 고르는 것**이 이 상수이고, 바뀌면 여기만 고친다.
+#   비관이 현행보다 55배, 낙관보다 100배 낫다. 셋을 다 내는 것은 그대로다 — **대표를 고르는 것**이 이 상수이고, 바뀌면 여기만 고친다.
 #
-# ★ 이것은 **판정을 안 바꾼다.** 저장 판정은 넷(clear·needs_cv·blocked·unknown)
-#   그대로고 `unknown` 은 여전히 「못 재서 모른다」다(DB 의 NULL). 바뀌는 것은
-#   「단일 수치로 무엇을 주장하는가」 하나다. 경로 탐색은 `edge_cost` 가 들고,
+# ★ 이것은 **판정을 안 바꾼다.** 저장 판정은 넷(clear·needs_cv·blocked·unknown) 그대로고 `unknown` 은 여전히 「못 재서 모른다」다(DB 의 NULL). 바뀌는 것은 「단일 수치로 무엇을 주장하는가」 하나다. 경로 탐색은 `edge_cost` 가 들고,
 #   거기서 회색을 막으면 도로망이 1,000 → 269구간으로 3등분된다(§273-2 실측).
 TILT = "pessimistic"
 MISS_COST = 100          # 미탐:오탐 비용비. 근거는 출동 실패 대 우회다(MASTER §2-1a)
@@ -160,8 +158,7 @@ def curvatures(feats: list[dict]) -> dict[int, float | None]:
 
     ★ 좌표를 국소 평면(`localgeo`)으로 옮겨 넘긴다. 파이프라인은 EPSG:5186
       으로 재므로 값이 정확히 같지 않다 — 이 값은 시나리오 선정 조건에만 쓰고
-      게이트 대조에는 안 쓴다(머리말 `밖`).
-    """
+      게이트 대조에는 안 쓴다(머리말 `밖`)."""
     out: dict[int, float | None] = {}
     for i, f in enumerate(feats):
         co = [(x * MX, y * MY) for x, y in kpi._coords(f["geometry"])]
@@ -170,10 +167,18 @@ def curvatures(feats: list[dict]) -> dict[int, float | None]:
 
 
 def _snap(pos: dict, graph: dict, lon: float, lat: float) -> tuple[int, float]:
-    """안전센터에 가장 가까운 노드와 그 거리(m)."""
-    x, y = lon * MX, lat * MY
-    n = min(graph, key=lambda k: (pos[k][0] - x) ** 2 + (pos[k][1] - y) ** 2)
-    return n, math.dist(pos[n], (x, y))
+    """가장 가까운 **노드**와 그 거리(m) — 건물 출입구용이다. ★ 안전센터는 이것으로 안 붙인다(`station_nodes`)."""
+    n = min(graph, key=lambda k: (pos[k][0] - lon * MX) ** 2 + (pos[k][1] - lat * MY) ** 2)
+    return n, math.dist(pos[n], (lon * MX, lat * MY))
+
+
+def station_nodes(feats: list[dict], nid: dict, ok: set[int]) -> dict:
+    """안전센터 → 붙을 노드. **판정 파이프라인과 같은 함수**(`seg.graph.station_node` — 가장 가까운 **통행 가능 구간**의 가까운 끝)를 쓴다.
+    ★ 종전에는 여기만 최근접 노드였다 — 지산은 12.6m 앞 간선 대신 24m 의 골목 끝에 붙어 「3/1090 노드만 닿는다」를 매번 냈다(DECISIONS §622-2 가 파이프라인만 고쳤다 · §782)."""
+    row = collections.namedtuple("row", "geometry seg_id")
+    ends = [(row(ln, i), ln.coords[0], ln.coords[-1]) for i, ln in enumerate(LineString([(x * MX, y * MY) for x, y in kpi._coords(f["geometry"])]) for f in feats)]
+    meta, rep = {i: {"blocked": i not in ok} for i in range(len(feats))}, [nid[j] for j in range(2 * len(feats))]
+    return {name: station_node(Point(lon * MX, lat * MY), ends, meta, rep) for name, (lon, lat) in STATIONS.items()}
 
 
 def load_buildings(proc: Path) -> tuple[dict, dict, int] | str:
@@ -222,13 +227,14 @@ def building_dests(feats: list[dict], pos: dict, naive: dict, bl: tuple[dict, di
                    "no_entrance": len(no_ent), "no_entrance_ids": no_ent[:50], "entrances_unattached": stray}
 
 
-def station_pairs(pos: dict, naive: dict, safe: dict, dests: list[dict]) -> tuple[dict, list[dict]]:
+def station_pairs(pos: dict, naive: dict, safe: dict, dests: list[dict], at: dict | None = None) -> tuple[dict, list[dict]]:
     """안전센터마다 모든 목적지 **건물**까지 (d1, d2). ★ 출발 노드는 **제약 없는 그래프에서** 고른다(따로 고르면 두 거리가
     다른 출발점에서 잰 값이 된다). ★ 쌍이 안 서는 건물은 조용히 버리지 않고 센다 — `d1_unreachable` · `at_source`."""
     per: dict = {}
     rows: list[dict] = []
     for name, (lon, lat) in STATIONS.items():
-        src, dist = _snap(pos, naive, lon, lat)
+        # 통행 가능 구간의 가까운 끝(`station_nodes`) — 그런 길이 없으면 최근접 노드로 남기고 결손 항이 말한다
+        src, dist = (at[name], math.dist(pos[at[name]], (lon * MX, lat * MY))) if at and at.get(name) is not None else _snap(pos, naive, lon, lat)
         d1, prev1 = kpi._dijkstra(naive, src)
         d2, prev2 = kpi._dijkstra(safe, src) if src in safe else ({}, {})
         n0, none, same, routed = len(rows), 0, 0, 0
@@ -243,8 +249,7 @@ def station_pairs(pos: dict, naive: dict, safe: dict, dests: list[dict]) -> tupl
                          "ratio": (b / a) if b != math.inf else math.inf,
                          "prev1": prev1, "prev2": prev2, "src": src})
         per[name] = {"snap_node": src, "snap_dist_m": round(dist, 1), "d1_reach": len(d1), "d2_reach": len(d2),
-                     "unreachable": len(rows) - n0 - routed, "buildings": len(dests),
-                     "d1_unreachable": none, "at_source": same}
+                     "unreachable": len(rows) - n0 - routed, "buildings": len(dests), "d1_unreachable": none, "at_source": same}
     return per, rows
 
 
@@ -258,8 +263,7 @@ def e1(per: dict, rows: list[dict], feats, rv, bstat: dict) -> dict:
 
     두 항이다. **진입 실패**는 「현행이 못 가는 길로 보내는가」이고
     **실거리비**는 「우리 길이 얼마나 도는가」다. 둘은 서로 대체하지 않는다 —
-    실거리비만 보면 우리가 늘 손해로 읽히고, 진입 실패만 보면 우회 비용이 숨는다.
-    """
+    실거리비만 보면 우리가 늘 손해로 읽히고, 진입 실패만 보면 우회 비용이 숨는다."""
     ratios = sorted(r["ratio"] for r in rows if r["ratio"] != math.inf)
     fail = sum(1 for r in rows if _pinch(r, feats, rv) is not None)
     out = {
@@ -303,8 +307,7 @@ def _claims(p: dict, tilt: str, rv: dict) -> bool:
 
     ★ `blocked` 는 어느 기울기에서도 주장하지 않는다 — 그것만은 판정이 확정이다.
     ★ `current` 는 지어낸 축이 아니라 **지금 발행되는 것**이다(`route_vehicle.csv`
-      의 `passable`). 현행을 따로 재지 않으면 「고쳐서 얼마가 나아졌나」를 못 낸다.
-    """
+      의 `passable`). 현행을 따로 재지 않으면 「고쳐서 얼마가 나아졌나」를 못 낸다."""
     v = p["verdict"]
     if v == "blocked":
         return False
@@ -326,8 +329,7 @@ def e2(feats: list[dict], rv: dict) -> dict:
 
     ★ 미탐 노출을 「미검증 전부」로 세지 않는다. `verified` 가 전 구간 false 라
       (D-25 0건) 그렇게 세면 셋이 다 같아지고 지표가 장식이 된다. 판정 어휘가
-      남은 유일한 정보이므로 그것으로 센다.
-    """
+      남은 유일한 정보이므로 그것으로 센다."""
     P = [f["properties"] for f in feats]
     per = {}
     for tilt in TILTS:
@@ -415,8 +417,7 @@ def scenarios(rows: list[dict], feats, rv, rad: dict, pos: dict) -> dict:
     **우회로 존재**(d2 < inf · 비율 문턱과 함께 이미 걸러진다) ·
     **CCTV 커버**(목 구간의 `cv_feasible`) · **코너 통과 가능**(우회 경로 전
     구간의 `can_turn`). ★ 코너 조건은 `turn_radius_verified: false` 인 동안
-    아무것도 안 거른다 — 그 사실을 `corner_vacuous` 로 같이 적는다.
-    """
+    아무것도 안 거른다 — 그 사실을 `corner_vacuous` 로 같이 적는다."""
     hits = []
     for r in rows:
         if r["ratio"] <= RATIO_MIN or r["d2_m"] == math.inf:
@@ -481,7 +482,7 @@ def build(proc: Path, gold: Path, base: Path, tag: str | None) -> tuple[dict, li
     naive, safe = build_graph(feats, nid, None), build_graph(feats, nid, ok)
     rad = curvatures(feats)
     dests, bstat = building_dests(feats, pos, naive, bl)
-    per, rows = station_pairs(pos, naive, safe, dests)
+    per, rows = station_pairs(pos, naive, safe, dests, station_nodes(feats, nid, ok))
 
     spec = V.spec()
     doc = {
@@ -586,8 +587,7 @@ def main(argv: list[str] | None = None) -> int:
 
     out = Path(a.out) if a.out else (proc / "eval.json")
     out.parent.mkdir(parents=True, exist_ok=True)
-    # ★ 수가 그대로면 **안 쓴다** — `as_of`·`git_sha` 만 흔들려 추적 파일이
-    #   더러워지는 것을 막는다(firelane.hashing.write_stable 의 사유).
+    # ★ 수가 그대로면 **안 쓴다** — `as_of`·`git_sha` 만 흔들려 추적 파일이 더러워지는 것을 막는다(firelane.hashing.write_stable 의 사유).
     _ws(out, doc, tail="\n")
     _print(doc)
     if a.scenarios:

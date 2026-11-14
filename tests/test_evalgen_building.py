@@ -109,3 +109,20 @@ def test_building_denominator_leaves_judgment_files_untouched(tree):
     before = h()
     _build(tree)
     assert h() == before
+
+
+def test_a_station_snaps_to_the_passable_road_in_front_not_to_the_nearest_alley_end(monkeypatch):
+    """★ 지산119안전센터가 「통행 가능 그래프에서 3 노드만 닿는다」로 나오던 원인(DECISIONS §622-2 · §782). 센터 앞 12m 에 통행 가능한
+    간선이 있는데 그 끝점은 멀고, 3m 옆에 막힌 골목의 끝이 있다 — 최근접 **노드**는 골목이고 붙어야 하는 것은 간선이다."""
+    def line(a, b):
+        return {"type": "Feature", "properties": {"length_m": 100.0}, "geometry": {"type": "LineString", "coordinates": [list(a), list(b)]}}
+    feats = [line((_east(-100), _north(12)), (_east(60), _north(12))),      # 0 간선 — 통행 가능 · 센터에서 12m · 끝점은 60m · 100m
+             line((_east(2), _north(-3)), (_east(2), _north(-40)))]         # 1 골목 — 막힘 · 끝점이 센터에서 3.6m
+    monkeypatch.setattr(ev, "STATIONS", {"센터": (_east(0), LAT0)})
+    nid, pos = ev.build_nodes(feats)
+    graph = ev.build_graph(feats, nid, None)
+    alley_end, _ = ev._snap(pos, graph, _east(0), LAT0)
+    assert alley_end == nid[2], "전제 — 최근접 노드는 골목 끝이다"
+    at = ev.station_nodes(feats, nid, ok={0})
+    assert at["센터"] == nid[1] != alley_end, "센터가 통행 가능한 간선이 아니라 골목 끝에 붙었다"
+    assert ev.station_nodes(feats, nid, ok=set())["센터"] is None, "통행 가능한 길이 없는데 아무 노드나 돌려줬다"

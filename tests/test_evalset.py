@@ -9,6 +9,7 @@ PARAM 없음
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 
 import evalgen
@@ -289,5 +290,220 @@ def test_score_refuses_a_row_without_seg_uid_and_a_dead_seg_uid_and_a_key_withou
 def test_score_never_looks_a_segment_up_by_seg_id() -> None:
     """회귀 — 구간 찾기가 `by_id[...]` 로 돌아가면 이 줄이 우는 것이 아니라 위 시험이 운다. 여기서는 글자로도 못박는다."""
     body = (ROOT / "tools/evalset.py").read_text(encoding="utf-8")
-    body = body[body.index("def score("):body.index("def selftest(")]
+    body = body[body.index("def score("):body.index("# ── 거리뷰 판독표")]      # score 의 몸통만(뒤의 판독표 절은 아래 시험이 따로 든다)
     assert "by_id[" not in body and "by_id =" not in body, "score 가 seg_id 로 구간을 찾는다(재발행하면 밀린다)"
+
+
+# ── 거리뷰 판독표 — 가설 검정 (묶음 ㉘ · PLAN #187) ────────────────────────────────────────────────
+# IN tools/evalset.py 의 rv_* · data/field/roadview_hypo_2611.csv · 발행본 · data/processed/width_samples.csv   OUT 없음(검사)   PARAM 없음
+# 밖 사람의 판독이 **옳은가** · 가설이 **좋은 가설인가**는 안 본다 — 칸 · 허용값 · 행마다 묻는 것이 있는가 · 좌표가 최소폭 표본 지점인가 · 대조군이 표에 안 드러나는가 · 검정이 다 채운 뒤에만 나오는가를 본다. 키 파일은 안 연다.
+FIELD = ROOT / "data/field"
+HY_M = 0.0004 / 44.0            # 합성 구간(북쪽으로 44m)의 1m 가 위도로 몇 도인가
+
+
+def _hy_world(extra: dict | None = None) -> tuple[list[dict], dict[str, list[dict]]]:
+    """합성 구간과 표본. 구간마다 북쪽으로 44m 곧은 선 · 표본 22개(s = 1, 3, …, 43) · 최소폭은 표본 #1(s = 3m)이다."""
+    kinds = [(u, 8.0, 2.6, 4.8) for u in E.RV_NAMED] + [(f"A{i}", 6.0, 2.5, 3.0) for i in range(10)] + [(f"C{i:02d}", 6.0, 5.5, 5.6) for i in range(24)] \
+        + [(f"B{i}", 3.0, 2.0, 4.0) for i in range(9)] + [(f"D{i}", 4.0, 9.0, 9.5) for i in range(8)]
+    feats, samples = [], {}
+    for i, (u, b, w, m) in enumerate(kinds):
+        x = 126.9 + i * 1e-3
+        p = {"seg_id": f"DM{i:05d}", "seg_uid": u, "road_name": "가로", "length_m": 44.0, "width_min_m": w, "width_med_m": m, "road_bt_m": b,
+             "width_min_sample_idx": 1, "verdict": "unknown", **(extra or {}).get(u, {})}
+        feats.append({"type": "Feature", "geometry": {"type": "LineString", "coordinates": [[x, 35.1], [x, 35.1004]]}, "properties": p})
+        samples[u] = [{"seg_uid": u, "seg_id": p["seg_id"], "s_m": f"{2 * k + 1}.0", "w_m": str(w if k == 1 else m)} for k in range(22)]
+    return feats, samples
+
+
+def _hy_sheet(tmp_path: Path, fill: dict[str, dict] | None = None, extra: dict | None = None):
+    """합성 판독표를 쓴다. `fill` = seg_uid → 채울 칸."""
+    feats, samples = _hy_world(extra)
+    table = E.rv_build(feats, samples, E.rv_draw(feats, samples))
+    for r in table:
+        r.update((fill or {}).get(r["seg_uid"], {}))
+    path = tmp_path / E.RV_FILE
+    E.rv_write(table, path)
+    return path, feats, samples, table
+
+
+def _hy_real():
+    if not E.SAMPLES.exists() or not SEG_PUB.exists():
+        pytest.skip("환경skip(산출물) — data/processed/width_samples.csv 또는 web/data/segments.geojson 이 없다")
+    return json.loads(SEG_PUB.read_text(encoding="utf-8"))["features"], E.rv_samples(), _table_rows(FIELD / E.RV_FILE)
+
+
+def _roles(feats: list[dict], samples: dict, rows: list[dict]) -> list[tuple[str, str | None]]:
+    by = {f["properties"]["seg_uid"]: f["properties"] for f in feats}
+    return [(r["가설"], E.rv_role(r["가설"], by[r["seg_uid"]], samples[r["seg_uid"]])) for r in rows]
+
+
+SEEN = {"거리뷰": "있다", "포장폭": "중간", "촬영시점": "2025-04"}
+
+
+def test_the_hypothesis_sheet_is_whole_and_blank_or_valid() -> None:
+    """실물 — 칸 · 행 수 · 허용값 · 가설군/대조군 수가 맞다. 전수표 셋(55 · 27 · 64행)은 지웠다 — 돌아오면 운다(64지점 표는 119 출동 위치가 드러난다)."""
+    feats, samples, rows = _hy_real()
+    bad, stat = E.rv_check(FIELD / E.RV_FILE, feats, samples)
+    assert not bad and stat["행"] == E.RV_N == len(rows) and 25 <= E.RV_N <= 40, (bad[:3], stat)
+    assert not [n for n in ("roadview_evalset_2611.csv", "roadview_wmax_2611.csv", "roadview_blocked_2611.csv") if (FIELD / n).exists()], "전수 판독표가 돌아왔다"
+    assert all(5 <= h[0] <= 10 and 5 <= h[1] <= 10 for h in E.RV_HYPO.values()), "한 가설의 가설군 · 대조군은 각각 5~10 이다"
+
+
+def test_the_sheet_carries_the_rule_in_words_and_nothing_that_drags_the_eye() -> None:
+    text = (FIELD / E.RV_FILE).read_text(encoding="utf-8")
+    head = "\n".join(ln for ln in text.splitlines() if ln.startswith("#"))
+    for word in ("전수 조사가 아니다", "최소폭을 잰 바로 그 표본 지점", "구간 중점도 도로명도 아니다", "s_m ÷ 구간 길이", "width_min_sample_idx", "피셔 정확검정", "유의수준 0.05", "귀무가설",
+                 "대조군인지도 없다", "가림", "YYYY-MM", "--roadview-check", *(h[7] for h in E.RV_HYPO.values()), *(h[4] for h in E.RV_HYPO.values())):
+        assert word in head, f"머리말에 「{word}」가 없다"
+    cols = text[len(head):].strip().splitlines()[0].split(",")
+    rows = _table_rows(FIELD / E.RV_FILE)
+    assert tuple(cols) == E.RV_COLS and not {"width_min_m", "width_med_m", "road_bt_m", "verdict", "length_m", "s_m", "역할", "묶음", "group", "대조군", "가설군"} & set(cols), cols
+    assert all(r["카카오로드뷰"] == f"https://map.kakao.com/link/roadview/{r['위도']},{r['경도']}" and r["네이버지도"].endswith(f"/{r['위도']},{r['경도']}") for r in rows)
+    assert [int(r["순번"]) for r in rows] == list(range(1, len(rows) + 1))
+
+
+def test_every_row_asks_what_its_hypothesis_asks() -> None:
+    """행마다 「그 점에서 묻는 것」이 있고 가설마다 다르다 — 「3m 넘나」 하나로 뭉개지 않는다. 답의 허용값은 묻는 줄 끝에 다 적혀 있다."""
+    rows = _table_rows(FIELD / E.RV_FILE)
+    assert all(r["묻는것"].strip() and r["묻는것"] == E.RV_HYPO[r["가설"]][4] for r in rows)
+    assert len({h[4] for h in E.RV_HYPO.values()}) == len(E.RV_HYPO) == len({r["가설"] for r in rows}) >= 3, "가설마다 묻는 것이 달라야 한다"
+    for k, h in E.RV_HYPO.items():
+        tail = h[4].split("—")[-1]
+        assert "—" in h[4] and all(a in tail for a in h[5]) and set(h[6]) < set(h[5]) and "가림" in h[5] and "가림" not in h[6], f"가설 {k}: 묻는 줄 끝에 허용 답이 다 없다"
+        assert "," not in h[4], "묻는 줄에 쉼표가 있으면 CSV 칸이 따옴표로 싸여 손으로 채우기 어렵다"
+
+
+def test_the_coordinate_is_the_min_width_sample_point_not_the_midpoint() -> None:
+    feats, samples, rows = _hy_real()
+    by = {f["properties"]["seg_uid"]: f for f in feats}
+    far = 0
+    for r in rows:
+        f = by[r["seg_uid"]]
+        p, got = f["properties"], samples[r["seg_uid"]][int(f["properties"]["width_min_sample_idx"])]
+        assert abs(float(got["w_m"]) - p["width_min_m"]) <= E.RV_TOL_M, f"{r['seg_uid']}: 그 표본이 발행 최소폭을 낸 표본이 아니다"
+        lat, lon, brg = E.rv_point(f["geometry"]["coordinates"], float(got["s_m"]) / p["length_m"])
+        assert (r["위도"], r["경도"], r["보는방향"]) == (f"{lat:.6f}", f"{lon:.6f}", brg), f"{r['seg_uid']}: 좌표가 최소폭 표본 지점이 아니다"
+        mlat, mlon, _ = E.rv_point(f["geometry"]["coordinates"], 0.5)
+        far += math.hypot((lon - mlon) * math.cos(math.radians(lat)) * 111_320, (lat - mlat) * 110_950) > 5.0
+    assert far >= len(rows) // 2, f"중점에서 5m 넘게 떨어진 행이 {far}/{len(rows)} — 좌표가 구간 중점으로 돌아갔다"
+    feats, samples = _hy_world()                                   # 합성 — 최소폭 표본은 s = 3m(44m 구간의 시작 쪽)이다. 중점(22m)이 아니다
+    row = E.rv_build(feats, samples, [("가", "A0")])[0]
+    assert float(row["위도"]) == pytest.approx(35.1 + 3 * HY_M, abs=2e-6) and abs(float(row["위도"]) - 35.1002) > 1e-4, row["위도"]
+
+
+def test_the_control_rows_do_not_show_and_the_draw_is_reproducible() -> None:
+    """대조군 여부는 표에 없다 — 열쇠 파일도 없다. 규칙(`rv_role`)과 시드로 다시 나온다. 행 순서도 가설군 · 대조군을 흘리지 않는다."""
+    feats, samples, rows = _hy_real()
+    assert [(r["가설"], r["seg_uid"]) for r in rows] == E.rv_draw(feats, samples), "실물 표가 지금 발행본 · 시드에서 다시 뽑은 명단과 다르다"
+    roles = _roles(feats, samples, rows)
+    for k, h in E.RV_HYPO.items():
+        assert (roles.count((k, "가설군")), roles.count((k, "대조군"))) == h[:2], (k, roles)
+    assert roles.count(("가", "지명")) == len(E.RV_NAMED) == 2 and {r["seg_uid"] for r in rows} >= set(E.RV_NAMED)
+    seq = [role for _, role in roles if role != "지명"]
+    assert seq != sorted(seq) and seq != sorted(seq, reverse=True), "행 순서가 가설군 · 대조군 순이다"
+    text = (FIELD / E.RV_FILE).read_text(encoding="utf-8")
+    body = "\n".join(ln for ln in text.splitlines() if not ln.startswith("#"))
+    assert "대조군" not in body and "가설군" not in body and "지명" not in body, "표 본문에 묶음이 실렸다"
+    assert not list(FIELD.glob("roadview_hypo*key*")), "열쇠 파일을 따로 두지 않는다 — 규칙으로 다시 나온다"
+    pub = {f["properties"]["seg_uid"]: f["properties"] for f in feats}
+    leak = {str(pub[r["seg_uid"]][c]) for r in rows for c in ("width_min_m", "width_med_m", "road_bt_m")} & {r[c] for r in rows for c in E.RV_PRE if c != "순번"}
+    assert not leak, f"표의 칸에 우리 폭 · 대장폭이 실렸다 {sorted(leak)[:3]}"
+
+
+def test_rv_role_follows_the_written_rules() -> None:
+    rows = [{"s_m": "1.0", "w_m": "9.9"}, {"s_m": "3.0", "w_m": "2.5"}]
+    p = {"seg_uid": "X", "length_m": 44.0, "width_min_m": 2.5, "width_med_m": 3.0, "road_bt_m": 6.0, "width_min_sample_idx": 1}
+    role = lambda hyp, **kw: E.rv_role(hyp, {**p, **kw}, [rows[0], {**rows[1], "w_m": str(kw.get("width_min_m", 2.5))}])  # noqa: E731 — 시험 안의 한 줄 도우미다
+    assert role("가") == "가설군" and role("가", width_min_m=3.0) is None and role("가", road_bt_m=8.01) is None and role("가", width_min_m=0.99) is None
+    assert role("가", width_min_m=5.0) == "대조군" and role("가", width_min_m=4.99) is None
+    assert role("나", road_bt_m=3.0, width_med_m=3.75) == "가설군" and role("나", road_bt_m=3.0, width_med_m=3.7) is None and role("나") is None, "가설 가의 구간이 나에 겹쳐 들었다"
+    assert role("나", width_min_m=4.5, width_med_m=5.0) == "대조군" and role("나", width_min_m=4.4, width_med_m=5.0) is None
+    assert role("다", width_min_m=9.0) == "가설군" and role("다", width_min_m=8.99) is None and role("다", width_min_m=15.0, road_bt_m=12.0) is None
+    assert role("다", width_min_m=6.5, width_med_m=6.6) == "대조군" and role("다", road_bt_m=2.0, width_min_m=2.5) is None, "거리뷰가 안 들어가는 3m 미만을 대조군으로 뽑았다"
+    assert role("가", length_m=14.9) is None, "교차부 안의 짧은 조각을 뽑았다"
+    assert E.rv_role("가", p, [rows[0], {**rows[1], "w_m": "2.6"}]) is None and E.rv_role("가", {**p, "width_min_sample_idx": None}, rows) is None, "최소폭 표본을 못 대는 구간을 뽑았다"
+    assert E.rv_role("가", {**p, "seg_uid": E.RV_NAMED[0]}, rows) == "지명" and E.rv_role("나", {**p, "seg_uid": E.RV_NAMED[0]}, rows) is None
+
+
+def test_rv_point_interpolates_along_the_line_and_keeps_the_travel_bearing() -> None:
+    lat, lon, brg = E.rv_point([[126.9, 35.1004], [126.9, 35.1]], 0.25)       # 남쪽으로 그은 선의 1/4 지점
+    assert (lat, lon, brg) == (35.1003, 126.9, "남 180°"), (lat, lon, brg)     # 방위를 북쪽 반원으로 접지 않는다 — 표본 위치가 느는 쪽이다
+    lat, lon, brg = E.rv_point([[126.9, 35.1], [126.9, 35.1002], [126.9002, 35.1002]], 1.0)
+    assert (lat, lon) == (35.1002, 126.9002) and brg.startswith("동 "), (lat, lon, brg)
+    assert E.rv_point([[126.9, 35.1], [126.9, 35.1004]], -1.0)[0] == 35.1 and E.rv_point([[126.9, 35.1], [126.9, 35.1004]], 9.0)[0] == 35.1004
+
+
+def test_rv_check_passes_a_good_row_and_catches_each_break(tmp_path: Path) -> None:
+    in_a = next(r["seg_uid"] for r in _hy_sheet(tmp_path)[3] if r["seg_uid"].startswith("A"))     # 가설 「가」의 가설군 한 행
+    path, feats, samples, table = _hy_sheet(tmp_path, {in_a: {**SEEN, "답": "한쪽"}})
+    bad, stat = E.rv_check(path, feats, samples)
+    assert not bad and stat["채운 행"] == 1 and stat["행"] == E.RV_N, bad
+    breaks = {"허용값": {"답": "터졌다"}, "허용값 ": {"포장폭": "3.2"}, "허용값  ": {"거리뷰": "예"}, "YYYY-MM": {"촬영시점": "2025.4"}, "채우다 만": {"포장폭": ""},
+              "채우다 만 ": {"거리뷰": "없다"}, "채우다 만  ": {"거리뷰": ""}, "채우다 만   ": {"촬영시점": ""}, "최소폭 표본 지점": {"위도": "35.100200"}, "최소폭 표본 지점 ": {"묻는것": ""},
+              "최소폭 표본 지점  ": {"보는방향": "남 180°"}, "규칙 밖": {"가설": "다"}}
+    for want, cell in breaks.items():
+        path, feats, samples, _ = _hy_sheet(tmp_path, {in_a: {**SEEN, "답": "한쪽", **cell}})
+        bad, _ = E.rv_check(path, feats, samples)
+        assert any(want.strip() in b for b in bad), f"{cell} 를 못 잡는다 — {bad}"
+    path, feats, samples, _ = _hy_sheet(tmp_path, {in_a: {"거리뷰": "없다"}})            # 거리뷰가 없으면 그 한 칸으로 온전한 행이다
+    assert E.rv_check(path, feats, samples)[0] == []
+    assert any("행 수" in b for b in E.rv_check(path, feats, samples, n=55)[0]), "행 수가 다른데 안 운다"
+    moved, _ = _hy_world({in_a: {"road_bt_m": 20.0}})                                    # 재발행으로 그 구간이 규칙 밖으로 나갔다
+    assert any("규칙 밖" in b for b in E.rv_check(path, moved, samples)[0]) and any("가설군 · 대조군 수" in b for b in E.rv_check(path, moved, samples)[0])
+    assert any("규칙 밖" in b for b in E.rv_check(path, feats[1:], samples)[0]), "발행본에 없는 구간인데 안 운다"
+    lines = path.read_text(encoding="utf-8").splitlines()
+    path.write_text("\n".join([*lines[:-1], lines[-2]]) + "\n", encoding="utf-8")
+    assert any("두 번" in b for b in E.rv_check(path, feats, samples)[0]), "같은 구간이 두 번 든 것을 못 잡는다"
+    path.write_text(path.read_text(encoding="utf-8").replace("순번,가설", "순번,묶음", 1), encoding="utf-8")
+    assert any("칸이 다르다" in b for b in E.rv_check(path, feats, samples)[0])
+
+
+def test_the_verdict_comes_only_when_a_hypothesis_is_fully_answered(tmp_path: Path) -> None:
+    """중간에 가설군/대조군 수를 내면 어느 행이 대조군인지 샌다 — 다 채운 가설만 가른다. 피셔 정확검정의 수도 댄다."""
+    assert E.rv_fisher(4, 4, 0, 4) == pytest.approx(1 / 70) and E.rv_fisher(0, 5, 0, 5) == 1.0 and E.rv_fisher(3, 6, 3, 6) == pytest.approx(0.7164502)
+    n1, n0 = E.RV_HYPO["가"][:2]
+    assert E.rv_fisher(n1, n1, 0, n0) <= E.RV_ALPHA < E.rv_fisher(n1 // 2, n1, n0 // 2, n0), "이 표본 수로는 완전히 갈려도 기각하지 못한다"
+    feats, samples = _hy_world()
+    picks = E.rv_draw(feats, samples)
+    role = dict(zip([u for _, u in picks], [r for _, r in _roles(feats, samples, [{"가설": h, "seg_uid": u} for h, u in picks])], strict=True))
+    ans = {u: {**SEEN, "답": "양쪽" if role[u] == "가설군" else "없다"} for h, u in picks if h == "가"}
+    part = dict(list(ans.items())[:-1])
+    path, feats, samples, _ = _hy_sheet(tmp_path, part)
+    bad, stat = E.rv_check(path, feats, samples)
+    assert not bad and isinstance(stat["가"], str) and "다 채우면" in stat["가"] and "가설군" not in json.dumps(stat, ensure_ascii=False), stat
+    path, feats, samples, _ = _hy_sheet(tmp_path, ans)
+    bad, stat = E.rv_check(path, feats, samples)
+    assert not bad and stat["가"]["가설군"] == f"{n1}/{n1}" and stat["가"]["대조군"] == f"0/{n0}" and "기각한다" in stat["가"]["판정"] and len(stat["가"]["지명"]) == 2, stat
+    assert isinstance(stat["나"], str), "안 채운 가설의 수가 나왔다"
+    blind = {u: ({"거리뷰": "없다"} if role[u] == "대조군" else {**SEEN, "답": "가림"} if role[u] == "지명" else v) for u, v in ans.items()}
+    path, feats, samples, _ = _hy_sheet(tmp_path, blind)
+    stat = E.rv_check(path, feats, samples)[1]
+    assert stat["가"]["p"] is None and "못 가른다" in stat["가"]["판정"] and stat["가"]["지명"] == ["가림", "가림"], stat
+    same = {u: {**SEEN, "답": "한쪽"} for u in ans}
+    path, feats, samples, _ = _hy_sheet(tmp_path, same)
+    assert "기각하지 못한다" in E.rv_check(path, feats, samples)[1]["가"]["판정"]
+
+
+def test_rv_main_never_overwrites_a_filled_sheet_and_never_opens_the_key(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    feats, samples = _hy_world()
+    seg, smp = tmp_path / "segments.geojson", tmp_path / "width_samples.csv"
+    seg.write_text(json.dumps({"features": feats}), encoding="utf-8")
+    smp.write_text("seg_uid,seg_id,s_m,w_m\n" + "".join(f"{r['seg_uid']},{r['seg_id']},{r['s_m']},{r['w_m']}\n" for v in samples.values() for r in v), encoding="utf-8")
+    monkeypatch.setattr(E, "SEG", seg)
+    monkeypatch.setattr(E, "SAMPLES", smp)
+    monkeypatch.setattr(E, "OUT_KEY", tmp_path / "없는.key.json")
+    assert E.rv_main(False, False, tmp_path) == 0 and E.rv_main(True, False, tmp_path) == 0
+    path = tmp_path / E.RV_FILE
+    blank = path.read_text(encoding="utf-8")
+    assert E.rv_main(False, False, tmp_path) == 0 and E.rv_main(False, True, tmp_path) == 0 and path.read_text(encoding="utf-8") == blank, "같은 입력 · 같은 시드인데 표가 달라졌다"
+    table = _table_rows(path)
+    table[0].update({"거리뷰": "없다"})
+    E.rv_write(table, path)
+    before = path.read_text(encoding="utf-8")
+    assert E.rv_main(False, True, tmp_path) == 0 and path.read_text(encoding="utf-8") == before, "채워진 판독표를 덮어썼다"
+    src = (ROOT / "tools/evalset.py").read_text(encoding="utf-8")
+    body = src[src.index("# ── 거리뷰 판독표"):src.index("def selftest(")]
+    assert "OUT_KEY" not in body and "key.json" not in body and "by_id" not in body, "판독표 절이 키 파일을 건드리거나 seg_id 로 구간을 찾는다"
+    short, _ = _hy_world({f"A{i}": {"length_m": 10.0} for i in range(5)})
+    with pytest.raises(SystemExit, match="못 뽑는다"):
+        E.rv_draw(short, samples)

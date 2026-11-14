@@ -254,9 +254,16 @@ def test_a_form_we_cannot_read_is_not_skipped(tmp_path: Path):
     assert name in m.survey(tmp_path)
 
 
+FIELD_REAL = ROOT / "data" / "field"
+
+
 def test_the_two_real_forms_are_blank_now_and_declared_with_reasons():
     m = _fs()
-    assert set(m.BLANK_FORMS) == {"evalset_2610.csv", "flip_top_2610.csv"}, sorted(m.BLANK_FORMS)
+    # 2026-11-14 (묶음 ㉘). 거리뷰 가설 판독표가 더해져 셋이다(이름의 「two」는 처음 둘의 흔적이다 — 시험 장부가 이름을 키로 들어 안 바꿨다). 전수표 셋은 지웠다.
+    assert set(m.BLANK_FORMS) == {"evalset_2610.csv", "flip_top_2610.csv", "roadview_hypo_2611.csv"}, sorted(m.BLANK_FORMS)
+    assert m.BLANK_FORMS["roadview_hypo_2611.csv"][1] == ("거리뷰", "답", "포장폭", "촬영시점", "메모"), "판독표의 사람 칸(`tools/evalset.py` 의 RV_HUMAN)과 다르다"
+    assert all((FIELD_REAL / n).exists() and m.is_blank_form(FIELD_REAL / n, cols) for n, (_w, cols) in m.BLANK_FORMS.items() if n.startswith("roadview_")) \
+        or any(n in m.survey() for n in m.BLANK_FORMS), "판독표가 없거나, 칸 이름이 실물과 달라 빈 양식으로 안 읽힌다"
     assert all(len(why) >= 30 for why, _ in m.BLANK_FORMS.values())
     assert set(m.skipped()) >= set(m.EXCLUDED), "영구 제외가 빠졌다"
 
