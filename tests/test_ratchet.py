@@ -207,6 +207,14 @@ def test_declared_ratchet_names_equal_produced_names_per_tool():
                 declared |= produced if len(m.RATCHETS) == 1 else keys
             else:
                 declared.add(name)
+        # 레이크 없는 기계는 `ratchet_values()` 가 예외 대신 **이름을 안 낸다**(0 으로 쓰면 조용히 초록 — `contract.py`). 빠져도 되는 것은 소유 모듈이
+        # `LAKE_ONLY` 로 **이름까지** 선언한 것뿐이다(`ratchet.py` 본체와 같은 규칙) — 선언 안 된 이름이 빠지면 그대로 빨강이고, 산출이 선언 밖이어도 빨강이다.
+        lake = m.LAKE_ONLY if isinstance(getattr(m, "LAKE_ONLY", None), dict) else {}
+        missing = declared - produced
+        if missing and missing <= set(lake):
+            assert produced <= declared, f"{p.name}: 산출만 {sorted(produced - declared)[:5]}"
+            skipped += 1
+            continue
         assert declared == produced, (
             f"{p.name}: 선언만 {sorted(declared - produced)[:5]} · 산출만 {sorted(produced - declared)[:5]}")
         checked += 1
