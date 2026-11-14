@@ -4830,6 +4830,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 
 | 파일 | 무엇을 묻나 |
 | --- | --- |
+| `web/navi/test/destFacility.test.ts` | 건물 면의 이름이 **검색에 뜨는가** — 전당 · 법원(알림 칸 `광주지방법원`) · 체육센터 · 의료 면 둘 · 롯데백화점을 이름으로 쳐 `build` 원천 점이 나온다(범위 밖 전남대병원은 걸지 않는다 · DECISIONS §785 · §786-E) |
 | `web/navi/test/status.test.ts` | 화면 상태가 **신호대로 갈리는가.** 한 줄이 열여덟 장을 가르는데 시험이 없었다 |
 | `web/navi/test/demo.test.ts` | 시연이 **GPS 와 무관한가** — 측위 셋 × 모든 단계로: 켜지면 표가 나는가 · 실주행 중에는 못 켜고 단추도 없는가 · 안내 문구가 가리키는 단추가 문구가 뜨는 모든 조건에서 있는가 |
 | `web/navi/test/roadLabels.test.ts` | 도로명이 **이름마다 한 점 · 가로 · 화면 안에 통째로 · 아이콘 층 밑**인가 — 순수 고르기(`pickRoadLabels`)와 층 선언(점 배치 · 화면 기준 가로 · 소화전 · CCTV 보다 아래 층) |
@@ -4873,6 +4874,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `src/firelane/scopetier.py` | 구간마다 **발행 범위 분류** `scope_tier` 를 붙인다 — 대상지 · 회랑 · 지정 · 참고. 구간을 안 떨구고 이름만 붙인다. 지정은 `fireaccess.match` 를 소방서 표 **주소부** 행에 적용한다(새 매처 없음). 판정 폐포 밖 |
 | `src/firelane/clearance.py` | 구간별 **단순 내접원** 칸(`clear_*`)을 출판 때 싣는다 — 판정 폐포 **안**이다(Zm19 · §564 — `segments.py` 가 부르고 `clear_med_m` 을 규칙 [10] 이 읽는다). `clear_min_m` · `clear_max_m` 를 판정이 읽으면 시험이 운다(`tests/test_clearance.py`). R 상수가 없다(R 보정은 측정에서 악화됐다) |
 | `src/firelane/structures.py` | 구간 가까이(50m)의 **입체 구조물**(터널 · 고가 · 교량)을 진단 칸(`struct_*`)으로 싣는다 — 판정 폐포 **밖**이고 판정이 읽으면 시험이 운다(`tests/test_structures.py`). 면은 입력 범위 안만 적재돼 있다(DECISIONS §563) |
+| `src/firelane/bldg_fill.py` | 지도 이동 범위 안에서 **도로명주소 건물 윤곽(`TL_SPBD_BULD`)이 안 가진** 건축물대장 윤곽(`AL_D010`)을 뽑는다 — 동명동 밖 · 덮임 < 10% · 어긋난 같은 건물(무게중심 8m · 면적비 0.5~2) 제외 · 4,296면 → `data/extra/bldg_gap_move.geojson`(표시용 · 판정 입력 아님). 다시 뽑아 커밋된 파일과 바이트 대조(`python -m firelane.bldg_fill`). `tests/test_bldg_fill.py` 가 규칙을 합성 면으로 문다(DECISIONS §786) |
 | `src/firelane/occ.py` | 점유압력 β — 수요점으로 구간의 거주단위/100m(길이 기준 · 12m 평평한 끝 버퍼)와 폭 밴드 안 순위를 낸다. **판정선을 못 넘는다**(`classify.py` 가 읽으면 시험이 운다) |
 | `src/firelane/cli.py` | **명령줄 표면의 관문.** 인자를 거절하는 일만 한다 — 모르는 깃발을 주면 백열여덟 중 스물다섯이 조용히 삼켰다 |
 | `src/firelane/datalog.py` | 데이터 대장 도구. 파이프라인 끝에서 매니페스트를 갱신한다 |
@@ -4931,6 +4933,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `tools/after_squash.py` | **열차가 만든 상태를 다시 본다.** 스쿼시 뒤의 강제자다 |
 | `tools/branch_tidy.sh` | 가지와 PR 정리. **산출물에 안 닿는다** |
 | `tools/closecap.py` | **한 커밋이 닫는 PLAN 행은 셋까지다.** 스테이지된 diff 에서 지워진 행을 세고, 넘으면 DECISIONS 에 더한 사유 줄이 있어야 통과한다. 과거는 보고만 한다 | 닫힌 행이 **옳게** 닫혔는지(`planclose` · 사람의 읽기) · CI(스테이지가 없다) |
+| `tools/firstscreen.py` | **첫 화면이 받는 gzip 바이트** 래칫 — Pages 모양 로컬 서버(응답마다 기록) + 헤드리스 크로미움(`tools/firstscreen_drive.cjs`)으로 내비 · 관제를 재 선언(타일 제외)과 대조한다. 현장 로딩의 진짜 축이다(`web/data` 총량이 아니다 · DECISIONS §787-H). CI `contract-smoke` 가 돈다 | 렌더링 시간(PLAN #246) · 서비스 워커가 든 2회차 · Pages 가 gzip 을 주는지 |
 | `tools/testsplit.py` | **`contract-tests` 의 조각을 CI 에서 잰 파일별 시간(`data/golden/ci_testtimes.json`)으로 가른다**(LPT · 결정적 · 새 파일은 장부 중앙값). 워크플로가 `--part N --of 4` 로 부른다 | 장부의 초가 CI 실측과 맞는지(푸시 뒤 첫 CI 가 그 오차) · 러너 속도 |
 | `ops-worker/scripts/deploy.sh` | **중개자를 Cloudflare 에 올리는 스크립트 — 사람이 친다**(로그인 · 비밀 입력). GitHub 변수 · 비밀은 안 건드리고 다음 명령만 찍는다. `ops-worker/` 가 `server.py` 와 같은 표면(DECISIONS §755) | 계정 · 실제 배포(사람 몫) |
 | `tools/closewords.py` | **행을 닫는 문단의 후속 어휘**(`안 한 것` · `범위가 아니다` · `확인 필요` · `남은 것` · `미뤘다`)는 PLAN 에 실재하는 열린 행 `#M` 을 인용해야 한다. `확인 불가로 닫는다` 는 허용. 카나리아는 `#144` 옛 닫는 문단 | 인용한 행이 그 일을 **정말 드는지**(번호의 실재만 본다) · CI |
@@ -4958,6 +4961,9 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | 파일 | 무엇을 묻나 |
 | --- | --- |
 | `tests/test_closecap.py` | 셋은 통과 · 넷은 사유 없이 막힘 · 사유는 기록된 더한 줄이고 수가 같고 스무 자 이상일 때만 · 훅이 달려 있다 · 실물 과거(29행을 한 커밋에 닫은 것)를 이 문이 막았을 것이다 |
+| `tests/test_dest_facility.py` | 건물 면의 이름이 목적지 색인에 든다 — 두 이름 칸을 다 읽고 이름당 한 점 · 여섯 용도만 · 다른 원천에 같은 이름이 있으면 안 더한다 · 지도 이동 범위 밖(전남대병원)은 안 든다(DECISIONS §785 · §786) |
+| `tests/test_bldg_fill.py` | 빠진 면 고르는 규칙 ①~⑤ 가 합성 면 한 개씩을 거른다 · 좌표계 · 칸이 틀리면 운다 · 쓰기 왕복 · 일치도 표 · 읽기 호출(bbox) (DECISIONS §786) |
+| `tests/test_firstscreen.py` | 첫 화면 래칫이 경계에서 운다 — 선언과 같으면 통과 · 위면 운다 · 선언 없는 화면은 운다 · 타일은 보고만 하고 거르지 않는다(DECISIONS §787-H) |
 | `tests/test_branch_tidy_green.py` | `refs/green/*` 청소가 안전한가 — 정확히 N일은 두고 넘은 것만 가린다 · 날짜를 못 읽은 ref 는 둔다 · 삭제 명령이 `--prune-green` 을 명시한 분기 안에만 있고 `--auto` 는 그것을 안 켠다 |
 | `tests/test_deliver_guards.py` | 배달 도구의 구멍 넷 — 포장 밑동이 끝과 같거나 조상이 아니면 멈춘다(W13-19) · 환경이 없는 워크트리에서 `uv run` 을 거친다(W13-21) · 없는 `--extra` 는 비우기 전에 운다(W13-22) · EXPECT 의 pytest 줄에 벽시계가 없다(W13-24) |
 | `tests/test_evalgen_building.py` | E-1 분모가 노드가 아니라 **건물**인가 — 출입구가 없는 범위 안 건물은 분모에서 안 빠지고 결손 항에 적힌다 · 건물 파일이 없으면 분모 0 으로 초록이 되지 않고 운다 · 판정 산출물의 해시가 평가 전후 같다 · 한 건물에 출입구가 여럿이면 주출입구가 먼저다 · 안전센터가 가장 가까운 골목 끝이 아니라 **앞의 통행 가능한 길**에 붙는가(파이프라인의 `station_node` 를 그대로 부른다 — 지산119안전센터가 3 노드 섬으로 나오던 병 · DECISIONS §782) |
