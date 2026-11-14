@@ -181,7 +181,7 @@ def _lock_graph() -> dict[str, tuple[str, set[str]]]:
     return out
 
 
-def lock_deps(start: str = "firelane.ingest") -> list[str]:
+def lock_deps(start: str = "firelane.ingest", direct_only: bool = False) -> list[str]:
     """`start` 의 폐포가 **실제로 기대는** 패키지 — `이름==판` 정렬 (DECISIONS §345).
 
     종전에는 `uv.lock` **파일 전체**를 해시했고 주석은 「geopandas 판이 바뀌면
@@ -225,6 +225,11 @@ def lock_deps(start: str = "firelane.ingest") -> list[str]:
             "  ★ 조용히 빼지 않는다 — 빼면 그 패키지의 판이 움직여도 지문이\n"
             "    안 움직이고, 그것은 낡은 산출물을 재사용하는 방향이다.")
 
+    if direct_only:
+        # ★ W13-29. 폐포가 **직접 import 하는** 패키지의 판만 — 전이 의존(`certifi` 같은 TLS 번들)은 뺀다. `golden` 만 쓴다(사람이 정했다).
+        #   기본은 전이까지 센다 — 샤드 봉인(`code_print`)은 `pyogrio` 같은 전이 의존이 실제로 읽으므로 안 좁힌다.
+        return sorted(f"{n}=={graph[n][0]}" for n in seeds)
+
     seen: set[str] = set()
     stack = list(seeds)
     while stack:
@@ -242,7 +247,7 @@ def lock_deps(start: str = "firelane.ingest") -> list[str]:
 SEALED_AXES = ("firelane.ingest", "firelane.segments", "firelane.ortho")
 
 
-def lock_print(start: str = "firelane.ingest") -> str:
+def lock_print(start: str = "firelane.ingest", direct_only: bool = False) -> str:
     """위 목록의 지문. 잠금이 없으면 빈 문자열 — 호출부가 그때 줄을 안 넣는다.
 
     ★ `ROOT` 를 **호출 때** 읽는다. 모듈 적재 때 묶으면 합성 트리 시험이 진짜
@@ -250,7 +255,7 @@ def lock_print(start: str = "firelane.ingest") -> str:
     """
     if not (ROOT / "uv.lock").is_file():
         return ""
-    return _short("\n".join(lock_deps(start)))
+    return _short("\n".join(lock_deps(start, direct_only)))
 
 
 def code_print(start: str = "firelane.ingest") -> str:

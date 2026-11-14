@@ -228,10 +228,30 @@ def test_only_a_stale_stamp_is_one_lap_and_moves_nothing_back():
     assert (f.sure, f.most, f.capped) == (1, 1, False)
 
 
-def test_an_unsealed_stamp_tightens_the_ratchet_so_it_is_two_laps_and_says_why():
+def test_an_unsealed_stamp_is_first_in_the_order_so_it_is_one_lap_and_still_says_why():
+    """2026-11-14 — ㉢ 이 래칫 **앞**이다. 도장을 먼저 찍어 `UNSEALED` 를 조이면 그 뒤의 래칫이
+    같은 바퀴에서 조여진 상수를 쓴다. 종전 순서(㉠ ㉤ ㉡ ㉢)에서는 확정 2바퀴였다(사람이 그 순서로
+    쳐서 2 → 1 로 줄었음이 실증됐다)."""
     f = P.forecast([_blk("㉢")])
-    assert f.sure == 2, "도장 없는 절을 찍으면 UNSEALED 가 조여져 래칫을 다시 쳐야 한다 — 확정 2바퀴"
-    assert any("UNSEALED" in x for x in f.lines)
+    assert f.sure == 1, "㉢ 이 래칫 앞인데 확정 바퀴가 1 이 아니다"
+    assert any("UNSEALED" in x for x in f.lines), "㉢→㉠ 변의 사유(UNSEALED)를 안 말한다"
+
+
+def test_the_whole_chain_in_the_declared_order_is_one_sure_lap():
+    f = P.forecast([_blk("㉢"), _blk("㉠", [WRITE]), _blk("㉤"), _blk("㉡")])
+    assert f.sure == 1 and f.capped and f.most == P.LAP_CAP
+
+
+def test_the_old_order_would_cost_two_laps_so_the_new_order_is_load_bearing(monkeypatch):
+    """순서를 되돌리면 확정 바퀴가 늘어야 한다 — 순서가 장식이 아니라는 증거."""
+    monkeypatch.setattr(P, "ORDER", ["㉠", "㉤", "㉡", "㉢"])
+    assert P.forecast([_blk("㉢")]).sure == 2
+
+
+def test_the_order_the_human_walks_is_the_order_the_report_lists_and_the_forecast_uses():
+    chain = [k for k, _ in P.CHECKS if k in P.ORDER]
+    assert chain == P.ORDER, "목록 순서(사람이 칠 순서)와 forecast 의 ORDER 가 갈렸다"
+    assert P.ORDER == ["㉢", "㉠", "㉤", "㉡"]
 
 
 def test_ratchet_then_ledger_then_stamp_is_one_sure_lap_but_can_come_back_without_a_fixed_point_claim():
@@ -385,3 +405,41 @@ def test_a_check_that_raises_in_parallel_kills_the_survey_not_turns_green():
         assert "죽은 칸" in str(e)
     else:
         raise AssertionError("죽은 칸이 초록으로 읽혔다")
+
+
+def test_the_branch_sync_is_named_as_a_human_step_and_no_workflow_moves_branches():
+    """PLAN #221 — 「브로드캐스트」라는 이름이 **사람이 치는** 단계를 자동 과정처럼 말했다(두 번 헛되이 기다렸다).
+
+    ① `.github/workflows` 에 가지를 옮기는 명령(`git push` · `git merge` · `gh pr merge` · `update-branch`)이 **실행 줄로** 한 곳도 없다
+       (`::error::`/`echo` 안내문과 `merge-base` 는 실행이 아니다) — 이 사실이 깨지면(자동화가 생기면) 아래 ② 의 문장이 거짓이 된다.
+    ② 코드 · 시험 · 워크플로(문서 `docs/` 는 주인이 따로 고친다)에서 낱말 「브로드캐스트」가 나오면 **같은 줄 ±2줄 안**에 사람 손임을 말하는 낱말(`사람이` · `merge_batch`)이 있다.
+    밖  `docs/DECISIONS.md` 2곳 · `docs/MASTER.md` 1곳은 이 시험이 안 본다 — 문서 정리가 끝나면 `DOCS` 에 넣는다.
+    """
+    import re
+
+    mover = re.compile(r"git push|git merge(?!-base)|gh pr merge|update-branch")
+
+    def runs_a_mover(line: str) -> bool:
+        t = line.strip()
+        return bool(mover.search(t)) and not t.startswith("#") and "::error::" not in t and not t.startswith("echo")
+
+    assert runs_a_mover("        run: git push origin HEAD") and not runs_a_mover('echo "::error::x — git merge origin/main"')   # 합성 결함
+    wf = sorted((ROOT / ".github" / "workflows").glob("*.yml"))
+    hits = [f"{f.name}:{i}" for f in wf for i, ln in enumerate(f.read_text(encoding="utf-8").splitlines(), 1) if runs_a_mover(ln)]
+    assert not hits, f"워크플로가 가지를 옮긴다 — 「사람이 친다」는 서술이 거짓이 됐다: {hits}"
+
+    def unmarked(lines: list[str]) -> list[int]:
+        return [i + 1 for i, ln in enumerate(lines) if "브로드캐스트" in ln
+                and not any(k in " ".join(lines[max(0, i - 2): i + 3]) for k in ("사람이", "merge_batch"))]
+
+    assert unmarked(["이 단계는 브로드캐스트가 한다"]) == [1] and unmarked(["브로드캐스트 — 사람이 친다"]) == []   # 합성 결함
+    tracked = subprocess.run(["git", "ls-files", "tools", "src", "tests", ".github"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.split()
+    bad = {}
+    for rel in tracked:
+        p = ROOT / rel
+        if p.suffix not in (".py", ".sh", ".yml", ".ts", ".tsx", ".md") or p.name == "test_pushready.py":
+            continue
+        u = unmarked(p.read_text(encoding="utf-8", errors="replace").splitlines())
+        if u:
+            bad[rel] = u
+    assert not bad, f"「브로드캐스트」가 사람 손임을 안 말한다: {bad}"

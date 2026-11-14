@@ -6,6 +6,12 @@
 #   bash tools/branch_tidy.sh --auto       비대화 — fl.sh 가 배치 끝에 부른다
 #   bash tools/branch_tidy.sh --keep feat/x   이 가지(와 그 PR)는 건드리지 않는다
 #   bash tools/branch_tidy.sh --auto --close-bots   ★ fl.sh 기본 — 봇(dependabot) PR 은 닫고 가지도 지운다
+#   bash tools/branch_tidy.sh --prune-green [--green-days N]   ★ 머지된 지 N일(기본 30)이 넘은 `refs/green/*` 를 원격에서 **지운다**(인자 없으면 세어서 보고만 한다)
+#
+# ★ 2026-11-14 (PLAN §13 W13-20). `refs/green/<나무>` 는 `fl.sh` 가 스쿼시 직전에 적고 CI 가 읽어 전체 테스트를 건너뛰는 근거다. **만드는 자는 있고 지우는 자가 없었다.**
+#   5절이 원격의 `refs/green/*` 를 세고 가리키는 커밋의 날짜로 낡은 것을 가른다. **지우는 것은 `--prune-green` 을 명시했을 때뿐이다** — 기본은 읽기만 한다
+#   (그래서 `fl.sh` 의 `--auto --close-bots` 호출은 아무것도 안 지운다). 날짜를 못 읽은 ref 는 **둔다**(모를 때는 지우는 쪽이 아니라 두는 쪽이다).
+#   N=30: 같은 나무가 한 달 뒤 다시 오는 것은 되돌림(revert)뿐이고, 그 대가는 CI 한 번이다 — 반대로 안 지우면 1년에 수백 개가 쌓인다.
 #
 # ★ 2026-09-22 (DECISIONS §217-4) `--close-bots`. 사용자가 열린 PR 도 닫고 가지도 정리해야 한다고
 #   지적했다. 봇 PR 은 흐름(feat → part → dev → main) 밖이라 **그대로 머지할 길이
@@ -29,12 +35,16 @@ REPO=CleverAIFox/fire-lane
 KEEP_RE='^(main|dev|part/infra|part/gis|part/cv)$'
 AUTO=0
 BOTS=0
+PRUNE_GREEN=0
+GREEN_DAYS=30
 EXTRA=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --auto) AUTO=1; shift ;;
     --close-bots) BOTS=1; shift ;;
     --keep) EXTRA+=("$2"); shift 2 ;;
+    --prune-green) PRUNE_GREEN=1; shift ;;
+    --green-days) GREEN_DAYS="$2"; shift 2 ;;
     *) echo "모르는 인자: $1" >&2; exit 2 ;;
   esac
 done
@@ -51,6 +61,13 @@ ask() {
 }
 say() { printf '\n══ %s\n' "$*"; }
 WARN=0
+
+# 낡은 green ref 를 가린다. 표준입력: `<ref>\t<커밋 시각(epoch)>` 한 줄씩 · 인자: 일수 · 지금(epoch).
+# ★ 시각이 숫자가 아니면(못 읽었다) **안 낸다** — 모를 때는 둔다.
+green_stale() { awk -F'\t' -v d="$1" -v now="$2" '$2 ~ /^[0-9]+$/ && now - $2 > d * 86400 { print $1 }'; }
+
+# 시험이 함수만 읽으려고 `BRANCH_TIDY_LIB=1 source` 한다 — 아래는 저장소를 건드린다.
+[ "${BRANCH_TIDY_LIB:-}" = 1 ] && return 0
 
 cd "$(git rev-parse --show-toplevel)"
 git fetch -q --prune origin
@@ -252,6 +269,30 @@ for b in main dev part/infra part/gis part/cv; do
     git branch -q -f "$b" "origin/$b" && echo "   ✓ $b"
   fi
 done
+
+# ── 5. refs/green/* ─────────────────────────────────────────────
+say "5. refs/green/* (CI 가 전체 테스트를 건너뛰는 근거 · 나무당 하나)"
+mapfile -t GR < <(git ls-remote origin 'refs/green/*' 2>/dev/null | awk '{print $1"\t"$2}' || true)
+if [ ${#GR[@]} -eq 0 ] || [ -z "${GR[0]:-}" ]; then echo "   없음"
+elif [ "$HAVE_GH" = 0 ]; then echo "   ${#GR[@]} 개 — gh 로그인이 없어 날짜를 못 읽는다(건드리지 않는다)"
+else
+  GL=()
+  for l in "${GR[@]}"; do
+    IFS=$'\t' read -r sha ref <<<"$l"
+    d=$(gh api "repos/$REPO/git/commits/$sha" --jq '.committer.date | fromdateiso8601' 2>/dev/null || echo "?")
+    GL+=("$ref"$'\t'"$d")
+  done
+  mapfile -t STALE < <(printf '%s\n' "${GL[@]}" | green_stale "$GREEN_DAYS" "$(date +%s)")
+  echo "   원격 ${#GR[@]} 개 · ${GREEN_DAYS}일이 넘은 것 ${#STALE[@]} 개"
+  if [ ${#STALE[@]} -gt 0 ] && [ -n "${STALE[0]:-}" ]; then
+    if [ "$PRUNE_GREEN" = 1 ]; then
+      for r in "${STALE[@]}"; do git push -q origin --delete "$r" && echo "   ✓ $r" || echo "   ! $r 실패"; done
+    else
+      printf '   %s\n' "${STALE[@]}"
+      echo "   ★ 읽기만 했다. 지우려면: bash tools/branch_tidy.sh --prune-green [--green-days $GREEN_DAYS]"
+    fi
+  fi
+fi
 
 say "끝"
 [ "$HAVE_GH" = 1 ] && echo "   열린 PR  $(gh pr list -R "$REPO" --state open --json number --jq length)"

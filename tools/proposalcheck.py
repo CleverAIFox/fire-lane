@@ -229,6 +229,75 @@ def ratchet_values() -> dict[str, int]:
             "LONG_MAX_LEN": max(lens, default=0)}
 
 
+HTML = ROOT / "web" / "proposal.html"
+#: 켜는 규칙 한 줄 — 지어진 화면은 공백을 접어 `#t0:checked~main #p0{display:block}`.
+RULE_RE = re.compile(r"#t(\d+):checked\s*~\s*main\s+#p(\d+)\s*[,{]")
+
+
+def pane_faults(html: str | None) -> list[str]:
+    """**지어진 화면의 칸 수 = 켜는 규칙 수 = 라디오 수** (W13-18 · DECISIONS §539).
+    `.pane{display:none}` 만 남고 켜는 줄이 없으면 네 칸이 전부 꺼진 채 발행된다 —
+    정본(md)도 빌드 시험도 초록이던 병이다. 못 읽으면 0건이 아니라 **실패**다."""
+    if html is None:
+        return [f"{HTML.relative_to(ROOT)} 이 없다 — 화면을 못 봤다"]
+    panes = len(re.findall(r'<section class="pane" id="p\d+"', html))
+    radios = len(re.findall(r'<input type="radio" name="pane"', html))
+    on = {int(a) for a, b in RULE_RE.findall(html) if a == b}
+    out = []
+    if panes < 2:
+        out.append(f"화면 — 칸이 {panes}개다(둘 미만)")
+    miss = sorted(set(range(panes)) - on)
+    if miss:
+        out.append(f"화면 — 칸 {panes}개 중 켜는 규칙이 없는 칸 {miss} — 영영 안 보인다")
+    if radios != panes:
+        out.append(f"화면 — 라디오 {radios}개 · 칸 {panes}개")
+    return out
+
+
+#: 헤드리스 — 이 저장소가 쓰는 길(`web/navi` 의 `@playwright/test` + 내려받은 크로뮴).
+_HEADLESS_JS = """
+import { chromium } from "@playwright/test";
+const b = await chromium.launch(); const p = await b.newPage();
+await p.goto(process.argv[1]);
+const n = await p.evaluate(() => document.querySelectorAll("input[name=pane]").length);
+const out = [];
+for (let k = 0; k < n; k++) {
+  await p.evaluate((k) => document.getElementById("t" + k).click(), k);
+  out.push(await p.evaluate((k) => { const e = document.getElementById("p" + k);
+    return [getComputedStyle(e).display, e.innerText.trim().length]; }, k));
+}
+console.log(JSON.stringify(out)); await b.close();
+"""
+
+
+def headless_lens(url: str = HTML.as_uri()) -> tuple[list[list], str | None]:
+    """칸마다 [display, 글자 수]. 못 띄우면 **사유**를 낸다(없는 것은 초록이 아니다)."""
+    navi = ROOT / "web" / "navi"
+    if not (navi / "node_modules" / "@playwright").is_dir():
+        return [], "web/navi/node_modules/@playwright 가 없다 — `npm ci` 가 필요하다"
+    try:
+        r = subprocess.run(["node", "--input-type=module", "-e", _HEADLESS_JS, url],  # noqa: S603 S607
+                           cwd=navi, capture_output=True, text=True, timeout=90, check=False)
+    except (OSError, subprocess.TimeoutExpired) as e:
+        return [], f"헤드리스를 못 띄웠다: {e}"
+    if r.returncode != 0:
+        return [], f"헤드리스 rc={r.returncode} {r.stderr.strip()[:160]}"
+    try:
+        return json.loads(r.stdout.strip().splitlines()[-1]), None
+    except (ValueError, IndexError):
+        return [], f"헤드리스 출력을 못 읽었다: {r.stdout[:120]!r}"
+
+
+def headless_faults(lens: list[list], why: str | None) -> list[str]:
+    """칸을 눌렀을 때 **보이고(display≠none) 글자가 0자가 아닌가.**"""
+    if why:
+        return [f"헤드리스 — {why}"]
+    if not lens:
+        return ["헤드리스 — 칸을 하나도 못 봤다"]
+    return [f"헤드리스 — 칸 p{k} 를 켰는데 display={d} · 글자 {n}자"
+            for k, (d, n) in enumerate(lens) if d == "none" or n == 0]
+
+
 def audit() -> list[str]:
     txt = text()
     if txt is None:
@@ -242,6 +311,7 @@ def audit() -> list[str]:
                    f"아무것도 못 본다 — **0건은 청결이 아니다**: {why}")
     bad += ref_faults(txt, files)
     bad += long_faults([len(c) for c in cells(txt)])
+    bad += pane_faults(HTML.read_text(encoding="utf-8") if HTML.is_file() else None)
     return bad
 
 
@@ -298,6 +368,24 @@ def selftest() -> int:
     if text(ROOT / "없는파일.md") is not None:
         bad.append("없는 파일에서 빈 문자열을 낸다 — 모든 축이 조용히 통과한다")
 
+    # ★ 화면 — 켜는 규칙이 없으면 우는가 · 멀쩡하면 조용한가 · 못 읽으면 우는가
+    ok_html = ('<input type="radio" name="pane" id="t0" checked>'
+               '<section class="pane" id="p0"></section><section class="pane" id="p1"></section>'
+               '<input type="radio" name="pane" id="t1">'
+               '#t0:checked~main #p0{display:block}#t1:checked~main #p1{display:block}')
+    if pane_faults(ok_html):
+        bad.append("멀쩡한 화면에서 운다")
+    if not pane_faults(ok_html.replace("#t1:checked~main #p1{display:block}", "")):
+        bad.append("켜는 규칙이 없는 칸을 안 문다 — §539 의 병")
+    if not pane_faults(None):
+        bad.append("화면을 못 읽었는데 조용하다")
+    if not headless_faults([["block", 10], ["none", 0]], None):
+        bad.append("꺼진 칸 · 빈 칸을 안 문다")
+    if headless_faults([["block", 10]], None):
+        bad.append("글자 있는 칸에서 운다")
+    if not headless_faults([], "사유"):
+        bad.append("헤드리스를 못 띄웠는데 조용하다")
+
     for x in bad:
         print(f"  ✗ {x}")
     print(f"{'✗' if bad else '✓'} 자기검사 — 총연장 · 폐기 · 캡션 · 참조 · 긴 칸 양방향")
@@ -307,10 +395,17 @@ def selftest() -> int:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="기획서 정본 대조")
     ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--headless", action="store_true",
+                    help="지어진 화면을 헤드리스로 띄워 칸마다 글자를 센다(느리다 — 훅 밖)")
     a = ap.parse_args(argv)
     if a.selftest:
         return selftest()
     bad = audit()
+    if a.headless:
+        lens, why = headless_lens()
+        bad += headless_faults(lens, why)
+        if not why:
+            print(f"  헤드리스 — 칸별 [display, 글자]: {lens}")
     if bad:
         print(f"✗ 기획서 정본이 어긋난다. {len(bad)}건")
         for b in bad:

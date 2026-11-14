@@ -133,12 +133,40 @@ def _three(detour_m: float, *, pinch_cv: bool, with_detour: bool) -> list[dict]:
     return feats
 
 
+def _ent(bid: int, kind: str, lon: float, lat: float) -> dict:
+    return {"type": "Feature", "properties": {"BUL_MAN_NO": bid, "ENTRC_SE": kind},
+            "geometry": {"type": "Point", "coordinates": [lon, lat]}}
+
+
+def _poly(bid: int, lon: float, lat: float) -> dict:
+    d = 1e-6
+    ring = [[lon - d, lat - d], [lon + d, lat - d], [lon + d, lat + d], [lon - d, lat + d],
+            [lon - d, lat - d]]
+    return {"type": "Feature", "properties": {"BUL_MAN_NO": bid},
+            "geometry": {"type": "MultiPolygon", "coordinates": [[ring]]}}
+
+
+#: 합성 건물. 1 = C 노드 옆 · 2 = B 노드 옆 · 3 = 5km 밖(범위 밖) · 4 = 출입구 없음(범위 안).
+#: 1 에는 주출입구(RM)가 B 쪽 먼 곳에 하나 더 있어도 가까운 쪽을 고르는지 — 아래 시험이 민다.
+def _put_buildings(proc: Path, ents: list[dict] | None = None, polys: list[dict] | None = None) -> None:
+    ents = ents if ents is not None else [
+        _ent(1, "RM", _east(100), LAT0), _ent(2, "RM", _east(50), _north(40)),
+        _ent(3, "RM", _east(5000), LAT0)]
+    polys = polys if polys is not None else [
+        _poly(1, _east(100), LAT0), _poly(2, _east(50), _north(40)),
+        _poly(3, _east(5000), LAT0), _poly(4, _east(95), _north(5))]
+    for n, fs in (("building_entrance.geojson", ents), ("building.geojson", polys)):
+        (proc / n).write_text(json.dumps({"type": "FeatureCollection", "features": fs}),
+                              encoding="utf-8")
+
+
 def _write_tree(root: Path, feats: list[dict]) -> Path:
     """`processed` · `golden` · `baseline/<태그>` 를 갖춘 트리를 짓는다."""
     proc, gold, base = root / "processed", root / "golden", root / "baseline" / TAG
     for d in (proc, gold, base):
         d.mkdir(parents=True, exist_ok=True)
     _put_segments(proc, feats)
+    _put_buildings(proc)
     (base / "segments.geojson").write_text(
         (proc / "segments.geojson").read_text(encoding="utf-8"), encoding="utf-8")
     (proc / "_manifest.json").write_text(json.dumps({

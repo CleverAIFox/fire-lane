@@ -420,6 +420,33 @@ def bodies_bad(out: Path, run: Callable[[list[str]], tuple[int, str]],
     return bad
 
 
+def base_verdict(sha: str, rng: str,
+                 run: Callable[[list[str]], tuple[int, str]]) -> str:
+    """밑동이 **재는 자리인가.** 아니면 까닭 한 줄, 맞으면 빈 문자열.  (PLAN W13-19)
+
+    ★ 밑동(`origin/<가지>`)이 포장할 가지의 끝과 같으면 패치가 전부 「이미 들어가
+      있다」가 되고 「새 빨간불 0」이 **아무것도 안 재고** 참이 된다(2026-10-19,
+      DECISIONS §539). 조상이면서 **끝이 아닌** 지점이어야 패치가 실제로 얹힌다.
+    """
+    tip_ref = re.split(r"\.{2,3}", rng)[-1] if re.search(r"\.\.", rng) else ""
+    rc, tip = run(["git", "rev-parse", "--verify", (tip_ref or "HEAD") + "^{commit}"])
+    if rc:
+        return f"범위 `{rng}` 의 끝을 못 읽었다: {tip.strip()}"
+    tip = tip.strip()
+    if sha == tip:
+        return (f"밑동 {sha[:12]} 가 포장할 가지의 **끝과 같다** — 패치가 전부 「이미 들어가 "
+                "있다」가 되어 「새 빨간불 0」이 아무것도 안 잰다. 푸시 **전에** 포장하라")
+    if run(["git", "merge-base", "--is-ancestor", sha, tip])[0]:
+        return (f"밑동 {sha[:12]} 가 포장할 가지({tip[:12]})의 **조상이 아니다** — "
+                "패치가 이 밑동 위에 얹히지 않는다")
+    return ""
+
+
+def extras_missing(extras: list[str]) -> list[str]:
+    """`--extra` 로 준 경로 중 **없는 것.** 조용히 넘기면 안 넣고도 넣은 줄 안다.  (W13-22)"""
+    return [e for e in extras if not Path(e).is_file()]
+
+
 def collide(names: list[str]) -> list[str]:
     """같은 basename 이 둘 이상인가. 오늘 `0001-` 과 `0003-` 이 그랬다."""
     seen: dict[str, int] = {}

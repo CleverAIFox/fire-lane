@@ -18,6 +18,7 @@ test_proposalcheck.py — 기획서 **정본** 대조가 양방향인가.
 """
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -69,3 +70,21 @@ def test_the_long_cell_ratchet_is_at_the_measured_value():
     got = P.ratchet_values()
     assert got["LONG_MAX_N"] == P.LONG_MAX_N, got
     assert got["LONG_MAX_LEN"] == P.LONG_MAX_LEN, got
+
+
+def test_built_screen_pane_rules_bite_synthetic_defect():
+    """W13-18 — 지어진 화면에서 켜는 규칙 하나를 지우면 운다(§539 의 병을 심어서)."""
+    html = P.HTML.read_text(encoding="utf-8")
+    assert P.pane_faults(html) == [], "실물 화면이 칸 수 · 규칙 수에서 어긋난다"
+    broken = re.sub(r"#t3:checked\s*~\s*main\s+#p3\s*([,{])", r"#tX:checked~main #pX\1", html)
+    assert broken != html and P.pane_faults(broken), "켜는 규칙을 지웠는데 안 운다"
+    assert P.pane_faults(None), "화면을 못 읽었는데 조용하다"
+
+
+def test_built_screen_every_pane_has_text_headless():
+    """W13-18 — 헤드리스로 칸마다 글자가 0자가 아닌가. 브라우저가 없으면 건너뛴다."""
+    import pytest
+    lens, why = P.headless_lens()
+    if why:
+        pytest.skip(f"환경skip(도구) — {why}")
+    assert P.headless_faults(lens, None) == [], lens

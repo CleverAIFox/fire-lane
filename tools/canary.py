@@ -303,6 +303,23 @@ def selftest() -> int:
     if has_canary(far):
         bad.append("다른 함수의 짝 묶음을 제 증거로 센다")
 
+    # ★ 2026-11-14 (PLAN W13-27 · 돌연변이 생존). `findings()` 의 첫 분기(`not hit` — 도구를 안 미는 시험은 건너뛴다)를 **합성 트리**로 민다.
+    #   도구를 미는 시험(카나리아 없음)은 잡히고 안 미는 시험은 안 잡혀야 한다 — `not` 이 떨어지면 둘이 뒤집힌다.
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        r = Path(td)
+        (r / "tools").mkdir()
+        (r / "tests").mkdir()
+        (r / "tools" / "zzdemo.py").write_text("X = 1\n", encoding="utf-8")
+        (r / "tests" / "test_a.py").write_text(
+            "import zzdemo\n\ndef test_x():\n    assert not zzdemo.f(1)\n", encoding="utf-8")
+        (r / "tests" / "test_b.py").write_text("def test_y():\n    assert 1\n", encoding="utf-8")
+        got = {f[0].name for f in findings(r)}
+        if "test_a.py" not in got:
+            bad.append("도구를 미는데 카나리아가 없는 시험을 못 잡는다")
+        if "test_b.py" in got:
+            bad.append("도구를 안 미는 시험을 카나리아 없음으로 센다")
+
     # ★ 판정 — 양방향 · 빈 그물
     if not faults(NO_CANARY + 1, denom=98):
         bad.append("늘었는데 안 운다")

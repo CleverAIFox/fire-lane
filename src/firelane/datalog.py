@@ -27,7 +27,7 @@ import yaml
 from firelane import gitq
 from firelane.cli import USAGE_EXIT
 from firelane.layerfsck import cmd_fsck  # 사용법 오류 종료코드는 정본 하나다
-from firelane.paths import ROOT
+from firelane.paths import PROCESSED, ROOT
 
 
 def _tracked_paths() -> frozenset[str] | None:
@@ -49,7 +49,6 @@ def _tracked_paths() -> frozenset[str] | None:
 
 KST = timezone(timedelta(hours=9))
 SOURCES = ROOT / "sources.yaml"
-PROCESSED = ROOT / "data" / "processed"
 INTERIM = ROOT / "data" / "interim"   # 재생성 가능 계층 — 생성물이 사는 곳
 MANIFEST = PROCESSED / "_manifest.json"
 RUNLOG = PROCESSED / "_runlog.json"     # ★ datalog 소유. `_manifest.json` 은 ingest 소유다(§280-1)

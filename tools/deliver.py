@@ -96,11 +96,13 @@ from pathlib import Path
 
 # ★ 판별식은 `delivercheck` 가 든다(§276-1). 여기서 다시 정의하면 두 벌이 된다.
 from delivercheck import (
+    base_verdict,
     bodies_bad,
     bodies_missing,
     collide,
     diff_sweep,
     diff_tests,
+    extras_missing,
     forbidden,
     lonely_tests,
     sweep_verdict,
@@ -239,15 +241,26 @@ def _closure(wt: Path, env: dict) -> dict[str, str]:
     code = ("import json;from firelane import shardseal as s;"
             "print(json.dumps({t:s.code_print(t)[:12] for t in "
             "('firelane.ingest','firelane.segments')}))")
-    rc, out = _run([str(_py()), "-c", code], cwd=wt, env=env)
+    rc, out = _run([*_py_cmd(), "-c", code], cwd=wt, env=env)
     if rc:
         raise SystemExit(f"★ 폐포 지문을 못 떴다\n{out}")
     return json.loads(out.strip().splitlines()[-1])
 
 
-def _py() -> Path:
-    v = ROOT / ".venv" / "bin" / "python"
-    return v if v.exists() else Path(sys.executable)
+def _py_cmd(root: Path = ROOT, uv: str | None = None) -> list[str]:
+    """파이썬을 **낳는 쪽**의 앞머리. `.venv` 가 있으면 그것, 없으면 `uv run` 을 거친다.
+
+    ★ W13-21. 종전에는 `.venv` 가 없으면 `sys.executable` 로 떨어졌다 — 의존성 없는
+      파이썬이라 `firelane` 을 못 읽고 `bodies_bad` 가 「본문이 템플릿을 못 넘는다」로
+      **거짓을 찍었다**(못 읽은 것과 없는 것이 다르다). `--project` 가 환경 자리를
+      `root` 로 못 박아 워크트리 안에서 환경을 새로 짓지 않는다.
+    """
+    v = root / ".venv" / "bin" / "python"
+    if v.exists():
+        return [str(v)]
+    if uv := uv or shutil.which("uv"):
+        return [uv, "run", "--quiet", "--project", str(root), "python"]
+    return [sys.executable]
 
 
 def _wt_env(wt: Path) -> dict:
@@ -336,7 +349,7 @@ def dryrun(branch: str, rng: str, patches: list[Path],
             fact[f"closure.{k}"] = ("same:" + after[t]) if before[t] == after[t] \
                 else f"moved:{before[t]}->{after[t]}"
 
-        rc, _ = _run([str(_py()), "tools/golden.py", "stale"], cwd=wt, env=env)
+        rc, _ = _run([*_py_cmd(), "tools/golden.py", "stale"], cwd=wt, env=env)
         fact["golden.relock"] = "no" if rc == 0 else "yes"
         relock = rc != 0
 
@@ -382,7 +395,10 @@ def _scan_pytest(out: str, rc: int | str) -> tuple[set[str], str]:
     red = {l.split()[1] for l in out.splitlines()
            if l.startswith("FAILED") and len(l.split()) > 1}
     tail = [l for l in out.splitlines() if re.search(r"\d+ (passed|failed)", l)]
-    return red, (tail[-1] if tail else f"rc={rc}")
+    # ★ W13-24. 벽시계(`in 457.32s (0:07:37)`)는 **다시 재면 같을 수 없다** — EXPECT 에 적으면
+    #   사람이 `diff` 로 댈 때마다 거짓 불일치다. 센 수만 남긴다.
+    return red, (re.sub(r"\s+in [\d.]+s(\s*\([\d:]+\))?", "", tail[-1]) if tail
+                 else f"rc={rc}")
 
 
 def _pytest_log() -> Path | None:
@@ -410,7 +426,7 @@ def _redlist(wt: Path, env: dict) -> tuple[set[str], str]:
     log = _pytest_log()
     if log is not None:
         return _scan_pytest(log.read_text(encoding="utf-8", errors="replace"), "log")
-    rc, out = _run([str(_py()), "-m", "pytest", "-q", "-p", "no:randomly"],
+    rc, out = _run([*_py_cmd(), "-m", "pytest", "-q", "-p", "no:randomly"],
                    cwd=wt, env=env, timeout=1800)
     return _scan_pytest(out, rc)
 
@@ -455,11 +471,28 @@ def cmd_dryrun(a) -> int:
 
 def cmd_pack(a) -> int:
     out = Path(a.out)
+    # ★ W13-22. 없는 `--extra` 는 **지우기 전에** 운다. `--out` 안의 파일은 `rmtree` 가
+    #   먹으므로 지우기 전에 옆에 떠 둔다.
+    if miss := extras_missing(a.extra or []):
+        print("★ --extra 로 준 경로가 없다 — 배달하지 않는다\n  " + "\n  ".join(miss))
+        return 1
+    stage = Path(tempfile.mkdtemp(prefix="fl-extra-"))
+    try:
+        for e in a.extra or []:
+            shutil.copy2(e, stage / Path(e).name)
+        return _pack(a, out, stage)
+    finally:
+        shutil.rmtree(stage, ignore_errors=True)
+
+
+def _pack(a, out: Path, stage: Path) -> int:
     if out.exists():
         shutil.rmtree(out)          # ★ ① 이름 충돌의 원인 — 묶는 자리를 비운다
     out.mkdir(parents=True)
 
     sha, subj = remote_tip(a.branch)
+    if why := base_verdict(sha, a.range, _run):    # ★ W13-19. 재는 자리가 아니면 멈춘다
+        print(f"★ {why}"); return 1
     rc, o = _run(["git", "format-patch", a.range, "-o", str(out),
                   "--no-signature", "-q"])
     if rc:
@@ -493,17 +526,15 @@ def cmd_pack(a) -> int:
     for k, v in fact.items():
         print(f"  {k:<20} {v}")
 
-    for extra in (a.extra or []):
-        src = Path(extra)
-        if src.is_file():
-            shutil.copy2(src, out / src.name)
+    for src in sorted(stage.iterdir()):
+        shutil.copy2(src, out / src.name)
     if bad := forbidden(sorted(out.iterdir())):
         print("★ 배달 디렉터리에 금지 문자열이 남았다\n  " + "\n  ".join(bad)); return 1
 
     # ★ 본문을 **검사기에 태운다.** 산문으로 「넘는다」고 적지 않는다(§276-1).
     names = [f.name for f in out.iterdir() if f.is_file()]
     for label, bad in (("본문 없음", bodies_missing(names)),
-                       ("본문이 템플릿을 못 넘는다", bodies_bad(out, _run, str(_py())))):
+                       ("본문이 템플릿을 못 넘는다", bodies_bad(out, lambda a: _run([*_py_cmd(), *a[1:]]), "python"))):
         if bad:
             print(f"★ {label} — 배달하지 않는다\n  " + "\n  ".join(bad)); return 1
     # ★ **잰 것만 적는다.** 처음엔 `PR_*` 전부를 적었고, 그래서 `PR_TITLE` 까지

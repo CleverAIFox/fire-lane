@@ -84,3 +84,37 @@ def test_the_processed_env_is_optional_and_defaults_to_the_repository_value(tmp_
     assert Path(run(base)) == root / "data" / "processed"
     p = str(tmp_path / "zz_processed")
     assert run({**base, "FIRE_LANE_PROCESSED": p}) == p
+
+
+def test_no_module_assembles_root_data_processed_itself_so_the_env_follows_everywhere():
+    """PLAN #225 — 여섯 모듈(`datalog` · `publish_*`)이 `ROOT / "data" / "processed"` 를 따로 들어 `FIRE_LANE_PROCESSED` 가 일부만 따라왔다.
+
+    `src/firelane/*.py`(`paths.py` 만 빼고)에서 `<무엇> / "data" / "processed"` 꼴의 **직접 조립**이 한 곳도 없어야 한다(AST). 여섯이 `paths.PROCESSED` 를 쓰는지도 같이 문다.
+    """
+    import ast
+    from pathlib import Path
+
+    src = Path(__file__).resolve().parents[1] / "src" / "firelane"
+
+    def chain(n: ast.AST) -> list[str]:
+        out: list[str] = []
+        while isinstance(n, ast.BinOp) and isinstance(n.op, ast.Div):
+            if isinstance(n.right, ast.Constant) and isinstance(n.right.value, str):
+                out.append(n.right.value)
+            n = n.left
+        return out[::-1]
+
+    def offenders(text: str) -> list[int]:
+        return [n.lineno for n in ast.walk(ast.parse(text))
+                if isinstance(n, ast.BinOp) and chain(n)[-2:] == ["data", "processed"]]
+
+    # 합성 결함 — 옛 꼴을 이 검사가 실제로 잡는다
+    assert offenders('P = ROOT / "data" / "processed"') == [1]
+    assert offenders('P, W = ROOT/"data"/"processed", ROOT/"web"/"data"') == [1]
+    assert offenders("P = PROCESSED") == []
+
+    found = {f.name: offenders(f.read_text(encoding="utf-8")) for f in sorted(src.rglob("*.py")) if f.name != "paths.py"}
+    bad = {k: v for k, v in found.items() if v}
+    assert not bad, f"`paths.PROCESSED` 를 쓰지 않고 직접 조립한다(줄): {bad}"
+    for name in ("datalog", "publish_basemap", "publish_context", "publish_navi", "publish_rules", "publish_web"):
+        assert "PROCESSED" in (src / f"{name}.py").read_text(encoding="utf-8").split("from firelane.paths import", 1)[1].split("\n", 1)[0], name

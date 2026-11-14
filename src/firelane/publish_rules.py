@@ -39,10 +39,10 @@ import math
 import geopandas as gpd
 from shapely.geometry import Point
 
-from firelane.paths import ROOT
+from firelane.paths import PROCESSED, ROOT
 from firelane.seg.params import NODE_TOL
 
-P = ROOT / "data" / "processed"
+P = PROCESSED
 #: 사람이 확인한 일방통행 방향 표(DECISIONS §653). `ow=2`(방향 모름)인 구간에만 읽는다.
 OW_FIELD = ROOT / "data" / "field" / "oneway_direction_2611.csv"
 

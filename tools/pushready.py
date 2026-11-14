@@ -28,7 +28,7 @@ pushready.py — 「푸시해도 되는가」 **한 명령.**  (PLAN #207)
   ㉧ 로컬이 **로컬에 있는 원격 추적 가지**(`@{u}`)보다 뒤인가 — 뒤면 받을 명령을 댄다(PLAN #211). `fetch` 는 **안 한다**(사람이 정했다: 읽기 전용이 정체성이다)
 ★ **몇 바퀴 남았나**(PLAN #220): 막는 것 목록 끝에 `forecast` 가 「이번에 치면 다음에 무엇이 또 낡는가」를 말한다 — 되먹임 변 다섯(`EDGES` · 실측 · 서술을 달았다)만으로 **확정 바퀴 · 가능한 바퀴**를 센다.
   모델이다: 고정점을 증명하지 않고, 가능한 자기 루프 때문에 상한(`LAP_CAP`)에서 자른다. 표본은 사람이 돈 다섯 바퀴 한 건이다. 이 도구는 여전히 **아무것도 안 친다**.
-순서는 사슬이다 — **받기 → 시험 → 등재 의무 → CI 미러 → 래칫 → 변이 장부 → 문서 도장 → 커밋.** 목록은 그 순서로 낸다(받으면 트리가 바뀌어 뒤의 것이 다 낡으므로 ㉧ 이 맨 앞이다).
+순서는 사슬이다 — **받기 → 시험 → 등재 의무 → CI 미러 → 도장 없는 절(㉢) → 래칫(㉠) → 변이 장부(㉤) → 낡은 도장(㉡) → 커밋.** (2026-11-14 · PLAN #220: 사람이 이 순서로 쳐서 확정 바퀴가 2 → 1 로 줄었다 — `㉢` 이 `UNSEALED` 를 조이므로 래칫 **앞**이다) 목록은 그 순서로 낸다(받으면 트리가 바뀌어 뒤의 것이 다 낡으므로 ㉧ 이 맨 앞이다).
 
 부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398 — 아직 어느 관문에도 안 올렸다: 2분이 예산 30초에 안 든다)
 IN    `tools/ratchet.py` · `tools/docseal.py` · `tools/mutate.py` 의 출력과 종료 코드 · `git status --porcelain`
@@ -293,7 +293,7 @@ def _upstream(root: Path, run: Runner) -> str | None:
 def check_behind(root: Path, run: Runner) -> Block | None:
     """`git rev-list --left-right --count HEAD...@{u}` — 로컬이 업스트림보다 **뒤**면 막는다. (PLAN #211)
 
-    2026-11-08 브로드캐스트가 원격만 갱신했고 로컬은 열여섯 커밋을 그 위에 쌓아 푸시가 non-fast-forward 로 거절됐다.
+    2026-11-08 원격만 갱신됐고(main → part/* 동기화 — **사람이 치는** `tools/merge_batch.sh` 의 단계다 · 자동 워크플로는 없다 · PLAN #221) 로컬은 열여섯 커밋을 그 위에 쌓아 푸시가 non-fast-forward 로 거절됐다.
     ★ 읽기 전용이다. `fetch` 를 안 한다 — 네트워크를 타면 `actionpin` 과 같은 사유로 사람 전용이 되어 매번 못 돈다.
     업스트림이 없는 가지는 **막지 않는다**(`notes()` 가 그 사실만 적는다). 읽을 수 없으면 닫힌 쪽(막는다).
     """
@@ -319,7 +319,7 @@ def notes(root: Path = ROOT, run: Runner = real_run) -> list[str]:
 
 
 # ── 몇 바퀴 남았나 (PLAN #220) ───────────────────────────────────
-#: **되먹임 그래프**(2026-11-11 · `#220` 의 실측). 사슬은 래칫(㉠) → 변이 장부(㉤) → 문서 도장(㉡ · ㉢) 순서인데, 뒤가 앞이 읽는 것을 **쓰는** 변이 있어 위상 정렬이 안 된다.
+#: **되먹임 그래프**(2026-11-11 · `#220` 의 실측). 사슬은 도장 없는 절(㉢) → 래칫(㉠) → 변이 장부(㉤) → 낡은 도장(㉡) 순서다(2026-11-14 — 종전 ㉠ ㉤ ㉡ ㉢ 에서는 ㉢→㉠ 이 뒤로 가는 변이라 확정 2바퀴였다). 그래도 뒤가 앞이 읽는 것을 **쓰는** 변이 있어 위상 정렬이 안 된다.
 #: 각 변은 `(from, to, 확정인가, 앞으로 가는가, 사유)` 다. **앞으로 가는 변**(순서에서 to 가 뒤)은 같은 바퀴에서 풀리고, **뒤로 가는 변**은 바퀴를 늘린다.
 #: 근거 — `실측`: 감사 훅으로 읽기 · 쓰기를 쟀다(`fix.sh` 를 복사본에서 돌려 래칫이 `data/golden/{mutation,docseal}.json` 을 읽는 것까지) · `서술`: 도구 머리말만 근거다(그 도구는 사람 몫이라 안 돌렸다).
 EDGES: list[tuple[str, str, bool, str]] = [
@@ -329,7 +329,7 @@ EDGES: list[tuple[str, str, bool, str]] = [
     ("㉤", "㉤", False, "`mutate` 가 장부를 쓴 뒤 **제 래칫 상수를 맨 끝에 적는다**(`ratchet.py` 머리말 · 서술) — 제 소스가 바뀌어 자기 지문이 또 어긋날 수 있다"),
     ("㉢", "㉠", True, "도장 없는 절이 줄어 `UNSEALED` 가 조여진다 — 래칫이 `data/golden/docseal.json` 을 읽는다(실측) · 조이는 쪽이 생긴다"),
 ]
-ORDER = ["㉠", "㉤", "㉡", "㉢"]       # 사람이 칠 순서(㉣ 커밋은 늘 맨 끝 — 바퀴 밖)
+ORDER = ["㉢", "㉠", "㉤", "㉡"]       # 사람이 칠 순서(㉣ 커밋은 늘 맨 끝 — 바퀴 밖)
 LAP_CAP = 4
 #: 표본 — 2026-11-10~11 사람이 돈 바퀴. **한 건이다** · 단계별 기록은 없다. 모델의 확정 바퀴는 이 표본보다 작다 — 되돌아올 수 있는 변이 실제로 밟혔다는 뜻이다.
 SAMPLE_LAPS = 5
@@ -393,10 +393,10 @@ def forecast(blocks: list[Block]) -> Forecast:
     return Forecast(sure, most, capped, L)
 
 
-#: 사슬 순서 — 래칫 → 변이 장부 → 문서 도장 → 커밋. **싼 것을 앞에 두지 않는다**(사람이 칠 순서가 목록 순서다).
+#: 사슬 순서 — 도장 없는 절 → 래칫 → 변이 장부 → 낡은 도장 → 커밋(`ORDER` 와 같다 — 시험이 맞춘다). **싼 것을 앞에 두지 않는다**(사람이 칠 순서가 목록 순서다).
 CHECKS: list[tuple[str, Callable[[Path, Runner], Block | None]]] = [
-    ("㉧", check_behind), ("㉥", check_tests), ("㉦", check_obligations), ("㉨", check_ci_mirror), ("㉠", check_ratchet), ("㉤", check_mutate), ("㉡", check_invalid_seals),
-    ("㉢", check_unsealed), ("㉣", check_dirty),
+    ("㉧", check_behind), ("㉥", check_tests), ("㉦", check_obligations), ("㉨", check_ci_mirror), ("㉢", check_unsealed), ("㉠", check_ratchet), ("㉤", check_mutate),
+    ("㉡", check_invalid_seals), ("㉣", check_dirty),
 ]
 
 
@@ -444,7 +444,7 @@ def render(blocks: list[Block], notes: list[str] | None = None) -> str:
         return "\n".join(["✓ 푸시 가능 — 원격 대비 · 시험 묶음 · 새 파일 등재 · CI 빠른 잡 미러 · 래칫 · 변이 장부 · 도장(낡음 · 없음) · 커밋 여덟 축이 막지 않는다.",
                           "  (전수 pytest 는 안 돌았다 — 이 도구는 그 대신이 아니다.)",
                           f"  ★ {BEHIND_LIMIT}", *tail])
-    L = [f"✗ 푸시 불가 — 막는 것 {len(blocks)}가지 (사슬 순서: 받기 → 시험 → 등재 의무 → CI 미러 → 래칫 → 변이 장부 → 문서 도장 → 커밋)\n"]
+    L = [f"✗ 푸시 불가 — 막는 것 {len(blocks)}가지 (사슬 순서: 받기 → 시험 → 등재 의무 → CI 미러 → 도장 없는 절 → 래칫 → 변이 장부 → 낡은 도장 → 커밋)\n"]
     for b in blocks:
         L.append(f"  {b.key} {b.what}")
         L += [f"      {d}" for d in b.detail]

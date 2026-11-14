@@ -179,6 +179,69 @@ def test_every_declared_ratchet_is_a_real_module_constant():
             assert hasattr(m, name), f"{p.name} 이 없는 이름 `{name}` 을 선언했다"
 
 
+def test_declared_ratchet_names_equal_produced_names_per_tool():
+    """W13-17 — 선언한 축 집합 == `ratchet_values()` 가 내는 축 집합. **값이 아니라 수**를 센다.
+
+    한쪽만 움직이면 그 축이 조용히 죽는다(534-3 이 뺀 축을 산출이 계속 낸 때). `down-map` 은 표의 **키**가 산출 키다.
+    레이크 없이는 못 재는 도구는 `lake_only()` 에 선언된 것만 건너뛴다.
+    """
+    exempt = RT.lake_only()
+    checked = skipped = 0
+    for p, m in RT.owners():
+        try:
+            produced = set(m.ratchet_values())
+        except Exception as e:                  # noqa: BLE001 — 레이크 의존 도구의 실측 함수
+            # 변이 장부가 낡으면 `mutate.py` 가 **일부러** 죽는다(장부를 다시 재라는 사람 몫의 빨강). 그 하나만 건너뛴다 — 면제 선언된 레이크 도구도 건너뛴다.
+            stale_ledger = p.name == "mutate.py" and "mutate.py --write --stale" in str(e)
+            assert p.name in exempt or stale_ledger, f"{p.name} 의 `ratchet_values()` 가 죽었는데 면제 사유가 없다 — {e}"
+            skipped += 1
+            continue
+        src = p.read_text(encoding="utf-8")
+        declared: set[str] = set()
+        for name, direction in m.RATCHETS.items():
+            if direction == "down-map":
+                # 표는 **예외 항목**만 선언한다 — 산출은 모든 파일을 낸다. 그래서 선언 키 ⊆ 산출 키(산출이 모르는 키를 선언했으면 그 항목이 죽었다)이고
+                # 표 항목은 같음 비교에서 뺀다(그 표의 산출 키는 다른 선언이 없으면 표 키 전부다).
+                keys = set(RT._map_keys(src, name))
+                assert keys <= produced, f"{p.name}: 표 `{name}` 이 산출이 모르는 키를 선언했다 {sorted(keys - produced)[:5]}"
+                declared |= produced if len(m.RATCHETS) == 1 else keys
+            else:
+                declared.add(name)
+        assert declared == produced, (
+            f"{p.name}: 선언만 {sorted(declared - produced)[:5]} · 산출만 {sorted(produced - declared)[:5]}")
+        checked += 1
+    assert checked >= 5 and checked > skipped, f"훑은 도구 {checked} · 건너뜀 {skipped} — 빈 그물이다"
+
+
+class _FakeMod:
+    def __init__(self, ratchets, vals):
+        self.RATCHETS, self._v = ratchets, vals
+
+    def ratchet_values(self):
+        return dict(self._v)
+
+
+def test_a_store_backed_ratchet_cries_when_loosened_and_asks_to_tighten_when_shrunk(tmp_path, monkeypatch):
+    """W13-26 — 값이 소스 밖(값 파일)에 있어도 「느슨해지면 운다 · 조일 게 있으면 조이라고 운다」가 그대로다. 실물 값 파일은 안 건드린다."""
+    import ratchetstore as RS
+    fake = tmp_path / "tools"
+    fake.mkdir()
+    (fake / "faker.py").write_text("RATCHETS = {'N': 'up'}\nN = 1\n", encoding="utf-8")
+    store = tmp_path / "r.json"
+    store.write_text('{"values": {"faker.py": {"N": 10}}}', encoding="utf-8")
+    monkeypatch.setattr(RS, "STORE", store)
+    monkeypatch.setattr(RT, "TOOLS", fake)
+    monkeypatch.setattr(RT, "owners", lambda: [(fake / "faker.py", _FakeMod({"N": "up"}, {"N": 4}))])
+    assert RT.run(write=True) == 1, "up 인데 실측 4 < 선언 10 — 느슨해졌는데 초록이다"
+    assert RS.read("faker.py", "N") == 10, "느슨해지는 쪽으로 값 파일에 써 버렸다"
+    monkeypatch.setattr(RT, "owners", lambda: [(fake / "faker.py", _FakeMod({"N": "up"}, {"N": 12}))])
+    assert RT.run(write=False) == 1, "조일 것이 있는데 --write 없이 초록이다"
+    assert RS.read("faker.py", "N") == 10
+    assert RT.run(write=True) == 0
+    assert RS.read("faker.py", "N") == 12, "조이는 값이 값 파일에 안 써졌다"
+    assert (fake / "faker.py").read_text(encoding="utf-8") == "RATCHETS = {'N': 'up'}\nN = 1\n", "도구 파일을 고쳤다"
+
+
 # ── ⑤ 레이크에 기대는 래칫 (§318) ──────────────────────────────
 
 def test_a_declared_lake_only_tool_is_skipped_with_a_reason(tmp_path, monkeypatch):

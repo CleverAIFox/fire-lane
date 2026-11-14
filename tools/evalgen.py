@@ -42,11 +42,11 @@ IN    data/processed/segments.geojson · route_vehicle.csv · _manifest.json
 OUT   data/processed/eval.json · 표준출력
       ★ 2026-10-09. 들여쓰기가 1 → 2 다. `manifest.write_stable` 하나로
         모았고(§445) 그쪽이 2 다 — **수는 안 바뀐다**
-PARAM --baseline · --out · --scenarios · --data · RATIO_MIN · 분모(노드)
+      data/processed/building.geojson · building_entrance.geojson  (E-1 분모 — 건물)
+PARAM --baseline · --out · --scenarios · --data · RATIO_MIN · BUILDING_SCOPE_M
 밖    **게이트를 여기서 판정하지 않는다.** 셋은 `tools/evalgate.py` 가 든다.
       **표본 설계를 안 정한다** — 시드(19980711)와 E-1 분모(건물)는 사람이 정했다
-      (DECISIONS §543). 다만 **분모 구현이 남았다**(PLAN §13 W13-30) — 그 전까지 여기서는
-      노드를 분모로 쓰고 그 사실을 `eval.json` 에 적는다.
+      (DECISIONS §543). 분모는 건물이다(W13-30). 범위 문턱 `BUILDING_SCOPE_M` 은 가져온 수다.
       **E-4 는 안 낸다** — D-25 실측(#4)이 전건이다. 없는 전건을 이 도구가
       대신 정하지 않는다. **E-2 는 경로 탐색의 기울기를 안 정한다** — 그것은
       `edge_cost` 가 들고, 여기서 정하는 것은 「단일 수치로 무엇을 주장하는가」
@@ -58,6 +58,7 @@ from __future__ import annotations
 
 import argparse
 import collections
+import json
 import math
 import statistics as st
 import sys
@@ -74,7 +75,8 @@ import evalgate as G
 import kpi
 import route_probe
 from localgeo import MX, MY
-from shapely.geometry import LineString
+from shapely import STRtree
+from shapely.geometry import LineString, Point, shape
 
 from firelane import ledger as _led
 from firelane.hashing import sha256 as _sha256
@@ -94,6 +96,10 @@ KST = timezone(timedelta(hours=9))
 RATIO_MIN = 1.5
 #: 난수 시드. 평가 표본의 무작위 대조군(층 D)을 뽑을 때 쓴다. 사람이 정했다(PLAN #94 · DECISIONS §543).
 SEED = 19980711
+#: E-1 분모의 건물 범위 — 출입구가 구간에서 이 안이면 판정 범위 건물. 접근 회랑 반경(70m · DECISIONS §170)을
+#: 가져온 수다. 밖의 건물은 분모에 안 넣고 수만 `outside_scope` 로 적는다.
+BUILDING_SCOPE_M = 70.0
+BUILDING_FILES = ("building.geojson", "building_entrance.geojson")
 
 # ── 오류 비대칭 (E-2 · 정본 MASTER §2-1a) ─────────────────────
 # ★ 2026-09-27. #117 이 열려 있던 이유는 자료가 아니라 **선언이 없음**이었다.
@@ -168,31 +174,71 @@ def _snap(pos: dict, graph: dict, lon: float, lat: float) -> tuple[int, float]:
     return n, math.dist(pos[n], (x, y))
 
 
-def station_pairs(pos: dict, naive: dict, safe: dict) -> tuple[dict, list[dict]]:
-    """안전센터마다 모든 목적지 노드까지 (d1, d2) 를 낸다.
+def load_buildings(proc: Path) -> tuple[dict, dict] | str:
+    """건물 `(출입구 {번호: [(lon, lat)]}, 중심점 {번호: (lon, lat)})`. **못 읽으면 사유(문자열)** —
+    빈 분모는 초록이 아니다. 번호 `BUL_MAN_NO`(0 · 빈 값은 건물이 아니다). 출입구가 여럿이면 주출입구(`RM`)를
+    먼저, 없을 때만 부출입구(`RS`)를 쓴다."""
+    if miss := [n for n in BUILDING_FILES if not (proc / n).is_file()]:
+        return f"건물 자료가 없다: {', '.join(miss)} — E-1 분모(건물)를 못 센다"
+    ent: dict = collections.defaultdict(lambda: {"RM": [], "RS": []})
+    for f in json.loads((proc / "building_entrance.geojson").read_text(encoding="utf-8"))["features"]:
+        p, (x, y) = f["properties"], f["geometry"]["coordinates"][:2]
+        if p.get("BUL_MAN_NO") and p.get("ENTRC_SE") in ("RM", "RS"):
+            ent[p["BUL_MAN_NO"]][p["ENTRC_SE"]].append((x, y))
+    cen: dict = {}
+    for f in json.loads((proc / "building.geojson").read_text(encoding="utf-8"))["features"]:
+        if f["properties"].get("BUL_MAN_NO") and f.get("geometry"):
+            c = shape(f["geometry"]).centroid
+            cen[f["properties"]["BUL_MAN_NO"]] = (c.x, c.y)
+    return {b: (e["RM"] or e["RS"]) for b, e in ent.items()}, cen
 
-    ★ 출발 노드는 **제약 없는 그래프에서** 고른다. 두 그래프에서 따로 고르면
-      두 거리가 서로 다른 출발점에서 잰 값이 되고, 비율이 그만큼 거짓말한다.
-    """
+
+def _near_m(tree: STRtree, lines: list, lon: float, lat: float) -> float:
+    pt = Point(lon * MX, lat * MY)
+    return pt.distance(lines[int(tree.nearest(pt))])
+
+
+def building_dests(feats: list[dict], pos: dict, naive: dict, bl: tuple[dict, dict]) -> tuple[list[dict], dict]:
+    """E-1 의 목적지 — **건물**(출입구 → 가장 가까운 노드). 판정 범위 건물 = 출입구가 구간에서 `BUILDING_SCOPE_M`
+    안인 건물(여럿이면 구간에 가장 가까운 출입구 하나 — 건물 하나는 쌍 하나). 범위 안인데 출입구 기록이 **없는**
+    건물(중심점만 범위 안)은 분모에서 빼지 않고 `no_entrance` 로 따로 적는다(DECISIONS §543 · `_gaps`)."""
+    ents, cen = bl
+    lines = [LineString([(x * MX, y * MY) for x, y in kpi._coords(f["geometry"])]) for f in feats]
+    tree = STRtree(lines)
+    dests: list[dict] = []
+    for b in sorted(ents):
+        d, lon, lat = min((_near_m(tree, lines, x, y), x, y) for x, y in ents[b])
+        if d <= BUILDING_SCOPE_M:
+            node, snap = _snap(pos, naive, lon, lat)
+            dests.append({"bid": b, "node": node, "snap_m": snap})
+    no_ent = sorted(b for b, (x, y) in cen.items() if b not in ents and _near_m(tree, lines, x, y) <= BUILDING_SCOPE_M)
+    return dests, {"in_scope": len(dests), "outside_scope": len(ents) - len(dests),
+                   "no_entrance": len(no_ent), "no_entrance_ids": no_ent[:50]}
+
+
+def station_pairs(pos: dict, naive: dict, safe: dict, dests: list[dict]) -> tuple[dict, list[dict]]:
+    """안전센터마다 모든 목적지 **건물**까지 (d1, d2). ★ 출발 노드는 **제약 없는 그래프에서** 고른다(따로 고르면 두 거리가
+    다른 출발점에서 잰 값이 된다). ★ 쌍이 안 서는 건물은 조용히 버리지 않고 센다 — `d1_unreachable` · `at_source`."""
     per: dict = {}
     rows: list[dict] = []
     for name, (lon, lat) in STATIONS.items():
         src, dist = _snap(pos, naive, lon, lat)
         d1, prev1 = kpi._dijkstra(naive, src)
-        if src in safe:
-            d2, prev2 = kpi._dijkstra(safe, src)
-        else:
-            d2, prev2 = {}, {}
-        for t, a in d1.items():
-            if a <= 0:
+        d2, prev2 = kpi._dijkstra(safe, src) if src in safe else ({}, {})
+        n0, none, same, routed = len(rows), 0, 0, 0
+        for t in dests:
+            a = d1.get(t["node"])
+            if a is None or a <= 0:
+                none, same = none + (a is None), same + (a is not None)
                 continue
-            b = d2.get(t, math.inf)
-            rows.append({"station": name, "node": t, "d1_m": a, "d2_m": b,
+            b = d2.get(t["node"], math.inf)
+            routed += b != math.inf
+            rows.append({"station": name, "node": t["node"], "bid": t["bid"], "d1_m": a, "d2_m": b,
                          "ratio": (b / a) if b != math.inf else math.inf,
                          "prev1": prev1, "prev2": prev2, "src": src})
-        per[name] = {"snap_node": src, "snap_dist_m": round(dist, 1),
-                     "d1_reach": len(d1), "d2_reach": len(d2),
-                     "unreachable": len(d1) - len(d2)}
+        per[name] = {"snap_node": src, "snap_dist_m": round(dist, 1), "d1_reach": len(d1), "d2_reach": len(d2),
+                     "unreachable": len(rows) - n0 - routed, "buildings": len(dests),
+                     "d1_unreachable": none, "at_source": same}
     return per, rows
 
 
@@ -201,7 +247,7 @@ def _pct(a: int, b: int) -> float:
     return round(100 * a / b, 1) if b else 0.0
 
 
-def e1(per: dict, rows: list[dict], feats, rv) -> dict:
+def e1(per: dict, rows: list[dict], feats, rv, bstat: dict) -> dict:
     """E-1 — 현행 내비게이션(폭 미인지) 대비 개선.
 
     두 항이다. **진입 실패**는 「현행이 못 가는 길로 보내는가」이고
@@ -212,8 +258,9 @@ def e1(per: dict, rows: list[dict], feats, rv) -> dict:
     fail = sum(1 for r in rows if _pinch(r, feats, rv) is not None)
     out = {
         "what": "현행 내비게이션(폭 미인지) 대비 개선. d1 제약 없음 · d2 제약 있음",
-        "denominator": "node",
-        "unresolved": "분모는 건물로 정했으나(DECISIONS §543) 구현 전이다 — PLAN §13 W13-30. 지금 수는 노드 분모다",
+        "denominator": "building",
+        "buildings": bstat["in_scope"],
+        "buildings_outside_scope": bstat["outside_scope"],
         "pairs": len(rows),
         "pairs_with_route": len(ratios),
         "unreachable": len(rows) - len(ratios),
@@ -224,14 +271,20 @@ def e1(per: dict, rows: list[dict], feats, rv) -> dict:
         "ratio_max": round(max(ratios), 3) if ratios else None,
         "over_ratio_min": sum(1 for x in ratios if x > RATIO_MIN),
         "per_station": per,
-        "gaps": _gaps(per),
+        "gaps": _gaps(per, bstat),
     }
     return out
 
 
-def _gaps(per: dict) -> list[dict]:
+def _gaps(per: dict, bstat: dict) -> list[dict]:
     """결손 항. ★ 분모에서 빼지 않고 **따로** 적는다(DECISIONS §543)."""
     out = []
+    if bstat["no_entrance"]:
+        out.append({
+            "what": f"판정 범위 안 건물 {bstat['no_entrance']}동은 출입구 기록이 없다",
+            "why": f"출입구가 없으면 노드로 못 옮긴다 — 분모(건물 {bstat['in_scope']})에 없다. 이 항으로 읽어라",
+            "building_ids": bstat["no_entrance_ids"],
+        })
     for name, s in per.items():
         if s["d1_reach"] and s["d2_reach"] / s["d1_reach"] < 0.05:
             out.append({
@@ -374,7 +427,7 @@ def scenarios(rows: list[dict], feats, rv, rad: dict, pos: dict) -> dict:
         rs = [rad[i] for i in det if rad[i] is not None]
         lon, lat = _lonlat(pos, r["node"])
         hits.append({
-            "station": r["station"], "node": r["node"],
+            "station": r["station"], "node": r["node"], "building": r["bid"],
             "dest_lon": lon, "dest_lat": lat,
             "d1_m": round(r["d1_m"], 1), "d2_m": round(r["d2_m"], 1),
             "ratio": round(r["ratio"], 3),
@@ -415,6 +468,9 @@ def build(proc: Path, gold: Path, base: Path, tag: str | None) -> tuple[dict, li
     if why:
         return {"gate": rep}, why
 
+    bl = load_buildings(proc)
+    if isinstance(bl, str):
+        return {"gate": rep}, [bl]
     feats = G.segments(proc)
     rv = G.route_rows(proc)
     nid, pos = build_nodes(feats)
@@ -422,7 +478,8 @@ def build(proc: Path, gold: Path, base: Path, tag: str | None) -> tuple[dict, li
           if int(rv[f["properties"]["seg_uid"]]["passable"]) == 1}
     naive, safe = build_graph(feats, nid, None), build_graph(feats, nid, ok)
     rad = curvatures(feats)
-    per, rows = station_pairs(pos, naive, safe)
+    dests, bstat = building_dests(feats, pos, naive, bl)
+    per, rows = station_pairs(pos, naive, safe, dests)
 
     spec = V.spec()
     doc = {
@@ -447,7 +504,7 @@ def build(proc: Path, gold: Path, base: Path, tag: str | None) -> tuple[dict, li
                                       ("verified", "turn_radius_verified",
                                        "wheelbase_verified")},
         },
-        "E1": e1(per, rows, feats, rv),
+        "E1": e1(per, rows, feats, rv, bstat),
         "E2": e2(feats, rv),
         "E3": e3(feats),
         "scenarios": scenarios(rows, feats, rv, rad, pos),
@@ -456,7 +513,7 @@ def build(proc: Path, gold: Path, base: Path, tag: str | None) -> tuple[dict, li
             "E-4(폭 정확도 · #93)는 D-25 실측(#4)이 전건이어서 안 낸다",
             "E-2 의 두 노출은 **주장의 노출**이고 지상진실이 아니다 — "
             "「실제로 못 갔다」는 폭 실측(#4)이 전건이다",
-            "E-1 분모는 지금 노드다. 건물로 정해졌고(DECISIONS §543) 구현은 PLAN §13 W13-30 이 든다",
+            "E-1 분모는 건물이다(DECISIONS §543 · W13-30). 건물 = 출입구가 구간에서 70m 안인 것 · 출입구 → 가장 가까운 노드. 출입구 기록 없는 건물은 `_gaps` 항",
             "거리는 국소 평면 근사(localgeo)로 잰다. 투영이 아니다",
             "`node` 는 실행 안에서만 뜻이 있는 번호다. 실행 간 인용은 `dest_lon`·`dest_lat` 로 한다",
         ],
@@ -470,12 +527,12 @@ def _print(doc: dict) -> None:
     print(f"게이트 통과 — 봉인 {g['transition']['tag']} · 전이 대각선 밖 {g['transition']['moved']}"
           f" · 지문 L1/L2/L3 일치 · 매니페스트 산출물 결손 {g['manifest']['outputs_missing']}")
     print(f"  구간 {t['n']} · " + " · ".join(f"{k} {v}" for k, v in t["verdict"].items()))
-    print(f"\nE-1  쌍 {e['pairs']} · 경로 있는 쌍 {e['pairs_with_route']} · "
+    print(f"\nE-1  분모 건물 {e['buildings']} (범위 밖 {e['buildings_outside_scope']}) · 쌍 {e['pairs']} · 경로 있는 쌍 {e['pairs_with_route']} · "
           f"도달 불가 {e['unreachable']}")
     print(f"     진입 실패 {e['entry_fail']} ({e['entry_fail_pct']}%) · "
           f"실거리비 중앙 {e['ratio_median']} · p90 {e['ratio_p90']} · 최대 {e['ratio_max']}")
     for gap in e["gaps"]:
-        print(f"     ★ 결손 {gap['station']} — {gap['what']}")
+        print(f"     ★ 결손 {gap.get('station', '건물')} — {gap['what']}")
     a = doc["E2"]
     print(f"\nE-2  기울기 **{a['tilt']}** (미탐:오탐 {a['miss_cost']}:1)")
     for t in TILTS:

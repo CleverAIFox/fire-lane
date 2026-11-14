@@ -191,3 +191,20 @@ def test_the_rescue_coordinates_are_the_reported_position_by_the_source_guide():
         with pytest.raises(ValueError, match="not_for"):
             ledger.coords("nfa_rescue", "reporter", use=use)
     assert ledger.coords("nfa_rescue", "reporter", use="지도 표출") == ("DCLR_PSTN_LOT", "DCLR_PSTN_LAT"), "발행은 「신고위치」 점으로 보인다"
+
+
+def test_a_none_declaration_only_lives_where_the_value_profile_measures():
+    """PLAN #228 ① — `valueprofile` 은 csv 표(`KINDS`)만 잰다. json · zip 표는 안 쟀다.
+
+    그 열림을 **지금 해로운 곳이 없다**로 묶는다: `none:`(「없음」 방언 선언)이나 `schema.profile` 을 든 항목은 모두 잰 갈래이고 프로필이 있다.
+    잰 적 없는 갈래에 `none:` 이 붙으면(= 안 잰 표에 선언만 있으면) 이 시험이 울고, 그때 프로필을 그 갈래로 넓힌다.
+    """
+    ds = ledger.load_sources().get("datasets") or {}
+    # 합성 결함 — json_table 에 none: 이 붙은 항목은 걸린다
+    def bad(e: dict) -> bool:
+        has = bool(e.get("none") or (e.get("schema") or {}).get("profile"))
+        return has and (e.get("kind") not in valueprofile.KINDS or not (e.get("schema") or {}).get("profile"))
+    assert bad({"kind": "json_table", "none": {"A": {"forms": ["empty"]}}})
+    assert not bad({"kind": "csv_table", "none": {"A": {}}, "schema": {"profile": {"n": 1, "cols": {}}}})
+    offenders = [k for k, e in ds.items() if isinstance(e, dict) and bad(e)]
+    assert not offenders, f"안 잰 갈래(또는 프로필 없는 항목)가 `none:` 을 든다 — 프로필을 넓혀라: {offenders}"

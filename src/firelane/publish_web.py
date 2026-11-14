@@ -48,7 +48,7 @@ from firelane import webmanifest
 from firelane.paths import PROCESSED, ROOT
 
 OUT = PROCESSED
-P, W = ROOT/"data"/"processed", ROOT/"web"/"data"
+P, W = PROCESSED, ROOT/"web"/"data"
 # ★ 2026-09-24 (PLAN §13 W12-2). `EMD_CD` 가 네 곳에 손으로 박혀 있었다.
 #   정본은 `seg/params.py` 다 — 그 파일은 **판정 지문** 안이라 값이 거기
 #   살아야 맞고, 나머지는 읽기만 한다. 대상 행정동이 바뀔 때 한 곳만 고치면

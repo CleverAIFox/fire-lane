@@ -860,7 +860,7 @@ def test_tidy_never_touches_data():
         "규칙에 넣었더니 실제로 잡혔다 — NEVER 가 무력하다"
 
 
-def test_tidy_knows_the_leftovers_that_bit_us():
+def test_tidy_knows_the_leftovers_that_bit_us(tmp_path, monkeypatch):
     """실제로 사고를 낸 찌꺼기를 `tidy` 가 알고 있는가.
 
     규칙 목록이 추상적인 위생 항목이 되면 다음에 또 같은 것에 물린다.
@@ -877,17 +877,14 @@ def test_tidy_knows_the_leftovers_that_bit_us():
     #   실제로 그랬다 — `fix-*.sh` 를 `*.sh` 로 넓히자 `apply.sh` 문자열이
     #   사라져 빨간불이 됐다. **규칙이 나아졌는데 검사가 막는 건 잘못이다.**
     #   문자열이 아니라 **행동**을 본다: 루트에 옛 패처를 놓고 잡히는가.
-    probe = tidy.ROOT / "apply.sh"
-    made = not probe.exists()
-    if made:
-        probe.write_text("#!/bin/bash\necho old\n", encoding="utf-8")
-    try:
-        hit = {p.name for _, p, _, _ in tidy.scan_fs()}
-        assert "apply.sh" in hit, \
-            "루트의 옛 패처를 tidy 가 안 잡는다 (08-23 — 새 스크립트를 가렸다)"
-    finally:
-        if made:
-            probe.unlink()
+    # ★ PLAN #219 ②. 프로브를 **실제 루트에 만들지 않는다** — 임시 뿌리로 `tidy.ROOT` 를 바꿔 거기서 잡는다(`scan_fs` 는 `.git` 을 안 읽는다 — `main()` 만 읽는다).
+    #   종전에는 추적 안 된 루트에 `apply.sh` 를 잠깐 만들어, `tidy` 를 읽는 다른 시험이 그 사이를 볼 수 있었다.
+    monkeypatch.setattr(tidy, "ROOT", tmp_path)
+    (tmp_path / "apply.sh").write_text("#!/bin/bash\necho old\n", encoding="utf-8")
+    hit = {p.name for _, p, _, _ in tidy.scan_fs()}
+    assert "apply.sh" in hit, \
+        "루트의 옛 패처를 tidy 가 안 잡는다 (08-23 — 새 스크립트를 가렸다)"
+    monkeypatch.undo()
 
     # tools/ 의 이름 있는 도구는 잡으면 안 된다
     assert not any(p.parent.name == "tools" and p.suffix == ".sh"

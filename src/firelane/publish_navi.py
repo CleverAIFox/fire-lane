@@ -100,12 +100,12 @@ from shapely.geometry import Point
 #   갈랐다 — 표준노드링크·TURNINFO 를 읽는 것이 그 둘뿐이고, 그 대조 폭 상수도
 #   거기 산다. 이 파일은 그 답을 **칸에 옮기기만** 한다.
 from firelane.cli import no_args
-from firelane.paths import ROOT
+from firelane.paths import PROCESSED, ROOT
 from firelane.publish_rules import oneway, turns
 from firelane.seg.params import NODE_TOL
 from firelane.seg.unionfind import find as _uf_find
 
-P = ROOT / "data" / "processed"
+P = PROCESSED
 W = ROOT / "web" / "data"
 
 # 좌표 자릿수. publish_web.py 와 같은 6자리(약 11cm)를 쓴다.
