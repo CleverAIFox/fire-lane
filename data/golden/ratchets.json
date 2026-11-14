@@ -2,7 +2,7 @@
  "_": "tools/ratchet.py --write 가 쓴다. 손으로 고치지 않는다. 이 파일의 경로를 어느 문서 절도 백틱으로 적지 않는다(tools/ratchetstore.py 머리말).",
  "values": {
   "sealcov.py": {
-   "SEALED_FILES": 732
+   "SEALED_FILES": 736
   }
  }
 }
