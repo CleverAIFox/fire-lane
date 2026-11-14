@@ -60,25 +60,40 @@ from firelane.seg.params import EMD_CD
 #: 판정 입력(`building_5186.gpkg`)은 그대로다 — 화면에만 뜨고 판정은 이 건물을 안 본다(그래서 「저 건물 앞은 왜 빨강」에 답할 수 없는 건물이다 · 목록은 DECISIONS §776).
 GAP_BUILDINGS = ROOT / "data" / "extra" / "bldg_gap_dongmyeong.geojson"
 GAP_ID0 = 100_000        # 발행 건물 번호(20~38,762)와 안 겹치는 자리
+#: ★ 2026-11-14 (PLAN #244 · DECISIONS §786). 동명동 **밖** 지도 이동 범위의 빠진 면 — `firelane.bldg_fill` 이 뽑는다(칸 `src` = `AL_D010`).
+#: 발행 칸은 다섯뿐이라(`BUL_MAN_NO` · `BULD_NM` · `flo` · `h` · `z` — 예산 4.9MB 에 여유가 없다) **출처 칸을 발행에 싣지 않고 번호 자리로 가른다:**
+#: 번호 ≥ `GAP_ID0` 는 전부 `AL_D010` 이다(`drop_gap` 이 그 가름을 든다). 파일 쪽에는 칸이 있다.
+FILL_BUILDINGS = ROOT / "data" / "extra" / "bldg_gap_move.geojson"
+#: ★ **예산이 고른다.** 파일의 4,296면을 다 얹으면 건물 파일이 5.5MB 가 돼 단순화 세 단계(1.0m 까지)로도 4.9MB 에 안 든다(2026-11-14 실측 · 한도는 안 올린다).
+#: 그래서 발행에는 **다중이용 여섯 용도(`FILL_USES`)의 모든 면 + 발자국 `FILL_MIN_M2` 이상의 면**만 얹는다. 나머지(단독주택 · 근생의 작은 면)는 **파일에 있고 발행에 안 간다**(DECISIONS §786).
+FILL_USES = ("문화및집회시설", "판매시설", "판매및영업시설", "의료시설", "교육연구시설", "교육연구및복지시설", "운동시설", "업무시설")
+FILL_MIN_M2 = 200.0
 
 
 def _add_gap_buildings(b: gpd.GeoDataFrame, road) -> gpd.GeoDataFrame:
-    """빠진 건물 면을 더한다. 파일이 없으면 그대로 돌려준다(건너뛰었다고 찍는다). 이미 10% 넘게 덮인 면은 뺀다 — 출처가 나중에 그 건물을 갖게 되면 겹쳐 그리지 않는다. **절반 넘게 도로면 위인 면도 뺀다**(도로 위 건물 상한 · `test_building_road_overlap` — 복개 · 측량 차이를 새로 들이지 않는다)."""
-    if not GAP_BUILDINGS.is_file():
+    """빠진 건물 면을 더한다. 파일이 없으면 그대로 돌려준다(건너뛰었다고 찍는다). 이미 10% 넘게 덮인 면은 뺀다 — 출처가 나중에 그 건물을 갖게 되면 겹쳐 그리지 않는다. **절반 넘게 도로면 위인 면도 뺀다**(도로 위 건물 상한 · `test_building_road_overlap` — 복개 · 측량 차이를 새로 들이지 않는다).
+
+    파일은 둘이다 — 동명동(`GAP_BUILDINGS` · 층수만) · 동명동 밖(`FILL_BUILDINGS` · 층수 · 이름). 번호는 합쳐 `GAP_ID0` 부터 이어 붙인다.
+    """
+    files = [f for f in (GAP_BUILDINGS, FILL_BUILDINGS) if f.is_file()]
+    if not files:
         print("  ! 빠진 건물 파일 없음 — 더하지 않는다")
         return b
-    x = gpd.read_file(GAP_BUILDINGS).to_crs(b.crs)
-    cover = x.geometry.intersection(b.geometry.union_all()).area / x.geometry.area
+    x = pd.concat([gpd.read_file(f).to_crs(b.crs).assign(_src=f.name) for f in files], ignore_index=True)
+    if "use" in x.columns:      # 예산 고름은 `FILL_BUILDINGS` 행에만 건다(동명동 파일은 `use` 칸이 없다)
+        x = x[x["use"].isna() | x["use"].isin(FILL_USES) | (x.geometry.area >= FILL_MIN_M2)]
+    base = b.geometry.union_all()
+    cover = x.geometry.intersection(base).area / x.geometry.area
     on_road = x.geometry.intersection(road).area / x.geometry.area
     x = x[(cover < 0.1) & (on_road <= 0.5)].copy()
     x["flo"] = x.flo.astype(float).clip(lower=1)
     x["h"] = (x.flo * 3.3).round(1)
     x["BUL_MAN_NO"] = range(GAP_ID0, GAP_ID0 + len(x))
-    x["BULD_NM"] = None
+    x["BULD_NM"] = x["nm"].where(x["nm"].fillna("") != "", None) if "nm" in x.columns else None
     if "z" in b.columns:       # 지반 높이 — 가장 가까운 발행 건물의 값(60m 안). 없으면 비워 둔다
         near = gpd.sjoin_nearest(x[["geometry"]], b[["z", "geometry"]], max_distance=60, how="left")
         x["z"] = near.groupby(level=0).z.first()
-    print(f"  빠진 건물 {len(x)}면 더함(표시용 · 판정 입력 불변)")
+    print(f"  빠진 건물 {len(x)}면 더함(표시용 · 판정 입력 불변) — " + " · ".join(f"{k} {v}" for k, v in x["_src"].value_counts().items()))
     return pd.concat([b, x[[c for c in b.columns if c in x.columns]]], ignore_index=True)
 
 def drop_gap(b: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
@@ -432,11 +447,12 @@ def main():
     _rd = dict(dtype=str, keep_default_na=False, encoding="utf-8-sig")
     dest, _st = _dest.build_index(
         _store, pd.read_csv(P/"navi_build.csv", **_rd), pd.read_csv(P/"navi_jibun.csv", **_rd),
-        gpd.read_file(P/"civil_office.geojson"), move4, landmarks=navi_landmarks())
+        gpd.read_file(P/"civil_office.geojson"), move4, landmarks=navi_landmarks(),
+        faces=gpd.read_file(P/"building_5186.gpkg").to_crs(4326))
     dest.to_file(W/"dest.geojson", **PREC)
     _nv = _st["navi"]
     print(f"  목적지 {_st['total']:,} — 상가 {_st['store']:,} · 주소/건물 {_st['build']:,} · 관공서/학교 {_st['civil']:,}"
-          f" · 지점 {_st.get('landmark', 0):,}")
+          f" · 지점 {_st.get('landmark', 0):,} · 건물 면 이름 {_st.get('facility', 0):,}")
     print(f"    내비DB {_nv['rows']:,}행 — 출입구 {_nv['entrance']:,} · 중심점 {_nv['center']:,} · "
           f"좌표 없음(뺌) {_nv['no_coord']:,} · 같은 주소(뺌) {_nv['same_addr']:,}")
 

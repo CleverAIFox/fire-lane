@@ -35,6 +35,11 @@ const prep = prepare((graph as unknown as NaviGraph).edges.map((e) => ({
 })));
 const pois = preparePois(dest);
 const snapM = (p: { point: [number, number] }) => snap(p.point[0], p.point[1], prep, {})?.dist_m ?? Infinity;
+/** ★ 2026-11-14 (PLAN #244 · DECISIONS §785). 건물 면의 이름에서 온 점 — `src` 는 `build` 인데 **주소 칸이 비었다**(면에는 주소 글자가 없고 지어내지 않는다).
+ *  대표점이 큰 단지 한가운데라 도로에서 60m 보다 멀 수 있다. 그 점은 아래 「60m 안」 · 「주소를 든다」 전제 **밖**이고 따로 센다. */
+const isFace = (p: { src: string; addr?: string }) => p.src === "build" && !p.addr;
+/** 60m 밖인 면 점의 수 — 2026-11-14 실측. 늘면 운다(이름으로 못박기엔 많아 수로 문다). 화면은 `farFromRoadNote` 가 말한다. */
+const FACE_FAR_N = 64;
 
 /** 도로망(판정 스코프) 밖이라 60m 안에 구간이 없는 점 — 2026-11-14 실측. 전부 관공서 · 학교 · 지점이다. */
 const FAR = [
@@ -48,15 +53,17 @@ const FAR = [
 
 describe("목적지 → 스냅", () => {
   it("건물 · 상가는 전점이 60m 안에서 도로에 붙는다", () => {
-    const near = pois.filter((p) => p.src === "build" || p.src === "store");
+    const near = pois.filter((p) => (p.src === "build" || p.src === "store") && !isFace(p));
     expect(near.length).toBeGreaterThan(2200);
     expect(near.filter((p) => snapM(p) > SNAP_MAX_M).map((p) => p.name)).toEqual([]);
   });
 
   it("60m 밖은 이름으로 고정한 관공서 · 지점뿐이다(새로 먼 점이 생기면 운다)", () => {
-    const far = pois.filter((p) => snapM(p) > SNAP_MAX_M);
+    const far = pois.filter((p) => snapM(p) > SNAP_MAX_M && !isFace(p));
     expect(far.map((p) => p.name).sort()).toEqual([...FAR].sort());
     expect(far.every((p) => p.src === "civil" || p.src === "landmark")).toBe(true);
+    // 건물 면 이름 점은 수로 문다 — 멀어도 화면이 「도보 약 Nm(직선)」 으로 말한다.
+    expect(pois.filter((p) => isFace(p) && snapM(p) > SNAP_MAX_M).length).toBe(FACE_FAR_N);
   });
 
   it("먼 목적지는 화면이 말한다 · 가까우면 말이 없다", () => {
@@ -135,7 +142,9 @@ describe("접수 카드 표기 (PLAN #73 진술 1 · 3)", () => {
   });
 
   it("색인의 건물 · 상가는 도로명주소를 든다(지번만인 점이 없다)", () => {
-    const noRoad = pois.filter((p) => (p.src === "build" || p.src === "store") && !p.addr);
+    const noRoad = pois.filter((p) => (p.src === "build" || p.src === "store") && !p.addr && !isFace(p));
     expect(noRoad.map((p) => p.name)).toEqual([]);
+    // 면 점은 주소가 **빈 채**다(지어내지 않는다) — 주소가 든 면 점이 생기면 `isFace` 의 정의가 낡은 것이다.
+    expect(pois.filter(isFace).length).toBeGreaterThan(100);
   });
 });

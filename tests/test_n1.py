@@ -304,7 +304,8 @@ def test_destinations_are_clipped_to_map_move_bounds():
     pub = (ROOT / "src/firelane/publish_web.py").read_text(encoding="utf-8")
     call = pub[pub.index("_dest.build_index("):]
     call = call[:call.index("\n    dest.to_file")]
-    assert "move4, landmarks=navi_landmarks())" in call, "목적지가 지도 이동 범위가 아닌 것으로 잘리거나 지점이 빠졌다"
+    # ★ 2026-11-14 (PLAN #244) — 뒤에 `faces=`(건물 면 이름)가 붙어 닫는 괄호가 밀렸다. 묻는 것은 같다: 자르는 틀 = move4 · 지점이 든다.
+    assert "move4, landmarks=navi_landmarks()," in call and "faces=" in call, "목적지가 지도 이동 범위가 아닌 것으로 잘리거나 지점 · 건물 면 이름이 빠졌다"
     assert "emd4" not in call, "목적지가 동명동으로 잘린다 — §183-1 로 되돌아갔다"
     assert '"maxBounds": [[round(minx-m, 4), round(miny-m, 4)], [round(maxx+m, 4), round(maxy+m, 4)]]' in pub
     assert "move4 = box(round(minx-m, 4), round(miny-m, 4), round(maxx+m, 4), round(maxy+m, 4))" in pub, (
