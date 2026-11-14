@@ -44,11 +44,14 @@ NAVI_GRAPH = ROOT / "web" / "data" / "navi_graph.json"
 
 #: 바탕 면이 배경과 **구분된다**고 보는 ΔE76 하한(두 화면 · 갈래마다). 6 은 보도(7.3)보다 한 단 약한 값이다.
 LAND_DE_MIN = 6
+#: ★ 2026-11-14 (DECISIONS §778 D). 어두운 화면은 **따로** 하한을 둔다 — 같은 ΔE76 도 어두운 바탕에서는 덜 보인다(사람이 6 짜리를 「여전히 약하다」고 했다). 12 는 명도를 올리지 않고 **채도로** 닿는다
+#:   (명도를 올리면 판정 색 대비가 깎여 `VERDICT_RETAIN_PCT` 가 먼저 운다 — 실측: 명도로 ΔE 10 이면 유지 80.9% · 채도로 ΔE 12 면 85.0%).
+LAND_DE_MIN_DARK = 12
 #: 판정 색이 바탕 면 위에서 배경 위 대비의 몇 %를 지켜야 하나(정수 %). 바탕을 진하게 할 때 판정이 묻히는 것을 막는다.
 VERDICT_RETAIN_PCT = 84
 
 #: `tools/ratchet.py` 가 읽는다. 둘 다 올라가는 쪽으로만 — 내리면 「구분된다」의 뜻이 약해진다.
-RATCHETS = {"LAND_DE_MIN": "up", "VERDICT_RETAIN_PCT": "up"}
+RATCHETS = {"LAND_DE_MIN": "up", "LAND_DE_MIN_DARK": "up", "VERDICT_RETAIN_PCT": "up"}
 
 #: 토지이용 갈래 — 두 화면이 **같은 표**를 쓴다(`tokens.ts` 의 `land*` 키 · 관제 `LAND_DARK` 의 `[MAP.land*]` 키).
 LAND_KEYS = ("landDaeji", "landPlaza", "landGreen", "landInst", "landForest", "landFarm", "landWater", "landPaved")
@@ -156,6 +159,42 @@ def wiring_faults(ops_src: str) -> list[str]:
     return bad
 
 
+#: 바탕 면이 **그 아래**여야 하는 층(건물 · 길 · 보도 · 판정 색 층) — `bg` · `hillshade` 만 바탕 면 밑에 올 수 있다.
+UNDER_LAND_OK = ("bg", "hillshade")
+
+
+def stack_faults(base_ids: list[str], insert_after: str, land_types: list[str]) -> list[str]:
+    """⑤ 바탕 면이 건물 · 길 · 판정 색 **위로 올라오지 않는가**(DECISIONS §778 C). 면은 `insert_after` 바로 뒤에 낀다 — 그 앞에 `bg`(와 지형 음영) 말고 층이 있으면 면이 그 층을 **덮는다**.
+    면의 종류가 `fill-extrusion` 이어도 운다(바탕이 3D 로 솟아 건물을 삼킨다)."""
+    bad = []
+    if insert_after not in base_ids:
+        return [f"바탕 면을 끼우는 기준 층 `{insert_after}` 가 층 목록에 없다"]
+    above = [i for i in base_ids[:base_ids.index(insert_after) + 1] if i not in UNDER_LAND_OK]
+    if above:
+        bad.append(f"바탕 면이 `{', '.join(above)}` 위에 깔린다 — 건물 · 길 · 판정 색을 덮는다(면은 그 아래여야 한다)")
+    if any(t == "fill-extrusion" for t in land_types):
+        bad.append("바탕 면에 `fill-extrusion`(3D 돌출)이 있다 — 면은 `fill` 이어야 한다")
+    return bad
+
+
+def land_stack() -> tuple[list[str], str, list[str]]:
+    """실물: `baseLayers` 의 층 순서 · `withLanduse` 가 끼우는 기준 층 · `landuseLayers` 가 내는 층의 종류."""
+    import re as _re
+    src = (SRC / "components" / "layers.ts").read_text(encoding="utf-8")
+    base = uicheck.layer_ids().get("baseLayers", [])
+    m = _re.search(r"export function withLanduse.*?findIndex\(\(l\) => l\.id === \"([\w-]+)\"\)", src, _re.S)
+    block = src[src.index("export function landuseLayers"):src.index("export function withLanduse")]
+    return base, (m.group(1) if m else ""), _re.findall(r'type: "([\w-]+)"', block)
+
+
+def land_state() -> str:
+    """바탕 면이 지금 켜져 있나(되돌린 상태를 말해 준다 — 실패가 아니다)."""
+    navi = (SRC / "components" / "NaviMap.tsx").read_text(encoding="utf-8")
+    ops = (SRC / "components" / "OpsMap.tsx").read_text(encoding="utf-8")
+    return ("내비 " + ("켜짐" if "withLanduse(" in navi else "꺼짐")
+            + " · 관제 " + ("꺼짐" if "const LAND_ON = false" in ops else "켜짐"))
+
+
 def role_faults(label_ids: set[str], navi_off: set[str], roles: dict[str, tuple[str, str, str]]) -> list[str]:
     """④ 라벨 · 지점 · 맥락 층마다 두 화면 몫이 선언돼 있고, `끔` 선언이 `NAVI_OFF` 와 맞는가."""
     bad = []
@@ -187,10 +226,10 @@ def measure() -> dict[str, float]:
     lbg, lland = light_palette(tk)
     dbg, dland = dark_palette(ops)
     v = verdict_colors()
-    de_min = min(min(de(c, lbg) for k, c in lland.items() if k in LAND_KEYS),
-                 min(de(c, dbg) for k, c in dland.items() if k in LAND_KEYS))
+    de_light = min(de(c, lbg) for k, c in lland.items() if k in LAND_KEYS)
+    de_dark = min(de(c, dbg) for k, c in dland.items() if k in LAND_KEYS)
     ret = min(retention(lbg, lland, v)[0], retention(dbg, dland, v)[0])
-    return {"LAND_DE_MIN": de_min, "VERDICT_RETAIN_PCT": ret * 100}
+    return {"LAND_DE_MIN": de_light, "LAND_DE_MIN_DARK": de_dark, "VERDICT_RETAIN_PCT": ret * 100}
 
 
 def ratchet_values() -> dict[str, int]:
@@ -204,12 +243,15 @@ def faults() -> list[str]:
     lbg, lland = light_palette(tk)
     dbg, dland = dark_palette(ops)
     v = verdict_colors()
-    bad = land_faults("밝은 화면(내비)", lbg, lland, LAND_DE_MIN) + land_faults("어두운 화면(관제)", dbg, dland, LAND_DE_MIN)
+    bad = land_faults("밝은 화면(내비)", lbg, lland, LAND_DE_MIN) + land_faults("어두운 화면(관제)", dbg, dland, LAND_DE_MIN_DARK)
     bad += verdict_faults("밝은 화면(내비)", lbg, lland, v, VERDICT_RETAIN_PCT)
     bad += verdict_faults("어두운 화면(관제)", dbg, dland, v, VERDICT_RETAIN_PCT)
     bad += wiring_faults(ops)
     bad += role_faults(label_ids(), navi_off(), ROLES)
+    bad += stack_faults(*land_stack())
     m = measure()
+    if math.floor(m["LAND_DE_MIN_DARK"]) > LAND_DE_MIN_DARK:
+        bad.append(f"어두운 화면 바탕 면 구분이 ΔE76 {m['LAND_DE_MIN_DARK']:.1f} 로 선언 {LAND_DE_MIN_DARK} 보다 높다 — `uv run python tools/ratchet.py --write` 로 올려라")
     if math.floor(m["LAND_DE_MIN"]) > LAND_DE_MIN:
         bad.append(f"바탕 면 구분이 ΔE76 {m['LAND_DE_MIN']:.1f} 로 선언 {LAND_DE_MIN} 보다 높다 — `uv run python tools/ratchet.py --write` 로 올려라")
     if math.floor(m["VERDICT_RETAIN_PCT"]) > VERDICT_RETAIN_PCT:
@@ -249,12 +291,18 @@ def selftest() -> int:
     expect("선언 없는 새 라벨 층", role_faults({"lbl-new"}, {"lbl-bldg"}, ROLES), True)
     expect("끔 선언인데 NAVI_OFF 에 없다", role_faults(set(ROLES), {"lbl-poi"}, ROLES), True)
     expect("선언과 NAVI_OFF 가 맞으면 조용하다", role_faults(set(ROLES), {"lbl-bldg", "lbl-poi"}, ROLES), False)
+    # ⑤ 바탕 면이 건물 · 길 위로 올라오는가 — 합성 층 목록
+    ids = ["bg", "sidewalk", "road-area", "bldg"]
+    expect("바탕 면이 `bg` 바로 뒤(건물 아래)면 조용하다", stack_faults(ids, "bg", ["fill", "line"]), False)
+    expect("녹지를 건물 위 레이어에 놓으면 운다", stack_faults(ids, "bldg", ["fill"]), True)
+    expect("길 위에 놓으면 운다", stack_faults(ids, "road-area", ["fill"]), True)
+    expect("바탕 면에 3D 돌출이 들어가면 운다", stack_faults(ids, "bg", ["fill", "fill-extrusion"]), True)
     # 선언한 하한이 실물보다 높으면 실제 트리가 운다 — 하한을 몰래 올려도 이 자기검사가 잡는다(변이: 하한 6 → 7 이 살아남았었다)
     m = measure()
-    got = (floors_ok(m, LAND_DE_MIN, VERDICT_RETAIN_PCT) and not floors_ok(m, LAND_DE_MIN + 10, VERDICT_RETAIN_PCT)
+    got = (floors_ok(m, LAND_DE_MIN, VERDICT_RETAIN_PCT) and math.floor(m["LAND_DE_MIN_DARK"]) >= LAND_DE_MIN_DARK and not floors_ok(m, LAND_DE_MIN + 10, VERDICT_RETAIN_PCT)
            and not floors_ok(m, LAND_DE_MIN, VERDICT_RETAIN_PCT + 50))   # 둘 중 하나만 틀려도 운다
     ok &= got
-    print(f"  {'✓' if got else '✗'} 선언한 하한이 실측 안이다 — ΔE {m['LAND_DE_MIN']:.1f} ≥ {LAND_DE_MIN} · 유지 {m['VERDICT_RETAIN_PCT']:.1f}% ≥ {VERDICT_RETAIN_PCT}%")
+    print(f"  {'✓' if got else '✗'} 선언한 하한이 실측 안이다 — ΔE {m['LAND_DE_MIN']:.1f} ≥ {LAND_DE_MIN} · 어두운 ΔE {m['LAND_DE_MIN_DARK']:.1f} ≥ {LAND_DE_MIN_DARK} · 유지 {m['VERDICT_RETAIN_PCT']:.1f}% ≥ {VERDICT_RETAIN_PCT}%")
     # 종료 코드의 두 갈래 — 성공은 0 · 실패는 1 (변이: main 의 성공 반환 0 → 1 이 살아남았었다)
     good = exit_code([]) == 0 and exit_code(["x"]) == 1
     ok &= good
@@ -279,8 +327,8 @@ def main() -> int:
     if a.selftest:
         return selftest()
     m = measure()
-    print(f"바탕 면 ΔE76 최소 {m['LAND_DE_MIN']:.1f}(하한 {LAND_DE_MIN}) · 판정 색 유지 최소 {m['VERDICT_RETAIN_PCT']:.1f}%(하한 {VERDICT_RETAIN_PCT}%)"
-          f" · 라벨 층 몫 선언 {len(ROLES)}")
+    print(f"바탕 면 ΔE76 최소 {m['LAND_DE_MIN']:.1f}(하한 {LAND_DE_MIN}) · 어두운 {m['LAND_DE_MIN_DARK']:.1f}(하한 {LAND_DE_MIN_DARK}) · 판정 색 유지 최소 {m['VERDICT_RETAIN_PCT']:.1f}%(하한 {VERDICT_RETAIN_PCT}%)"
+          f" · 라벨 층 몫 선언 {len(ROLES)} · 바탕 면 {land_state()}")
     bad = faults()
     if bad:
         print("\n✗ 화면 구분")

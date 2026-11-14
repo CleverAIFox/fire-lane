@@ -65,3 +65,19 @@ def test_the_defect_of_2026_11_13_would_have_been_caught():
     bg, land = TC.light_palette(tk)
     assert len(TC.land_faults("밝", bg, land, TC.LAND_DE_MIN)) >= 3
     assert TC.wiring_faults(ops)
+
+
+def test_a_land_stacked_above_buildings_or_extruded_cries():
+    ids = ["bg", "sidewalk", "road-area", "bldg"]
+    assert not TC.stack_faults(ids, "bg", ["fill", "line"])
+    assert TC.stack_faults(ids, "bldg", ["fill"]), "바탕 면을 건물 위에 놓았는데 안 운다"
+    assert TC.stack_faults(ids, "bg", ["fill-extrusion"]), "바탕 면이 3D 돌출인데 안 운다"
+
+
+def test_the_real_land_sits_right_after_the_background():
+    base, after, types = TC.land_stack()
+    assert after == "bg" and base[0] == "bg" and not TC.stack_faults(base, after, types)
+
+
+def test_the_dark_floor_is_declared_apart_from_the_light_one():
+    assert TC.LAND_DE_MIN_DARK > TC.LAND_DE_MIN, "어두운 화면 하한이 밝은 화면보다 높아야 한다(같은 ΔE 가 어두운 바탕에서 덜 보인다)"
