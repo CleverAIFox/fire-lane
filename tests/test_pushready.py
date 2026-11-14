@@ -345,3 +345,43 @@ def test_an_axis_layer_names_a_pushready_axis_that_really_exists_and_the_strict_
     scripts = " ".join(j[2][-1] for j in P.mirror_commands()[0])
     for want in ("tools/docnum_check.py", "tools/unusedcheck.py", "tools/owned_paths.py", "--config .ruff-strict.toml"):
         assert want in scripts, f"엄격 잡의 검사 {want} 가 ㉨ 에 안 든다"
+
+
+# ── 병렬(PLAN ㉕ B-③) — 칸을 한꺼번에 띄워도 같은 것을 같은 순서로 잡는가 ──────────────────
+_DEFECTS = {                                   # 합성 결함 — 칸마다 하나씩 심는다
+    "㉥": dict(tests=(1, "✗ 시험 묶음 1개 · 빨강 1\n")),
+    "㉦": dict(obligations=(1, "새 파일 x.py 가 등재 안 됐다\n")),
+    "㉠": dict(ratchet=(1, "  ✗ ratchet.py · NAME · 느슨\n래칫 1개 · 낡음 1\n")),
+    "㉤": dict(mutate=(1, "RuntimeError: 1개가 잰 뒤로 바뀌었다 — sizecheck.")),
+    "㉡": dict(invalid=(0, "DECISIONS/1\n")),
+    "㉣": dict(git=(0, " M x.py\n")),
+    "㉧": dict(behind=(0, "2\t5\n")),
+}
+
+
+def test_parallel_survey_catches_every_planted_defect_alone_and_all_together_in_chain_order():
+    for key, over in _DEFECTS.items():
+        assert key in [b.key for b in P.survey(ROOT, _runner(**over))], f"{key}: 병렬에서 안 잡혔다"
+    every = {k: v for over in _DEFECTS.values() for k, v in over.items()}
+    got = [b.key for b in P.survey(ROOT, _runner(**every))]
+    assert got == [k for k, _ in P.CHECKS if k in got] and len(got) == len(_DEFECTS)
+
+
+def test_parallel_and_serial_survey_give_the_same_blocks():
+    every = {k: v for over in _DEFECTS.values() for k, v in over.items()}
+    a = [(b.key, b.what, b.detail, b.cmds) for b in P.survey(ROOT, _runner(**every), parallel=True)]
+    b = [(b.key, b.what, b.detail, b.cmds) for b in P.survey(ROOT, _runner(**every), parallel=False)]
+    assert a == b
+
+
+def test_a_check_that_raises_in_parallel_kills_the_survey_not_turns_green():
+    def run(argv, cwd):
+        if "testpick.py" in " ".join(argv):
+            raise RuntimeError("죽은 칸")
+        return _runner()(argv, cwd)
+    try:
+        P.survey(ROOT, run)
+    except RuntimeError as e:
+        assert "죽은 칸" in str(e)
+    else:
+        raise AssertionError("죽은 칸이 초록으로 읽혔다")

@@ -400,16 +400,42 @@ CHECKS: list[tuple[str, Callable[[Path, Runner], Block | None]]] = [
 ]
 
 
-def survey(root: Path = ROOT, run: Runner = real_run, *, log: Callable[[str], None] | None = None) -> list[Block]:
-    out: list[Block] = []
-    for key, fn in CHECKS:
+#: 앞뒤에 홀로 도는 칸. ㉧ 은 싸고(0초) ㉣ 은 **다른 칸이 다 끝난 뒤의 작업 트리**를 본다 — 가운데와 겹치면 안 된다.
+_FIRST, _LAST = ("㉧",), ("㉣",)
+
+
+def survey(root: Path = ROOT, run: Runner = real_run, *, log: Callable[[str], None] | None = None, parallel: bool = True) -> list[Block]:
+    """칸을 모두 잰다. 돌려주는 순서는 **언제나 `CHECKS` 순서**다(사람이 칠 순서가 목록 순서 · 병렬이어도 같다).
+
+    ★ 2026-11-14 (PLAN ㉕ B-③). 종전에는 아홉 칸을 한 줄로 돌았다 — 실측 325초 중 ㉥ 200 · ㉠ 58 · ㉨ 47 · ㉡ 8 · ㉢ 8. 가운데 일곱 칸은 **읽기만 한다**
+      (시험은 거울에서 돌고 추적 파일 쓰기는 감사 훅이 문다 — PLAN #219 ①). 그래서 한꺼번에 띄워 가장 긴 하나로 줄인다. `parallel=False` 가 종전 한 줄 순서다.
+    ★ 칸 하나가 예외로 죽으면 **전체가 죽는다**(삼키지 않는다) — 죽은 칸을 초록으로 읽는 것이 이 도구가 막는 병이다.
+    """
+    def one(key: str, fn: Callable[[Path, Runner], Block | None]) -> Block | None:
         t = time.monotonic()
         b = fn(root, run)
         if log:
             log(f"  {key} {'✗' if b else '✓'}  {time.monotonic() - t:5.1f}초")
-        if b:
-            out.append(b)
-    return out
+        return b
+
+    done: dict[str, Block | None] = {}
+    middle = [(k, f) for k, f in CHECKS if k not in _FIRST + _LAST]
+    for k, f in CHECKS:
+        if k in _FIRST:
+            done[k] = one(k, f)
+    if parallel:
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=len(middle)) as ex:
+            futs = {k: ex.submit(one, k, f) for k, f in middle}
+            for k, fut in futs.items():
+                done[k] = fut.result()          # 예외는 여기서 다시 던져진다
+    else:
+        for k, f in middle:
+            done[k] = one(k, f)
+    for k, f in CHECKS:
+        if k in _LAST:
+            done[k] = one(k, f)
+    return [b for k, _ in CHECKS if (b := done[k])]
 
 
 def render(blocks: list[Block], notes: list[str] | None = None) -> str:

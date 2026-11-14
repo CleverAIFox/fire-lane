@@ -74,6 +74,7 @@ def src(p: Path) -> str:
 
 
 _TREES: dict[tuple[str, int, int], ast.Module | None] = {}
+_WALKED: dict[int, tuple[ast.AST, list[ast.AST]]] = {}
 
 
 def tree(p: Path) -> ast.Module | None:
@@ -88,9 +89,12 @@ def tree(p: Path) -> ast.Module | None:
 
 
 def _walk(n: ast.AST):
-    """`ast.walk` 와 같은 결과 — 노드마다 한 번 펼쳐 기억한다(`deadprobes.walk` · 프로브마다 같은 나무를 다시 걷던 비용)."""
-    from deadprobes import walk
-    return walk(n)
+    """`ast.walk` 와 같은 결과 — 모듈 뿌리만 한 번 펼쳐 기억한다(프로브마다 같은 나무를 다시 걷던 비용)."""
+    if not isinstance(n, ast.Module):
+        return ast.walk(n)
+    if id(n) not in _WALKED or _WALKED[id(n)][0] is not n:
+        _WALKED[id(n)] = (n, list(ast.walk(n)))
+    return iter(_WALKED[id(n)][1])
 
 
 # ── ① 빈 그물 ───────────────────────────────────────────────────
