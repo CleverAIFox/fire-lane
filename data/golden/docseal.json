@@ -14390,14 +14390,14 @@
   "fp": "view-v3",
   "kind": "read",
   "legacy": [
-   "3c3332c31ee34203",
-   "61cd24be7e16064e",
-   "85d18acddfdff957",
-   "900091cb57703996",
-   "ba6f4e845cf19c12",
-   "c29159aa572ad0fa",
-   "db8a9bdd5eda7eed",
-   "dffc012900caec1f"
+   "01c7462c7c5c8283",
+   "26fb570bee587689",
+   "4618c87e6bf8af79",
+   "5a90a399528475d4",
+   "6f26b1e3013f461b",
+   "83eb68125654b3c2",
+   "d03719299a1a71f6",
+   "d9add40c47f5fd25"
   ],
   "parts": {
    ".pre-commit-config.yaml": "2a9d722b6ec7193e",
@@ -14407,9 +14407,9 @@
    "tests/test_guards.py": "98d3f7bf8dee6405",
    "tools/commit_policy.py": "8f4cee3c33a241bc",
    "tools/firstscreen.py": "85393d9a38b776ae",
-   "본문": "6c1c55e7cac68513"
+   "본문": "e05002691efc649c"
   },
-  "sha": "85d18acddfdff957"
+  "sha": "5a90a399528475d4"
  },
  "DECISIONS/788": {
   "doc": "docs/DECISIONS.md",
@@ -14420,36 +14420,40 @@
   "fp": "view-v3",
   "kind": "read",
   "legacy": [
-   "aa953ec0131a2c26",
-   "b7bd7d9dd6c34168"
+   "13c855b6afe1c9dd",
+   "18780bc4d78bcaca",
+   "b484a21e9a71c03b",
+   "d49cee63a5c63efc"
   ],
   "parts": {
    "tests/test_evalset.py": "898934303d4b4eb4",
    "tests/test_fieldseal.py": "db330fdadd5ca82c",
-   "본문": "3bcdee08fdf51619"
+   "본문": "ce77754151ca3073"
   },
-  "sha": "b7bd7d9dd6c34168"
+  "sha": "d49cee63a5c63efc"
  },
  "DECISIONS/789": {
   "doc": "docs/DECISIONS.md",
   "files": [
    "tests/test_classify_published.py",
    "tests/test_dest_facility.py",
-   "tests/test_k2.py"
+   "tests/test_k2.py",
+   "tools/evalgen.py"
   ],
   "fp": "view-v3",
   "kind": "read",
   "legacy": [
-   "308144ffc9db2858",
-   "40944567d9c5a1e7"
+   "386df4ef7a692ab1",
+   "a620443e62010eb9"
   ],
   "parts": {
    "tests/test_classify_published.py": "4f24b123f91a40d9",
    "tests/test_dest_facility.py": "cd6e16095956b095",
    "tests/test_k2.py": "9074a7c4f00e80ef",
-   "본문": "3cf30310a05035b1"
+   "tools/evalgen.py": "e427c21b58389a63",
+   "본문": "afb72cdb7524b84b"
   },
-  "sha": "40944567d9c5a1e7"
+  "sha": "386df4ef7a692ab1"
  },
  "DECISIONS/79": {
   "doc": "docs/DECISIONS.md",
