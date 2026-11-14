@@ -433,7 +433,7 @@ def test_the_branch_sync_is_named_as_a_human_step_and_no_workflow_moves_branches
                 and not any(k in " ".join(lines[max(0, i - 2): i + 3]) for k in ("사람이", "merge_batch"))]
 
     assert unmarked(["이 단계는 브로드캐스트가 한다"]) == [1] and unmarked(["브로드캐스트 — 사람이 친다"]) == []   # 합성 결함
-    tracked = subprocess.run(["git", "ls-files", "tools", "src", "tests", ".github"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.split()
+    tracked = subprocess.run(["git", "ls-files", "tools", "src", "tests", ".github"], cwd=ROOT, capture_output=True, text=True, check=True, timeout=60).stdout.split()
     bad = {}
     for rel in tracked:
         p = ROOT / rel

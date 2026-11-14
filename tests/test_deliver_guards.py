@@ -4,6 +4,11 @@ test_deliver_guards.py — `deliver.py pack` 의 입구 가드 넷을 **심은 �
 W13-19 밑동이 가지 끝이면 공허하게 참 · W13-21 `.venv` 없을 때 낳는 쪽 ·
 W13-22 없는 `--extra` · W13-24 EXPECT pytest 줄의 벽시계.
 저장소는 전부 tmp_path 의 합성이다 — 실제 저장소의 추적 파일은 안 건드린다.
+
+IN    tools/deliver.py · tools/delivercheck.py · 합성 저장소(tmp_path)
+OUT   없음 (검사)
+PARAM 없음
+밖    **`pack` 전 경로(원격 · 레이크)는 안 돈다** — 입구 가드만 합성으로 문다. `.venv` 없는 실제 워크트리에서의 끝까지 실행은 사람이 한 번 본다.
 """
 from __future__ import annotations
 
@@ -23,7 +28,7 @@ _spec.loader.exec_module(DL)
 
 def _git(cwd: Path, *args: str) -> str:
     r = subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t", *args],
-                       cwd=cwd, capture_output=True, text=True, check=True)
+                       cwd=cwd, capture_output=True, text=True, check=True, timeout=60)
     return r.stdout.strip()
 
 
@@ -40,7 +45,7 @@ def _repo(tmp_path: Path) -> tuple[Path, list[str]]:
 
 def _runner(cwd: Path):
     def run(args):
-        p = subprocess.run(args, cwd=cwd, capture_output=True, text=True)
+        p = subprocess.run(args, cwd=cwd, capture_output=True, text=True, timeout=60)
         return p.returncode, p.stdout + p.stderr
     return run
 

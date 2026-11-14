@@ -46,7 +46,7 @@ def ignored_names_in(source: str, local_only: set[str]) -> list[str]:
 
 
 def _git(*a: str) -> list[str]:
-    return subprocess.run(["git", *a], cwd=ROOT, capture_output=True, text=True, check=True).stdout.split("\n")
+    return subprocess.run(["git", *a], cwd=ROOT, capture_output=True, text=True, check=True, timeout=60).stdout.split("\n")
 
 
 def _local_only_names() -> set[str]:
