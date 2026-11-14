@@ -51181,9 +51181,9 @@ mv 'AL_D010_12_20261109.zip'                  juso_bldg_ledger_jngj_20261109.zip
 - `W13-23` `contract.yml` 「문서 정합 도장」에 봇 PR 만 건너뛰는 `if`(푸시 · main 게이트에서는 그대로 돈다). 도구 안에서 봇을 거르는 길은 로컬 훅과 CI 가 갈려 안 갔다.
 - `W13-24` `deliver._scan_pytest` 가 `in N.NNs (H:MM:SS)` 를 걷는다. `expectcheck` 왕복 시험이 시간 없는 EXPECT 를 읽는다.
 - `W13-25` **하지 않았다 — 중복이다.** §776 ③ ⓐ 의 지문 v3 이 닫는 법 둘 중 둘째(「절별 관점을 줄인다」)를 이미 했다: 잠금은 절이 버전 줄에 백틱으로 든 패키지의 항목만 본다. PR 378 · 382 의 잠금으로 재서 무효 6 → 3 이었고 남은 셋(`DECISIONS/430` `vite` · `DECISIONS/773` `undici` 등 · `PLAN/10` `vitest`)은 절이 그 패키지의 판을 말하는 정당한 무효다. `DECISIONS/430` 은 잠금 항목에 기대는 의도로 가른 절이라 기반에서 통째로 빼면 죽는다 — 첫째 길(기반에서 뺀다)은 안 간다. 닫는 법의 둘째 길이 이미 섰으므로 이 행은 닫는다.
-- `W13-26` 이미 닫혀 있었다 — `#198` 이 래칫 값을 소스 밖(`data/golden/ratchets.json` · `tools/ratchetstore.py`)으로 뺐다. 이번에 「느슨해지면 운다 · 줄면 조이라고 운다 · `--write` 는 값 파일만 조인다」 시험을 더했다.
+- `W13-26` 이미 닫혀 있었다 — `#198` 이 래칫 값을 소스 밖(값 파일 data/golden/ratchets.json · `tools/ratchetstore.py`)으로 뺐다. 이번에 「느슨해지면 운다 · 줄면 조이라고 운다 · `--write` 는 값 파일만 조인다」 시험을 더했다.
 - `W13-28` `build_proposal.TOUCH` 에서 수치 기준일 패턴을 뺐다(`--touch-today` 는 「최종 수정」 한 줄만) · `docs/proposal.md` 에 「수치 기준일」 줄을 갈랐다 · `web/proposal.html` 재생성.
-- `W13-29`(사람이 정했다: 직접 의존만) `shardseal.lock_print(direct_only=True)` 를 `golden` 만 부른다. 지문에 든 12 패키지 중 `firelane.segments` 가 직접 import 하는 것은 6(`geopandas` `networkx` `numpy` `pandas` `pyproj` `shapely`)이고 `certifi` 는 `pyogrio` · `pyproj` · `rasterio` 의 전이로 들었다. 증명: 합성 잠금에서 `certifi` 만 올리면 새 지문은 불변 · 옛 지문은 가변, 직접 의존(`geopandas` · `pyyaml`)을 올리면 새 지문도 가변. 샤드 봉인 기본값은 안 바꿨다(영향 0). **위험:** `pyogrio`(GDAL 번들)가 지문에서 빠졌다 — GDAL 만 올라가는 경우는 이제 못 잡는다(사람이 정한 기준). 이 값은 판정 폐포 파일(`seg/*` · `segments.py`)을 안 건드렸다.
+- `W13-29`(사람이 정했다: 직접 의존만) `shardseal.lock_print(direct_only=True)` 를 `golden` 만 부른다. 지문에 든 12 패키지 중 `firelane.segments` 가 직접 import 하는 것은 6(`geopandas` `networkx` `numpy` `pandas` `pyproj` `shapely`)이고 `certifi` 는 `pyogrio` · `pyproj` · `rasterio` 의 전이로 들었다. 증명: 합성 잠금에서 `certifi` 만 올리면 새 지문은 불변 · 옛 지문은 가변, 직접 의존(`geopandas` · `pyyaml`)을 올리면 새 지문도 가변. 샤드 봉인 기본값은 안 바꿨다(영향 0). **위험:** `pyogrio`(GDAL 번들)가 지문에서 빠졌다 — GDAL 만 올라가는 경우는 이제 못 잡는다(사람이 정한 기준). 이 값은 판정 폐포 파일(`seg/*` · `segments.py`)을 안 건드렸다. **★ 정정(같은 날 · DECISIONS §781): 이 항목의 기준은 틀렸다 — 선례가 아니다.** 「폐포가 직접 import 하는가」로 갈랐더니 `pyogrio`(GDAL/OGR — 기하를 읽는 엔진)가 전이 의존이라는 이유로 지문에서 빠졌다. 그것은 판정을 조용히 움직일 수 있는 패키지다. 맞는 기준은 **「판정 수를 움직일 수 있는가」**이고, 「안 닿는다」는 증거가 있는 것만 뺀다. 위 문장의 「직접 import 6개만」 · `direct_only` 는 §781 이 걷었다(지금은 `verdict_only` · `VERDICT_BLIND`).
 
 **못 닫은 여덟(PLAN 에 남겼다 — 행 본문에 진행을 적었다)**
 - `#205` `params.py:117` 주석이 「국가 기준 · 바꾸지 말 것」을 든다. **판정 폐포 파일이라 주석 한 줄도 안 건드렸다.** 나머지 사용처(`proposal.md:886` · `turn.ts:27` · `MASTER` 4263)는 고쳤다.
@@ -51247,3 +51247,30 @@ curl "https://fire-lane-ops.<서브도메인>.workers.dev/units?t=<토큰>"   # 
 **`W13-27` 의 `docseal.py`:** `tools/sizetable.py` 의 `docseal.py` 줄 예외 상한을 올릴지 정한다(올리면 자기검사에 분기를 걸 수 있다).
 **`#205`:** `src/firelane/seg/params.py:117` 의 주석을 폐포 재잠금과 같이 「2차 자료 · 판정 문턱이 아니다」로 고친다.
 **알려진 환경 한계:** 환경변수로 저장소 밖 산출물 경로를 주는 모드에서는 `tests/test_ledger_outputs.py::test_step_writes_are_declared_in_the_ledger` 가 `relative_to(ROOT)` 에서 죽는다(모드의 인공물일 수 있다 · 안 고쳤다).
+
+## 781. ㉗ 판정 지문의 기준을 정정한다 — 「직접 import 하는가」가 아니라 「판정 수를 움직일 수 있는가」 · 뺀 것마다 증거
+
+> 2026-11-14
+
+유병률  **1회** — 좁히는 기준을 **구조**(import 그래프에서의 자리)로 잡고 **효과**(판정에 닿는가)로 안 잡았다. §345-2 가 이미 적은 방향이다: 좁게 틀리면 낡은 산출물을 재사용한다 — 판정이 거짓이 된다
+
+강제자  `tests/test_lock_closure.py`(`pyogrio` 는 아무도 직접 import 하지 않아도 올리면 판정 지문이 움직인다 · `certifi` 는 안 움직인다 · 빼는 이름은 `VERDICT_BLIND` 표에 근거와 함께 · 수치 · 기하 · 좌표 패키지는 못 뺀다) · `src/firelane/shardseal.py::VERDICT_BLIND`. 하위 없음
+
+**A — 무엇이 틀렸나(선례로 복제되면 안 된다).** §780 의 `W13-29` 는 판정 지문에 넣을 패키지를 「`firelane.segments` 폐포가 **직접 import 하는가**」로 갈랐다. 그 기준은 `certifi`(TLS 번들)를 빼려는 것이었는데 같은 칼이 `pyogrio` 를 같이 뺐다 — `geopandas` 뒤에 숨은 전이 의존이지만 **GDAL/OGR 로 기하를 읽는 엔진**이다. GDAL 판이 바뀌면 좌표 변환 · 기하 정밀도가 달라져 판정이 조용히 움직일 수 있고, 지문이 안 움직이면 낡은 판정이 초록으로 남는다. **import 그래프에서의 자리는 판정에 닿는가와 상관이 없다.** 새 기준: **「판정 수를 움직일 수 있는가」.** 전이 의존이어도 수치 · 기하 · 좌표에 닿으면 넣는다. 「안 닿는다」는 **증거가 있는 것만** 뺀다 — 짐작으로 안 뺀다.
+
+**증거를 어떻게 쟀나.** 격리 사본(`data/processed` 를 스크래치에 복사 · `FIRE_LANE_PROCESSED` 로 돌림 — 저장소 불변)에서 판정 단계 `firelane.segments.main` 을 처음부터 두 번 돌렸다(각 약 2분 · 구간 1,287). 추적기는 `sys.monitoring` 의 함수 시작 이벤트(패키지별로 실행된 함수) + 감사 훅의 파일 열기다. 두 번째 실행은 임포트가 끝난 뒤 이벤트를 다시 켜 **실행 단계에서 불린 것만** 따로 셌고, 동시에 `certifi.where()` 를 **반으로 자른 번들**로 바꿔 끼웠다. 두 실행의 산출물은 바이트가 같다(sha256 `0ee826c33f246a6e…` · 판정 249 · 294 · 184 · 560).
+
+| 패키지(지문에서 빠졌던 여섯) | 판정 | 무엇을 통해 닿는가(또는 안 닿는가) — 잰 것 |
+|---|---|---|
+| `pyogrio` | **넣는다** | 실행 단계에서 함수 31개가 돈다(GDAL 환경을 세우고 파일의 기하를 읽는다). 기하 엔진이다 |
+| `packaging` | **넣는다** | 실행 단계에서 `Version.__ge__` 등 5개가 불린다 — 판 비교가 `pandas` · `geopandas` 의 갈래를 정한다. 「안 닿는다」를 못 보였다 |
+| `six` | **넣는다** | 실행 단계에서 임포트 훅 `_SixMetaPathImporter.find_spec` 이 불린다. 수치는 아니지만 호출 경로가 있어 「안 닿는다」를 못 보였다 — 못 보이면 안 뺀다 |
+| `certifi` | 뺀다 | `where()` 가 임포트 때 한 번 불려 PROJ 에 번들 경로를 줄 뿐이고 실행 단계 호출 0. **번들을 반으로 잘라 돌려도 산출물이 바이트 동일** |
+| `python-dateutil` | 뺀다 | 임포트 때 모듈이 설 뿐 실행 단계에서 불린 함수 0(전 구간) — 판정은 날짜를 안 읽는다 |
+| `tzdata` | 뺀다 | 실행된 코드 0 · 열린 파일 0 |
+
+**한계(적어 둔다):** 「실행 단계 호출 0」은 **이 입력 · 이 코드**에서 잰 것이다. 판정 코드가 날짜를 읽기 시작하면 `python-dateutil` · `tzdata` 는 다시 재야 한다 — 표(`VERDICT_BLIND`)에 이름을 더하거나 둘 때는 같은 측정을 다시 한다. C 확장 안의 호출은 이 추적기가 못 본다(그래서 C 확장인 `pyogrio` 는 파이썬 쪽 호출만으로도 넣는 쪽으로 읽었다).
+
+**고친 것.** `shardseal.lock_deps(verdict_only=True)` 가 전이까지 다 세고 `VERDICT_BLIND` 의 셋만 뺀다(`golden` 만 부른다 · 샤드 봉인 기본값은 그대로 전부). `direct_only` 는 없앴다. 판정 지문에 드는 패키지: 12 → (틀린 기준) 6 → **9**(`geopandas` `networkx` `numpy` `packaging` `pandas` `pyogrio` `pyproj` `shapely` `six`). 시험은 느슨해지지 않았다 — `pyogrio` 올림이 지문을 움직이는지를 새로 문다(틀린 기준으로 되돌리면 운다).
+
+**지문이 다시 움직였다 — 판정 네 수는 그대로다.** 코드 지문 `61f171a419324e7e` → `562a22bd3a0a2016`(바뀐 칸은 잠금 한 칸). `golden.py check --allow-stale` 이 구간 1,287 전부 동일 · 기하 동일을 냈고 발행 구간의 판정은 `clear` 249 · `needs_cv` 294 · `blocked` 184 · `unknown` 560 이다. **재잠금은 사람이 친다:** `uv run python tools/golden.py lock`.

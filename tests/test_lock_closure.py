@@ -211,42 +211,48 @@ def test_golden_and_shardseal_use_one_function() -> None:
 
 
 # ══ ⑥ golden 의 직접 의존만 지문 (W13-29 · 사람이 정했다) ════════
-def _lock_with_certifi(certifi: str = "2026.10.19", geopandas: str = "1.1.4") -> str:
-    """`geopandas` 가 `certifi` 를 **전이**로 끌고 온다 — 아무 파일도 import 하지 않는다."""
-    return _lock(("geopandas", geopandas, ("shapely", "certifi")), ("shapely", "2.1.2", ("numpy",)),
-                 ("numpy", "2.5.3", ()), ("certifi", certifi, ()), ("pyyaml", "6.0.3", ()))
+def _lock_with_certifi(certifi: str = "2026.10.19", geopandas: str = "1.1.4", pyogrio: str = "0.12.1") -> str:
+    """`geopandas` 가 `certifi` 와 `pyogrio` 를 **전이**로 끌고 온다 — 아무 파일도 import 하지 않는다."""
+    return _lock(("geopandas", geopandas, ("shapely", "certifi", "pyogrio")), ("shapely", "2.1.2", ("numpy",)),
+                 ("numpy", "2.5.3", ()), ("certifi", certifi, ()), ("pyogrio", pyogrio, ("certifi",)), ("pyyaml", "6.0.3", ()))
 
 
-def test_direct_only_ignores_a_transitive_bump_where_the_full_print_moves(tree) -> None:
-    """(b) 합성 잠금에서 `certifi` 판만 올린다 — 새 방식(`direct_only`)은 불변, 옛 방식(전이 포함)은 가변. 둘이 **갈려야** 이 시험이 산 것이다."""
+def test_the_verdict_print_ignores_a_bundle_bump_where_the_full_print_moves(tree) -> None:
+    """`certifi` 판만 올린다 — 판정 지문(`verdict_only`)은 불변, 샤드 봉인 쪽(전부)은 가변. 둘이 **갈려야** 이 시험이 산 것이다."""
     (tree / "uv.lock").write_text(_lock_with_certifi(), encoding="utf-8")
-    full0, direct0 = shardseal.lock_print("firelane.ingest"), shardseal.lock_print("firelane.ingest", direct_only=True)
+    full0, v0 = shardseal.lock_print("firelane.ingest"), shardseal.lock_print("firelane.ingest", verdict_only=True)
     assert "certifi==2026.10.19" in shardseal.lock_deps("firelane.ingest"), "전제 — certifi 가 전이로 폐포에 든다"
-    assert not any(x.startswith("certifi") for x in shardseal.lock_deps("firelane.ingest", direct_only=True))
+    assert not any(x.startswith("certifi") for x in shardseal.lock_deps("firelane.ingest", verdict_only=True))
     (tree / "uv.lock").write_text(_lock_with_certifi(certifi="2026.11.1"), encoding="utf-8")
-    assert shardseal.lock_print("firelane.ingest", direct_only=True) == direct0, "전이 의존 한 올림에 직접 지문이 움직였다"
-    assert shardseal.lock_print("firelane.ingest") != full0, "옛 방식(전이 포함 · 샤드 봉인)이 전이 올림을 놓쳤다 — 봉인이 좁혀졌다"
+    assert shardseal.lock_print("firelane.ingest", verdict_only=True) == v0, "TLS 번들 한 올림에 판정 지문이 움직였다"
+    assert shardseal.lock_print("firelane.ingest") != full0, "샤드 봉인(전부)이 전이 올림을 놓쳤다 — 봉인이 좁혀졌다"
 
 
-def test_direct_only_still_moves_on_a_direct_dependency_bump(tree) -> None:
-    """(c) 직접 의존(`geopandas` · `pyyaml`)을 올리면 새 방식도 가변이다 — 좁혔어도 여전히 무는가."""
+def test_the_verdict_print_moves_on_the_geometry_engine_though_nobody_imports_it(tree) -> None:
+    """★ 정정(DECISIONS §781)의 과녁 — `pyogrio`(GDAL/OGR)는 아무도 직접 import 하지 않는 **전이 의존**이지만 기하를 읽는다. 올리면 판정 지문이 움직여야 한다."""
     (tree / "uv.lock").write_text(_lock_with_certifi(), encoding="utf-8")
-    before = shardseal.lock_print("firelane.ingest", direct_only=True)
+    before = shardseal.lock_print("firelane.ingest", verdict_only=True)
+    assert "pyogrio==0.12.1" in shardseal.lock_deps("firelane.ingest", verdict_only=True), "전이 의존 `pyogrio` 가 판정 지문에 없다 — 「직접 import」 기준으로 되돌아갔다"
+    (tree / "uv.lock").write_text(_lock_with_certifi(pyogrio="0.13.0"), encoding="utf-8")
+    assert shardseal.lock_print("firelane.ingest", verdict_only=True) != before, "기하 엔진이 올랐는데 판정 지문이 그대로다"
     (tree / "uv.lock").write_text(_lock_with_certifi(geopandas="1.2.0"), encoding="utf-8")
-    assert shardseal.lock_print("firelane.ingest", direct_only=True) != before, "직접 의존이 움직였는데 지문이 그대로다"
+    assert shardseal.lock_print("firelane.ingest", verdict_only=True) != before, "직접 의존이 움직였는데 지문이 그대로다"
     (tree / "uv.lock").write_text(_lock_with_certifi().replace("6.0.3", "6.1.0"), encoding="utf-8")
-    assert shardseal.lock_print("firelane.ingest", direct_only=True) != before, "pyyaml 이 움직였는데 지문이 그대로다"
+    assert shardseal.lock_print("firelane.ingest", verdict_only=True) != before, "pyyaml 이 움직였는데 지문이 그대로다"
 
 
-def test_golden_asks_for_the_direct_only_print_and_the_default_stays_full() -> None:
-    """golden 은 직접 의존만 쓰고, 기본(샤드 봉인 쪽 `code_print`)은 전이까지 센다 — 한쪽만 바뀌었는지."""
+def test_golden_asks_for_the_verdict_print_and_only_evidenced_names_are_blind() -> None:
+    """golden 은 `verdict_only` 를 쓰고 기본(샤드 봉인)은 전부 센다. 빼는 이름은 표에 **근거와 함께** 있고, 실물에서 수치 · 기하 · 좌표 패키지는 하나도 안 빠진다."""
     import ast
     src = (shardseal.ROOT / "tools" / "golden.py").read_text(encoding="utf-8")
     calls = [n for n in ast.walk(ast.parse(src)) if isinstance(n, ast.Call) and getattr(n.func, "id", "") == "lock_print"]
-    assert calls and all(any(k.arg == "direct_only" and getattr(k.value, "value", None) is True for k in c.keywords) for c in calls)
+    assert calls and all(any(k.arg == "verdict_only" and getattr(k.value, "value", None) is True for k in c.keywords) for c in calls)
     sh = (shardseal.ROOT / "src" / "firelane" / "shardseal.py").read_text(encoding="utf-8")
-    assert "lock_deps(start, direct_only)" in sh and "direct_only: bool = False" in sh, "기본이 직접만으로 바뀌었다 — 샤드 봉인이 좁혀진다"
-    real_full = set(shardseal.lock_deps("firelane.segments"))
-    real_direct = set(shardseal.lock_deps("firelane.segments", direct_only=True))
-    assert real_direct < real_full and {"geopandas", "pandas", "numpy"} <= {x.split("==")[0] for x in real_direct}
-    assert not any(x.startswith("certifi") for x in real_direct)
+    assert "lock_deps(start, verdict_only)" in sh and "verdict_only: bool = False" in sh, "기본이 좁혀졌다 — 샤드 봉인이 좁혀진다"
+    assert all(len(why) >= 20 for why in shardseal.VERDICT_BLIND.values()), "근거 없이 뺀 이름이 있다"
+    full = {x.split("==")[0] for x in shardseal.lock_deps("firelane.segments")}
+    kept = {x.split("==")[0] for x in shardseal.lock_deps("firelane.segments", verdict_only=True)}
+    assert full - kept == set(shardseal.VERDICT_BLIND) & full, "표에 없는 이름이 빠졌다"
+    must = {"geopandas", "pandas", "numpy", "shapely", "pyproj", "networkx", "pyogrio", "packaging"}
+    assert must <= kept, f"판정 수를 움직일 수 있는 패키지가 지문에서 빠졌다 — {sorted(must - kept)}"
+    assert not must & set(shardseal.VERDICT_BLIND)

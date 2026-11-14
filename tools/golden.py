@@ -256,7 +256,7 @@ def _logic_fingerprint(files: list[str] | None = None) -> tuple[str, dict[str, s
             continue
         if rel == "uv.lock":
             from firelane.shardseal import lock_print  # ★ §345 — 파일 전체가 아니다
-            digest = lock_print("firelane.segments", direct_only=True)  # ★ W13-29 직접 import 만 — certifi 같은 전이 의존은 뺀다
+            digest = lock_print("firelane.segments", verdict_only=True)  # ★ W13-29(정정 §781) 판정 수를 움직일 수 있는 것 전부 — `VERDICT_BLIND` 만 뺀다
             per[rel] = digest
             h.update(rel.encode())
             h.update(digest.encode())
