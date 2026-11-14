@@ -9,6 +9,7 @@ IN    없음
 OUT   `RV_*` 상수 — `evalset` 이 가져다 쓴다(`E.RV_HYPO` 처럼 evalset 이름으로도 그대로 보인다)
 PARAM `RV_NAMED` · `RV_ALPHA` · `RV_TOL_M` · `RV_MIN_LEN` · `RV_HYPO`(가설별 규칙 · 허용 답) · `RV_NEED`(가설별 요구 칸)
 밖    **표를 뽑지도 검사하지도 않는다.** 가설이 좋은가는 안 본다.
+부류  몸통   진입점이 **아니다.** `canary.py` 가 import 한다  (DECISIONS §398)
 """
 from __future__ import annotations
 
