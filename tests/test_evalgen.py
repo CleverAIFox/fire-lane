@@ -134,15 +134,15 @@ def _three(detour_m: float, *, pinch_cv: bool, with_detour: bool) -> list[dict]:
 
 
 def _ent(bid: int, kind: str, lon: float, lat: float) -> dict:
-    return {"type": "Feature", "properties": {"BUL_MAN_NO": bid, "ENTRC_SE": kind},
+    """출입구. ★ `bid` 는 읽는 사람을 위한 표지일 뿐 — 건물에는 **기하로** 붙는다(같은 자리의 `_poly`)."""
+    return {"type": "Feature", "properties": {"ENTRC_SE": kind},
             "geometry": {"type": "Point", "coordinates": [lon, lat]}}
 
 
-def _poly(bid: int, lon: float, lat: float) -> dict:
-    d = 1e-6
+def _poly(bid: int, lon: float, lat: float, d: float = 1e-6) -> dict:
     ring = [[lon - d, lat - d], [lon + d, lat - d], [lon + d, lat + d], [lon - d, lat + d],
             [lon - d, lat - d]]
-    return {"type": "Feature", "properties": {"BUL_MAN_NO": bid},
+    return {"type": "Feature", "properties": {"BD_MGT_SN": bid},
             "geometry": {"type": "MultiPolygon", "coordinates": [[ring]]}}
 
 

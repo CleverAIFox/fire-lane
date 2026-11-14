@@ -76,6 +76,7 @@ import kpi
 import route_probe
 from localgeo import MX, MY
 from shapely import STRtree
+from shapely.affinity import scale
 from shapely.geometry import LineString, Point, shape
 
 from firelane import ledger as _led
@@ -100,6 +101,7 @@ SEED = 19980711
 #: 가져온 수다. 밖의 건물은 분모에 안 넣고 수만 `outside_scope` 로 적는다.
 BUILDING_SCOPE_M = 70.0
 BUILDING_FILES = ("building.geojson", "building_entrance.geojson")
+ENTRANCE_SNAP_M = 5.0      # 출입구 → 건물 면. 실측(출입구 12,737): 중앙 0m · 99분위 4.21m · 5m 밖 101
 
 # ── 오류 비대칭 (E-2 · 정본 MASTER §2-1a) ─────────────────────
 # ★ 2026-09-27. #117 이 열려 있던 이유는 자료가 아니라 **선언이 없음**이었다.
@@ -174,23 +176,27 @@ def _snap(pos: dict, graph: dict, lon: float, lat: float) -> tuple[int, float]:
     return n, math.dist(pos[n], (x, y))
 
 
-def load_buildings(proc: Path) -> tuple[dict, dict] | str:
-    """건물 `(출입구 {번호: [(lon, lat)]}, 중심점 {번호: (lon, lat)})`. **못 읽으면 사유(문자열)** —
-    빈 분모는 초록이 아니다. 번호 `BUL_MAN_NO`(0 · 빈 값은 건물이 아니다). 출입구가 여럿이면 주출입구(`RM`)를
-    먼저, 없을 때만 부출입구(`RS`)를 쓴다."""
+def load_buildings(proc: Path) -> tuple[dict, dict, int] | str:
+    """건물 `(출입구 {건물: [(lon, lat)]}, 중심점 {건물: (lon, lat)}, 못 붙인 출입구 수)`. **못 읽으면 사유(문자열)** — 빈 분모는 초록이 아니다. ★ 건물의 이름은 원천
+    건물관리번호 `BD_MGT_SN` 이고 출입구는 **기하로** 붙인다(가장 가까운 건물 면 · `ENTRANCE_SNAP_M` 안) — 지역 번호 칸은 다시 발행하면 달라져 조인 키가 아니다(DECISIONS §320 · §781). `RM` 먼저, 없을 때만 `RS`."""
     if miss := [n for n in BUILDING_FILES if not (proc / n).is_file()]:
         return f"건물 자료가 없다: {', '.join(miss)} — E-1 분모(건물)를 못 센다"
-    ent: dict = collections.defaultdict(lambda: {"RM": [], "RS": []})
-    for f in json.loads((proc / "building_entrance.geojson").read_text(encoding="utf-8"))["features"]:
-        p, (x, y) = f["properties"], f["geometry"]["coordinates"][:2]
-        if p.get("BUL_MAN_NO") and p.get("ENTRC_SE") in ("RM", "RS"):
-            ent[p["BUL_MAN_NO"]][p["ENTRC_SE"]].append((x, y))
-    cen: dict = {}
+    ids, polys, cen = [], [], {}
     for f in json.loads((proc / "building.geojson").read_text(encoding="utf-8"))["features"]:
-        if f["properties"].get("BUL_MAN_NO") and f.get("geometry"):
-            c = shape(f["geometry"]).centroid
-            cen[f["properties"]["BUL_MAN_NO"]] = (c.x, c.y)
-    return {b: (e["RM"] or e["RS"]) for b, e in ent.items()}, cen
+        if (b := f["properties"].get("BD_MGT_SN")) and f.get("geometry"):
+            g = shape(f["geometry"])
+            ids.append(b), polys.append(scale(g, MX, MY, origin=(0, 0))), cen.update({b: (g.centroid.x, g.centroid.y)})
+    ent: dict = collections.defaultdict(lambda: {"RM": [], "RS": []})
+    tree, stray = (STRtree(polys) if polys else None), 0
+    for f in json.loads((proc / "building_entrance.geojson").read_text(encoding="utf-8"))["features"]:
+        (x, y), kind = f["geometry"]["coordinates"][:2], f["properties"].get("ENTRC_SE")
+        if kind in ("RM", "RS"):
+            i = int(tree.nearest(pt := Point(x * MX, y * MY))) if tree is not None else None
+            if i is None or polys[i].distance(pt) > ENTRANCE_SNAP_M:
+                stray += 1
+            else:
+                ent[ids[i]][kind].append((x, y))
+    return {b: (e["RM"] or e["RS"]) for b, e in ent.items()}, cen, stray
 
 
 def _near_m(tree: STRtree, lines: list, lon: float, lat: float) -> float:
@@ -198,11 +204,11 @@ def _near_m(tree: STRtree, lines: list, lon: float, lat: float) -> float:
     return pt.distance(lines[int(tree.nearest(pt))])
 
 
-def building_dests(feats: list[dict], pos: dict, naive: dict, bl: tuple[dict, dict]) -> tuple[list[dict], dict]:
+def building_dests(feats: list[dict], pos: dict, naive: dict, bl: tuple[dict, dict, int]) -> tuple[list[dict], dict]:
     """E-1 의 목적지 — **건물**(출입구 → 가장 가까운 노드). 판정 범위 건물 = 출입구가 구간에서 `BUILDING_SCOPE_M`
     안인 건물(여럿이면 구간에 가장 가까운 출입구 하나 — 건물 하나는 쌍 하나). 범위 안인데 출입구 기록이 **없는**
     건물(중심점만 범위 안)은 분모에서 빼지 않고 `no_entrance` 로 따로 적는다(DECISIONS §543 · `_gaps`)."""
-    ents, cen = bl
+    ents, cen, stray = bl
     lines = [LineString([(x * MX, y * MY) for x, y in kpi._coords(f["geometry"])]) for f in feats]
     tree = STRtree(lines)
     dests: list[dict] = []
@@ -213,7 +219,7 @@ def building_dests(feats: list[dict], pos: dict, naive: dict, bl: tuple[dict, di
             dests.append({"bid": b, "node": node, "snap_m": snap})
     no_ent = sorted(b for b, (x, y) in cen.items() if b not in ents and _near_m(tree, lines, x, y) <= BUILDING_SCOPE_M)
     return dests, {"in_scope": len(dests), "outside_scope": len(ents) - len(dests),
-                   "no_entrance": len(no_ent), "no_entrance_ids": no_ent[:50]}
+                   "no_entrance": len(no_ent), "no_entrance_ids": no_ent[:50], "entrances_unattached": stray}
 
 
 def station_pairs(pos: dict, naive: dict, safe: dict, dests: list[dict]) -> tuple[dict, list[dict]]:
@@ -280,19 +286,15 @@ def _gaps(per: dict, bstat: dict) -> list[dict]:
     """결손 항. ★ 분모에서 빼지 않고 **따로** 적는다(DECISIONS §543)."""
     out = []
     if bstat["no_entrance"]:
-        out.append({
-            "what": f"판정 범위 안 건물 {bstat['no_entrance']}동은 출입구 기록이 없다",
-            "why": f"출입구가 없으면 노드로 못 옮긴다 — 분모(건물 {bstat['in_scope']})에 없다. 이 항으로 읽어라",
-            "building_ids": bstat["no_entrance_ids"],
-        })
+        out.append({"what": f"판정 범위 안 건물 {bstat['no_entrance']}동은 출입구 기록이 없다", "building_ids": bstat["no_entrance_ids"],
+                    "why": f"출입구가 없으면 노드로 못 옮긴다 — 분모(건물 {bstat['in_scope']})에 없다. 이 항으로 읽어라"})
+    if bstat.get("entrances_unattached"):
+        out.append({"what": f"출입구 {bstat['entrances_unattached']}개는 건물 면에서 {ENTRANCE_SNAP_M:g}m 넘게 떨어져 어느 건물에도 안 붙였다",
+                    "why": "기하로 붙인다(지역 번호는 조인 키가 아니다 — DECISIONS §320). 억지로 붙이지 않고 이 항으로 센다"})
     for name, s in per.items():
         if s["d1_reach"] and s["d2_reach"] / s["d1_reach"] < 0.05:
-            out.append({
-                "station": name,
-                "what": f"통행 가능 그래프에서 {s['d2_reach']}/{s['d1_reach']} 노드만 닿는다",
-                "why": ("접속 노드가 통행 가능 성분의 섬에 있다. 이 출발점에서는 "
-                        "역산이 성립하지 않는다 — 쌍을 0 으로 세지 말고 이 항으로 읽어라"),
-            })
+            out.append({"station": name, "what": f"통행 가능 그래프에서 {s['d2_reach']}/{s['d1_reach']} 노드만 닿는다",
+                        "why": "접속 노드가 통행 가능 성분의 섬에 있다. 이 출발점에서는 역산이 성립하지 않는다 — 쌍을 0 으로 세지 말고 이 항으로 읽어라"})
     return out
 
 

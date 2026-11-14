@@ -14,7 +14,17 @@ import hashlib
 
 import evalgen as ev
 import pytest
-from test_evalgen import LAT0, _build, _east, _ent, _north, _put_buildings, _three, _write_tree
+from test_evalgen import (
+    LAT0,
+    _build,
+    _east,
+    _ent,
+    _north,
+    _poly,
+    _put_buildings,
+    _three,
+    _write_tree,
+)
 
 
 @pytest.fixture
@@ -40,7 +50,9 @@ def test_e1_pairs_are_buildings_not_nodes(tree):
     assert e["pairs"] <= e["buildings"] * stations
     extra = tree / "processed"
     _put_buildings(extra, ents=[_ent(1, "RM", _east(100), LAT0), _ent(9, "RM", _east(99), LAT0),
-                                _ent(2, "RM", _east(50), _north(40))])
+                                _ent(2, "RM", _east(50), _north(40))],
+                   polys=[_poly(1, _east(100), LAT0), _poly(9, _east(99), LAT0), _poly(2, _east(50), _north(40)),
+                          _poly(3, _east(5000), LAT0), _poly(4, _east(95), _north(5))])   # 출입구는 기하로 붙는다 — 건물 9 의 면이 있어야 건물이다
     e2 = _build(tree)[0]["E1"]
     assert e2["buildings"] == e["buildings"] + 1, "노드는 같은데 건물이 늘었다 — 건물을 안 센다"
     assert 0 < e2["pairs"] - e["pairs"] <= stations, (e["pairs"], e2["pairs"])
@@ -72,10 +84,22 @@ def test_the_nearest_of_several_entrances_is_the_building_node(tree):
     bl = ev.load_buildings(tree / "processed")
     assert isinstance(bl, tuple)
     p = tree / "processed"
-    _put_buildings(p, ents=[_ent(1, "RS", _east(100), LAT0), _ent(1, "RM", _east(50), _north(40))],
-                   polys=[])
-    ents, _ = ev.load_buildings(p)
+    wide = _poly(1, (_east(100) + _east(50)) / 2, (LAT0 + _north(40)) / 2, d=4e-4)     # 두 출입구를 다 품는 한 건물(약 ±40m)
+    _put_buildings(p, ents=[_ent(1, "RS", _east(100), LAT0), _ent(1, "RM", _east(50), _north(40))], polys=[wide])
+    ents, _, stray = ev.load_buildings(p)
+    assert stray == 0
     assert ents[1] == [(_east(50), _north(40))], "RM 이 있는데 RS 를 썼다"
+
+
+def test_an_entrance_joins_its_building_by_geometry_and_a_far_one_is_counted_not_forced(tree):
+    """★ 조인은 **기하**다(DECISIONS §320 · §781) — 지역 번호 칸이 없어도 붙고, 건물 면에서 `ENTRANCE_SNAP_M` 넘게 떨어진 출입구는 억지로 안 붙이고 센다."""
+    p = tree / "processed"
+    far = _ent(0, "RM", _east(100 + 3 * ev.ENTRANCE_SNAP_M), LAT0)
+    _put_buildings(p, ents=[_ent(0, "RM", _east(100), LAT0), far], polys=[_poly(1, _east(100), LAT0)])
+    ents, _, stray = ev.load_buildings(p)
+    assert ents == {1: [(_east(100), LAT0)]} and stray == 1
+    assert not ev._gaps({}, {"no_entrance": 0, "entrances_unattached": 0}), "못 붙인 것이 없는데 항이 섰다"
+    assert "안 붙였다" in ev._gaps({}, {"no_entrance": 0, "entrances_unattached": stray})[0]["what"]
 
 
 def test_building_denominator_leaves_judgment_files_untouched(tree):
