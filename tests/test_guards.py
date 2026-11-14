@@ -486,30 +486,37 @@ def test_lineage_is_pipeline_concern_not_step_concern():
 #   대해 이미 하고 있는 일을, 남은 자리에도 한다.
 
 def test_webdata_limit_is_one_number():
-    """web/data 용량 상한이 세 곳에서 같아야 한다.
+    """web/data 용량 **래칫**(두 축 바이트)이 세 곳에서 같아야 한다.
 
-    ★ 실제로 갈라져 있었다 — contract.yml 40 · commit_policy 40 · pipeline 60.
-      PLAN #12 가 "60 → 40 으로 조정" 이라 적었는데 pipeline 만 안 고쳤다.
-      40~60 구간에서 **로컬 파이프라인은 초록불이고 CI 만 빨간불**이 된다.
-      값이 무엇이냐보다 하나냐가 중요하다.
+    ★ 2026-11-14 (DECISIONS §787-F). 40MB 상한이 두 축 래칫(정사영상 · 나머지)으로 바뀌었다. 묻는 것은 같다 — **값이 하나냐.**
+    ★ 실제로 갈라져 있었다 — contract.yml 40 · commit_policy 40 · pipeline 60. PLAN #12 가 "60 → 40 으로 조정" 이라 적었는데 pipeline 만 안 고쳤다.
+      그 구간에서 **로컬 파이프라인은 초록불이고 CI 만 빨간불**이 된다. 값이 무엇이냐보다 하나냐가 중요하다.
     """
     import re
 
-    from firelane.expectation import WEB_MAX_MB  # ← pipeline (§431 · PLAN #157)
+    from firelane.expectation import (  # ← pipeline (§431 · PLAN #157)
+        WEB_ORTHO_BYTES,
+        WEB_REST_BYTES,
+    )
 
     ci = (ROOT / ".github/workflows/contract.yml").read_text(encoding="utf-8")
-    m = re.search(r'SIZE"?\s*-ge\s*(\d+)', ci) or re.search(r'-ge\s*"?(\d+)"?', ci)
-    assert m, "contract.yml 에서 web/data 상한을 못 찾았다"
-    ci_mb = int(m.group(1))
+    mo = re.search(r"ORTHO_MAX=(\d+)", ci)
+    mr = re.search(r"REST_MAX=(\d+)", ci)
+    assert mo and mr, "contract.yml 에서 web/data 래칫(ORTHO_MAX · REST_MAX)을 못 찾았다"
 
     pol = (ROOT / "tools/commit_policy.py").read_text(encoding="utf-8")
-    m2 = re.search(r"MAX_WEBDATA_MB\s*=\s*(\d+)", pol)
-    assert m2, "commit_policy.py 에서 MAX_WEBDATA_MB 를 못 찾았다"
-    pol_mb = int(m2.group(1))
+    po = re.search(r"WEBDATA_ORTHO_BYTES\s*=\s*([\d_]+)", pol)
+    pr = re.search(r"WEBDATA_REST_BYTES\s*=\s*([\d_]+)", pol)
+    assert po and pr, "commit_policy.py 에서 WEBDATA_ORTHO_BYTES · WEBDATA_REST_BYTES 를 못 찾았다"
 
-    assert WEB_MAX_MB == ci_mb == pol_mb, (
-        f"web/data 상한이 갈렸다 — expectation {WEB_MAX_MB} · "
-        f"contract.yml {ci_mb} · commit_policy {pol_mb}")
+    got = {
+        "expectation": (WEB_ORTHO_BYTES, WEB_REST_BYTES),
+        "contract.yml": (int(mo.group(1)), int(mr.group(1))),
+        "commit_policy": (int(po.group(1).replace("_", "")), int(pr.group(1).replace("_", ""))),
+    }
+    assert len(set(got.values())) == 1, f"web/data 래칫이 갈렸다 — {got}"
+    assert "MAX_WEBDATA_MB" not in pol and "WEB_MAX_MB" not in (ROOT / "src/firelane/expectation.py").read_text(encoding="utf-8"), (
+        "40MB 상한(MAX_WEBDATA_MB · WEB_MAX_MB)이 되살아났다 — 래칫으로 바꿨다(DECISIONS §787-F)")
 
 
 def test_ci_watches_the_working_branch():
@@ -776,9 +783,10 @@ def test_local_verify_covers_ci():
         f"CI 가 돌리는데 verify.sh 가 안 돌리는 검사: {missing}\n"
         "  로컬이 CI 의 부분집합이면 '내 기계에서는 됐는데' 가 나온다.")
 
-    if "du -sm web/data" in ci:
-        assert "web/data" in vs and "du -sm" in vs, \
-            "CI 가 web/data 용량을 보는데 verify.sh 는 안 본다"
+    # ★ 2026-11-14 (DECISIONS §787-F). 40MB `du -sm` 상한이 두 축 바이트 래칫으로 바뀌었다 — CI 는 `ORTHO_MAX` 를 선언하고 verify.sh 는 `web_size_verdict` 를 부른다.
+    if "ORTHO_MAX" in ci:
+        assert "web/data" in vs and "web_size_verdict" in vs, \
+            "CI 가 web/data 래칫을 보는데 verify.sh 는 안 본다"
 
 
 def test_scan_data_sizes_add_up():
@@ -2701,13 +2709,17 @@ def test_sheet_pick_refuses_to_guess_between_equal_candidates(tmp_path, monkeypa
 
 
 def test_web_size_verdict_bites_at_the_boundary():
-    """상한이 **경계에서** 운다. 그리고 상한 자체가 정본에서 온다."""
+    """래칫이 **경계에서** 운다 — 두 축이 따로. 그리고 선언 자체가 정본에서 온다."""
     from firelane import expectation as m
-    assert m.web_size_verdict(m.WEB_MAX_MB - 0.1) == [], "상한 밑인데 운다"
-    over = m.web_size_verdict(m.WEB_MAX_MB)
-    assert len(over) == 1, "경계에서 안 문다 — `>` 와 `>=` 를 섞었다"
-    assert str(m.WEB_MAX_MB) in over[0], "할 말에 상한이 없다 — 사람이 무엇을 넘었는지 모른다"
-    assert m.web_size_verdict(m.WEB_MAX_MB * 10), "한참 넘었는데 안 문다"
+    O, R = m.WEB_ORTHO_BYTES, m.WEB_REST_BYTES
+    assert m.web_size_verdict(O, R) == [], "선언과 같은데 운다 — 래칫은 「늘지 않는다」다"
+    assert m.web_size_verdict(0, 0) == [], "줄었는데 운다"
+    over = m.web_size_verdict(O + 1, R)
+    assert len(over) == 1 and "정사영상" in over[0], "정사영상 축이 경계에서 안 문다"
+    over = m.web_size_verdict(O, R + 1)
+    assert len(over) == 1 and "나머지" in over[0], "나머지 축이 경계에서 안 문다 — 정사영상에 섞였다"
+    assert f"{R:,}" in over[0], "할 말에 선언이 없다 — 사람이 무엇을 넘었는지 모른다"
+    assert len(m.web_size_verdict(O * 10, R * 10)) == 2, "한참 넘었는데 둘 다 안 문다"
 
 
 def test_verify_returns_what_it_found_instead_of_printing_it():

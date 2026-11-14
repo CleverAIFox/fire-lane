@@ -28,7 +28,7 @@ OUT   web/data/  — 아래 열일곱. ★ 중괄호 축약을 쓰지 않는다.
         보존하고 다시 쓴다 — writes 가 아니라 **mutates** 다
       ★ markers.geojson 은 **내지 않는다.** 286줄이 남은 것을 지운다 —
         종전에 이 줄이 산출물로 적혀 있었다(2026-09-03 정정)
-PARAM 좌표 정밀도(PREC) · web/data 40MB 상한(CI · commit_policy · pipeline)
+PARAM 좌표 정밀도(PREC) · web/data 두 축 바이트 래칫(CI · commit_policy · pipeline)
 
 ★ **이 블록들을 루프로 묶지 않는다**(2026-10-08 · DECISIONS §435 · PLAN #99 닫힘).
   「손으로 쌓였으니 대장 플래그로 돌리자」가 9월부터 행으로 있었다. 세어 보니
@@ -61,13 +61,11 @@ from firelane.seg.params import EMD_CD
 GAP_BUILDINGS = ROOT / "data" / "extra" / "bldg_gap_dongmyeong.geojson"
 GAP_ID0 = 100_000        # 발행 건물 번호(20~38,762)와 안 겹치는 자리
 #: ★ 2026-11-14 (PLAN #244 · DECISIONS §786). 동명동 **밖** 지도 이동 범위의 빠진 면 — `firelane.bldg_fill` 이 뽑는다(칸 `src` = `AL_D010`).
-#: 발행 칸은 다섯뿐이라(`BUL_MAN_NO` · `BULD_NM` · `flo` · `h` · `z` — 예산 4.9MB 에 여유가 없다) **출처 칸을 발행에 싣지 않고 번호 자리로 가른다:**
+#: 발행 칸은 다섯뿐이라(`BUL_MAN_NO` · `BULD_NM` · `flo` · `h` · `z` — 예산 `BLDG_MB` 에 여유가 없다) **출처 칸을 발행에 싣지 않고 번호 자리로 가른다:**
 #: 번호 ≥ `GAP_ID0` 는 전부 `AL_D010` 이다(`drop_gap` 이 그 가름을 든다). 파일 쪽에는 칸이 있다.
 FILL_BUILDINGS = ROOT / "data" / "extra" / "bldg_gap_move.geojson"
-#: ★ **예산이 고른다.** 파일의 4,296면을 다 얹으면 건물 파일이 5.5MB 가 돼 단순화 세 단계(1.0m 까지)로도 4.9MB 에 안 든다(2026-11-14 실측 · 한도는 안 올린다).
-#: 그래서 발행에는 **다중이용 여섯 용도(`FILL_USES`)의 모든 면 + 발자국 `FILL_MIN_M2` 이상의 면**만 얹는다. 나머지(단독주택 · 근생의 작은 면)는 **파일에 있고 발행에 안 간다**(DECISIONS §786).
-FILL_USES = ("문화및집회시설", "판매시설", "판매및영업시설", "의료시설", "교육연구시설", "교육연구및복지시설", "운동시설", "업무시설")
-FILL_MIN_M2 = 200.0
+#: ★ 2026-11-14 (PLAN #245 · DECISIONS §787). **걸름을 걷었다** — 파일의 4,296면을 전부 얹는다(덮임 · 도로 위 걸름만 남는다). 종전에는 예산(4.9MB)이 고른다며
+#: 다중이용 용도 + 200㎡ 이상 192면만 얹었다(DECISIONS §786-C). 한도를 8.0 / 7.0MB 로 올려 걸름이 필요 없어졌다(§787-G).
 
 
 def _add_gap_buildings(b: gpd.GeoDataFrame, road) -> gpd.GeoDataFrame:
@@ -80,8 +78,6 @@ def _add_gap_buildings(b: gpd.GeoDataFrame, road) -> gpd.GeoDataFrame:
         print("  ! 빠진 건물 파일 없음 — 더하지 않는다")
         return b
     x = pd.concat([gpd.read_file(f).to_crs(b.crs).assign(_src=f.name) for f in files], ignore_index=True)
-    if "use" in x.columns:      # 예산 고름은 `FILL_BUILDINGS` 행에만 건다(동명동 파일은 `use` 칸이 없다)
-        x = x[x["use"].isna() | x["use"].isin(FILL_USES) | (x.geometry.area >= FILL_MIN_M2)]
     base = b.geometry.union_all()
     cover = x.geometry.intersection(base).area / x.geometry.area
     on_road = x.geometry.intersection(road).area / x.geometry.area
@@ -104,11 +100,12 @@ def drop_gap(b: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
 
 PREC = dict(driver="GeoJSON", COORDINATE_PRECISION=6)
-# ★ 건물 발행 예산(§181-2). 스코프 판 2.18MB · web/data 32MB / 상한 40MB 에서 잡았다.
+# ★ 건물 발행 예산(§181-2). 스코프 판 2.18MB · web/data 32MB 에서 잡았다(그때 상한 40MB — 지금은 총량 래칫이다 · DECISIONS §787).
 # ★ 2026-09-22 (§218-3) — 6.0 **MiB** 였는데 커밋 정책(`tools/commit_policy.py` MAX_FILE_MB)은 5.0 **MB**
 #   (10진)라 둘 사이(5.0MB~6.0MiB)에 떨어진 발행물이 파이프라인은 통과하고 커밋에서 막혔다.
 #   단위를 정책에 맞추고 여유 0.1 을 둔다.
-BLDG_MB = 4.9
+# ★ 2026-11-14 (PLAN #245 · DECISIONS §787-G). 4.9 → **7.0**. 커밋 정책 `MAX_FILE_MB` 도 5.0 → 8.0 (둘 사이 1MB 를 둔다 — 위 §218-3 의 단위 사고 때문)
+BLDG_MB = 7.0
 BLDG_TOL = (0.3, 0.6, 1.0)          # m · EPSG:5186
 
 def main():

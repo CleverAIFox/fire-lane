@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-14T21:18:31+09:00",
+  "generated_at": "2026-11-14T21:56:43+09:00",
   "note": "publish_web.py 산출물. 손으로 고치지 마라 — 다음 실행에 덮어써진다.",
   "source": {
     "segments.geojson": {
@@ -17,8 +17,8 @@
   },
   "files": {
     "buildings.geojson": {
-      "sha256": "1bcf7cfb568ca927aa77941095c92448fbdf321187581c7101f8cfadbdf7179f",
-      "bytes": 4807052
+      "sha256": "0c8d3fc7f469223d2259bb04578c9966d5638a063f7f8ef9a8e3fd6c4f78e573",
+      "bytes": 6170476
     },
     "cctv.geojson": {
       "sha256": "5e7581b7aef530d269a4b2bae76ea23e250d4b73b1327c6fad1c08f0f843061d",
@@ -128,5 +128,5 @@
     }
   },
   "tiles_digest": "f52e1501560e8a5a",
-  "total_mb": 35.58
+  "total_mb": 36.94
 }

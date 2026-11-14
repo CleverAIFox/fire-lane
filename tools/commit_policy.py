@@ -10,7 +10,7 @@ CI 는 push 후에 돈다. 그때 잡히면 이미 히스토리에 박혀 있고
 `git rm --cached` 로 추적을 끊어도 객체는 남는다.
 
 2026-08-21 에 네 번 겪었다 — processed 산출물 16.4MB · `.stale_*` 격리 파일 ·
-루트의 일회성 스크립트 3개 · web/data 상한 초과. 전부 사후 발견이었다.
+루트의 일회성 스크립트 3개 · web/data 래칫 초과. 전부 사후 발견이었다.
 
 ── 규칙 ───────────────────────────────────────────────────────
 각 규칙은 **왜** 를 함께 출력한다. 이유를 모르면 우회하게 된다.
@@ -24,8 +24,10 @@ from pathlib import Path
 from firelane.generated import for_role
 
 # ── 한계값 ────────────────────────────────────────────────────
-MAX_FILE_MB = 5.0          # 단일 파일. 이보다 크면 재생성 가능한지 따진다
-MAX_WEBDATA_MB = 40        # contract.yml 과 같은 값
+MAX_FILE_MB = 8.0          # 단일 파일. 이보다 크면 재생성 가능한지 따진다 (2026-11-14 5.0 → 8.0 · DECISIONS §787-G)
+# web/data 두 축 **래칫**(바이트 · 2026-11-14 DECISIONS §787-F). 40MB 상한을 없앴다. contract.yml · expectation.py 와 같은 값이다.
+WEBDATA_ORTHO_BYTES = 24_760_000    # 정사영상(ortho/) — 의도적으로 큰 것이라 따로 센다
+WEBDATA_REST_BYTES = 12_190_000     # 나머지 — 지금 실측 12,184,206 을 10KB 로 올림
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -136,10 +138,17 @@ def check_size(paths: list[str]) -> list[str]:
 
     web = ROOT / "web" / "data"
     if web.is_dir():
-        mb = sum(f.stat().st_size for f in web.rglob("*") if f.is_file()) / 1e6
-        if mb >= MAX_WEBDATA_MB:
-            bad.append(f"\n  ✗ web/data {mb:.1f}MB — 상한 {MAX_WEBDATA_MB}MB")
-            bad.append("      타일 줌 단계를 줄이거나 외부 호스팅으로 옮겨라")
+        ortho = rest = 0
+        for f in web.rglob("*"):
+            if f.is_file():
+                if f.relative_to(web).parts[0] == "ortho":
+                    ortho += f.stat().st_size
+                else:
+                    rest += f.stat().st_size
+        for name, got, lim in (("정사영상(ortho/)", ortho, WEBDATA_ORTHO_BYTES), ("나머지", rest, WEBDATA_REST_BYTES)):
+            if got > lim:
+                bad.append(f"\n  ✗ web/data {name} {got:,}B — 래칫 {lim:,}B 초과(+{got - lim:,}B)")
+                bad.append("      늘린 이유를 DECISIONS §787 에 적고 선언(세 곳)을 올려라 — 줄일 수 있으면 줄여라")
     return bad
 
 
@@ -172,7 +181,7 @@ def main() -> int:
               "(저장소 전체를 보려면 --tracked)")
         return 0
 
-    # ★ web/data 상한은 **스테이지에 그 폴더가 없어도** 본다. 합계 상한이라
+    # ★ web/data 래칫은 **스테이지에 그 폴더가 없어도** 본다. 합계라
     #   지금 커밋과 무관하게 넘을 수 있다. 위의 빈 스테이지 갈래만 예외다.
     bad = check_paths(paths) + check_size(paths)
     if not bad:

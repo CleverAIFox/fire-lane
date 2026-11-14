@@ -50,7 +50,7 @@ W = ROOT / "web" / "data"
 SIMPLIFY_M = 0.4
 #: 좌표 자릿수. publish_web · publish_navi 와 같은 6자리(약 11cm)
 PREC = 6
-#: 산출 상한(두 파일 합). web/data 40MB 예산 안에서 이 몫을 못박는다
+#: 산출 상한(두 파일 합). web/data 래칫(DECISIONS §787-F′) 안에서 이 몫을 못박는다
 SIZE_MAX = 2 * 1024 * 1024
 
 SOURCES = {

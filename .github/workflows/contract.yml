@@ -675,10 +675,16 @@ jobs:
 
       - name: web/data 용량 검사
         run: |
-          SIZE=$(du -sm web/data | cut -f1)
-          echo "web/data ${SIZE}MB"
-          if [ "$SIZE" -ge 40 ]; then
-            echo "::error::web/data 가 40MB 를 넘었다. 타일 줌 단계를 줄이거나 외부 호스팅으로 옮길 것"
+          # ★ 2026-11-14 (DECISIONS §787-F). 40MB 상한 → 두 축 바이트 래칫. `du` 가 아니라 파일 크기 합이다(블록 올림이 없다).
+          #   세 곳이 같은 수를 본다 — 이 파일 · tools/commit_policy.py · src/firelane/expectation.py (`test_webdata_limit_is_one_number`).
+          ORTHO_MAX=24760000
+          REST_MAX=12190000
+          ORTHO=$(find web/data/ortho -type f -printf '%s\n' 2>/dev/null | awk '{s+=$1} END{print s+0}')
+          ALL=$(find web/data -type f -printf '%s\n' | awk '{s+=$1} END{print s+0}')
+          REST=$((ALL-ORTHO))
+          echo "web/data ortho ${ORTHO}B (래칫 ${ORTHO_MAX}) · 나머지 ${REST}B (래칫 ${REST_MAX})"
+          if [ "$ORTHO" -gt "$ORTHO_MAX" ] || [ "$REST" -gt "$REST_MAX" ]; then
+            echo "::error::web/data 가 래칫을 넘었다. 늘린 이유를 DECISIONS §787 에 적고 선언 세 곳을 올릴 것"
             exit 1
           fi
 
@@ -888,6 +894,11 @@ jobs:
         run: |
           cd web/navi
           npm run smoke
+
+      - name: ★ 첫 화면 전송량 (gzip 래칫 — 내비 · 관제)
+        # ★ 2026-11-14 (DECISIONS §787-H · PLAN #245). 현장 로딩의 진짜 축은 `web/data` 총량이 아니라 **첫 화면이 받는 gzip 바이트**다. 위에서 빌드까지 했고 크로미움도 깔렸다.
+        #   같은 명령이 `verify.sh` 에도 있다(`첫 화면 전송량`). 선언(`FIRST_SCREEN_KB`)은 타일을 뺀 합이다 — 타일은 렌더 타이밍에 따라 ±20KB 흔들린다.
+        run: uv run python tools/firstscreen.py
 
   contract-shared:
     name: contract-shared

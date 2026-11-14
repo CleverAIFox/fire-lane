@@ -2526,7 +2526,7 @@ DECISIONS §341) 선언이 없는 이미지를 표에 두면 **있는 것처럼 
 
 ### 12-8a. 매체 저장 — 밑그림
 
-사진은 저장소에 넣지 않는다. `web/data` 40MB 상한(§12-10)과 같은 이유이며,
+사진은 저장소에 넣지 않는다. `web/data` 용량 래칫(§12-10)과 같은 이유이며,
 한 번 커밋되면 히스토리에서 뺄 수 없다.
 
 버킷을 둘로 가른다. **어느 쪽에도 미마스킹 프레임을 두지 않는다.**
@@ -2656,9 +2656,9 @@ CODEOWNERS 는 "누가 봐야 하는가"를 정하고, 계약 테스트는 "무�
 | `data/field/` | ✓ | 재생성 불가. 사람이 만드는 유일한 데이터 |
 | `web/data/` | ✓ | UI 담당이 raw 없이 작업할 수 있어야 한다 |
 
-`web/data` 는 **40MB 상한**이다. 세 곳이 같은 값을 본다 —
-`.github/workflows/contract.yml` · `tools/commit_policy.py` ·
-`expectation.WEB_MAX_MB`. 현재값은 `tools/web_manifest.py` 가 낸다 — 문서에 적지 않는다. 세는 방법이 셋이라(추적 파일 합 · `du` · 계보) 값을 적으면 어느 것과도 안 맞는다.
+`web/data` 는 **두 축 바이트 래칫**이다(정사영상 `ortho/` · 나머지 — 2026-11-14 DECISIONS §787-F′ 가 40MB 상한을 없앴다. 상한은 「거기까지 마음껏」이라 경보로 틀린 도구다).
+세 곳이 같은 값을 본다 — `.github/workflows/contract.yml`(`ORTHO_MAX` · `REST_MAX`) · `tools/commit_policy.py`(`WEBDATA_*_BYTES`) ·
+`expectation.WEB_ORTHO_BYTES` · `WEB_REST_BYTES`. 단일 파일은 8.0MB(`MAX_FILE_MB`). 현장 로딩의 축은 총량이 아니라 **첫 화면 gzip 전송량**이고 `tools/firstscreen.py` 가 따로 건다(DECISIONS §787-H). 현재값은 `tools/web_manifest.py` 가 낸다 — 문서에 적지 않는다. 세는 방법이 셋이라(추적 파일 합 · `du` · 계보) 값을 적으면 어느 것과도 안 맞는다.
 강제자 — `tests/test_guards.py::test_webdata_limit_is_one_number`
 
 ### 12-11. 한글 파일명

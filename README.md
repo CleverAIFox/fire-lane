@@ -256,7 +256,7 @@ bash scripts/deploy.sh                                       # 배포 — 사람
 | Infra · API | `part/infra` | 아직 서버 없음 — 배포는 `.github/workflows/deploy.yml` · 배치는 `tools/fl.sh` | README `## 도구` |
 
 **데이터 레이크는 GIS 담당만 필요하다.** CV·Infra 는 git 으로 추적되는
-`web/data/`(40MB 상한)만으로 작업할 수 있다.
+`web/data/`(바이트 래칫 — 정사영상과 나머지 두 축 · DECISIONS §787)만으로 작업할 수 있다.
 
 배포된 화면 넷이다. **서로 링크하지 않는다** — 각각 다른 사람이 다른 이유로 열고, 화면마다 이동 메뉴를 두면 같은 목록이 네 곳에 산다.
 가는 길은 여기 하나다(DECISIONS §99). 플레이북(`web/playbook.html`)은 협업 방침을 그리는

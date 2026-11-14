@@ -110,6 +110,7 @@ LAYERS: dict[tuple[str, str], tuple[str, str]] = {
     ("tools/dupcheck.py", "--min 40 --max 0"): ("ready", _SLOW3),
     ("tools/fixable.py", ""): ("ready", _BUDGET),
     ("tools/fixture_recut.py", "--check"): ("ready", _BUDGET),
+    ("tools/firstscreen.py", ""): ("ci", _SMOKE),             # 빌드본 + 헤드리스 크로미움 — 훅 · pushready 는 내비를 안 짓는다(DECISIONS §787-H)
     ("tools/gate_parity.py", ""): ("ready", _BUDGET),
     ("tools/greycheck.py", ""): ("ready", _BUDGET),
     ("tools/htmlfigs.py", "--check"): ("ready", _BUDGET),
