@@ -1,5 +1,5 @@
 {
- "all": "d4a575f3c6b25aa3",
+ "all": "4f56d5e9895b6054",
  "method": "tokens-v1",
  "files": {
   "src/firelane/__init__.py": "fa4d63348469",
@@ -24,6 +24,6 @@
   "src/firelane/seg/width.py": "f4d3505974e2",
   "src/firelane/segkey.py": "33fe9066ab95",
   "src/firelane/segments.py": "cb1e4cef9df7",
-  "uv.lock": "a8934db1bdd5428e"
+  "uv.lock": "6e14671b6ca86d08"
  }
 }
