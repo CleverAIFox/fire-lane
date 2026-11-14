@@ -338,6 +338,7 @@ def _roles(feats: list[dict], samples: dict, rows: list[dict]) -> list[tuple[str
 
 
 SEEN = {"거리뷰": "있다", "포장폭": "중간", "촬영시점": "2025-04"}
+FLAT = {"답2": "평평하다"}           # 가-2 — 가설 「가」에서 가-1 이 한쪽 · 양쪽인 행만 적는다
 
 
 def test_the_hypothesis_sheet_is_whole_and_blank_or_valid() -> None:
@@ -368,9 +369,12 @@ def test_every_row_asks_what_its_hypothesis_asks() -> None:
     assert all(r["묻는것"].strip() and r["묻는것"] == E.RV_HYPO[r["가설"]][4] for r in rows)
     assert len({h[4] for h in E.RV_HYPO.values()}) == len(E.RV_HYPO) == len({r["가설"] for r in rows}) >= 3, "가설마다 묻는 것이 달라야 한다"
     for k, h in E.RV_HYPO.items():
-        tail = h[4].split("—")[-1]
-        assert "—" in h[4] and all(a in tail for a in h[5]) and set(h[6]) < set(h[5]) and "가림" in h[5] and "가림" not in h[6], f"가설 {k}: 묻는 줄 끝에 허용 답이 다 없다"
+        q1, *q2 = h[4].split(" / ")          # 가설 「가」는 물음이 둘이다(가-1 · 가-2) — 물음마다 줄 끝에 허용 답이 다 있어야 한다
+        tail = q1.split("—")[-1]
+        assert "—" in q1 and all(a in tail for a in h[5]) and set(h[6]) < set(h[5]) and "가림" in h[5] and "가림" not in h[6], f"가설 {k}: 묻는 줄 끝에 허용 답이 다 없다"
+        assert len(q2) == (k == E.RV_Q2_HYP) and all(all(a in q.split("—")[-1] for a in E.RV_ALLOWED["답2"]) for q in q2), f"가설 {k}: 둘째 물음(가-2)의 허용 답이 줄 끝에 없다"
         assert "," not in h[4], "묻는 줄에 쉼표가 있으면 CSV 칸이 따옴표로 싸여 손으로 채우기 어렵다"
+    assert {"노상주차면", "갈림목"} <= set(E.RV_HYPO["다"][5]) and "노상주차면" in E.RV_HYPO["다"][6] and "갈림목" not in E.RV_HYPO["다"][6], "다 의 새 답 둘 — 노상주차면은 가설이 참인 쪽 · 갈림목은 아니다"
 
 
 def test_the_coordinate_is_the_min_width_sample_point_not_the_midpoint() -> None:
@@ -435,14 +439,14 @@ def test_rv_point_interpolates_along_the_line_and_keeps_the_travel_bearing() -> 
 
 def test_rv_check_passes_a_good_row_and_catches_each_break(tmp_path: Path) -> None:
     in_a = next(r["seg_uid"] for r in _hy_sheet(tmp_path)[3] if r["seg_uid"].startswith("A"))     # 가설 「가」의 가설군 한 행
-    path, feats, samples, table = _hy_sheet(tmp_path, {in_a: {**SEEN, "답": "한쪽"}})
+    path, feats, samples, table = _hy_sheet(tmp_path, {in_a: {**SEEN, **FLAT, "답": "한쪽"}})
     bad, stat = E.rv_check(path, feats, samples)
     assert not bad and stat["채운 행"] == 1 and stat["행"] == E.RV_N, bad
     breaks = {"허용값": {"답": "터졌다"}, "허용값 ": {"포장폭": "3.2"}, "허용값  ": {"거리뷰": "예"}, "YYYY-MM": {"촬영시점": "2025.4"}, "채우다 만": {"포장폭": ""},
               "채우다 만 ": {"거리뷰": "없다"}, "채우다 만  ": {"거리뷰": ""}, "채우다 만   ": {"촬영시점": ""}, "최소폭 표본 지점": {"위도": "35.100200"}, "최소폭 표본 지점 ": {"묻는것": ""},
               "최소폭 표본 지점  ": {"보는방향": "남 180°"}, "규칙 밖": {"가설": "다"}}
     for want, cell in breaks.items():
-        path, feats, samples, _ = _hy_sheet(tmp_path, {in_a: {**SEEN, "답": "한쪽", **cell}})
+        path, feats, samples, _ = _hy_sheet(tmp_path, {in_a: {**SEEN, **FLAT, "답": "한쪽", **cell}})
         bad, _ = E.rv_check(path, feats, samples)
         assert any(want.strip() in b for b in bad), f"{cell} 를 못 잡는다 — {bad}"
     path, feats, samples, _ = _hy_sheet(tmp_path, {in_a: {"거리뷰": "없다"}})            # 거리뷰가 없으면 그 한 칸으로 온전한 행이다
@@ -466,7 +470,7 @@ def test_the_verdict_comes_only_when_a_hypothesis_is_fully_answered(tmp_path: Pa
     feats, samples = _hy_world()
     picks = E.rv_draw(feats, samples)
     role = dict(zip([u for _, u in picks], [r for _, r in _roles(feats, samples, [{"가설": h, "seg_uid": u} for h, u in picks])], strict=True))
-    ans = {u: {**SEEN, "답": "양쪽" if role[u] == "가설군" else "없다"} for h, u in picks if h == "가"}
+    ans = {u: {**SEEN, "답": "양쪽" if role[u] == "가설군" else "없다", **(FLAT if role[u] == "가설군" else {})} for h, u in picks if h == "가"}
     part = dict(list(ans.items())[:-1])
     path, feats, samples, _ = _hy_sheet(tmp_path, part)
     bad, stat = E.rv_check(path, feats, samples)
@@ -479,7 +483,7 @@ def test_the_verdict_comes_only_when_a_hypothesis_is_fully_answered(tmp_path: Pa
     path, feats, samples, _ = _hy_sheet(tmp_path, blind)
     stat = E.rv_check(path, feats, samples)[1]
     assert stat["가"]["p"] is None and "못 가른다" in stat["가"]["판정"] and stat["가"]["지명"] == ["가림", "가림"], stat
-    same = {u: {**SEEN, "답": "한쪽"} for u in ans}
+    same = {u: {**SEEN, **FLAT, "답": "한쪽"} for u in ans}
     path, feats, samples, _ = _hy_sheet(tmp_path, same)
     assert "기각하지 못한다" in E.rv_check(path, feats, samples)[1]["가"]["판정"]
 
@@ -507,3 +511,49 @@ def test_rv_main_never_overwrites_a_filled_sheet_and_never_opens_the_key(tmp_pat
     short, _ = _hy_world({f"A{i}": {"length_m": 10.0} for i in range(5)})
     with pytest.raises(SystemExit, match="못 뽑는다"):
         E.rv_draw(short, samples)
+
+
+def _rows_of(feats, samples, tmp_path: Path, hyp: str) -> list[str]:
+    path, _f, _s, table = _hy_sheet(tmp_path)
+    return [r["seg_uid"] for r in table if r["가설"] == hyp]
+
+
+def test_each_hypothesis_requires_its_own_columns(tmp_path: Path) -> None:
+    """★ 가설마다 요구하는 칸이 다르다(DECISIONS §788) — 「나」는 지도 · 항공뷰로 보므로 거리뷰 · 촬영시점을 안 요구하고, 「가」 · 「다」는 요구한다. 「가」는 가-1 이 한쪽 · 양쪽일 때만 답2 도 요구한다."""
+    assert E.RV_NEED["나"] != E.RV_NEED["가"] == E.RV_NEED["다"] and "촬영시점" not in E.RV_NEED["나"] and "거리뷰" not in E.RV_NEED["나"], "나 는 지도로 보는 가설이다"
+    assert {"촬영시점", "거리뷰"} <= set(E.RV_NEED["가"]) and {"촬영시점", "거리뷰"} <= set(E.RV_NEED["다"]), "가 · 다 는 로드뷰로 본다 — 촬영시점을 면제하지 않는다"
+    feats, samples = _hy_world()
+    ids = {h: _rows_of(feats, samples, tmp_path, h) for h in ("가", "나", "다")}
+
+    def check(hyp: str, cell: dict) -> list[str]:
+        path, f, s_, _ = _hy_sheet(tmp_path, {ids[hyp][-1]: cell})
+        return E.rv_check(path, f, s_)[0]
+
+    # 나 — 답 · 포장폭만으로 온전하다(거리뷰 · 촬영시점 없음 · 거리뷰 「없다」여도 지도로 본 것이다)
+    assert check("나", {"답": "교차부", "포장폭": "중간"}) == []
+    assert check("나", {"답": "잘록하다", "포장폭": "좁다", "거리뷰": "없다"}) == []
+    assert any("빠진 것: 포장폭" in b for b in check("나", {"답": "교차부"})), "나 의 요구 칸(포장폭)이 빠져도 안 운다"
+    assert any("답2" in b for b in check("나", {"답": "교차부", "포장폭": "중간", "답2": "평평하다"})), "나 에 답2 를 적었는데 안 운다"
+    # 다 — 촬영시점이 여전히 요구된다 · 새 답 둘이 허용된다
+    assert any("촬영시점" in b and "채우다 만" in b for b in check("다", {"거리뷰": "있다", "답": "터졌다", "포장폭": "넓다"})), "다 의 촬영시점이 면제됐다"
+    for a in ("노상주차면", "갈림목"):
+        assert check("다", {"거리뷰": "있다", "답": a, "포장폭": "넓다", "촬영시점": "2026-03"}) == [], a
+    assert any("허용값" in b for b in check("다", {"거리뷰": "있다", "답": "교차부", "포장폭": "넓다", "촬영시점": "2026-03"}))
+    # 가 — 촬영시점 요구 · 가-1 한쪽 · 양쪽이면 답2 요구 · 없다 · 가림이면 답2 는 비운다
+    base = {**SEEN, "답": "한쪽"}
+    assert any("빠진 것: 답2" in b for b in check("가", base)), "가-1 이 한쪽인데 가-2 가 비어도 안 운다"
+    assert check("가", {**base, **FLAT}) == [] and check("가", {**base, "답2": "턱 있다"}) == []
+    assert any("촬영시점" in b for b in check("가", {**base, **FLAT, "촬영시점": ""})), "가 의 촬영시점이 면제됐다"
+    for a in ("없다", "가림"):
+        assert check("가", {**SEEN, "답": a}) == [], f"가-1 이 {a} 인데 답2 를 요구한다"
+        assert any("답2" in b for b in check("가", {**SEEN, "답": a, **FLAT})), f"가-1 이 {a} 인데 답2 를 적어도 안 운다"
+    assert any("허용값" in b for b in check("가", {**base, "답2": "있다"})), "답2 의 허용값을 안 문다"
+
+
+def test_the_sheet_head_says_which_screen_each_hypothesis_is_judged_on() -> None:
+    """머리말이 「나 는 지도 · 항공뷰다」를 못박고 가설마다 보는 화면을 적는다 · 가설마다 요구 칸 · 가-2 · 새 답 둘을 적는다."""
+    head = "\n".join(ln for ln in (FIELD / E.RV_FILE).read_text(encoding="utf-8").splitlines() if ln.startswith("#"))
+    assert "나 는 지도 · 항공뷰로 본다" in head and "로드뷰가 아니다" in head
+    assert all(f"보는 화면: {h[8]}" in head for h in E.RV_HYPO.values()) and len({h[8] for h in E.RV_HYPO.values()}) == 3
+    assert "가설마다 요구하는 칸이 다르다" in head and all(f"{k} = {' · '.join(v)}" in head for k, v in E.RV_NEED.items())
+    assert "가-1" in head and "가-2" in head and "노상주차면" in head and "갈림목" in head
