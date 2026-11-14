@@ -410,7 +410,8 @@ def test_the_control_rows_do_not_show_and_the_draw_is_reproducible() -> None:
     assert "대조군" not in body and "가설군" not in body and "지명" not in body, "표 본문에 묶음이 실렸다"
     assert not list(FIELD.glob("roadview_hypo*key*")), "열쇠 파일을 따로 두지 않는다 — 규칙으로 다시 나온다"
     pub = {f["properties"]["seg_uid"]: f["properties"] for f in feats}
-    leak = {str(pub[r["seg_uid"]][c]) for r in rows for c in ("width_min_m", "width_med_m", "road_bt_m")} & {r[c] for r in rows for c in E.RV_PRE if c != "순번"}
+    from rvsheet import RV_PRE  # 판독표 선언은 `tools/rvsheet.py` 로 옮겼다(DECISIONS §788)
+    leak = {str(pub[r["seg_uid"]][c]) for r in rows for c in ("width_min_m", "width_med_m", "road_bt_m")} & {r[c] for r in rows for c in RV_PRE if c != "순번"}
     assert not leak, f"표의 칸에 우리 폭 · 대장폭이 실렸다 {sorted(leak)[:3]}"
 
 

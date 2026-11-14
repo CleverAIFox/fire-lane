@@ -114,7 +114,7 @@ def test_published_index_has_the_places_a_person_named(name):
 
 
 def test_published_court_is_found_by_its_district_name():
-    p = [f["properties"] for f in _dest() if f["properties"]["name"] == "광주지방.고등법원"][0]
+    p = next(f["properties"] for f in _dest() if f["properties"]["name"] == "광주지방.고등법원")
     assert "광주지방법원" in p["alt"]
 
 

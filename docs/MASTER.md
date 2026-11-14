@@ -4933,6 +4933,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `tools/after_squash.py` | **열차가 만든 상태를 다시 본다.** 스쿼시 뒤의 강제자다 |
 | `tools/branch_tidy.sh` | 가지와 PR 정리. **산출물에 안 닿는다** |
 | `tools/closecap.py` | **한 커밋이 닫는 PLAN 행은 셋까지다.** 스테이지된 diff 에서 지워진 행을 세고, 넘으면 DECISIONS 에 더한 사유 줄이 있어야 통과한다. 과거는 보고만 한다 | 닫힌 행이 **옳게** 닫혔는지(`planclose` · 사람의 읽기) · CI(스테이지가 없다) |
+| `tools/rvsheet.py` | **거리뷰 판독표의 선언** — 가설 · 허용 답 · 가설마다 요구 칸(`RV_NEED` — 나 는 지도로 보므로 촬영시점 면제) · 보는 화면 · 머리말. 순수 상수이고 동작은 `tools/evalset.py` 의 `rv_*` 가 든다(줄 수 상한 때문에 옮겼다 · DECISIONS §788) | 가설이 좋은가 · 판독이 옳은가 |
 | `tools/firstscreen.py` | **첫 화면이 받는 gzip 바이트** 래칫 — Pages 모양 로컬 서버(응답마다 기록) + 헤드리스 크로미움(`tools/firstscreen_drive.cjs`)으로 내비 · 관제를 재 선언(타일 제외)과 대조한다. 현장 로딩의 진짜 축이다(`web/data` 총량이 아니다 · DECISIONS §787-H). CI `contract-smoke` 가 돈다 | 렌더링 시간(PLAN #246) · 서비스 워커가 든 2회차 · Pages 가 gzip 을 주는지 |
 | `tools/testsplit.py` | **`contract-tests` 의 조각을 CI 에서 잰 파일별 시간(`data/golden/ci_testtimes.json`)으로 가른다**(LPT · 결정적 · 새 파일은 장부 중앙값). 워크플로가 `--part N --of 4` 로 부른다 | 장부의 초가 CI 실측과 맞는지(푸시 뒤 첫 CI 가 그 오차) · 러너 속도 |
 | `ops-worker/scripts/deploy.sh` | **중개자를 Cloudflare 에 올리는 스크립트 — 사람이 친다**(로그인 · 비밀 입력). GitHub 변수 · 비밀은 안 건드리고 다음 명령만 찍는다. `ops-worker/` 가 `server.py` 와 같은 표면(DECISIONS §755) | 계정 · 실제 배포(사람 몫) |
