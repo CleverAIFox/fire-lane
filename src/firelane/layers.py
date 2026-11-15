@@ -46,6 +46,7 @@ BIND = {
     "interim": "INTERIM",
     "processed": "PROCESSED",
     "field": "FIELD",
+    "extra": "EXTRA",
     "quarantine": "QUARANTINE",
     "web": "WEB",
     "golden": "GOLDEN",

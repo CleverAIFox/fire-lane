@@ -170,6 +170,9 @@ INTERIM = (DATA / "interim") if DATA else (ROOT / "data" / "interim")
 #     가 근거로 인용한다. `tools/fieldseal.py` 가 지문을 든다.
 FIELD = ROOT / "data" / "field"
 
+# 발행 건물에 얹는 빠진 면 · 표시용 산출물(저장소 안 · 추적됨 · 도구가 다시 낸다). `layers.extra` 가 선언한다(DECISIONS §797-D · §799) — 선언만 있고 이 줄이 없어 BIND 가 비었다.
+EXTRA = ROOT / "data" / "extra"
+
 # 대장에 없는 파일. 삭제하지 않고 격리한다(MASTER §18-12).
 QUARANTINE = (DATA / "_quarantine") if DATA else (ROOT / "data" / "_quarantine")
 
