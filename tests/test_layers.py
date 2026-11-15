@@ -338,7 +338,6 @@ TARGET_ONLY: dict[str, str] = {}
 LEDGER_ONLY = {
     "baseline": "저장소 안. 봉인 기준선이다",
     "field": "저장소 안. 실측 원본이라 커밋된다",
-    "extra": "저장소 안. 발행 건물에 얹는 빠진 면(표시용)이라 커밋된다 — 도구(`bldg_gap` · `bldg_fill`)가 다시 낸다(DECISIONS §797-D)",
     "golden": "저장소 안. 산출물 지문이다",
     "processed": "저장소 안. 파이프라인 산출물이다",
     "web": "저장소 안. 관제·내비가 읽는 발행물이라 커밋된다",

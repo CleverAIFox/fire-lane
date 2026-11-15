@@ -52460,7 +52460,7 @@ PLAN #31 에 「0.05 로 정했다 · 근거 · 본 저장소 미적용」 을, 
 
 ### 797-D. #232 — `data/extra/` 를 계층으로 올렸다
 
-사람이 정했다(두 파일이 이미 거기 있고 앞으로도 쓴다). `layers.extra`(`base: repo` · `sub: data/extra` · 추적됨 · 재생성 가능)를 더하고 `outputs` 에 `bldg_gap_dongmyeong` · `bldg_gap_move` 를 올렸다 — 전에는 경로가 계층 밖이라 `test_declared_paths_point_into_a_declared_layer` 가 울어 건물대장 항목의 note 가 대장을 겸했다. 이 칸은 봉인지 cfg 의 전역 칸이지만 `ingest` 가 닿는 계층만 지문에 든다(`_narrow_layers`)라 봉인지가 안 찢어졌다(시험이 같다). **⑤ `A0`~`A28` 정본 문서는 못 닫는다** — 받은 PDF(`도로명주소전자지도활용가이드.pdf`)는 `TL_*` 층의 칸 레이아웃이고 `AL_D010` · `A0` 꼴 이름이 0건이다(§773-1). 행에 그대로 적었다.
+(§799-A 가 되돌렸다 — 판정 폐포를 건드려야 서기 때문이다) 사람이 정했다(두 파일이 이미 거기 있고 앞으로도 쓴다). `layers.extra`(`base: repo` · `sub: data/extra` · 추적됨 · 재생성 가능)를 더하고 `outputs` 에 `bldg_gap_dongmyeong` · `bldg_gap_move` 를 올렸다 — 전에는 경로가 계층 밖이라 `test_declared_paths_point_into_a_declared_layer` 가 울어 건물대장 항목의 note 가 대장을 겸했다. 이 칸은 봉인지 cfg 의 전역 칸이지만 `ingest` 가 닿는 계층만 지문에 든다(`_narrow_layers`)라 봉인지가 안 찢어졌다(시험이 같다). **⑤ `A0`~`A28` 정본 문서는 못 닫는다** — 받은 PDF(`도로명주소전자지도활용가이드.pdf`)는 `TL_*` 층의 칸 레이아웃이고 `AL_D010` · `A0` 꼴 이름이 0건이다(§773-1). 행에 그대로 적었다.
 
 ### 797-E. pushready 가 막은 둘 — 원인과 고친 길 · 사람이 칠 명령은 없다
 
@@ -52533,7 +52533,7 @@ PLAN #31 에 「0.05 로 정했다 · 근거 · 본 저장소 미적용」 을, 
 
 **`UI_TEXT` 는 3377 그대로다.** 예보(−20)는 함수를 걷는 몫이었는데 같은 묶음에서 갈라 쓴 줄(「폭 모름 N곳」 · 「차량 한계」 · 「차량이 못 도는 코너」 · 관제 카드의 「폭 모름」)이 그만큼 보태 순 0 이다 — 안 올렸고 안 내려갔다.
 
-## 799. `layers.extra` 의 bind 를 올렸다 · PDF 이름이 두 시험 사이에 낀 것 · 시험 묶음이 900초를 넘긴 원인은 모른다
+## 799. `layers.extra` 는 판정 폐포를 건드려야 서서 되돌렸다 · PDF 이름이 두 시험 사이에 낀 것 · 시험 묶음이 900초를 넘긴 원인은 모른다
 
 > 2026-11-15
 
@@ -52541,9 +52541,16 @@ PLAN #31 에 「0.05 로 정했다 · 근거 · 본 저장소 미적용」 을, 
 
 강제자  `tests/test_layers.py`(선언과 BIND 가 같은 층 · 모든 층이 경로로 풀림 · 대장에만 있는 층의 사유) · `tests/test_intake_rules.py`(정규명) · `tests/test_normalize_rules.py`(규칙 ↔ 실물). 하위 셋이 이 칸을 물려받는다
 
-### 799-A. `test_layers` 넷 — 고칠 자리는 bind 쪽이었다
+### 799-A. `test_layers` 넷 — bind 를 올리면 판정 폐포가 바뀌어 **선언을 되돌렸다**
 
-원인: §797-D 가 `layers.extra` 를 `sources.yaml` 에 선언했으나 `layers.BIND`(선언 이름 → `paths` 상수)와 `paths.py` 에 짝이 없었다. 첫 시험이 「선언에만 있음 `extra`」로 빨갛고 나머지 셋(경로 풀림 · base 일치 · 간극 선언)은 같은 뿌리다. 가름: 선언이 맞다(두 파일이 실제로 `data/extra/` 에 있고 사람이 계층으로 정했다) — 그래서 **bind 를 올렸다**: `paths.EXTRA = ROOT/data/extra` · `BIND["extra"] = "EXTRA"`. 넷째 시험(대장에만 있는 층)은 레이크 밖 저장소 안 층이라 `LEDGER_ONLY` 에 사유와 함께 올렸다(`field` · `web` 과 같은 꼴 — 시험을 느슨하게 한 것이 아니라 선언한 간극을 적은 것이다). §797-D 를 쓸 때 `test_ledger_outputs` · `test_shardseal` 은 돌렸고 `test_layers` 는 안 돌렸다 — 계층을 더하는 일이면 이 시험이 첫 줄이다.
+원인: §797-D 가 `layers.extra` 를 `sources.yaml` 에 선언했으나 `layers.BIND`(선언 이름 → `paths` 상수)와 `paths.py` 에 짝이 없었다. 첫 시험이 「선언에만 있음 `extra`」로 빨갛고 나머지 셋(경로 풀림 · base 일치 · 간극 선언)은 같은 뿌리다. 가름의 첫 안: 선언이 맞으니 **bind 를 올린다** — `paths.EXTRA` · `BIND["extra"]`(시험이 「모든 계층이 `paths.py` 에 있다」를 걸어 상수는 `paths.py` 에 있어야 한다). 넷이 풀렸으나 **`golden.py check` 가 빨개졌다**: `src/firelane/paths.py` 가 판정 폐포(잠긴 코드 지문) 안이라 상수 하나가 지문(562a22bd… → 737f5b3c…)을 바꿨다. 판정 폐포를 고치지 않는다는 금지에 걸려 **되돌렸다** — `paths.py` · `layers.py` · `tests/test_layers.py` 를 원래대로, `sources.yaml` 에서 `layers.extra` 와 `outputs.bldg_gap_dongmyeong` · `bldg_gap_move` 를 뺐다(건물대장 항목의 note 가 도로 대장을 겸한다). 되돌린 뒤 `test_layers` · `test_ledger_outputs` · `test_shardseal` · `test_ledger_accessor` 103건 초록 · `golden.py check` 의 세 단계(L1 L2 L3)가 같다(판정 지문 불변).
+
+| 길 | 사람이 하는 일 | 비용 |
+|---|---|---|
+| 가) 지금 상태(계층을 안 올린다) | 없다 | `data/extra/` 두 파일은 건물대장 항목의 note 가 대장을 겸한다(§776 이후와 같다) |
+| 나) 계층을 올린다 | `paths.EXTRA` · `BIND` · 선언을 다시 넣는다(제안 패치는 §797-D 의 설명 그대로) → 파이프라인을 다시 돌리고 `golden.py lock`(사람 전용) | 판정 입력은 안 바뀌어도 코드 지문이 바뀌어 **재잠금**이 따른다 |
+
+§797-D 를 쓸 때 `test_layers` 는 안 돌렸다 — 계층을 더하는 일이면 이 시험과 `golden.py check` 가 첫 줄이다.
 
 ### 799-B. 레이아웃 PDF 의 이름이 두 시험 사이에 끼었다 (사람 몫 · 명령 하나)
 
