@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import geopandas as gpd
 import numpy as np
 from shapely.geometry import box
 
@@ -74,3 +75,40 @@ def test_published_buildings_carry_zb_only_where_it_matters():
     assert 500 < len(zbs) < 0.1 * len(feats), f"{len(zbs)}동 — 희소가 아니거나 안 실렸다"
     assert all(z <= 0 for z in zbs), "zb 는 최저 − 중심이라 0 이하다"
     assert all(f["properties"]["zb"] is not None for f in feats if "zb" in f["properties"]), "빈 zb 가 파일에 남았다"
+
+
+def test_lonlat_to_px_round_trips_the_tile_corner():
+    n = G.TILE * 2 ** G.ZOOM
+    px, py = G.lonlat_to_px(-180.0, 0.0)
+    assert (px, round(py)) == (0.0, n // 2)          # 서쪽 끝 · 적도
+    assert G.lonlat_to_px(0.0, 0.0)[0] == n / 2       # 경도 0 은 가운데
+
+
+def test_center_point_rules_agree_on_a_box_and_reject_unknown_rules():
+    g = box(0.0, 0.0, 2.0, 4.0)
+    for rule in ("centroid", "rep", "bbox"):
+        assert abs(G.center_point(g, rule).x - 1.0) < 1e-9, rule
+    try:
+        G.center_point(g, "없는규칙")
+    except ValueError:
+        return
+    raise AssertionError("모르는 규칙을 조용히 받았다")
+
+
+def test_add_ground_marks_only_the_slope_and_keeps_the_rest(tmp_path):
+    """합성 타일을 파일로 구워 `add_ground` 를 끝에서 끝까지 돈다 — 평지 건물은 `zb` 가 비고 `h` 가 그대로다."""
+    from PIL import Image
+
+    def rgb(slope):
+        v = ((np.arange(G.TILE) * slope + 100.0) + 10000.0) / 0.1     # 0.1m 단위 정수 · mapbox Terrain-RGB
+        iv = np.tile(np.round(v).astype("int64"), (G.TILE, 1))
+        return np.stack([(iv >> 16) & 255, (iv >> 8) & 255, iv & 255], -1).astype("uint8")
+    d = tmp_path / str(G.ZOOM) / str(TX)
+    d.mkdir(parents=True)
+    Image.fromarray(rgb(0.1)).save(d / f"{TY}.png")
+    slope_foot = _foot()
+    flat_foot = box(slope_foot.bounds[0] + 1e-9, slope_foot.bounds[1], slope_foot.bounds[0] + 2e-9, slope_foot.bounds[1] + 1e-9)
+    b = gpd.GeoDataFrame({"h": [6.6, 6.6]}, geometry=[slope_foot, flat_foot], crs=4326)
+    out = G.add_ground(b, tmp_path)
+    assert out["zb"].notna().tolist()[0] and out["h"].tolist()[0] > 6.6
+    assert out["h"].tolist()[1] == 6.6 and out["zb"].isna().tolist()[1]

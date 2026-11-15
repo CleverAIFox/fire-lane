@@ -20,7 +20,7 @@
  * 밖    실제 지도(MapLibre)의 그리기 · 실제 브라우저의 타이머 묶임 — 핀의 DOM 은 `pinLook` 이 낸 값을 칠할 뿐이다(소스 문으로 본다)
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Unit } from "../src/domain/opsProtocol";
+import { isLL, isObj, type Unit } from "../src/domain/opsProtocol";
 import { UNIT_STALE_MS } from "../src/domain/opsBoard";
 import { chipOf, liveCounts, lostUnits, pinLook, unitChip } from "../src/domain/unitBoard";
 
@@ -148,4 +148,14 @@ describe("관제 전용 모듈 — 내비 쪽 소스가 읽으면 진입 청크�
 
 it("관제 첫 화면의 범례는 접혀 있다 — 펼친 범례가 핀을 덮는다(PLAN #242 · 기준 창 폭 1536 이상)", () => {
   expect(OPS_APP).toMatch(/\[legendOpen, setLegendOpen\] = useState\(false\)/);
+});
+
+describe("모양 검사 둘 — 받은 것을 믿기 전의 문(opsBoard 가 같이 쓴다)", () => {
+  it("isObj — 객체만 참이고 null · 글자 · 숫자는 거짓", () => {
+    expect([isObj({}), isObj([]), isObj(null), isObj("a"), isObj(3)]).toEqual([true, true, false, false, false]);
+  });
+  it("isLL — 유한한 숫자 둘의 배열만 참이다", () => {
+    expect([isLL([126.9, 35.1]), isLL([1]), isLL([1, NaN]), isLL([1, Infinity]), isLL("ab"), isLL(null)])
+      .toEqual([true, false, false, false, false, false]);
+  });
 });
