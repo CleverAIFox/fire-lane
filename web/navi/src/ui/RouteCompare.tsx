@@ -187,7 +187,7 @@ type Section = (typeof SECTIONS)[number];
 function cells(o: RouteOption): Record<Section, ReactNode> {
   return {
     rules: o.ruleCount > 0 || o.rules ? <Block k="규칙 경고" v={o.rules ?? `${o.ruleCount}건`} warn /> : null,
-    around: o.around ? <Block k="경로 주변" v={o.around} /> : null,
+    around: null,   // ★ 2026-11-15 (PLAN #250 · DECISIONS §797-B) 출동에 안 쓴다 — 칸을 뺐다(`hazardSummary` 는 남겼다 · 달리는 중 음성 안내는 `hazardPhrase` 의 다른 길이다)
     risks: o.risks.lines.length > 0 ? (
       <div style={riskBox}>
         {o.risks.lines.map((l, i) => <div key={l} style={i >= o.risks.lines.length - (o.risks.shared ?? 0) ? { opacity: 0.55 } : undefined}>{l}</div>)}

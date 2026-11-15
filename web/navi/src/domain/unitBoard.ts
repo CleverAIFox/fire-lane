@@ -15,7 +15,8 @@
  * OUT   새 배열(입력을 안 바꾼다) · 상태 한 낱말
  * 밖    **그리는 일 · 색 · 문구는 안 한다**(`OpsApp`). 목록의 다른 쓰임(지도 마커 · 포커스)의 순서도 안 바꾼다 — 상황판만이다.
  */
-import { unitStale, type Unit } from "./opsProtocol";
+import { unitStale } from "./opsBoard";
+import type { Unit } from "./opsProtocol";
 import { DEMO_BADGE } from "./demo";
 
 export type UnitStatus = "dispatching" | "lost" | "idle";

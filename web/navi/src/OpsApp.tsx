@@ -58,7 +58,8 @@ import { MOTION_CSS } from "./ui/motion";
 import { useFleet } from "./app/useFleet";
 import { loadAll, loadHistory, type Bundle } from "./infra/dataSource";
 import { openLink, newId, type Link } from "./infra/opsLink";
-import { HB_MS, OPS_EMPTY, asNaviMsg, opsAck, opsReduce, type OpsState } from "./domain/opsProtocol";
+import { OPS_EMPTY, asNaviMsg, opsAck, opsReduce } from "./domain/opsBoard";
+import { HB_MS, type OpsState } from "./domain/opsProtocol";
 import { buildAdjacency, findRouteBetween, nearestNode, snapToEdge } from "./domain/graph";
 import { ruleSummary } from "./domain/rules";
 import { dispatchUrl as mkDispatchUrl } from "./domain/dispatch";
@@ -94,8 +95,7 @@ export default function OpsApp() {
   const fleet = useFleet();
   const [incident, setIncident] = useState<Incident | null>(null);
   const [histOpen, setHistOpen] = useState(false);
-  // ★ 2026-10-05 (DECISIONS §400). 경로 모드는 **관제가 정한다.** 내비에는
-  //   고르는 손이 없다 — 지령에 실어 보낸다.
+  // ★ 2026-10-05 (DECISIONS §400). 경로 모드는 **관제가 정한다.** 내비에는 고르는 손이 없다 — 지령에 실어 보낸다.
   const [route, setRoute] = useState<RouteMode>("safe");
   const [picking, setPicking] = useState(false);
   const [stationId, setStationId] = useState<string>("0");
@@ -113,11 +113,9 @@ export default function OpsApp() {
   // ★ 2026-09-23 (DECISIONS §220). 구간 색의 기준. **판정 4색이 기본이다** — 여유폭은
   //   고른 차로 그 자리에서 빼는 수라 파이프라인 판정을 덮어쓰지 않는다.
   const [colorMode, setColorMode] = useState<"verdict" | "clearance">("verdict");
-  // ★ 2026-09-23 (DECISIONS §224-4). 범례가 지도 왼쪽 아래를 270px 폭으로 항상 가린다.
-  //   좁은 골목을 보려면 접을 수 있어야 한다. 종전에는 머리글이 「눌러서 숨기기」
-  //   라고 적혀 있었는데 그것은 **줄 하나의 색을 숨기는 것**이지 범례를 접는 것이
-  //   아니었다 — 글이 없는 기능을 약속했다.
-  const [legendOpen, setLegendOpen] = useState(true);
+  // ★ 2026-09-23 (DECISIONS §224-4). 범례는 접을 수 있다 — 머리글을 누르면 펴고 접는다(줄 하나의 색을 숨기는 것과 다르다).
+  // ★ 2026-11-15 (DECISIONS §797-B · PLAN #242). **첫 화면에는 접혀 있다** — 펼친 범례가 광주 인공지능사관학교 핀을 덮었다(기준 창 폭 1536 이상 · 1280 은 범위 밖).
+  const [legendOpen, setLegendOpen] = useState(false);
   const [hiddenBands, setHiddenBands] = useState<ReadonlySet<string>>(() => new Set());
   const [seg, setSeg] = useState<string | null>(null);
   const [q, setQ] = useState("");

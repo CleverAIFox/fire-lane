@@ -127,7 +127,7 @@ export const STATUS: Record<StatusKey, StatusSpec> = {
     title: "우회 경로 없음", sub: "{road} 통행 불가 · 300m 안 접근 지점 없음",
     eta: "none", route: "pending", blankRemain: true },
   noData: { wf: ["14"], tone: "cyan", tag: "미측정 구간", label: "현장 확인 필요",
-    title: "경로 판정 보류", sub: "도로 폭 정보 부족",
+    title: "경로 확인 필요", sub: "도로 폭 정보 부족",
     eta: "none", route: "pending", blankRemain: true },
   blocked: { wf: ["16"], tone: "cyan", tag: "현장 통행 불가", label: "우회 경로 필요",
     title: "전방 통행 불가", sub: "{road} · {len}m 구간",

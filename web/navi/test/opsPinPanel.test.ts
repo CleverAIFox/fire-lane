@@ -20,7 +20,8 @@
  * 밖    실제 지도(MapLibre)의 그리기 · 실제 브라우저의 타이머 묶임 — 핀의 DOM 은 `pinLook` 이 낸 값을 칠할 뿐이다(소스 문으로 본다)
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { UNIT_STALE_MS, type Unit } from "../src/domain/opsProtocol";
+import type { Unit } from "../src/domain/opsProtocol";
+import { UNIT_STALE_MS } from "../src/domain/opsBoard";
 import { chipOf, liveCounts, lostUnits, pinLook, unitChip } from "../src/domain/unitBoard";
 
 const SRC = (g: Record<string, unknown>) => Object.values(g)[0] as string;
@@ -133,4 +134,18 @@ describe("효과가 도는 횟수와 관제사가 보는 차 수", () => {
     expect(alivePins).toBe(real + demo);
     expect(chipOf(units[2], true).kind).toBe("lost");
   });
+});
+
+describe("관제 전용 모듈 — 내비 쪽 소스가 읽으면 진입 청크에 도로 따라온다(PLAN #235)", () => {
+  it("opsBoard · unitBoard 를 읽는 것은 관제 쪽 파일뿐이다", () => {
+    const all = import.meta.glob("../src/**/*.{ts,tsx}", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
+    const readers = Object.entries(all)
+      .filter(([f, s]) => /from "[./]*(?:domain\/)?(?:opsBoard|unitBoard)"/.test(s) && !/(?:opsBoard|unitBoard)\.ts$/.test(f))
+      .map(([f]) => f.replace("../src/", ""));
+    expect(readers.sort()).toEqual(["OpsApp.tsx", "components/OpsMap.tsx"]);
+  });
+});
+
+it("관제 첫 화면의 범례는 접혀 있다 — 펼친 범례가 핀을 덮는다(PLAN #242 · 기준 창 폭 1536 이상)", () => {
+  expect(OPS_APP).toMatch(/\[legendOpen, setLegendOpen\] = useState\(false\)/);
 });

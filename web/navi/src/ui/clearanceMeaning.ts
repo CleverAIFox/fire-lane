@@ -81,13 +81,13 @@ export function segmentReason(
   if (e.verdict === "needs_cv") {
     if (c.band === "neg") {
       return {
-        head: "판정 보류 — 도면상 요구폭 미만",
+        head: "확인 필요 — 도면상 요구폭 미만",
         detail,
         action: "영상판정 전까지 진입 불가로 본다 — 우회로를 같이 잡는다",
       };
     }
     return {
-      head: c.band === "tight" ? `판정 보류 — 여유 ${tightM}m 미만` : "판정 보류 — 영상판정 대상",
+      head: c.band === "tight" ? `확인 필요 — 여유 ${tightM}m 미만` : "확인 필요 — 영상판정 대상",
       detail,
       action: c.band === "tight"
         ? "주차 한 대로 막힌다 — 서행 · 미러 접기, 선행 차로 확인"
@@ -98,7 +98,7 @@ export function segmentReason(
   if (e.verdict === "unknown") {
     const g = e.unknown_reason ? GRAY_REASON[e.unknown_reason] : null;
     return {
-      head: `영상판정 불가 — ${g?.short ?? e.unknown_reason ?? "CCTV 19m 밖"}`,
+      head: `폭 모름 — ${g?.short ?? e.unknown_reason ?? "CCTV 19m 밖"}`,
       detail,
       action: c.band === "neg"
         ? "도면상 요구폭 미만 — 진입 전 현장 확인이 필요하다"

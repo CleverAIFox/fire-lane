@@ -138,7 +138,7 @@ test("사유 — 회색은 `unknown_reason` 넷을 그대로 말한다", () => {
   for (const k of Object.keys(GRAY_REASON)) {
     const r = reason({ verdict: "unknown", width_min_m: 3.2, unknown_reason: k })!;
     ok(r.head.includes(GRAY_REASON[k].short), `${k}: ${r.head}`);
-    ok(r.head.includes("영상판정 불가"), `${k}: ${r.head}`);
+    ok(r.head.includes("폭 모름"), `${k}: ${r.head}`);
     ok(!!r.action, `${k}: 조치가 없다`);
   }
   // 모르는 사유가 와도 그 문자열을 잃지 않는다
@@ -146,7 +146,7 @@ test("사유 — 회색은 `unknown_reason` 넷을 그대로 말한다", () => {
   ok(odd.head.includes("새_사유"), odd.head);
   // 사유가 아예 없는 회색도 말은 한다
   const bare = reason({ verdict: "unknown", width_min_m: 3.2 })!;
-  ok(bare.head.includes("영상판정 불가"), bare.head);
+  ok(bare.head.includes("폭 모름"), bare.head);
 });
 
 test("사유 — 주황은 여유폭 부호에 따라 다른 조치를 낸다", () => {
@@ -412,9 +412,10 @@ test("경로 카드 — 같은 경로면 카드 하나이고 비교 줄이 없�
   ok(!h.includes("빠른 경로") && !h.includes("둘째 경로 없음"), "같은 경로인데 비교 문구가 나온다");
 });
 
-test("펼친 쪽에는 접힌 것이 전부 있다 — 구간 목록 · 규칙 경고 · 경로 주변 · 설명(지운 것이 아니다)", () => {
+test("펼친 쪽에는 접힌 것이 있다 — 구간 목록 · 규칙 경고 · 설명. 「경로 주변」 칸은 뺐다(PLAN #250 · 출동에 안 쓴다)", () => {
   const h = renderToStaticMarkup(createElement(Details, { o: opt({}) }));
-  for (const t of ["RISK구간", "외 3곳", "RULES요약", "AROUND주변", "NOTE문장"]) ok(h.includes(t), `${t} 가 펼침에 없다`);
+  for (const t of ["RISK구간", "외 3곳", "RULES요약", "NOTE문장"]) ok(h.includes(t), `${t} 가 펼침에 없다`);
+  ok(!h.includes("AROUND주변") && !h.includes("경로 주변"), "빼기로 한 「경로 주변」 칸이 도로 나온다");
 });
 
 test("riskKind — 구간 하나의 위험 종류 · 폭 모름이면 여유가 없다 · 위험이 아니면 null (riskList 와 병목 패널이 같이 쓴다)", () => {

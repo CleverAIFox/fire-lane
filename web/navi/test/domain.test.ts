@@ -6,10 +6,8 @@ import { buildAdjacency, findRoute } from "../src/domain/graph";
 import { alternateAccess, reachable, reachableEdges, MAX_WALK_M } from "../src/domain/access";
 import { compareMarks } from "../src/domain/compare";
 import { displayName, shortStation, vehicleClass } from "../src/domain/fleetName";
-import {
-  asNaviMsg, asOpsMsg, opsAck, opsReduce, OPS_EMPTY, shareState, opsPresent, HB_TTL_MS,
-  unitStale, UNIT_STALE_MS, type Unit,
-} from "../src/domain/opsProtocol";
+import { asOpsMsg, shareState, opsPresent, HB_TTL_MS, type Unit } from "../src/domain/opsProtocol";
+import { asNaviMsg, opsAck, opsReduce, OPS_EMPTY, unitStale, UNIT_STALE_MS } from "../src/domain/opsBoard";
 import { distM } from "../src/domain/geo";
 import opsAppSrc from "../src/OpsApp.tsx?raw";
 import { demoTag, liveCounts, sortUnits, unitChip, unitRank, unitStatus } from "../src/domain/unitBoard";

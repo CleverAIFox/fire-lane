@@ -787,6 +787,21 @@ layers:
       - 8월 20일 오전 10시의 그 골목은 다시 안 온다. raw 등급으로 보호한다
       - 저장소 안이 정본이다. clone 만으로 보여야 한다 (2026-08-23 정정)
 
+  extra:
+    base: repo
+    sub: data/extra
+    required: false
+    mutable: true
+    committed: true
+    backup: false
+    regenerable: true
+    naming: null
+    what: 발행 건물에 얹는 빠진 면 · 표시용 산출물. 판정 입력이 아니다(`publish_web._add_gap_buildings` 만 읽는다)
+    caveats:
+      # ★ 2026-11-15 (PLAN #232 · DECISIONS §797-D). 사람이 계층으로 선언했다 — 두 파일이 이미 있고 앞으로도 쓴다. 저장소 안이 정본이 아니라 **만드는 도구가 정본이다**(`regenerable`):
+      #   `bldg_gap.py --apply` · `bldg_fill.py --apply` 가 `datasets.juso_bldg_ledger`(`AL_D010` zip)에서 다시 낸다. 추적하는 것은 발행(`publish_web`)이 레이크 없이 돌아야 해서다.
+      - 판정은 이 계층을 안 읽는다 — 판정 입력은 `juso_bldg_geom`(→ `building_5186.gpkg`)이다. 읽는 곳은 `publish_web` 하나다
+
   quarantine:
     base: data
     sub: _quarantine
@@ -4258,8 +4273,7 @@ datasets:
       ★ **그래도 읽는 코드가 있다** — `src/firelane/bldg_gap.py` 가 이 zip 의 1번 쉐이프(`AL_D010_12_20261109.shp` · 1,000,000행 · `…(2).shp` 831,883행은 안 읽는다)에서
         동명동의 빠진 건물 323면을 뽑아 `data/extra/bldg_gap_dongmyeong.geojson`(추적되는 파일 · 표시용 · 칸은 `flo` 하나)으로 낸다. 정규 이름이 없으면 원본명으로 찾고 **sha256 이 같아야** 읽는다. 읽는 칸은 `A26` 하나다.
         판정은 이것을 안 읽는다 — 판정 입력은 `juso_bldg_geom`(→ `building_5186.gpkg`) 그대로다. 전부 교체(방안 c)는 47구간의 판정을 움직여 안 갔다(DECISIONS §776).
-      ★ **산출물을 `outputs` 에 못 올렸다** — `data/extra/` 가 `layers` 의 어느 계층에도 없어 `outputs.path` 로 적으면
-        `test_declared_paths_point_into_a_declared_layer` 가 운다(2026-11-14 실측). 계층을 더하는 것은 전역 칸이라 사람의 판단이다. 그때까지 이 항목이 그 파일의 대장이다:
+      ★ **산출물은 `outputs` 에 올랐다**(2026-11-15 · PLAN 행 232) — `data/extra/` 를 `layers.extra` 로 선언해서다(`outputs.bldg_gap_dongmyeong` · `bldg_gap_move`).
         만드는 자 `src/firelane/bldg_gap.py` · 입력 이 zip + `boundary_emd` + **`web/data/buildings.geojson`**(발행물) · 읽는 자 `src/firelane/publish_web.py`.
         「안 덮는」의 기준이 발행 건물이고 거기에는 이 파일이 더한 274면(번호 ≥ 100,000)이 들어 있어 **그것을 빼고** 잰다(안 빼면 두 번째 실행이 0면이다 · 시험이 문다).
         274 가 아니라 323 이다 — 274 는 발행이 여기서 이미 덮인 2 · 절반 넘게 도로 위인 47 을 더 뺀 수다(`publish_web._add_gap_buildings`).
@@ -4312,7 +4326,8 @@ datasets:
       - src/firelane/normalize_raw.py
     feeds_note: '[]'
     stem: juso_entrc
-    ext: [zip]
+    stems: [juso_entrc, juso_layout]   # ★ 같은 `TL_*` 계열 — 레이아웃 PDF(`juso_layout_kr_20261112.pdf`)를 한 항목으로 묶는다(PDF 는 열 계약을 못 가져 따로 올리면 무계약 래칫이 풀린다 · DECISIONS §797-A)
+    ext: [zip, pdf]
     kind: raw_only
     layer: '*TL_SPBD_ENTRC*.shp'
     scope: jngj
@@ -4328,6 +4343,10 @@ datasets:
       ★ 2026-11-15 (PLAN #232 ④). 사람이 2026-11-13 에 제공처 원본 이름 `(도로명주소)출입구_전남광주통합특별시.zip` 을 정규 이름 `juso/juso_entrc_jngj_20261112.zip` 으로 옮겼고
         `acquire --verify` 가 `_acquire.json` 에 적었다. `normalize_raw` 규칙이 원본명 → 정규명이다(DECISIONS §773-1 의 제안 이름). 19.8MB.
       ★ 좌표계 EPSG:5179 · 칸은 위와 같다(DECISIONS §773-1 이 열어 봤다). 소비자가 서면 `kind` 를 `shp_zip` 으로 올리고 `contract` 를 단다.
+      ★ **같은 항목의 PDF — `juso_layout_kr_20261112.pdf`**(`stems` 의 둘째 · 원본 이름 `도로명주소전자지도활용가이드.pdf` · 1.1MB · 24쪽 · 「도로명주소DB 레이아웃(도로명주소 전자지도)」 · `TL_*` 층의 칸 레이아웃 · 읽는 코드 없다).
+        PDF 는 열 계약을 가질 수 없어 **따로 `datasets` 에 올리면 무계약 래칫이 풀린다**(DECISIONS §397 · §429 가 PDF 를 올릴 때마다 그 래칫을 올렸다 — 이번에는 안 올린다). 최상위 `raw_only` 에도 안 올렸다 —
+        그 칸은 **봉인지 cfg 의 전역 칸**(`INGEST_GLOBAL`)이라 한 줄을 더하면 모든 항목의 봉인지가 찢어진다(DECISIONS §797-B).
+      ★ **`AL_D010`(건축물대장 건물)의 `A0`~`A28` 뜻은 이 문서에 없다** — `A0`~`A28` 꼴 칸 이름이 0건 · `AL_D010` 0건이다(DECISIONS §773-1). PLAN #232 ⑤ 를 이 문서가 닫지 못한다.
 
     contract:
       layer_must_exist: true
@@ -4356,15 +4375,6 @@ raw_only:
         `datasets.ortho.feeds` 가 `ortho.py` 를 이미 들고 있었다 —
         한 파일이 제 자신과 모순돼 있었다.
       DL 세그멘테이션(3-A)은 아직 미투입이다. 타일 굽기는 투입돼 있다.
-
-  juso_layout:
-    what: 도로명주소 전자지도 활용 가이드 — 24쪽 · 「도로명주소DB 레이아웃(도로명주소 전자지도)」 · `TL_*` 층의 칸 레이아웃(행정안전부 도로명주소 안내시스템 · 사람이 2026-11-13 레이크에 직접 반입)
-    files: [juso_layout_kr_20261112.pdf]
-    note: |
-      ★ 2026-11-15 (PLAN #232 ④ · ⑤). 문서다 — 읽는 코드가 없다. 사람이 읽는다(`TL_*` 층의 열쇠: 출입구 · 건물 칸 이름이 `datasets.juso_entrc` 와 같다).
-        원본 이름 `도로명주소전자지도활용가이드.pdf` → 정규 이름은 사람이 옮겼고(2026-11-13) `normalize_raw` 규칙이 같다.
-      ★ **`AL_D010`(건축물대장 건물)의 `A0`~`A28` 뜻은 이 문서에 없다** — `A0`~`A28` 꼴 칸 이름이 0건 · `AL_D010` 0건이다(DECISIONS §773-1). PLAN #232 ⑤ 를 이 문서가 닫지 못한다.
-      ★ `datasets` 가 아니라 여기인 이유 — PDF 는 열 계약을 가질 수 없어 `datasets` 에 올리면 무계약 래칫(`NO_CONTRACT_RATCHET`)이 느슨해지는 쪽으로 움직인다(DECISIONS §397 · §429 가 PDF 를 올릴 때마다 그 래칫을 올렸다 — 이번에는 올리지 않는다).
 
   building_change:
     what: GIS건물통합정보 일변동분
@@ -4854,6 +4864,26 @@ outputs:
       ★ 2026-09-24. `jijeok_probe.py` 를 소비자로 적고 있었으나 그 도구는
         이 파일 이름을 한 번도 안 든다. 짝과 같이 소비자 0이다.
       ★ 2026-11-06 (DECISIONS §652). `tools/oneway_match.py` 가 읽는다 — 일방통행 목록의 끝점 지번(법정동 · 지번)을 필지 중심 좌표로 옮긴다. 짝(`jijeok.geojson`)은 여전히 소비자 0이다.
+    verified: false
+  bldg_gap_dongmyeong:
+    produced_by: src/firelane/bldg_gap.py
+    path: data/extra/bldg_gap_dongmyeong.geojson
+    inputs: [juso_bldg_ledger]
+    consumers: [src/firelane/publish_web.py]
+    what: 동명동에서 발행 건물이 안 덮는 건축물대장 면 323(표시용 · 칸 `flo` 하나)
+    note: |
+      ★ 2026-11-15 (PLAN #232). `data/extra/` 를 계층으로 선언해(`layers.extra`) 올렸다 — 그 전에는 `outputs.path` 가 계층 밖이라 시험이 울어 `datasets.juso_bldg_ledger` 의 note 가 대장을 겸했다.
+      ★ 판정은 이것을 안 읽는다. 만들려면 — uv run python -m firelane.bldg_gap --apply
+    verified: false
+  bldg_gap_move:
+    produced_by: src/firelane/bldg_fill.py
+    path: data/extra/bldg_gap_move.geojson
+    inputs: [juso_bldg_ledger]
+    consumers: [src/firelane/publish_web.py]
+    what: 지도 이동 범위에서 발행 건물이 안 덮는 건축물대장 면(표시용)
+    note: |
+      ★ 2026-11-15 (PLAN #232). 위와 짝이다 — 이 파일 안에 같은 건물이 두 번 든 쌍이 59개 있다(`tools/bldg_overlap.py` · DECISIONS §792-H).
+      ★ 만들려면 — uv run python -m firelane.bldg_fill --apply
     verified: false
   segments_schema:
     produced_by: src/firelane/segments.py

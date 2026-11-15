@@ -184,14 +184,15 @@ export function baseLayers(style: Record<string, VerdictStyle>): LayerSpecificat
     // ★ 2026-11-14 (PLAN 행 239). **`base` 는 0 이어야 한다 — 지형을 켠 지금도.** 「경사에서 건물이 묻히니 `base` 를 지반고 `z` 로」 는 틀린 고침이다:
     //   MapLibre 의 압출 셰이더는 지형이 켜지면 건물을 **발자국 중심 한 점의 지형 표고**에 올리고(`get_elevation(a_centroid)`), `base > 0` 이면 그 위에 **더한다**
     //   (`base = max(0, base) + 지형`). `z`(0~130m · 중앙 16.7m)를 넣으면 건물이 그만큼 **뜬다**(헤드리스로 구워 확인했다 — §216-2 의 16m 뜸과 같은 병).
-    //   `base` 가 0 일 때만 벽이 지형 아래 10m 까지 내려가 내리막 쪽 틈을 막는다. 오르막 쪽이 묻히는 것은 「중심 한 점」 규칙의 몫이라 이 층의 값으로는 못 고친다
-    //   (새 타일 기준 1m 넘게 묻히는 건물 215동 · 3m 넘게 23동 — 고치려면 건물마다 「발자국 아래 최고 지반 − 중심 지반」 을 발행물에 실어 높이에 더해야 한다).
+    //   `base` 가 0 일 때만 벽이 지형 아래 10m 까지 내려가 내리막 쪽 틈을 막는다. 오르막 쪽이 묻히는 것은 「중심 한 점」 규칙의 몫이다.
+    // ★ 2026-11-15 (PLAN #239 · DECISIONS §797-A). 고침 — 경사 0.5m 이상인 건물(1,217동)에 발행물이 `zb`(= 최저 − 중심 · **음수**)와 높이 `h`(+ 묻힘)를 싣는다.
+    //   MapLibre 6.16 은 음수 `base` 를 받아 내리막 쪽 아래를 지반까지 메운다(헤드리스 실측 — §796-A). `zb` 가 없는 건물은 0 이다(`coalesce`).
     { id: "bldg", type: "fill-extrusion", source: "buildings", minzoom: 14.5,
       paint: {
         "fill-extrusion-color": ["interpolate", ["linear"], ["get", "flo"],
           1, MAP.bldgLow, 12, MAP.bldgHigh],
         "fill-extrusion-height": ["get", "h"],
-        "fill-extrusion-base": 0,
+        "fill-extrusion-base": ["coalesce", ["get", "zb"], 0],
         "fill-extrusion-opacity": 1,
         "fill-extrusion-vertical-gradient": true,
       } },

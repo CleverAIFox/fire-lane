@@ -188,13 +188,13 @@ test("토지이용 면 — 뜬 지도에 얹어도 목록에 끼운 것과 같�
 });
 
 /**
- * ★ PLAN 행 239. 지형(`setTerrain`)이 켜진 두 화면에서 건물 압출의 `base` 는 **상수 0** 이다. MapLibre 는 지형이 켜지면 건물을 발자국 중심의 지형 표고에 올리고
+ * ★ PLAN 행 239. 지형(`setTerrain`)이 켜진 두 화면에서 건물 압출의 `base` 는 **0 이거나 발행물의 `zb`(음수 · 최저 − 중심)** 다(PLAN #239 가 `zb` 를 더했다 · 지반고 `z` 는 안 쓴다). MapLibre 는 지형이 켜지면 건물을 발자국 중심의 지형 표고에 올리고
  *   `base > 0` 은 그 위에 더한다 — `z`(해발 기준 지반고)를 `base` 로 주면 건물이 그만큼 뜬다(§216-2 · 2026-11-14 헤드리스 재확인). `base` 0 일 때만 벽이 지형 아래로 내려가 틈을 막는다.
  */
-test("건물 압출 — 지형 위에서 base 는 상수 0 이고 높이는 h 하나다(지반고 z 를 더하면 뜬다)", () => {
+test("건물 압출 — 지형 위에서 base 는 zb(없으면 0)이고 높이는 h 하나다(지반고 z 를 더하면 뜬다)", () => {
   const bldg = baseLayers(style).find((l) => l.id === "bldg") as { type: string; paint: Record<string, unknown> };
   ok(bldg.type === "fill-extrusion", "bldg 가 압출 층이 아니다");
-  ok(bldg.paint["fill-extrusion-base"] === 0, `base 가 0 이 아니다: ${JSON.stringify(bldg.paint["fill-extrusion-base"])}`);
+  ok(JSON.stringify(bldg.paint["fill-extrusion-base"]) === JSON.stringify(["coalesce", ["get", "zb"], 0]), `base 가 「zb 없으면 0」 이 아니다: ${JSON.stringify(bldg.paint["fill-extrusion-base"])}`);
   ok(JSON.stringify(bldg.paint["fill-extrusion-height"]) === JSON.stringify(["get", "h"]), "높이가 h 하나가 아니다");
   ok(!JSON.stringify(bldg.paint).includes('"z"'), "압출 식에 지반고 z 가 들어왔다 — 지형이 이미 올려 준 높이를 한 번 더 더한다");
 });
