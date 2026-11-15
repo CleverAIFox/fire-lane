@@ -23,7 +23,7 @@ export function ShareChip({ info, onRetry }: { info: ShareInfo; onRetry: () => v
   const t = info.state === "sending" ? { bg: "#eef4ff", ink: C.cta, text: `관제에 ${what} 공유 중…`, wf: "18" }
     : info.state === "awaiting" ? { bg: "#fff7e6", ink: C.warnInk, text: `관제 확인 대기 · ${what}`, wf: "19" }
     : info.state === "failed" ? { bg: "#fdecec", ink: C.danger, text: `공유 실패 · ${what}`, wf: "20" }
-    : { bg: "#e9f9ef", ink: C.safeInk, text: `관제 확인 완료 ${info.ackedAt ?? ""} · ${what}`, wf: info.kind === "arrival" ? "23" : "21" };
+    : { bg: "#e9f9ef", ink: C.safeInk, text: `관제 확인 ${info.ackedAt ?? ""} ${what}`, wf: info.kind === "arrival" ? "23" : "21" };
   return (
     <div style={{ ...chip, background: t.bg, color: t.ink }} data-wf={t.wf}>
       <span style={{ fontWeight: 800 }}>{t.text}</span>
@@ -31,7 +31,7 @@ export function ShareChip({ info, onRetry }: { info: ShareInfo; onRetry: () => v
         <button onClick={onRetry} style={retry}>다시 보내기</button>
       )}
       {info.simulated
-        ? <span style={sim} title="관제 화면이 열려 있지 않다 — 전송을 흉내 낸다">시연</span>
+        ? <span style={sim} title="관제 닫힘 — 전송을 흉내 낸다">시연</span>
         : <span style={{ ...sim, color: "#9ff0c1" }} title="같은 브라우저의 관제 화면과 연결됐다">관제 연결</span>}
     </div>
   );
@@ -49,5 +49,5 @@ const retry: CSSProperties = {
 };
 const sim: CSSProperties = {
   background: "rgba(11,27,58,.75)", color: "#ffd166", borderRadius: 6,
-  padding: "2px 6px", fontSize: 11, fontWeight: 800,
+  padding: "2px 6px", fontSize: 24, fontWeight: 800,
 };
