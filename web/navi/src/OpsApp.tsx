@@ -61,7 +61,7 @@ import { openLink, newId, type Link } from "./infra/opsLink";
 import { OPS_EMPTY, asNaviMsg, opsAck, opsReduce } from "./domain/opsBoard";
 import { HB_MS, type OpsState } from "./domain/opsProtocol";
 import { buildAdjacency, findRouteBetween, nearestNode, snapToEdge } from "./domain/graph";
-import { ruleSummary } from "./domain/rules";
+import { limitSummary, ruleSummary } from "./domain/rules";
 import { dispatchUrl as mkDispatchUrl } from "./domain/dispatch";
 import { demoTag, liveCounts, lostUnits, sortUnits, unitChip } from "./domain/unitBoard";
 import type { RouteMode } from "./domain/handoff";
@@ -383,7 +383,7 @@ export default function OpsApp() {
 
             <label style={lab}>경로 — 관제가 정한다</label>
             <div style={{ display: "flex", gap: 6 }}>
-              {([["safe", "안전", "폭으로 본 안전 — 확인 필요 구간을 피한다"],
+              {([["safe", "안전", "폭으로 본 안전 — 확인 필요 · 폭 모름 구간을 피한다"],
                  ["fast", "빠른", "도착이 빠르다 — 폭 신뢰도가 낮은 구간을 지날 수 있다"]] as const)
                 .map(([m, ko, why]) => (
                   <button key={m} onClick={() => setRoute(m)} title={why}
@@ -408,15 +408,15 @@ export default function OpsApp() {
                     )}
                     {/* ★ §220 — 경로의 **가장 좁은 곳의 여유폭**. 관제가 지령 전에 보는 수다 */}
                     <div style={{ fontSize: 12, color: D.sub, marginTop: 4 }}>
-                      확인 필요 {plan.plan.edges.filter((e) => e.verdict === "needs_cv" || e.verdict === "unknown").length}개 ·
+                      확인 필요 {plan.plan.edges.filter((e) => e.verdict === "needs_cv").length}개 · 폭 모름 {plan.plan.edges.filter((e) => e.verdict === "unknown").length}개 ·
                       최소폭 {Math.min(...plan.plan.edges.map((e) => e.width_min_m ?? 99)).toFixed(1)}m / 요구 {need.toFixed(1)}m ·
                       여유폭 <b style={{ color: D.ink }}>
                         {fmtClearance(Math.min(...plan.plan.edges.map((e) => e.width_min_m ?? 99)) - need)}
                       </b>
                     </div>
-                    {ruleSummary(plan.plan.rules) && (
+                    {(ruleSummary(plan.plan.rules) || limitSummary(plan.plan.rules)) && (
                       <div style={{ fontSize: 12, color: D.warn, fontWeight: 800, marginTop: 4 }}>
-                        통행 규칙 — {ruleSummary(plan.plan.rules)}
+                        {[ruleSummary(plan.plan.rules) && `통행 규칙 — ${ruleSummary(plan.plan.rules)}`, limitSummary(plan.plan.rules)].filter(Boolean).join(" · ")}
                       </div>
                     )}
                     {(plan.alt || farFromRoadNote(plan.walkM)) && ( /* ★ #227 — 도로망 밖 목적지도 말한다 */

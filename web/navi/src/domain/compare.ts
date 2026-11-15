@@ -63,6 +63,9 @@ export interface RouteStats {
   ruleCount: number;
   /** 폭 확인 필요(판정 보류 · 영상판정 불가) 구간 수와 실거리 */
   uncertainCount: number;
+  /** 그중 갈라 센 둘 — 확인 필요(`needs_cv` · 관제가 CCTV 로 확인해 줄 수 있다)와 폭 모름(`unknown` · 확인 수단이 없다). 카드는 합이 아니라 이 둘을 쓴다 */
+  needsCvCount: number;
+  unknownCount: number;
   uncertainM: number;
   /** 경로에서 가장 좁은 최소 유효폭. 폭을 아는 구간이 없으면 null */
   minWidthM: number | null;
@@ -76,6 +79,8 @@ export function routeStats(p: RoutePlan): RouteStats {
     blockedCount: p.edges.filter((e) => e.verdict === "blocked").length,
     ruleCount: p.rules.length,
     uncertainCount: unc.length,
+    needsCvCount: unc.filter((e) => e.verdict === "needs_cv").length,
+    unknownCount: unc.filter((e) => e.verdict === "unknown").length,
     uncertainM: unc.reduce((a, e) => a + (e.length_m ?? 0), 0),
     minWidthM: w.length ? Math.min(...w) : null,
   };

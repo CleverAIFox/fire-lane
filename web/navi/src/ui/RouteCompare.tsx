@@ -43,8 +43,9 @@ export interface RouteOption {
   recommended: boolean;
   sec: number;
   lengthM: number;
-  uncertainCount: number;
-  /** 그중 폭 모름(`unknown`) 구간 수 — 최소폭이 이 구간을 못 본다 */
+  /** 확인 필요(`needs_cv`) 구간 수 — 관제가 CCTV 로 확인해 줄 수 있다 */
+  needsCvCount: number;
+  /** 폭 모름(`unknown`) 구간 수 — 확인 수단이 없다. 최소폭이 이 구간을 못 본다 */
   unknownCount: number;
   uncertainM: number;
   minWidthM: number | null;
@@ -60,8 +61,8 @@ export interface RouteOption {
   rules: string | null;
   /** 경로 **위** 경고(PLAN #78 ③) — 어느 구간이 어떻게 위험한지. 줄은 `RISK_LINES_MAX` 까지 · 넘치면 `more` 수만 */
   risks: { lines: string[]; more: number; /** 보이는 줄 중 **끝에서 몇 줄이** 상대 경로와 공통인가 — 흐리게 그린다(없으면 0 · 상대가 없으면 undefined) */ shared?: number };
-  /** 경로 주변 사정 요약(§216-3) — 과속방지턱 · 단속카메라 · 보호구역 시설. 없으면 null */
-  around: string | null;
+  /** 차량 한계 요약(`domain/rules.ts limitSummary`) — 좁은 코너는 규칙이 아니라 차량이 못 도는 곳이다. 없으면 null */
+  limits: string | null;
 }
 
 interface Props {
@@ -123,7 +124,7 @@ export function RouteBrief(p: Props) {
  */
 export function verdictLine(safe: RouteOption, fast: RouteOption): { text: string; worse: boolean } {
   const dt = Math.round(fast.sec - safe.sec);
-  const dn = fast.uncertainCount - safe.uncertainCount;
+  const dn = fast.needsCvCount - safe.needsCvCount;
   const time = dt === 0 ? "시간이 같고" : dt < 0 ? `${fmtDur(-dt)} 빠르고` : `${fmtDur(dt)} 느리고`;
   const risk = dn === 0 ? "확인 필요는 같다" : `확인 필요가 ${Math.abs(dn)}곳 ${dn > 0 ? "많다" : "적다"}`;
   return { text: `빠른 경로가 ${time} ${risk}`, worse: dn > 0 };
@@ -166,9 +167,10 @@ function Col({ o, on, accent, chip, title, scope }: {
           {fmtDur(o.sec)} <span style={{ fontSize: 13, fontWeight: 700, color: C.panelSub }}>{(o.lengthM / 1000).toFixed(1)}km</span>
         </div>
         <div style={{ ...lab, marginTop: 10 }}>확인 필요</div>
-        <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.1, color: o.uncertainCount > 0 ? C.danger : C.panelInk }}>
-          {o.uncertainCount}곳
+        <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.1, color: o.needsCvCount > 0 ? C.danger : C.panelInk }}>
+          {o.needsCvCount}곳
         </div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: o.unknownCount > 0 ? C.danger : C.panelSub, marginTop: 6 }}>폭 모름 {o.unknownCount}곳</div>
         {o.blockedCount > 0 && <div style={{ fontSize: 13, fontWeight: 800, color: C.danger, marginTop: 6 }}>통행 불가 {o.blockedCount}곳</div>}
         <div style={{ ...lab, marginTop: 10, lineHeight: 1.5 }}>
           최소폭 <b style={{ color: C.panelInk }}>{o.minWidthM != null ? `${o.minWidthM.toFixed(1)}m` : "—"}</b>
@@ -180,14 +182,14 @@ function Col({ o, on, accent, chip, title, scope }: {
   );
 }
 
-/** 접힌 것의 칸들 — 규칙 경고 · 경로 주변 · 구간 목록 · 설명 · 각주. 두 열이 **같은 줄에 같은 칸**이 오도록 칸 이름을 고정한다 */
-const SECTIONS = ["rules", "around", "risks", "note", "foot"] as const;
+/** 접힌 것의 칸들 — 규칙 경고 · 차량 한계 · 구간 목록 · 설명 · 각주. 두 열이 **같은 줄에 같은 칸**이 오도록 칸 이름을 고정한다 */
+const SECTIONS = ["rules", "limits", "risks", "note", "foot"] as const;
 type Section = (typeof SECTIONS)[number];
 
 function cells(o: RouteOption): Record<Section, ReactNode> {
   return {
-    rules: o.ruleCount > 0 || o.rules ? <Block k="규칙 경고" v={o.rules ?? `${o.ruleCount}건`} warn /> : null,
-    around: null,   // ★ 2026-11-15 (PLAN #250 · DECISIONS §797-B) 출동에 안 쓴다 — 칸을 뺐다(`hazardSummary` 는 남겼다 · 달리는 중 음성 안내는 `hazardPhrase` 의 다른 길이다)
+    rules: o.rules ? <Block k="규칙 경고" v={o.rules} warn /> : null,
+    limits: o.limits ? <Block k="차량 한계" v={o.limits} warn /> : null,   // ★ 2026-11-15 (PLAN #250) 「좁은 코너」는 규칙이 아니라 차량 한계라 규칙 경고와 줄을 가른다
     risks: o.risks.lines.length > 0 ? (
       <div style={riskBox}>
         {o.risks.lines.map((l, i) => <div key={l} style={i >= o.risks.lines.length - (o.risks.shared ?? 0) ? { opacity: 0.55 } : undefined}>{l}</div>)}

@@ -138,9 +138,14 @@ export function ruleSummary(ws: RuleWarning[]): string | null {
     n("wrong_way") && `역주행 ${n("wrong_way")}곳`,
     n("oneway_unknown") && `일방통행 ${n("oneway_unknown")}곳(방향 미확인)`,
     n("turn_ban") && `회전 금지 ${n("turn_ban")}곳`,
-    n("tight_turn") && `좁은 코너 ${n("tight_turn")}곳`,
   ].filter(Boolean);
-  return parts.join(" · ");
+  return parts.join(" · ") || null;
+}
+
+/** 차량 한계 한 줄 — 「좁은 코너」(`tight_turn`)는 규칙이 아니라 이 차의 내륜차 · 회전반경이다(PLAN #250 · DECISIONS §798). 없으면 null */
+export function limitSummary(ws: RuleWarning[]): string | null {
+  const k = ws.filter((w) => w.kind === "tight_turn").length;
+  return k ? `차량이 못 도는 코너 ${k}곳` : null;
 }
 
 /** `driven` 뒤 `reachM` 안에서 처음 만나는 규칙. 이미 지난 것은 안 본다 */

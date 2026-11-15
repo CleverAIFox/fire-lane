@@ -8,7 +8,7 @@ import { FL, test, ok } from "./harness";
 import { buildAdjacency, findRoute, type Adjacency } from "../src/domain/graph";
 import {
   directionFactor, edgeIndex, isWrongWay, nextRule, routeRuleWarnings,
-  ruleSummary, rulePhrase, turnBan, TURN_BAN_WORD,
+  limitSummary, ruleSummary, rulePhrase, turnBan, TURN_BAN_WORD,
   WRONG_WAY, ONEWAY_UNKNOWN, TURN_BAN_M,
 } from "../src/domain/rules";
 import type { GraphEdge, NaviGraph } from "../src/domain/types";
@@ -200,4 +200,12 @@ test("엣지 색인 — `turns` 가 인덱스로 적혀 있어 이것이 그 다
     ok(idx.get(graph.edges[i]) === i && idx.get(graph.edges[o]) === o,
       `금지 회전이 가리키는 엣지 ${i}·${o} 를 색인이 못 찾는다`);
   }
+});
+
+test("규칙 경고와 차량 한계는 줄이 다르다 — 좁은 코너는 규칙이 아니라 차량이 못 도는 곳이다", () => {
+  const w = (kind: "tight_turn" | "turn_ban") => ({ kind, atM: 1, seg_uid: "a", text: "" });
+  ok(ruleSummary([w("tight_turn")]) === null, "좁은 코너만 있는데 규칙 요약이 났다");
+  ok(ruleSummary([w("tight_turn"), w("turn_ban")]) === "회전 금지 1곳", "규칙 요약에 좁은 코너가 섞였다");
+  ok(limitSummary([w("tight_turn"), w("tight_turn")]) === "차량이 못 도는 코너 2곳", "차량 한계 줄이 틀리다");
+  ok(limitSummary([w("turn_ban")]) === null && limitSummary([]) === null, "한계가 없는데 줄이 났다");
 });
