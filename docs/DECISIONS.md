@@ -52750,7 +52750,7 @@ PLAN #40 이 지도를 `@rnmapbox/maps` 로 적었다 — 그것은 Mapbox 토�
 
 유병률  **1회** — 도구가 실패의 **이유를 못 읽고 전부를 같은 색으로 칠해** 오진했다: `testpick.run_bin` 의 「죽은 이유를 못 읽었다 — 전부 빨강」이 시험 전부가 초록인 직렬 측정을 빨강 274 로 만들었다(§802-A · 같은 꼴의 `pushready.check_ratchet` 은 「원인 불명」이라고 **이름을 붙여** 막으므로 오진이 아니다 — 이번에 세지 않았다)
 
-강제자  `tests/tracked_guard.py`(세션 끝에 추적 파일이 바뀌면 종료 코드 1) · `tools/testpick.py`(`run_bin` 의 빨강 분류) · `tests/test_testpick.py`. 하위 하나가 이 칸을 물려받는다
+강제자  `tests/tracked_guard.py`(세션 끝에 추적 파일이 바뀌면 종료 코드 1) · `tools/testpick.py`(`run_bin` 의 빨강 분류) · `tests/test_testpick.py` · `.githooks/pre-push`(동시 실행 수) · `tests/test_pushready.py`(열린 경고 수 한 줄) · `tools/uicheck.py`(긴 말 · 글자 선언 · 글자 수) · `tests/test_npm_overrides_declared.py`(override 의 대장). 하위 다섯이 이 칸을 물려받는다
 
 쓴 칸  없음 — 사유: 도구의 동작(세션 끝 가드 · `run_bin` 의 빨강 분류)을 재고 원인을 가린 조사이고 대장 · 발행물의 칸을 읽지 않았다
 
@@ -52813,4 +52813,19 @@ PLAN #40 이 지도를 `@rnmapbox/maps` 로 적었다 — 그것은 Mapbox 토�
 **렌더로 쟀다 — 지난 시도의 실패(§761: 24px 로 올리자 잘림 8 → 17)를 다시 겪는지.** `npm run glance`(헤드리스 크로미움 1280×800 · 상태 18개)를 고치기 전과 후에 같은 조건으로 돌렸다(각 약 2분 · 개발 서버 `127.0.0.1:5173`): **글자가 잘리는 상태 0 → 0**(열여덟 모두) · 20자 넘는 줄이 있는 상태 2 → 1(`detourAccess` 24자 · `noDetour` 26자 → `noDetour` 한 상태 22자로 줄어 아래 한 번 더 고쳤다) · `reroute` 의 24px 미만 줄 4 → 1. 마지막 고침(`noDetour` 부기를 「{도로} 통행 불가」 로) 뒤에는 glance 를 다시 안 돌렸다 — 실제 도로명이 들어간 그 줄이 17자 안이다(위 22자에서 「 · 대안」 5자를 뺐다).
 
 **한계 — 정적 수가 0 이어도 렌더에는 규범 밖이 남았다.** 렌더 측정에 아직 남은 것: 20자 넘는 줄 셋(`GPS 신호가 없다 — 「시연으로 주행」을 누른다` 27자 14px · 병목 패널 상세의 `최소 유효폭 … 요구폭 3.0m(전폭 2.5 + 여유 0.5)` 39자 12px · `주차 한 대로 막힌다 — 서행 · 미러 접기, 선행 차로 확인` 34자 12px) — 정적 래칫이 세는 파일(`uidrive.DRIVE_FILES`)의 문자열이 아니라 병목 패널 상세 · 개발 도구 쪽이라 래칫 밖이다. 상태마다 24px 미만 한 줄이 렌더에 남는다(`noCctv` 는 3줄). **`Legend` 24px 가 실제로 어떻게 보이는지는 못 봤다** — 헤드리스로 띄운 두 화면(기획 · 시연 주행)에 범례가 안 떴다. 터치 76 미만 1개(최소 29px)도 그대로다. PLAN #224 는 열어 둔다.
+
+### 802-E. npm `overrides` 의 대장 — 걷을 조건을 적을 자리를 만들었다 · `source-map-js` 를 걷었다
+
+**왜.** `web/navi/package.json` 의 `overrides` 는 둘이었다(`source-map-js` 고정 · `typescript-estree` 아래 `minimatch ^11.0.1`). override 는 **lock 이 조용히 거짓말하게 만드는 자리**다 — 상류가 못 받는 판을 가린다. `package.json` 에는 주석을 달 수 없고, 날짜 기한(`doc_fsck.DEFERRED` ⑧)은 「상류가 오르는 날」 같은 **사건 조건**에 안 맞는다.
+
+**자리.** `sources.yaml` 의 `pending` — 「남이 하고 결과만 받는 일」(`vehicle_spec_measured` 와 같은 꼴: `desc` · `source` · `status` · `blocking`(걷는 조건 · 왜 있나) · `fallback`)이 가장 가깝다. 키 규칙은 `npm_override_<이름>`. 둘을 올렸다:
+
+| 항목 | 상태 | 내용 |
+|---|---|---|
+| `npm_override_typescript_estree_minimatch` | **열림**(외부 대기) | 걷는 조건: `npm view @typescript-eslint/typescript-estree dependencies.minimatch` 가 `^11` 이상을 내고 override 없이 `npm ls minimatch` 가 11 이상으로 풀린다. 지금은 8.72.2 가 `^10.2.2` 라 override 가 필요하다(GHSA-g3hv-75wg-m249 · 고친 판 11.0.1 부터). fallback: override 를 유지하되 린트가 깨지면 걷고 경고를 사유와 함께 닫는다(§203 의 길) |
+| `npm_override_source_map_js` | **해소**(2026-11-15) | override 를 걷었다 |
+
+**`source-map-js` override 를 걷을 수 있는가 — 재서 걷었다.** 저장소 밖 복사본에서 override 를 뺀 `package.json` 으로 `npm install --package-lock-only` → `lock` 이 **바이트 그대로**(`source-map-js` 1.2.2 · 부모 `^1.2.2` · 최신 1.2.2)이고 `npm ci --dry-run` 이 통과한다(`package-lock.json` 에는 `overrides` 칸이 없다). 아무 일도 안 하던 override 였다. 저장소의 `npm install` · `npm ci` 는 안 돌렸다 — **저장소 lock 은 바이트 그대로**다(`package.json` 한 줄만 바뀌었다).
+
+**막는 시험.** `tests/test_npm_overrides_declared.py` 넷: override 마다 열린 항목이 있다 · 열린 항목마다 override 가 실재한다 · 해소 항목의 override 는 없다 · 키 이름 규칙이 실제 이름에서 기대한 키를 낸다(빈 그물 방지). 새 override 를 `package.json` 에 더하면 이 시험이 **대장 항목이 없다고 운다.** **안 보는 것:** 걷는 조건이 참인지(상류 릴리스를 읽으려면 망이 필요하다 — 항목의 확인 명령이 든다).
 

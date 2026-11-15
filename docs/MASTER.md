@@ -3326,7 +3326,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 3,531 전수 · **분모(blank) 0절** · 물림(inherit) 2,235절.
+★ **강제자 칸의 분모.** 절 3,532 전수 · **분모(blank) 0절** · 물림(inherit) 2,236절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -5016,6 +5016,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `tests/test_publish_checkpoints.py` | 엣지의 소화전 · CCTV 칸 — 경로의 수가 **합이 아니라 합집합**인가 · 모름을 0 으로 안 적는가 · 발행 그래프의 실제 경로 셋에서 형상으로 다시 잰 수와 같은가 · 소화전 거리가 호스 1본 등급과 같은 수인가. 그리고 일방통행 판독표의 「적용」 행이 발행 방향으로 읽히고 「보류(충돌)」 행은 안 읽히는가 · 안 덮은 「적용」 행을 세는가(PLAN #72 · PLAN #1) |
 | `tests/test_bldg_gap.py` | 빠진 건물 추출 규칙을 합성 도형으로 문다 — 제 지난 산출물을 빼고 재는가 · 동 거르기 · 덮임 문턱의 방향과 값 · 층수 0 과 빈 값을 1 로 올리는가 · 좌표계 · 원천 sha 검사. 대장이 그 절차를 `pending` · `datasets` 중 정확히 한 곳에 적는가(PLAN #232(닫힘)). 실물 대조는 모듈의 종료 코드가 든다(한 번에 25초라 시험에 안 실었다) |
 | `tests/test_bldg_ground.py` | 평지는 안 단다 · 비탈은 `zb` 가 음수이고 지붕이 최고 지반 위 · 문턱 아래와 타일 밖은 그대로 · 빈 `zb` 를 파일에서 뺀다 · 발행물의 `zb` 는 0 이하이고 희소하다(DECISIONS §797-A) |
+| `tests/test_npm_overrides_declared.py` | **`web/navi/package.json` 의 npm `overrides` 가 대장(`sources.yaml` 의 `pending`)에 걷을 조건과 함께 올라 있다** — override 마다 열린 `npm_override_*` 항목이 있고 열린 항목마다 override 가 실재하며 해소 항목의 override 는 없다(DECISIONS §802-E · 조용한 override 를 막는다) |
 | `tests/test_testsplit.py` | LPT 가 균형 · 결정적 · 빠짐 없음 · 새 파일도 든다 · 장부 꼴(`ci_testtimes.json`) |
 | `ops-worker/test/relay.test.ts` | 중개자의 순수 규칙(`ops-worker/src/relay.ts`) — 누가 누구에게 · **마지막 한 통은 글자 그대로** · 관제 것은 안 기억 · 상한 · 인증. `node --test` 로 돈다 |
 | `tests/test_closewords.py` | `#144` 옛 닫는 문단이 막힌다 · 실재 행을 인용하면 통과 · 없는 행 · 닫은 행 자신은 후속이 못 된다 · `확인 불가` 허용 · 안 닫으면 안 본다 · 훅이 달려 있다 |

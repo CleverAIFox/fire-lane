@@ -39,7 +39,6 @@
     "node": ">=22"
   },
   "overrides": {
-    "source-map-js": "1.2.2",
     "@typescript-eslint/typescript-estree": {
       "minimatch": "^11.0.1"
     }
