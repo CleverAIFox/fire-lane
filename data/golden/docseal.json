@@ -14192,12 +14192,12 @@
   "fp": "view-v3",
   "kind": "read",
   "legacy": [
-   "1b19837e3d91fe23",
-   "32a0dcf71936feb4",
-   "7ab9198b420247fe",
-   "88fa8bccc2b6f7da",
-   "f1968bee6514638f",
-   "f8b1ccf65ddfbbeb"
+   "2dfce4797cec655f",
+   "3791c4be0cb18d7d",
+   "41de5611a8dd8db1",
+   "af0fa0b6d93333f8",
+   "cfad47298614b700",
+   "d5acb8f17c475cdf"
   ],
   "parts": {
    "sources.yaml": "998cac5b549d33e2",
@@ -14213,10 +14213,10 @@
    "tools/pushready.py": "1811996e9180b398",
    "tools/verify.sh": "b7fc512ff4490823",
    "web/config.js": "4c414e90f3f9c971",
-   "web/navi/package-lock.json": "8c1fad617cfbf06e",
+   "web/navi/package-lock.json": "39a71fc0a84b648a",
    "본문": "ad590e05396b48f5"
   },
-  "sha": "88fa8bccc2b6f7da"
+  "sha": "2dfce4797cec655f"
  },
  "DECISIONS/78": {
   "doc": "docs/DECISIONS.md",
