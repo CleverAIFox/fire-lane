@@ -71,7 +71,7 @@ describe("지도 핀과 상황판은 같은 값을 읽는다", () => {
 
 describe("옛 규칙은 같은 격자에서 갈린다(결함의 재현)", () => {
   /** 고치기 전 `OpsMap` — 마지막 메시지의 `demo` 칸만 읽는다. 시계가 없다. */
-  const oldPinKind = (u: Unit) => (u.last.demo ? "demo" : u.last.remainM != null ? "dispatching" : "idle");
+  const oldPinKind = (u: Unit): string => (u.last.demo ? "demo" : u.last.remainM != null ? "dispatching" : "idle");
 
   it("패널만 끊김 — 말이 5초를 넘게 끊긴 차에서 옛 핀은 안 끊긴다", () => {
     const diverged = GRID.filter(({ a, d, r }) => {
@@ -104,7 +104,7 @@ describe("소스 문 — 핀은 끊김을 스스로 계산하지 않는다", () 
     expect(OPS_APP).toContain("lostUnits(units, now)");
     expect(OPS_APP).toContain("unitChip(u, now)");
     expect(OPS_APP).toMatch(/setInterval\(\(\)\s*=>\s*setNow\(Date\.now\(\)\),\s*1000\)/);
-    expect(OPS_APP).toContain("lost={lost}");
+    expect(OPS_APP).toContain("lost={lostUnits(units, now)}");   // 끊김은 상황판과 같은 `now` 로 한 곳에서 계산해 글자로 넘긴다
   });
 });
 

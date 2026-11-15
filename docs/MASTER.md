@@ -1123,7 +1123,7 @@ tools/transition.py        봉인 ↔ 현재 전이표 · --self 항등 자기�
 소방장비 기본규격 · 소방차량 관리카드(받는 대로 반입 · 4대분).
 
 <!--gen: datasets-->
-대장은 `sources.yaml` 하나다. `datasets` 90종 · `retired` 9종.
+대장은 `sources.yaml` 하나다. `datasets` 89종 · `retired` 9종.
 <!--/gen-->
 ★ `datasets` 종수는 `tools/docgen.py` 가 대장에서 받아 **채운다** — 손으로 적으면 낡는다(08-31 에 실제로 셋 다 낡아 있었다). `retired` 종수는 대조만 한다(§246 밖 ②). `norm` 은 텍스트 14종 이관 완료다(§123).
 
@@ -2838,7 +2838,7 @@ PLAN 번호·참조 · 커버리지 래칫 · 문서 정합 도장을 밟는다.
 
 <!--gen: sealable-->
 ★ **raw 지문으로 파이프라인 전량을 생략한다**(`PLAN #15`(결번) · `#68` → `DECISIONS
-  §160~161`). `SEAL.json` 이 소스 89종의 raw sha256 을 갖고, `dms.py rawdiff`
+  §160~161`). `SEAL.json` 이 소스 88종의 raw sha256 을 갖고, `dms.py rawdiff`
   가 그것을 실물과 대조한다. 같으면 전량을 안 돈다 — **한 자릿수 분이 1분 밑으로** 준다.
   못 재거나 봉인이 없으면 **안 건너뛴다.** 모를 때 건너뛰는 것은 검사를
   끄는 것과 같다.
@@ -5390,7 +5390,7 @@ web/
 도달 불가    468         지도에 점선으로 겹친다 — 판정이 clear 여도 닿지 못한다
 총연장       58,821.5m
 기준        소방청 2025 골든타임 대책 + 2026-08-06 현장 답사 (통과 하한 3.0m)
-대장        `datasets` 90종 · `retired` 9종
+대장        `datasets` 89종 · `retired` 9종
 web/data    지형 22타일 · 정사영상 1,423타일 포함 (크기는 web_manifest 가 낸다)
 내비        web/navi/ — GPS 위치 추정(경로 투영 · 순간이동 재동기화) · A* · 턴바이턴 · 대체 접근 지점
             edge_cost 는 파이썬과 전량 대조 · 단위 시험 web/navi/test (npm run test · vitest)

@@ -238,7 +238,6 @@ export default function OpsApp() {
   const selEdge: GraphEdge | null = seg ? edgeByUid.get(seg) ?? null : null;
 
   const units = useMemo(() => Object.values(ops.units), [ops.units]);
-  const lost = useMemo(() => lostUnits(units, now), [units, now]);   // ★ 끊김은 여기 한 곳(`unitStale` · 같은 `now`)이 정한다 — 상황판 칩과 지도 핀이 같은 값을 읽는다(PLAN #251). 글자라 끊김이 **바뀔 때만** 새 값이다
   const board = useMemo(() => sortUnits(units, now), [units, now]);   // ★ 상황판만 상태 순서(`domain/unitBoard`) — `units` 는 지도에도 가므로 정렬 안 된 그대로(매초 새 배열이면 마커 효과가 매초 돈다)
   const need = spec ? requiredWidth(spec) : 3;
 
@@ -457,7 +456,7 @@ export default function OpsApp() {
                   reachable={reach} incident={incident?.point ?? null}
                   preview={plan?.plan?.coords ?? null}
                   previewWalk={plan?.plan && incident ? [plan.plan.coords[plan.plan.coords.length - 1], incident.point] : null}
-                  units={units} lost={lost} feed={ops.feed} selectedSeg={seg} focus={focus}
+                  units={units} lost={lostUnits(units, now)} feed={ops.feed} selectedSeg={seg} focus={focus}
                   onPick={onPick} onSeg={(u) => { if (!picking) setSeg(u); }} />
           {/* 범례 · 레이어 — 지도 위 왼쪽 아래 */}
           <div style={legendBox}>

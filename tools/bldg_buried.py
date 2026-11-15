@@ -20,7 +20,7 @@ IN    `web/data/buildings.geojson`(발행물) · `web/data/terrain/16/{x}/{y}.pn
 OUT   화면 표 · (`--csv`) 건물별 파일. 저장소 파일을 안 쓴다 · 판정을 안 읽는다
 PARAM `ZOOM` 16 · `BURY` 1.0 · 3.0(m) · `SPARSE_M` 0.5 · `CENTERS` centroid · rep · bbox
 밖    **MapLibre 가 실제로 어느 점을 중심으로 쓰는지는 안 본다**(세 규칙을 맞대어 어제의 215 · 23 · 6 에 맞는 것을 가릴 뿐이다) · 지형 위 그림이 어떻게 보이는지는 안 본다(헤드리스 실측)
-      · 발행 번호(`BUL_MAN_NO`)를 안 읽는다(§320) · 높이 `h` 만 읽는다
+      · 건물의 발행 번호 칸은 안 읽는다(§320 — 재발행하면 달라진다) · 높이 `h` 만 읽는다
 부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398)
 """
 from __future__ import annotations

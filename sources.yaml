@@ -4238,6 +4238,7 @@ datasets:
     stem: juso_bldg_ledger
     ext: [zip]
     kind: raw_only
+    layer: 'AL_D010_12_20261109.shp'
     scope: jngj
     updated: '2026-11-09'
     origin_name: AL_D010_12_20261109.zip
@@ -4302,6 +4303,9 @@ datasets:
       ★ 이 판의 sha256 — `3198c591e0411b48e5df1ca382e2c827f2e1abf5a9ab45d1492beb554cfddd91`(DECISIONS §776 · 2026-11-14 다시 쟀다 · 291,356,487 B).
         `firelane.bldg_gap.SRC_SHA256` 과 같다(시험이 문다) — 이름을 옮겨도 그대로이고, 사람이 `acquire --verify` 로 `data/_acquire.json` 에 올리면 같은 값이 거기에도 선다.
 
+    contract:
+      layer_must_exist: true
+
   juso_entrc:
     authority: 행정안전부 도로명주소 안내시스템 (사람이 2026-11-13 레이크에 직접 반입)
     feeds:
@@ -4310,6 +4314,7 @@ datasets:
     stem: juso_entrc
     ext: [zip]
     kind: raw_only
+    layer: '*TL_SPBD_ENTRC*.shp'
     scope: jngj
     updated: '2026-11-12'
     origin_name: (도로명주소)출입구_전남광주통합특별시.zip
@@ -4324,24 +4329,9 @@ datasets:
         `acquire --verify` 가 `_acquire.json` 에 적었다. `normalize_raw` 규칙이 원본명 → 정규명이다(DECISIONS §773-1 의 제안 이름). 19.8MB.
       ★ 좌표계 EPSG:5179 · 칸은 위와 같다(DECISIONS §773-1 이 열어 봤다). 소비자가 서면 `kind` 를 `shp_zip` 으로 올리고 `contract` 를 단다.
 
-  juso_layout:
-    authority: 행정안전부 도로명주소 안내시스템 (사람이 2026-11-13 레이크에 직접 반입)
-    feeds:
-      - src/firelane/normalize_raw.py
-    feeds_note: '[]'
-    stem: juso_layout
-    ext: [pdf]
-    kind: raw_only
-    scope: kr
-    updated: '2026-11-12'
-    origin_name: 도로명주소전자지도활용가이드.pdf
-    what: |
-      도로명주소 전자지도 활용 가이드 — 24쪽 · 제목 「도로명주소DB 레이아웃(도로명주소 전자지도)」 · `TL_*` 층의 칸 레이아웃
-    feeds_why: |
-      ★ 문서다 — 읽는 코드가 없다. 사람이 읽는다(`TL_*` 층의 열쇠: 출입구 · 건물 칸 이름이 위 `juso_entrc` 와 같다).
-    note: |
-      ★ 2026-11-15 (PLAN #232 ④ · ⑤). 사람이 2026-11-13 에 정규 이름 `juso/juso_layout_kr_20261112.pdf` 로 옮겼다(vintage 는 사람이 정했다).
-      ★ **`AL_D010`(건축물대장 건물)의 `A0`~`A28` 뜻은 이 문서에 없다** — `A0`~`A28` 꼴 칸 이름이 0건 · `AL_D010` 0건이다(DECISIONS §773-1). PLAN #232 ⑤ 를 이 문서가 닫지 못한다.
+    contract:
+      layer_must_exist: true
+
 
 raw_only:
   ortho:
@@ -4366,6 +4356,15 @@ raw_only:
         `datasets.ortho.feeds` 가 `ortho.py` 를 이미 들고 있었다 —
         한 파일이 제 자신과 모순돼 있었다.
       DL 세그멘테이션(3-A)은 아직 미투입이다. 타일 굽기는 투입돼 있다.
+
+  juso_layout:
+    what: 도로명주소 전자지도 활용 가이드 — 24쪽 · 「도로명주소DB 레이아웃(도로명주소 전자지도)」 · `TL_*` 층의 칸 레이아웃(행정안전부 도로명주소 안내시스템 · 사람이 2026-11-13 레이크에 직접 반입)
+    files: [juso_layout_kr_20261112.pdf]
+    note: |
+      ★ 2026-11-15 (PLAN #232 ④ · ⑤). 문서다 — 읽는 코드가 없다. 사람이 읽는다(`TL_*` 층의 열쇠: 출입구 · 건물 칸 이름이 `datasets.juso_entrc` 와 같다).
+        원본 이름 `도로명주소전자지도활용가이드.pdf` → 정규 이름은 사람이 옮겼고(2026-11-13) `normalize_raw` 규칙이 같다.
+      ★ **`AL_D010`(건축물대장 건물)의 `A0`~`A28` 뜻은 이 문서에 없다** — `A0`~`A28` 꼴 칸 이름이 0건 · `AL_D010` 0건이다(DECISIONS §773-1). PLAN #232 ⑤ 를 이 문서가 닫지 못한다.
+      ★ `datasets` 가 아니라 여기인 이유 — PDF 는 열 계약을 가질 수 없어 `datasets` 에 올리면 무계약 래칫(`NO_CONTRACT_RATCHET`)이 느슨해지는 쪽으로 움직인다(DECISIONS §397 · §429 가 PDF 를 올릴 때마다 그 래칫을 올렸다 — 이번에는 올리지 않는다).
 
   building_change:
     what: GIS건물통합정보 일변동분
