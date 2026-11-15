@@ -4,14 +4,9 @@
 """
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-
+import bldg_overlap as O
 import geopandas as gpd
 from shapely.geometry import box
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
-import bldg_overlap as O  # noqa: E402 — `sys.path` 를 먼저 깔아야 import 가 된다
 
 ID0 = 100_000
 

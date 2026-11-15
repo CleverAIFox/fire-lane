@@ -6,15 +6,10 @@
 """
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-
 import geopandas as gpd
 import pandas as pd
+import xsec_leak as X
 from shapely.geometry import LineString, box
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
-import xsec_leak as X  # noqa: E402 — `sys.path` 를 먼저 깔아야 import 가 된다
 
 
 def _fixture():

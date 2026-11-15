@@ -4840,7 +4840,6 @@ outputs:
     - tests/test_oneway_field.py
     - src/firelane/publish_web.py
     - tools/occ_pressure.py
-    - tools/xsec_leak.py                    # 2026-11-15 (PLAN #247 · DECISIONS §791) — 구간선 위 표본점을 되살려 교차부 폴리곤 밖 거리를 잰다(읽기만)
     - tests/test_contract.py
     - tests/test_reach_overlay.py          # 2026-09-16 도달 불가 오버레이 조인 키
     - tools/survey_queue.py
