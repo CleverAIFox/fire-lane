@@ -5003,7 +5003,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `tests/test_bldg_fill.py` | 빠진 면 고르는 규칙 ①~⑤ 가 합성 면 한 개씩을 거른다 · 좌표계 · 칸이 틀리면 운다 · 쓰기 왕복 · 일치도 표 · 읽기 호출(bbox) (DECISIONS §786) |
 | `tests/test_xsec_leak.py` | 최소폭 표본점이 구간선 위 `s_m` 에서 되살아나는가 · 발행 최소폭과 안 맞는 구간은 빠지는가 · 경계 밖 거리 구간 수가 합과 맞는가 · 정적 재거름이 최솟값이 바뀐 구간과 표본 0 이 된 구간을 따로 세는가(DECISIONS §791) |
 | `tests/test_bldg_overlap.py` | 얹은 면 가르기(번호) · 겹침 비율이 기존 면과 얹은 면끼리를 따로 세는가 · 문턱별 표 · 상위 목록이 비율 순인가(DECISIONS §792-H) |
-| `tests/test_park_forecast.py` | 가중치 0 이면 경로가 안 바뀌고 크면 단속이 많은 직선을 피해 도는가 · 늘어난 길이를 맞게 재는가 · 영상판정 불가 구간의 근거를 세는가 · 판별식이 살아 있는가(DECISIONS §794-A) |
+| `tests/test_park_forecast.py` | 가중치 0 이면 경로가 안 바뀌고 크면 단속이 많은 직선을 피해 도는가 · 늘어난 길이를 맞게 재는가 · 영상판정 불가 구간의 근거를 세는가(DECISIONS §794-A) |
 | `tests/test_firstscreen.py` | 첫 화면 래칫이 경계에서 운다 — 선언과 같으면 통과 · 위면 운다 · 선언 없는 화면은 운다 · 타일은 보고만 하고 거르지 않는다(DECISIONS §787-H) |
 | `tests/test_branch_tidy_green.py` | `refs/green/*` 청소가 안전한가 — 정확히 N일은 두고 넘은 것만 가린다 · 날짜를 못 읽은 ref 는 둔다 · 삭제 명령이 `--prune-green` 을 명시한 분기 안에만 있고 `--auto` 는 그것을 안 켠다 |
 | `tests/test_deliver_guards.py` | 배달 도구의 구멍 넷 — 포장 밑동이 끝과 같거나 조상이 아니면 멈춘다(W13-19) · 환경이 없는 워크트리에서 `uv run` 을 거친다(W13-21) · 없는 `--extra` 는 비우기 전에 운다(W13-22) · EXPECT 의 pytest 줄에 벽시계가 없다(W13-24) |

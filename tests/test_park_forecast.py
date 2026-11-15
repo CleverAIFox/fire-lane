@@ -34,7 +34,3 @@ def test_grounding_counts_unknown_segments_with_a_positive_road_count():
     g = F.grounding(by, props)
     assert g["unknown"] == 2 and g["unknown_no_cctv"] == 1
     assert g["unknown_park_pos"] == 1 and g["unknown_park_strong"] == 1 and g["no_cctv_park_pos"] == 1
-
-
-def test_the_selftest_passes():
-    assert F.selftest() == 0

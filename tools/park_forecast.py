@@ -4,7 +4,6 @@ park_forecast.py — **단속이력 가중치의 예보.** 가중치를 켜면 �
 
     uv run python tools/park_forecast.py                       붙은 정도 · 영상판정 불가 구간의 근거 · 경로 예보 표
     uv run python tools/park_forecast.py --ks 0.05,0.1,0.4     가중치 후보(`parkPer1000`)를 바꿔 본다
-    uv run python tools/park_forecast.py --selftest            ★ 예보 판별식이 살아 있나
 
 ── 왜 있나 ────────────────────────────────────────────────────
 `web/navi/src/domain/pressure.ts` 의 `pressureFactor` 는 구간 비용에 `1 + park/1000 × parkPer1000` 을 곱한다. 계수 `parkPer1000` 은 지금 **0** 이다
@@ -63,7 +62,7 @@ def path_edges(g: nx.Graph, path: list[int]) -> tuple[int, ...]:
 def forecast(edges: list[dict], origins: list[int], ks, n_dest: int = N_DEST, seed: int = SEED) -> list[dict]:
     """후보 `k` 마다: 경로가 바뀐 비율 · 늘어난 길이(%) 분포 · 최대 비용 배수. 쌍은 센터 노드가 닿는 성분 안에서 시드로 뽑는다."""
     base = build(edges, 0.0)
-    rng = random.Random(seed)
+    rng = random.Random(seed)  # noqa: S311 — 씨앗을 박은 재현용 표집이다. 암호가 아니다
     pairs = []
     for o in origins:
         comp = sorted(nx.node_connected_component(base, o) - {o})
@@ -117,23 +116,10 @@ def render(counts: dict, g: dict, fc: list[dict]) -> list[str]:
     return out
 
 
-def selftest() -> int:
-    # 삼각: a-b 직선 100m(park 3000) 대 a-c-b 우회 130m(park 0). k=0 은 직선 · 크면 우회.
-    edges = [{"a": 0, "b": 1, "length_m": 100, "park": 3000}, {"a": 0, "b": 2, "length_m": 60, "park": 0},
-             {"a": 2, "b": 1, "length_m": 70, "park": 0}]
-    r = forecast(edges, [0], (0.0, 0.01, 1.0), n_dest=5)
-    ok = r[0]["changed"] == 0 and r[1]["changed"] == 0 and r[2]["changed"] == 1 and abs(r[2]["extra_med"] - 30.0) < 1e-9
-    print("✓ 예보 판별식이 살아 있다" if ok else f"✗ 예보 판별식이 죽었다: {r}")
-    return 0 if ok else 1
-
-
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[1])
     ap.add_argument("--ks", help="쉼표로 가른 후보(`parkPer1000`)")
-    ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args(argv)
-    if a.selftest:
-        return selftest()
     gj = json.loads(GRAPH.read_text(encoding="utf-8"))
     edges = gj["edges"]
     props = [f["properties"] for f in json.loads(SEGS.read_text(encoding="utf-8"))["features"]]
