@@ -14,7 +14,7 @@ import pandas as pd
 from shapely.geometry import LineString, box
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
-import xsec_leak as X  # noqa: E402
+import xsec_leak as X  # noqa: E402 — `sys.path` 를 먼저 깔아야 import 가 된다
 
 
 def _fixture():
@@ -57,3 +57,11 @@ def test_grid_counts_changed_min_and_zero_sample_segments():
     assert parse[0] == (0, 0)      # b=0: 폴리곤 안 표본(x≤4)만 빠진다 — 최솟값(x=5)은 남아 폭이 안 바뀐다
     assert parse[1] == (1, 0)      # b=1: x=5 가 경계 1m 이내라 빠진다 → 최솟값이 2.0 에서 6.0 으로 바뀐다
     assert parse[2] == (0, 1)      # b=6: 남는 표본이 없다 — 엔진이면 폭을 못 내는 구간
+
+
+def test_nodes_need_three_segment_ends_at_one_point():
+    two = gpd.GeoDataFrame({"geometry": [LineString([(0, 0), (5, 0)]), LineString([(0, 0), (0, 5)])]}, crs=5186)
+    three = gpd.GeoDataFrame({"geometry": [LineString([(0, 0), (5, 0)]), LineString([(0, 0), (0, 5)]),
+                                           LineString([(0, 0), (-5, 0)])]}, crs=5186)
+    assert not X.nodes(two)         # 둘이 만나는 곳은 교차로가 아니라 이음매다
+    assert X.nodes(three)           # 셋이 만나면 교차로다
