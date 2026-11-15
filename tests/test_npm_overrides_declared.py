@@ -13,7 +13,7 @@ import json
 import re
 from pathlib import Path
 
-import yaml
+from firelane import ledger
 
 ROOT = Path(__file__).resolve().parent.parent
 PKG = ROOT / "web" / "navi" / "package.json"
@@ -35,7 +35,7 @@ def _slug(path: str) -> str:
 
 
 def _pending() -> dict[str, dict]:
-    d = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
+    d = ledger.load_sources()        # 대장은 한 문으로 읽는다 — 직접 yaml 로 열면 `test_lake` 의 읽는 문 래칫(MAX_LEDGER_LOADERS)이 는다
     return {e["key"]: e for e in d.get("pending", []) if str(e.get("key", "")).startswith("npm_override_")}
 
 
