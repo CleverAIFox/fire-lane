@@ -35,6 +35,10 @@ from pathlib import Path
 
 import networkx as nx
 
+from firelane.quantile import (
+    p90,  # 분위수의 정본(`numpy.quantile`) — 손 색인을 복사하지 않는다 (DECISIONS §471)
+)
+
 ROOT = Path(__file__).resolve().parent.parent
 GRAPH = ROOT / "web" / "data" / "navi_graph.json"
 SEGS = ROOT / "data" / "processed" / "segments.geojson"
@@ -81,7 +85,7 @@ def forecast(edges: list[dict], origins: list[int], ks, n_dest: int = N_DEST, se
         mult = [1.0 + (e.get("park") or 0) / 1000.0 * k for e in edges]
         out.append({"k": k, "pairs": len(pairs), "changed": changed,
                     "extra_med": statistics.median(extra) if extra else 0.0,
-                    "extra_p90": sorted(extra)[int(0.9 * (len(extra) - 1))] if extra else 0.0,
+                    "extra_p90": p90(extra) if extra else 0.0,
                     "extra_max": max(extra) if extra else 0.0,
                     "mult_med": statistics.median(mult), "mult_max": max(mult)})
     return out
