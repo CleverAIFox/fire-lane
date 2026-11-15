@@ -540,3 +540,38 @@ def test_the_forecast_names_both_samples_the_old_order_and_the_new_one():
     assert f"{P.SAMPLE_LAPS}바퀴" in line and "옛 순서" in line and f"사슬 {P.SAMPLE_NEW_ORDER[0]}건" in line and f"{P.SAMPLE_NEW_ORDER[1]}바퀴" in line
     assert "증명은 아니다" in line, "표본을 고정점의 증명처럼 적지 않는다"
     assert P.SAMPLE_NEW_ORDER[1] == P.forecast([_blk(k) for k in ("㉢", "㉤", "㉡")] + [_blk("㉠", [WRITE])]).sure, "실증 표본이 모델의 확정 바퀴와 다르면 문구가 거짓이다"
+
+
+# ── 열린 Dependabot 경고 수 — 적기만 한다 (DECISIONS §802-C) ──────────────
+
+def test_dependabot_note_reports_the_count_and_never_blocks():
+    n0 = P.dependabot_note(ROOT, lambda argv, cwd: (0, "0\n"))
+    n3 = P.dependabot_note(ROOT, lambda argv, cwd: (0, "3\n"))
+    assert "0건" in n0[0] and "★" not in n0[0]
+    assert "3건" in n3[0] and "막지 않는다" in n3[0]
+
+
+def test_dependabot_note_skips_when_gh_cannot_answer():
+    for rc, out in ((127, "gh 가 없다"), (124, "15초 안에 답이 없다"), (1, "gh: To use GitHub CLI, run: gh auth login"), (0, "숫자가 아니다")):
+        (note,) = P.dependabot_note(ROOT, lambda argv, cwd, r=rc, o=out: (r, o))
+        assert "못 봤다" in note and "건너뛴다" in note and "막지 않는다" in note, (rc, note)
+
+
+def test_dependabot_note_asks_for_open_alerts_only():
+    seen: list[list[str]] = []
+    P.dependabot_note(ROOT, lambda argv, cwd: (seen.append(argv) or (0, "0")))
+    assert seen and seen[0][:2] == ["gh", "api"] and "dependabot/alerts?state=open" in seen[0][2]
+
+
+def test_gh_run_returns_a_reason_when_gh_is_missing(tmp_path: Path, monkeypatch):
+    monkeypatch.setenv("PATH", str(tmp_path))
+    rc, out = P._gh_run(["gh", "api", "x"], tmp_path)
+    assert rc == 127 and "gh" in out
+
+
+def test_notes_adds_the_alert_line_only_when_there_is_an_upstream(tmp_path: Path):
+    _git(tmp_path, "init", "-q")
+    _commit(tmp_path, "x")
+    called: list[int] = []
+    out = P.notes(tmp_path, P.real_run, lambda argv, cwd: (called.append(1) or (0, "2")))
+    assert not called and "업스트림이 없는 가지" in " ".join(out)       # 업스트림이 없으면 망을 안 탄다

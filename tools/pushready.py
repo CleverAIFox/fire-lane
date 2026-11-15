@@ -34,7 +34,7 @@ pushready.py — 「푸시해도 되는가」 **한 명령.**  (PLAN #207)
 부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398 — 아직 어느 관문에도 안 올렸다: 2분이 예산 30초에 안 든다)
 IN    `tools/ratchet.py` · `tools/docseal.py` · `tools/mutate.py` 의 출력과 종료 코드 · `git status --porcelain` · (`--edges`) `FIRE_LANE_AUDIT_DIR/log`
 OUT   화면 · 종료 코드(가능 0 · 불가 1). 파일은 안 쓴다.
-밖    **푸시할 ref 가 무엇인지는 안 본다**(그것은 `.githooks/pre-push` 의 몫) · **원격 상태를 안 본다**(네트워크 없음 — ㉧ 은 마지막 `git fetch` 가 받아 둔 로컬 ref 만 비교한다) ·
+밖    **푸시할 ref 가 무엇인지는 안 본다**(그것은 `.githooks/pre-push` 의 몫) · **원격 상태를 안 본다**(네트워크 없음 — ㉧ 은 마지막 `git fetch` 가 받아 둔 로컬 ref 만 비교한다 · 단 열린 Dependabot 경고 수 한 줄은 `gh` 로 읽어 **적기만** 한다 — 못 읽으면 건너뛴다) ·
       **CI 가 도는 시험 전체를 안 돈다** — 전수 `pytest` 는 25분이고 이 도구는 그 대신이 아니다. 이 도구가 「가능」이라고
       한 것은 **도장 · 래칫 · 변이 장부 · 커밋** 네 축이 푸시를 막지 않는다는 뜻이다.
       ★ **느리다** — `ratchet.py` 전수가 2분이다. 그래서 `pre-push` 30초 예산에 못 올렸다(PLAN #207).
@@ -312,11 +312,42 @@ def check_behind(root: Path, run: Runner) -> Block | None:
                  [BEHIND_LIMIT], [f"git merge {up}   # 받은 뒤 트리가 바뀌므로 아래 사슬을 다시 돈다"])
 
 
-def notes(root: Path = ROOT, run: Runner = real_run) -> list[str]:
+#: ★ 2026-11-15 (PLAN #252 곁 · DECISIONS §802-C). 열린 Dependabot 경고 수 — `zod`(high) 하나가 20일 열려 있었는데 아무도 몰랐다. CI 의 `npm audit` 은 `--omit=dev` 라 개발 의존을 처음부터 못 보고 알림이라 막지도 않는다.
+GH_ALERTS = ["gh", "api", "repos/:owner/:repo/dependabot/alerts?state=open&per_page=100", "--jq", "length"]
+GH_TIMEOUT = 15
+
+
+def _gh_run(argv: list[str], cwd: Path) -> tuple[int, str]:
+    """`gh` 호출 — 망 · 로그인이 없을 수 있어 **짧은 시한**을 둔다. 없거나 늦으면 (127 · 124) 와 이유를 돌려준다."""
+    try:
+        r = subprocess.run(argv, cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=GH_TIMEOUT)
+    except FileNotFoundError:
+        return 127, "gh 가 없다"
+    except subprocess.TimeoutExpired:
+        return 124, f"{GH_TIMEOUT}초 안에 답이 없다"
+    return r.returncode, (r.stdout or "") + (r.stderr or "")
+
+
+def dependabot_note(root: Path = ROOT, gh: Runner = _gh_run) -> list[str]:
+    """열린 Dependabot 경고 수를 **적기만** 한다 — 막는 축이 아니다(`actionpin` · `mergecheck` 이 ㉨ 밖인 것과 같은 사유: 망 · 로그인이 필요하다).
+
+    못 읽으면(망 · `gh` 로그인 · 권한 · 시한) **건너뛴다고 적고** 끝난다. 0건이어도 한 줄을 적는다 — 침묵이 「0」인지 「못 봄」인지 가를 수 없어서다."""
+    rc, out = gh(GH_ALERTS, root)
+    last = (out.strip().splitlines() or [""])[-1].strip()
+    if rc != 0 or not last.isdigit():
+        why = last[:80] or f"종료 코드 {rc}"
+        return [f"열린 Dependabot 경고 수를 못 봤다(망 · `gh` 로그인 · 권한 · 시한 — {why}). 건너뛴다 · 막지 않는다."]
+    n = int(last)
+    if n == 0:
+        return ["열린 Dependabot 경고 0건(`gh api` 로 읽었다)."]
+    return [f"★ 열린 Dependabot 경고 {n}건 — 막지 않는다. 보려면 `gh api 'repos/:owner/:repo/dependabot/alerts?state=open' --jq '.[] | \"\\(.number) \\(.security_advisory.severity) \\(.dependency.package.name)\"'`"]
+
+
+def notes(root: Path = ROOT, run: Runner = real_run, gh: Runner = _gh_run) -> list[str]:
     """막지는 않고 **적기만** 하는 사실."""
     if _upstream(root, run) is None:
         return ["업스트림이 없는 가지다(`@{u}` 없음) — 원격보다 뒤인지는 못 봤다. 막지 않는다."]
-    return []
+    return dependabot_note(root, gh)
 
 
 # ── 몇 바퀴 남았나 (PLAN #220) ───────────────────────────────────
