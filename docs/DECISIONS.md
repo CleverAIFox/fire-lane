@@ -52600,6 +52600,29 @@ PLAN #31 에 「0.05 로 정했다 · 근거 · 본 저장소 미적용」 을, 
 
 **훅 예산(28초) — 안에 든다.** 훅 모드(`testpick --list --no-touched`) 묶음 207/274개 파일 · 추정 **27.4초**(예산 28초) — 단독으로 쓴 뒤 오히려 0.5초 줄었다. **`test_layering.py` 는 묶음 안으로 돌아왔다.** 예산은 안 올렸다.
 
+**새로 빨갰던 한 건 — 시험의 목록을 사실에 맞췄다(사람이 허락했다).** `test_testpick.py::test_the_long_tests_touching_docs_and_ledger_are_over_the_cap_on_the_real_ledger` 는 다섯 파일(`test_ledger_accessor` · `test_normalize_rules` · `test_ledger_outputs` · `test_guards` · `test_tools_are_wired`)이 상한 **위**임을 실물 장부로 못 박았는데 단독 값으로는 `test_guards`(34.6)와 `test_tools_are_wired`(22.0)가 상한 아래다. **고침:** 목록을 위 셋으로 줄이고 아래 둘이 상한 아래임을 따로 문다(둘이 닿은 시험 묶음에 든다). **왜 느슨해진 것이 아닌가:** 상한(`TOUCH_CAP` — 코드값 40초)은 한 글자도 안 건드렸다. 「위」의 목록이 장부가 병렬 8 로 부푼 값(`test_guards` 75.5 · `test_tools_are_wired` 67.7초)일 때의 사실이었고 단독 값에서는 둘이 상한 아래라서, **목록이 사실에 맞아졌다.** 오히려 시험이 하나 더 단단해졌다 — 아래 둘이 상한 아래임을 문장으로 묻기 때문에, 부푼 값이 장부에 되돌아오면 이 시험이 **그쪽에서** 운다(`장부에 부푼 값이 되돌아왔다`). 실물 장부에서 셋은 위(`test_ledger_accessor` 113.8 · `test_ledger_outputs` 106.2 · `test_normalize_rules` 63.0초)로 그대로 걸린다. 같은 구조가 오늘 두 번 깨졌다(PLAN #252 가 파일 목록을 손으로 박은 자리로 적었다).
+
+**㉥ 를 한 번 더 쟀다:** `testpick --run --no-cap` **313.9초**(벽시계 320.7초 · 추정 405.5초 · 261개 파일 · 빨강 1). 앞의 386초 · 495초 · 900초 초과와 함께 놓으면 같은 묶음이 313~495초 사이에서 움직였고 한 번 900초를 넘었다 — **넘긴 원인은 여전히 모른다.**
+
+**전수 장부는 틀린 길이었다(사람이 바로잡았다).** `testpick --measure --write` 전수(274개 파일 · 합 2,733초 · 빨강 0)를 썼더니 값이 **병렬 8** 의 값이라 장부를 읽는 시험 둘이 빨갰다: `test_ledger_accessor.py` 가 327.2초로 적혀 시험당 시한 300초에 닿았고(`test_no_ledger_file_reaches_the_per_test_timeout`) 구조 규칙 시험 `test_layering.py` 가 28초 예산 묶음 밖으로 밀렸다(`test_the_real_ledger_picks_the_structure_rules_within_budget`). 지시가 틀렸고 사람이 인정했다 — 장부 칸은 **단독 값**이어야 한다. **앞으로 전수 `--measure --write` 는 쓰지 않고 장부는 `--only` 단독 값으로만 쓴다**(도구 결함은 PLAN #252).
+
+**다시 잴 파일의 기준(재현 가능):** 장부 값이 **30초 이상**이거나 **직전 장부의 2배 이상**(그리고 5초 이상)인 파일 — 24개. 직전 장부는 이 절 앞의 값(사본으로 남겼다)이고 두 조건의 합집합이다(`test_ledger_accessor` · `test_ratchet` · `test_evalgen` 이 모두 든다). 경합을 없애려고 `--jobs 1` 로 한 파일씩 쟀다(합 828초 · 벽시계 836초 · 빨강 0).
+
+| 파일 | 병렬 | 단독 |
+|---|---:|---:|
+| `test_ledger_accessor.py` | 327.2 | 113.8 |
+| `test_cli_surface.py` | 247.9 | 109.9 |
+| `test_ledger_outputs.py` | 217.3 | 106.2 |
+| `test_ratchet.py` | 193.5 | 69.2 |
+| `test_normalize_rules.py` | 200.8 | 63.0 |
+| `test_evalgen.py` | 56.0 | 19.1 |
+| `test_layering.py` | 5.8 | 1.4 |
+| 나머지 17개 | (병렬 8.6~138.7) | (단독 3.8~42.4) |
+
+병렬 값은 단독의 **2.05~4.21배**로 부푼다(24개 전부 · 가장 큰 것이 `test_layering` 4.2배). 단독으로 재지 않은 나머지 250개 파일은 앞 전수의 병렬 값이 그대로 남았다(각각 30초 미만이고 직전 장부의 2배 미만이다 — 같은 길로 다시 쓰는 것은 PLAN #252 의 도착 조건 ④).
+
+**훅 예산(28초) — 안에 든다.** 훅 모드(`testpick --list --no-touched`) 묶음 207/274개 파일 · 추정 **27.4초**(예산 28초) — 단독으로 쓴 뒤 오히려 0.5초 줄었다. **`test_layering.py` 는 묶음 안으로 돌아왔다.** 예산은 안 올렸다.
+
 **새로 빨간 한 건 — 장부가 진실에 가까워져서다:** `test_testpick.py::test_the_long_tests_touching_docs_and_ledger_are_over_the_cap_on_the_real_ledger` 는 다섯 파일(`test_ledger_accessor` · `test_normalize_rules` · `test_ledger_outputs` · `test_guards` · `test_tools_are_wired`)이 상한 45초 **위**임을 실물 장부로 못 박는데 단독 값으로는 `test_guards`(34.6)와 `test_tools_are_wired`(22.0)가 45초 아래다. 그 시험이 병렬로 부푼 값을 전제로 쓰였다는 뜻이고 PLAN #252 가 같은 뿌리를 든다. 시험을 고치거나 장부에 부푼 값을 되돌려 쓰는 것은 안 했다(금지이고 장부가 거짓이 된다).
 
 **㉥ 를 한 번 더 쟀다:** `testpick --run --no-cap` 313.9초(벽시계 320.7초)였다가 `pushready` 안에서는 433~464초가 찍혔다 — 같은 묶음이 313~495초 사이에서 움직이고 한 번 900초를 넘겼다. **넘긴 원인은 여전히 모른다.**
