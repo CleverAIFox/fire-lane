@@ -71,6 +71,8 @@ _SLOW3 = "훅 예산 — 단독 3.8~4.9초(싼 37개 + 이 셋이면 훅 중앙 
 _NET = "망이 필요하다(패키지 내려받기 · GitHub API)"
 _SMOKE = "브라우저가 필요하고 1분 남짓 걸린다(헤드리스 크로미움 · 개발 서버 재시작 시험) — 훅 예산(30초) 밖이다(DECISIONS §700). 로컬은 `verify.sh` 가 돈다(DECISIONS §706)"
 _NPM = "npm · node_modules 가 필요하다(`npm ci` 는 망)"
+_NPM_LINT = ("`eslint .` — 3.7~6.8초(더운 · 찬 캐시) · 망이 아니다(`node_modules` 만 있으면 된다 — `navi:test` 와 같은 사유) · 읽기만 한다. CI 가 빨갰는데 ㉨ 가 못 본 자리였다: `react-hooks/exhaustive-deps` "
+              "(2026-11-15 · `App.tsx` 의 안 쓰는 의존성 `n.data` · DECISIONS §800)")
 _NPM_TEST = ("`vitest` 전수 — 12.8초 · 망이 아니다(`node_modules` 만 있으면 된다) · 발행 산출물(`web/data` · `data/golden`)을 정적 import 로 먹는다. 재잠금이 움직이는 수를 "
              "pytest 그물(`testpick`)이 못 본다 — CI 에서야 터졌다(DECISIONS §719). 훅 예산(30초)에는 안 든다")
 _OPS_TEST = "중개자(`ops-worker`) 단위 시험 — `node --test` 한 줄 · 0.3초 · 설치 불필요(wrangler 는 배포에만 쓴다). 스크립트 이름을 `relay-test` 로 따로 둬 `navi:test` 와 **이름이 겹치지 않는다**(DECISIONS §772 · §720 의 패턴 — 작업 디렉터리 축에만 기대지 않았다)"
@@ -87,7 +89,7 @@ LAYERS: dict[tuple[str, str], tuple[str, str]] = {
     ("firelane.datalog", "graph"): ("ci", _WRITES1),
     ("firelane.jsonkeys", ""): ("ready", _BUDGET),
     ("firelane.ledger_check", ""): ("ready", _BUDGET),
-    ("navi:lint", "@web/navi"): ("ci", _NPM),
+    ("navi:lint", "@web/navi"): ("ready", _NPM_LINT),
     ("navi:smoke", "@web/navi"): ("ci", _SMOKE),
     ("navi:test", "@web/navi"): ("ready", _NPM_TEST),
     ("navi:typecheck", "@web/navi"): ("ci", _NPM),
