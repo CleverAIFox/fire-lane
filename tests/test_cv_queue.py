@@ -155,3 +155,10 @@ def test_the_published_segments_carry_no_queue_column(q):
     props = json.loads(SEG.read_text(encoding="utf-8"))["features"][0]["properties"]
     assert not [k for k in props if "queue" in k or "cv_rank" in k], \
         f"발행물에 큐 칸이 있다: {sorted(props)}"
+
+
+def test_the_queue_key_must_match_the_part_contract(q):
+    """`seg_uid` 형식은 파트 간 계약(`contracts.vision.SEG_UID_RE`)이 정한다 — 큐가 비전 파트에 넘기는 열쇠다 (PLAN #126 · DECISIONS §794)."""
+    ok = {"seg_uid": "DM-192892-283592-W4QT"}
+    assert not q.malformed([ok])
+    assert q.malformed([ok, {"seg_uid": "DM00123"}, {"seg_uid": None}]) == ["DM00123", "None"]
