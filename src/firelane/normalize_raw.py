@@ -241,6 +241,10 @@ RULES: list[tuple[str, str, str]] = [
     (r"^전남광주통합특별시_동구\.zip$",   "juso", "juso_elctrnmap_jngj_20260711.zip"),
     (r"사물주소도형.*동구\.zip$",         "juso", "juso_spotaddr_geom_jngj_20260801.zip"),
     (r"사물주소기준점.*동구\.zip$",       "juso", "juso_spotaddr_ref_jngj_20260801.zip"),
+    # ★ 2026-11-15 (PLAN #232 ④). 레이크에 제공처 원본 이름으로 놓였던 셋(DECISIONS §773-1) — 사람이 정규 이름으로 옮겼고(2026-11-13) 그 이름이 목표다.
+    (r"^\(도로명주소\)출입구_전남광주통합특별시\.zip$", "juso", "juso_entrc_jngj_20261112.zip"),
+    (r"^도로명주소전자지도활용가이드\.pdf$",          "juso", "juso_layout_kr_20261112.pdf"),
+    (r"^al_d010_12_20261109\.zip$",                  "juso", "juso_bldg_ledger_jngj_20261109.zip"),
 
     # ── its · 국가교통정보센터 ───────────────────────────────
     # ★ 258MB 전국이다. 광주 절단은 norm 이후 단계에서 한다.
