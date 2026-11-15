@@ -83,9 +83,9 @@ if [ ${#fail[@]} -eq 0 ]; then
         bash -c "${cmds[$k]}" </dev/null >"$o" 2>&1; echo $? >"$o.rc"
         awk -v a="$s" -v b="$(now)" 'BEGIN { printf "%.1f", b - a }' >"$o.t"
     }
-    # ★ 2026-11-15 (PLAN #253 · DECISIONS §802-B). **무거운 것부터 · 동시에 넷까지.** 25게이트를 한꺼번에 띄우면 8코어가 경합해 게이트마다 단독의 약 3배로 부풀고(deadcheck 9 → 28초)
-    #   벽시계가 30~37초가 됐다. 긴 것(셋째 열 큰 순)부터 동시 `POOL` 개까지만 돌리면 같은 25게이트가 **27.1~27.6초**(동시 4~5 · 세 번씩 · 기준 30.1~37.6초)다.
-    #   `FIRE_LANE_PREPUSH_POOL` 로 바꾼다(기본 4). 출력 순서는 여전히 게이트 파일 순서다. 직렬은 `FIRE_LANE_PREPUSH_SERIAL=1`.
+    # ★ 2026-11-15 (PLAN #253 · DECISIONS §802-B). **무거운 것부터 · 동시에 넷까지.** 25게이트를 한꺼번에 띄우면 8코어가 경합해 게이트마다 단독의 약 3배로 부푼다(deadcheck 9 → 28초).
+    #   긴 것(셋째 열 큰 순)부터 동시 `POOL` 개까지만 돌린다. **효과는 작다 — 원래 훅과 번갈아 5바퀴 돌린 실측: 원래 27.2~29.5초(평균 27.8) · 이 훅 26.6~27.4초(평균 26.8) — 약 1초 · 흔들림이 좁다.**
+    #   벽시계는 같은 훅이라도 기계 상태에 따라 27~37초로 움직였다(§802-B 표). `FIRE_LANE_PREPUSH_POOL` 로 바꾼다(기본 4). 출력 순서는 게이트 파일 순서다. 직렬은 `FIRE_LANE_PREPUSH_SERIAL=1`.
     pool="${FIRE_LANE_PREPUSH_POOL:-4}"
     order=($(for k in "${!names[@]}"; do printf '%s\t%s\n' "${secs[$k]}" "$k"; done | sort -t$'\t' -k1,1nr -k2,2n | cut -f2))
     for k in "${order[@]}"; do
