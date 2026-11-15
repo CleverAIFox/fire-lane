@@ -6,10 +6,8 @@ import { buildAdjacency, findRoute } from "../src/domain/graph";
 import { alternateAccess, reachable, reachableEdges, MAX_WALK_M } from "../src/domain/access";
 import { compareMarks } from "../src/domain/compare";
 import { displayName, shortStation, vehicleClass } from "../src/domain/fleetName";
-import {
-  asNaviMsg, asOpsMsg, opsAck, opsReduce, OPS_EMPTY, shareState, opsPresent, HB_TTL_MS,
-  unitStale, UNIT_STALE_MS, type Unit,
-} from "../src/domain/opsProtocol";
+import { asOpsMsg, shareState, opsPresent, HB_TTL_MS, type Unit } from "../src/domain/opsProtocol";
+import { asNaviMsg, opsAck, opsReduce, OPS_EMPTY, unitStale, UNIT_STALE_MS } from "../src/domain/opsBoard";
 import { distM } from "../src/domain/geo";
 import opsAppSrc from "../src/OpsApp.tsx?raw";
 import { demoTag, liveCounts, sortUnits, unitChip, unitRank, unitStatus } from "../src/domain/unitBoard";
@@ -133,7 +131,7 @@ test("건물은 땅에서 선다 — 지형을 안 켠 지도에서 해발고(z)
 });
 
 test("경로 주변 사정 — 경로 위 거리 순 · 종류별 문턱 안 · 연속 과속방지턱은 하나로 (§216-3)", async () => {
-  const { routeHazards, hazardSummary, NEAR_M } = await import("../src/domain/context");
+  const { routeHazards, NEAR_M } = await import("../src/domain/context");
   const { distM: d } = await import("../src/domain/geo");
   const mk = (kind: string, at: [number, number]) =>
     ({ type: "Feature", properties: { kind }, geometry: { type: "Point", coordinates: at } }) as GeoJSON.Feature;
@@ -153,7 +151,6 @@ test("경로 주변 사정 — 경로 위 거리 순 · 종류별 문턱 안 · 
   ok(hs.map((h) => h.kind).join() === "speedbump,child_zone,speedcam", `순서 ${hs.map((h) => h.kind).join()}`);
   ok(hs.every((h, i) => i === 0 || hs[i - 1].atM <= h.atM), "경로 위 거리 순이 아니다");
   ok(NEAR_M.speedbump < NEAR_M.child_zone, "문턱 전제");
-  ok(hazardSummary(hs) === "과속방지턱 1 · 단속카메라 1 · 보호구역 시설 1", `요약 ${hazardSummary(hs)}`);
   ok(routeHazards(plan, null).length === 0, "주변 사정 파일이 없는데 무언가를 냈다");
 });
 

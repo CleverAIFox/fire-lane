@@ -235,16 +235,16 @@ RULES: list[tuple[str, str, str]] = [
      "gjcity", "gjcity_road_facility_jngj_20220914.hwp"),
 
     # ── juso · 도로명주소 ────────────────────────────────────
-    # 전자지도 zip 하나에 5종이 들어 있다.
-    # TL_SPRD_MANAGE(도로구간) TL_SPRD_RW(실폭도로) TL_SCCO_EMD(경계)
+    # 전자지도 zip 하나에 5종이 들어 있다 — TL_SPRD_MANAGE(도로구간) TL_SPRD_RW(실폭도로) TL_SCCO_EMD(경계)
     # TL_SPBD_BULD(건물) TL_SPBD_ENTRC(출입구)
     (r"^전남광주통합특별시_동구\.zip$",   "juso", "juso_elctrnmap_jngj_20260711.zip"),
     (r"사물주소도형.*동구\.zip$",         "juso", "juso_spotaddr_geom_jngj_20260801.zip"),
     (r"사물주소기준점.*동구\.zip$",       "juso", "juso_spotaddr_ref_jngj_20260801.zip"),
+    (r"^\(도로명주소\)출입구_전남광주통합특별시\.zip$", "juso", "juso_entrc_jngj_20261112.zip"),   # 2026-11-15 (PLAN #232 ④) — 제공처 원본 이름 셋 → 사람이 옮긴 정규 이름
+    (r"^도로명주소전자지도활용가이드\.pdf$", "juso", "juso_layout_kr_20261112.pdf"), (r"^al_d010_12_20261109\.zip$", "juso", "juso_bldg_ledger_jngj_20261109.zip"),
 
     # ── its · 국가교통정보센터 ───────────────────────────────
-    # ★ 258MB 전국이다. 광주 절단은 norm 이후 단계에서 한다.
-    #   raw 는 원본 보존이 원칙이므로 여기서 자르지 않는다.
+    # ★ 258MB 전국이다. 광주 절단은 norm 이후 단계에서 한다 — raw 는 원본 보존이 원칙이므로 여기서 자르지 않는다.
     (r"nodelinkdata\.zip$",  "its", "its_nodelink_kr_20260812.zip"),
     # ★ 2026-08-23. 소방장비 기본규격. 차량 제원의 유일한 공식 출처다.
     #   파일명이 소방청 게시판에서 받은 그대로라 규칙으로 정규화한다.

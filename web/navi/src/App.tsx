@@ -222,10 +222,10 @@ export default function App() {
     const b = n.fastPlan && !same ? n.fastPlan : null;
     return {
       same,
-      safe: routeOption(a, need, b, true, n.access, n.data?.context ?? null),
-      fast: b ? routeOption(b, need, a, false, n.access, n.data?.context ?? null) : null,
+      safe: routeOption(a, need, b, true, n.access),
+      fast: b ? routeOption(b, need, a, false, n.access) : null,
     };
-  }, [n.plan, n.fastPlan, need, n.access, n.data]);
+  }, [n.plan, n.fastPlan, need, n.access]);
 
   // ── 주행 ──────────────────────────────────────────────────────
   // ★ §216-3 경로 위 주변 사정 — 경로가 바뀔 때만 다시 센다

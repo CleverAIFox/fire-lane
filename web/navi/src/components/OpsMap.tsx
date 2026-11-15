@@ -19,7 +19,7 @@
  */
 import { useEffect, useRef } from "react";
 import * as maplibregl from "maplibre-gl";
-import { DEMO_BADGE } from "../domain/demo";
+import { pinLook } from "../domain/unitBoard";
 import "maplibre-gl/dist/maplibre-gl.css";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import type { LngLat } from "../domain/geo";
@@ -134,6 +134,8 @@ interface Props {
   preview: LngLat[] | null;
   previewWalk: LngLat[] | null;
   units: Unit[];
+  /** 끊긴 차의 이름(`|` 로 이은 글자) — `domain/unitBoard::lostUnits`. 핀이 끊김을 따로 계산하지 않고 상황판과 같은 값을 읽는다 */
+  lost: string;
   feed: FeedItem[];
   selectedSeg: string | null;
   focus: { n: number; at: LngLat; zoom?: number } | null;
@@ -363,6 +365,7 @@ export function OpsMap(props: Props) {
     whenReady((m) => {
       const seen = new Set<string>();
       const routes: GeoJSON.Feature[] = [];
+      const lostSet = new Set(P.current.lost.split("|").filter(Boolean));
       for (const u of P.current.units) {
         seen.add(u.unit);
         if (u.route && u.route.length > 1) {
@@ -378,19 +381,21 @@ export function OpsMap(props: Props) {
         }
         mk.setLngLat(pos).setRotation(u.last.brg);
         const lab = mk.getElement().querySelector("span");
-        if (lab) lab.textContent = u.last.demo ? `${DEMO_BADGE} · ${u.last.vehicle}` : u.last.vehicle;
-        // ★ 시연 차량은 호박색 — 내비의 시연 테두리(`C.warn`)와 짝이다. 같은 마커가 시연을 켜고 끄는 사이에 바뀔 수 있어 **매번** 칠한다(DECISIONS §745)
+        // ★ 겉모습은 `pinLook`(상황판 칩과 같은 `chipOf`)이 정한다 — 핀은 끊김을 스스로 안 계산한다(PLAN #251 · 같은 차를 지도와 패널이 따로 판정하던 결함).
+        //   시연은 호박색(내비의 시연 테두리 `C.warn` 과 짝 · DECISIONS §745) · 끊김은 회색. 같은 마커가 상태를 오가므로 **매번** 칠한다.
+        const look = pinLook(u, lostSet.has(u.unit));
+        if (lab) lab.textContent = look.text;
         const body = mk.getElement().querySelector("rect");
-        if (body) body.setAttribute("fill", u.last.demo ? "#f59e0b" : "#dc2626");
-        if (lab) (lab as HTMLElement).style.background = u.last.demo ? "#f59e0b" : "#0f172a";
-        if (lab) (lab as HTMLElement).style.color = u.last.demo ? "#1b1203" : "#fff";
+        if (body) body.setAttribute("fill", look.fill);
+        if (lab) (lab as HTMLElement).style.background = look.bg;
+        if (lab) (lab as HTMLElement).style.color = look.fg;
       }
       for (const [k, mk] of Object.entries(unitMk.current)) {
         if (!seen.has(k)) { mk.remove(); delete unitMk.current[k]; }
       }
       (m.getSource("unit-routes") as maplibregl.GeoJSONSource).setData({ type: "FeatureCollection", features: routes });
     });
-  }, [props.units]);  
+  }, [props.units, props.lost]);  
 
   // ── 공유된 지점 ───────────────────────────────────────────────
   useEffect(() => {

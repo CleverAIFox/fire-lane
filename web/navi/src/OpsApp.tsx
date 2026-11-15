@@ -58,11 +58,12 @@ import { MOTION_CSS } from "./ui/motion";
 import { useFleet } from "./app/useFleet";
 import { loadAll, loadHistory, type Bundle } from "./infra/dataSource";
 import { openLink, newId, type Link } from "./infra/opsLink";
-import { HB_MS, OPS_EMPTY, asNaviMsg, opsAck, opsReduce, type OpsState } from "./domain/opsProtocol";
+import { OPS_EMPTY, asNaviMsg, opsAck, opsReduce } from "./domain/opsBoard";
+import { HB_MS, type OpsState } from "./domain/opsProtocol";
 import { buildAdjacency, findRouteBetween, nearestNode, snapToEdge } from "./domain/graph";
-import { ruleSummary } from "./domain/rules";
+import { limitSummary, ruleSummary } from "./domain/rules";
 import { dispatchUrl as mkDispatchUrl } from "./domain/dispatch";
-import { demoTag, liveCounts, sortUnits, unitChip } from "./domain/unitBoard";
+import { demoTag, liveCounts, lostUnits, sortUnits, unitChip } from "./domain/unitBoard";
 import type { RouteMode } from "./domain/handoff";
 import { alternateAccess, reachableEdges, MAX_WALK_M } from "./domain/access";
 import { addressLines, asOfDate, farFromRoadNote, preparePois, searchPois, walkNote, type PoiHit } from "./domain/search";
@@ -94,8 +95,7 @@ export default function OpsApp() {
   const fleet = useFleet();
   const [incident, setIncident] = useState<Incident | null>(null);
   const [histOpen, setHistOpen] = useState(false);
-  // ★ 2026-10-05 (DECISIONS §400). 경로 모드는 **관제가 정한다.** 내비에는
-  //   고르는 손이 없다 — 지령에 실어 보낸다.
+  // ★ 2026-10-05 (DECISIONS §400). 경로 모드는 **관제가 정한다.** 내비에는 고르는 손이 없다 — 지령에 실어 보낸다.
   const [route, setRoute] = useState<RouteMode>("safe");
   const [picking, setPicking] = useState(false);
   const [stationId, setStationId] = useState<string>("0");
@@ -113,11 +113,9 @@ export default function OpsApp() {
   // ★ 2026-09-23 (DECISIONS §220). 구간 색의 기준. **판정 4색이 기본이다** — 여유폭은
   //   고른 차로 그 자리에서 빼는 수라 파이프라인 판정을 덮어쓰지 않는다.
   const [colorMode, setColorMode] = useState<"verdict" | "clearance">("verdict");
-  // ★ 2026-09-23 (DECISIONS §224-4). 범례가 지도 왼쪽 아래를 270px 폭으로 항상 가린다.
-  //   좁은 골목을 보려면 접을 수 있어야 한다. 종전에는 머리글이 「눌러서 숨기기」
-  //   라고 적혀 있었는데 그것은 **줄 하나의 색을 숨기는 것**이지 범례를 접는 것이
-  //   아니었다 — 글이 없는 기능을 약속했다.
-  const [legendOpen, setLegendOpen] = useState(true);
+  // ★ 2026-09-23 (DECISIONS §224-4). 범례는 접을 수 있다 — 머리글을 누르면 펴고 접는다(줄 하나의 색을 숨기는 것과 다르다).
+  // ★ 2026-11-15 (DECISIONS §797-B · PLAN #242). **첫 화면에는 접혀 있다** — 펼친 범례가 광주 인공지능사관학교 핀을 덮었다(기준 창 폭 1536 이상 · 1280 은 범위 밖).
+  const [legendOpen, setLegendOpen] = useState(false);
   const [hiddenBands, setHiddenBands] = useState<ReadonlySet<string>>(() => new Set());
   const [seg, setSeg] = useState<string | null>(null);
   const [q, setQ] = useState("");
@@ -385,7 +383,7 @@ export default function OpsApp() {
 
             <label style={lab}>경로 — 관제가 정한다</label>
             <div style={{ display: "flex", gap: 6 }}>
-              {([["safe", "안전", "폭으로 본 안전 — 확인 필요 구간을 피한다"],
+              {([["safe", "안전", "폭으로 본 안전 — 확인 필요 · 폭 모름 구간을 피한다"],
                  ["fast", "빠른", "도착이 빠르다 — 폭 신뢰도가 낮은 구간을 지날 수 있다"]] as const)
                 .map(([m, ko, why]) => (
                   <button key={m} onClick={() => setRoute(m)} title={why}
@@ -410,15 +408,15 @@ export default function OpsApp() {
                     )}
                     {/* ★ §220 — 경로의 **가장 좁은 곳의 여유폭**. 관제가 지령 전에 보는 수다 */}
                     <div style={{ fontSize: 12, color: D.sub, marginTop: 4 }}>
-                      확인 필요 {plan.plan.edges.filter((e) => e.verdict === "needs_cv" || e.verdict === "unknown").length}개 ·
+                      확인 필요 {plan.plan.edges.filter((e) => e.verdict === "needs_cv").length}개 · 폭 모름 {plan.plan.edges.filter((e) => e.verdict === "unknown").length}개 ·
                       최소폭 {Math.min(...plan.plan.edges.map((e) => e.width_min_m ?? 99)).toFixed(1)}m / 요구 {need.toFixed(1)}m ·
                       여유폭 <b style={{ color: D.ink }}>
                         {fmtClearance(Math.min(...plan.plan.edges.map((e) => e.width_min_m ?? 99)) - need)}
                       </b>
                     </div>
-                    {ruleSummary(plan.plan.rules) && (
+                    {(ruleSummary(plan.plan.rules) || limitSummary(plan.plan.rules)) && (
                       <div style={{ fontSize: 12, color: D.warn, fontWeight: 800, marginTop: 4 }}>
-                        통행 규칙 — {ruleSummary(plan.plan.rules)}
+                        {[ruleSummary(plan.plan.rules) && `통행 규칙 — ${ruleSummary(plan.plan.rules)}`, limitSummary(plan.plan.rules)].filter(Boolean).join(" · ")}
                       </div>
                     )}
                     {(plan.alt || farFromRoadNote(plan.walkM)) && ( /* ★ #227 — 도로망 밖 목적지도 말한다 */
@@ -456,7 +454,7 @@ export default function OpsApp() {
                   reachable={reach} incident={incident?.point ?? null}
                   preview={plan?.plan?.coords ?? null}
                   previewWalk={plan?.plan && incident ? [plan.plan.coords[plan.plan.coords.length - 1], incident.point] : null}
-                  units={units} feed={ops.feed} selectedSeg={seg} focus={focus}
+                  units={units} lost={lostUnits(units, now)} feed={ops.feed} selectedSeg={seg} focus={focus}
                   onPick={onPick} onSeg={(u) => { if (!picking) setSeg(u); }} />
           {/* 범례 · 레이어 — 지도 위 왼쪽 아래 */}
           <div style={legendBox}>

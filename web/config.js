@@ -36,11 +36,11 @@ const CONFIG = {
   verdict: {
     blocked : { color:[255, 77, 61], lightColor:[224, 53, 38], label:"통행 불가",
                 desc:"벽 사이 폭 3.0m 미만. 주차 차량이 없어도 소방차가 못 지나간다" },
-    needs_cv: { color:[255,171, 46], lightColor:[212,124, 10], label:"판정 보류",
+    needs_cv: { color:[255,171, 46], lightColor:[212,124, 10], label:"확인 필요",
                 desc:"도면만으로 결론이 안 난다. 영상판정(호모그래피) 대상" },
     clear   : { color:[ 74,209,143], lightColor:[ 26,150, 96], label:"통행 가능",
                 desc:"도로 폭 7.0m 이상. 양쪽에 주차가 있어도 통과. 영상판정 불필요" },
-    unknown : { color:[ 90, 98,114], lightColor:[110,120,138], label:"영상판정 불가",
+    unknown : { color:[ 90, 98,114], lightColor:[110,120,138], label:"폭 모름",
                 desc:"CCTV 유효범위 19m 밖. 영상판정 자체가 성립하지 않는다" },
   },
 
@@ -62,7 +62,7 @@ const CONFIG = {
     no_cctv_single: "7m 이상이나 표본 부족으로 통과 확정 보류",
     needs_survey: "폭 소견이 엇갈린다(다른 자료 최솟값 · 대칭폭 · 중앙값 · 폭 급변) · CCTV 도 없어 현장 실측이 필요",
     /* 옛 키. 재발행 전 산출물을 열었을 때를 위해 남긴다. */
-    no_cctv: "CCTV 유효범위 19m 밖 · 영상판정 불가",
+    no_cctv: "CCTV 유효범위 19m 밖 · 폭 모름",
     width  : "실폭도로·건물 폴리곤 부재 · 폭 산출 불가",
   },
 

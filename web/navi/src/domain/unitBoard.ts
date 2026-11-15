@@ -15,7 +15,8 @@
  * OUT   새 배열(입력을 안 바꾼다) · 상태 한 낱말
  * 밖    **그리는 일 · 색 · 문구는 안 한다**(`OpsApp`). 목록의 다른 쓰임(지도 마커 · 포커스)의 순서도 안 바꾼다 — 상황판만이다.
  */
-import { unitStale, type Unit } from "./opsProtocol";
+import { unitStale } from "./opsBoard";
+import type { Unit } from "./opsProtocol";
 import { DEMO_BADGE } from "./demo";
 
 export type UnitStatus = "dispatching" | "lost" | "idle";
@@ -30,9 +31,35 @@ export function unitStatus(u: Unit, now: number): UnitStatus {
  * ★ 시연 차량이 초록(출동 중)으로 그려지면 관제가 거짓 상황을 본다(DECISIONS §745) — 호박색 갈래를 따로 둔다(내비의 시연 테두리 `C.warn` 과 짝).
  */
 export function unitChip(u: Unit, now: number): { label: string; kind: UnitStatus | "demo" } {
-  const s = unitStatus(u, now);
+  return chipOf(u, unitStale(u, now));
+}
+
+/**
+ * 끊김 여부를 **받아서** 칩을 낸다 — 상황판 칩과 지도 핀이 같은 값을 읽는 자리다(PLAN #251).
+ * ★ 끊김은 이 함수가 안 정한다. `unitStale`(마지막으로 들은 시각 · `UNIT_STALE_MS`)이 한 곳에서 정하고 그 결과(`lostUnits` 의 이름 목록)가 지도로 간다.
+ */
+export function chipOf(u: Unit, lost: boolean): { label: string; kind: UnitStatus | "demo" } {
+  const s: UnitStatus = lost ? "lost" : u.last.remainM != null ? "dispatching" : "idle";
   if (u.last.demo && s !== "lost") return { label: DEMO_BADGE, kind: "demo" };
   return { label: s === "lost" ? "끊김" : s === "dispatching" ? "출동 중" : "대기", kind: s };
+}
+
+/** 끊긴 차의 이름 목록(정렬 · `|` 로 이은 글자). 값이 같으면 글자도 같아 지도 효과가 끊김이 **바뀔 때만** 돈다(매초 새 배열이 아니다). */
+export function lostUnits(units: readonly Unit[], now: number): string {
+  return units.filter((u) => unitStale(u, now)).map((u) => u.unit).sort().join("|");
+}
+
+/** 지도 핀의 겉모습 — 상황판 칩(`chipOf`)에서 나온다. 핀은 시계를 안 읽는다. */
+export const PIN_COLORS = {
+  idle: { fill: "#dc2626", bg: "#0f172a", fg: "#ffffff" },
+  dispatching: { fill: "#dc2626", bg: "#0f172a", fg: "#ffffff" },
+  demo: { fill: "#f59e0b", bg: "#f59e0b", fg: "#1b1203" },
+  lost: { fill: "#9ca3af", bg: "#6b7280", fg: "#ffffff" },
+} as const;
+export function pinLook(u: Unit, lost: boolean): { text: string; kind: UnitStatus | "demo"; fill: string; bg: string; fg: string } {
+  const { kind, label } = chipOf(u, lost);
+  const text = kind === "lost" || kind === "demo" ? `${label} · ${u.last.vehicle}` : u.last.vehicle;   // 칩의 말(끊김 · 시연 중)을 그대로 쓴다 — 말을 두 번 적지 않는다
+  return { text, kind, ...PIN_COLORS[kind] };
 }
 
 /** 상단 합계 옆에 붙이는 말 — 시연 차량이 없으면 없다. 내비 띠와 같은 말(`DEMO_BADGE`)이다 */

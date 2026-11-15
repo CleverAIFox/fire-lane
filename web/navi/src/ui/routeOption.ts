@@ -14,8 +14,7 @@
  * 밖    둘 중 어느 것이 추천인지 고르지 않는다. 고르는 것은 `App.tsx` 다.
  */
 import { riskList, routeStats, type RiskItem } from "../domain/compare";
-import { hazardSummary, routeHazards } from "../domain/context";
-import { ruleSummary } from "../domain/rules";
+import { limitSummary, ruleSummary } from "../domain/rules";
 import { travelSeconds } from "../domain/speed";
 import type { RoutePlan } from "../domain/types";
 import type { RouteOption } from "./RouteCompare";
@@ -37,13 +36,12 @@ export function riskLine(r: RiskItem): string {
 export function routeOption(
   p: RoutePlan, need: number, other: RoutePlan | null, rec: boolean,
   access: { alt: boolean; walkM: number } | null,
-  ctx: GeoJSON.FeatureCollection | null,
 ): RouteOption {
   const st = routeStats(p);
-  const unc = { length: st.uncertainCount };
+  const unc = { length: st.needsCvCount };
   const sec = travelSeconds(p);
   const deltaSec = other ? sec - travelSeconds(other) : 0;
-  const otherUnc = other ? routeStats(other).uncertainCount : unc.length;
+  const otherUnc = other ? routeStats(other).needsCvCount : unc.length;
   const slower = deltaSec > 1 ? `${fmtDur(deltaSec)} 느리지만 ` : "";
   const recNote = !unc.length ? `${slower}확인 필요 구간을 우회합니다.`
     : unc.length < otherUnc ? `${slower}확인 필요 구간이 ${otherUnc - unc.length}개 적습니다.`
@@ -52,17 +50,17 @@ export function routeOption(
     ? ` 차량은 사건 지점 약 ${Math.round(access.walkM)}m(직선) 앞 대체 접근 지점까지 갑니다.` : "";
   return {
     title: rec ? "안전 경로" : "빠른 경로", recommended: rec, sec, lengthM: st.lengthM,
-    uncertainCount: st.uncertainCount,
-    unknownCount: p.edges.filter((e) => e.verdict === "unknown").length,
+    needsCvCount: st.needsCvCount,
+    unknownCount: st.unknownCount,
     uncertainM: st.uncertainM,
     minWidthM: st.minWidthM,
     requiredM: need,
     blockedCount: st.blockedCount,
-    ruleCount: st.ruleCount,
+    ruleCount: st.ruleCount - p.rules.filter((w) => w.kind === "tight_turn").length,   // 규칙만 — 차량 한계(좁은 코너)는 `limits`
     deltaSec,
     note: (rec ? recNote : "도착은 빠르지만 폭 측정 신뢰도가 낮은 구간이 포함됩니다.") + tail,
     rules: ruleSummary(p.rules),
-    around: hazardSummary(routeHazards(p, ctx)),
+    limits: limitSummary(p.rules),
     risks: riskSummary(p, need, other),
   };
 }

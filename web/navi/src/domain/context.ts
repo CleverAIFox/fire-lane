@@ -115,15 +115,3 @@ export function nextHazard(hs: readonly Hazard[], driven: number, reachM: number
   }
   return null;
 }
-
-/** 경로 비교 카드 한 줄. 없으면 null */
-export function hazardSummary(hs: readonly Hazard[]): string | null {
-  if (!hs.length) return null;
-  const n = (k: ContextKind) => hs.filter((h) => h.kind === k).length;
-  const parts = [
-    n("speedbump") && `과속방지턱 ${n("speedbump")}`,
-    n("speedcam") && `단속카메라 ${n("speedcam")}`,
-    (n("child_zone") + n("senior_zone")) && `보호구역 시설 ${n("child_zone") + n("senior_zone")}`,
-  ].filter(Boolean);
-  return parts.join(" · ");
-}

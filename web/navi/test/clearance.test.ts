@@ -138,7 +138,7 @@ test("사유 — 회색은 `unknown_reason` 넷을 그대로 말한다", () => {
   for (const k of Object.keys(GRAY_REASON)) {
     const r = reason({ verdict: "unknown", width_min_m: 3.2, unknown_reason: k })!;
     ok(r.head.includes(GRAY_REASON[k].short), `${k}: ${r.head}`);
-    ok(r.head.includes("영상판정 불가"), `${k}: ${r.head}`);
+    ok(r.head.includes("폭 모름"), `${k}: ${r.head}`);
     ok(!!r.action, `${k}: 조치가 없다`);
   }
   // 모르는 사유가 와도 그 문자열을 잃지 않는다
@@ -146,7 +146,7 @@ test("사유 — 회색은 `unknown_reason` 넷을 그대로 말한다", () => {
   ok(odd.head.includes("새_사유"), odd.head);
   // 사유가 아예 없는 회색도 말은 한다
   const bare = reason({ verdict: "unknown", width_min_m: 3.2 })!;
-  ok(bare.head.includes("영상판정 불가"), bare.head);
+  ok(bare.head.includes("폭 모름"), bare.head);
 });
 
 test("사유 — 주황은 여유폭 부호에 따라 다른 조치를 낸다", () => {
@@ -357,7 +357,7 @@ test("경로 위 경고 — 실제 발행물의 경로에서 병목 패널이 �
 import { renderToStaticMarkup } from "react-dom/server";
 import { createElement } from "react";
 import { isHeadsUp, riskKind } from "../src/domain/compare";
-import { Details, RouteBrief } from "../src/ui/RouteCompare";
+import { Details, RouteBrief, verdictLine } from "../src/ui/RouteCompare";
 import type { RouteOption } from "../src/ui/RouteCompare";
 
 test("폭 모름이면 여유 수를 안 쓴다 — 다른 소스의 폭 값이 붙어 있어도(모르는 수를 믿게 하지 않는다)", () => {
@@ -377,9 +377,9 @@ test("앞서 알릴 구간의 정의는 하나다 — 확인 필요 · 폭 모�
 
 function opt(over: Partial<RouteOption>): RouteOption {
   return {
-    title: "안전 경로", recommended: true, sec: 600, lengthM: 2290, uncertainCount: 7, uncertainM: 100,
+    title: "안전 경로", recommended: true, sec: 600, lengthM: 2290, needsCvCount: 7, uncertainM: 100,
     unknownCount: 0, minWidthM: 3.1, requiredM: 2.6, blockedCount: 0, ruleCount: 2, deltaSec: 0,
-    note: "NOTE문장", rules: "RULES요약", around: "AROUND주변",
+    note: "NOTE문장", rules: "RULES요약", limits: "LIMITS한계",
     risks: { lines: ["0m RISK구간 · 확인 필요 · 여유 +0.5m"], more: 3 }, ...over,
   };
 }
@@ -387,9 +387,9 @@ const html = (safe: RouteOption, fast: RouteOption | null, same = false) =>
   renderToStaticMarkup(createElement(RouteBrief, { safe, fast, same, chosen: "safe", fromOrder: true, onConfirm: () => {} }));
 
 test("경로 카드 — 접혀 있을 때는 시간 · 최소폭 · 여유 · 확인 필요만 보이고 나머지는 접혀 있다(지우지 않았다)", () => {
-  const h = html(opt({}), opt({ title: "빠른 경로", recommended: false, sec: 520, uncertainCount: 14 }));
+  const h = html(opt({}), opt({ title: "빠른 경로", recommended: false, sec: 520, needsCvCount: 14 }));
   for (const shown of ["최소폭", "여유", "확인 필요", "10분", "2.3km", "자세히"]) ok(h.includes(shown), `${shown} 이 안 보인다`);
-  for (const folded of ["RISK구간", "RULES요약", "AROUND주변", "NOTE문장", "규칙 경고", "경로 주변", "통행 불가", "길이", "여유폭 ="])
+  for (const folded of ["RISK구간", "RULES요약", "LIMITS한계", "NOTE문장", "규칙 경고", "차량 한계", "경로 주변", "통행 불가", "길이", "여유폭 ="])
     ok(!h.includes(folded), `접혀 있어야 할 ${folded} 가 카드에 나온다`);
   ok(h.includes("빠른 경로가 1분 20초 빠르고 확인 필요가 7곳 많다"), "두 경로의 비교가 한 문장에 안 나온다");
   ok(h.indexOf("빠른 경로가 1분 20초") < h.indexOf("안전 경로</b>"), "비교 문장이 카드보다 아래에 있다 — 고르는 데 필요한 것이 먼저여야 한다");
@@ -412,9 +412,10 @@ test("경로 카드 — 같은 경로면 카드 하나이고 비교 줄이 없�
   ok(!h.includes("빠른 경로") && !h.includes("둘째 경로 없음"), "같은 경로인데 비교 문구가 나온다");
 });
 
-test("펼친 쪽에는 접힌 것이 전부 있다 — 구간 목록 · 규칙 경고 · 경로 주변 · 설명(지운 것이 아니다)", () => {
+test("펼친 쪽에는 접힌 것이 있다 — 구간 목록 · 규칙 경고 · 설명. 「경로 주변」 칸은 뺐다(PLAN #250 · 출동에 안 쓴다)", () => {
   const h = renderToStaticMarkup(createElement(Details, { o: opt({}) }));
-  for (const t of ["RISK구간", "외 3곳", "RULES요약", "AROUND주변", "NOTE문장"]) ok(h.includes(t), `${t} 가 펼침에 없다`);
+  for (const t of ["RISK구간", "외 3곳", "RULES요약", "LIMITS한계", "NOTE문장"]) ok(h.includes(t), `${t} 가 펼침에 없다`);
+  ok(!h.includes("AROUND주변") && !h.includes("경로 주변"), "빼기로 한 「경로 주변」 칸이 도로 나온다");
 });
 
 test("riskKind — 구간 하나의 위험 종류 · 폭 모름이면 여유가 없다 · 위험이 아니면 null (riskList 와 병목 패널이 같이 쓴다)", () => {
@@ -426,4 +427,13 @@ test("riskKind — 구간 하나의 위험 종류 · 폭 모름이면 여유가 
   ok(riskKind({ verdict: "clear", width_min_m: NEED + 0.2 }, NEED)?.kind === "tight", "여유 부족");
   ok(riskKind({ verdict: "clear", width_min_m: NEED + 0.9 }, NEED) === null, "넉넉한 초록이 위험으로 올랐다");
   ok(riskKind({ verdict: "clear", width_min_m: null }, NEED) === null, "폭 값 없는 초록을 위험으로 올렸다");
+});
+
+test("경로 카드 — 확인 필요(needs_cv)와 폭 모름(unknown)을 갈라 센다 · 합치지 않는다(PLAN #250 · DECISIONS §798)", () => {
+  const h = html(opt({ needsCvCount: 3, unknownCount: 2 }), null);
+  ok(h.includes("3곳") && h.includes("폭 모름 2곳"), "두 수가 따로 안 보인다");
+  const v = verdictLine(opt({ needsCvCount: 1, unknownCount: 0 }), opt({ needsCvCount: 4, unknownCount: 2 }));
+  ok(v.text.includes("확인 필요가 3곳 많다") && v.worse, `비교 문장 ${v.text}`);   // 비교 문장은 확인 필요(needs_cv)만 — 폭 모름은 카드의 제 줄이 든다
+  const same = verdictLine(opt({ needsCvCount: 2, unknownCount: 1 }), opt({ needsCvCount: 2, unknownCount: 5 }));
+  ok(same.text.includes("확인 필요는 같다") && !same.worse, same.text);
 });

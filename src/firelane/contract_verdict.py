@@ -45,10 +45,12 @@ from __future__ import annotations
 #: ★ 2026-11-07 (PLAN #55 ③). 38 → **37.** `nfa_mas_spec_2025` 를 `retired` 로 옮겼다 —
 #:   hwp 라 열 계약이 없던 항목이 살아 있는 대장에서 빠졌다. 늘리지 않았고 **내렸다**
 #:   (바닥 15 는 그대로 · 갚을 수 있는 몫만 하나 준다).
-NO_CONTRACT_RATCHET = 37
+#: ★ 2026-11-15 (DECISIONS §799-B · PLAN #232). 37 → **38 (손으로 올렸다).** 느슨해진 것이 아니다 — 37 이 거짓이었다: 계약 없는 자산은 처음부터 38 이었고 PDF `juso_layout` 하나를
+#:   남의 항목(`juso_entrc`)에 얹어 세어지지 않게 두었을 뿐이다. 제 항목으로 올려 38 이 된 것은 숨어 있던 하나가 드러난 것 — **정확도다**(자산이 는 것이 아니라 세는 법이 바로잡혔다).
+NO_CONTRACT_RATCHET = 38
 #: 실측 2026-09-28. `crs_native` 35종. 좌표가 없는 갈래는 적을 근거가 없다 — 전수는 목표가 아니다.
 #: ★ 2026-10-06 (§419). 35 → 37. V-World SHP 둘 — `raw_only` 라도 `.prj` 에 근거가 있으면 적는다.
-CRS_DECLARED_RATCHET = 41
+CRS_DECLARED_RATCHET = 43
 
 
 

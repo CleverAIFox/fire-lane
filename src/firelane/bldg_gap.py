@@ -42,7 +42,7 @@ from firelane import hashing, paths
 from firelane.publish_web import GAP_BUILDINGS, W, drop_gap
 from firelane.seg.params import EMD_CD
 
-KEY = "juso_bldg_ledger"                 # 대장 키 — 지금은 `pending`, 사람이 이름을 옮기면 `datasets`
+KEY = "juso_bldg_ledger"                 # 대장 키 — `datasets`(2026-11-15 · 사람이 이름을 옮겼고 `pending` 에서 올렸다)
 CANON = "juso/juso_bldg_ledger_jngj_20261109.zip"   # 정규 이름(DECISIONS §773-1 의 제안 · `naming.check` 통과)
 ORIGIN = "juso/AL_D010_12_20261109.zip"             # 사람이 레이크에 놓은 이름(`treecheck` D6)
 INNER = "AL_D010_12_20261109.shp"        # zip 안 1번 쉐이프. 이름을 옮겨도 zip 안 이름은 그대로다

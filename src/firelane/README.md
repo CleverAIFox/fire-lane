@@ -42,6 +42,7 @@ uv run fire-lane --only publish
     scope: jngj-donggu           # 공간 범위. 전국이면 kr
     updated: '2026-08-09'        # ★ 데이터 갱신일이지 다운로드일이 아니다
     stem: safety_cctv_jngj       # 파일명 어간. ext 와 합쳐 실물을 찾는다
+    authority: 기관명 (받은 경로)    # ★ 받은 경로를 괄호로 적는다 — `authority.bad()` 가 꼴을 묻는다(PLAN #199 ④)
     ext: [csv]
     feeds: [data/processed/cctv_5186.gpkg]   # 무엇을 먹이나
     feeds_note: '[]'

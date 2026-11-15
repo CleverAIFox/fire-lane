@@ -44,6 +44,7 @@ import json
 import geopandas as gpd
 import pandas as pd
 
+from firelane import bldg_ground as _bg
 from firelane import webmanifest
 from firelane.paths import PROCESSED, ROOT
 
@@ -261,13 +262,11 @@ def main():
     # 잘라서 부스러기(2㎡ 미만)만 남은 것만 버린다 — 원래 작은 건물은 건드리지 않는다
     b = b[~(_cut & (b.geometry.is_empty | (b.geometry.area < 2.0)))].copy()
     print(f"  건물 · 도로 겹침 {int(_cut.sum())}동 잘라냄 · 절반 넘게 도로 위 {int((_ov > 0.5).sum())}동은 그대로")
-    # ★ 2026-09-30 (DECISIONS §320). **`BUL_MAN_NO` 는 이름이 거짓말한다.** 도로명주소
-    #   전자지도의 건물관리번호는 25자리 문자열인데, 발행본의 이 칸은 정수
-    #   20~38,762(고유 12,663)다 — 원천 키가 아니라 **발행본 안에서만 유효한
-    #   지역 번호**다. 지금 이것으로 조인하는 곳은 0곳이고(`tests/test_guards.py`
-    #   가 든다), 그래서 아직 사고가 안 났다. 이름을 고치는 것이 맞지만 발행
-    #   스키마가 움직이므로 측정 배치의 일이다(PLAN §13-5 규칙 2 · PLAN 이 든다).
-    cols = ["BUL_MAN_NO","BULD_NM","flo","h"] + (["z"] if "z" in b.columns else [])
+    # ★ 2026-09-30 (DECISIONS §320). **`BUL_MAN_NO` 는 발행본 안에서만 유효한 지역 번호다**(정수 20~38,762 · 원천 키는 25자리 문자열).
+    #   조인하는 곳은 0곳이라(`tests/test_guards.py`) 사고가 없었다. 이름을 고치는 것이 맞지만 발행 스키마가 움직여 측정 배치의 일이다(PLAN §13-5 규칙 2).
+    # ★ 2026-11-15 (PLAN #239 · DECISIONS §797-A). 경사면의 묻힘 · 뜸을 건물마다 재서 `zb`(음수 base)와 `h` 에 싣는다 — 희소(≥ 0.5m)만. 판정은 안 건드린다.
+    b = _bg.add_ground(b, W/"terrain")
+    cols = ["BUL_MAN_NO","BULD_NM","flo","h"] + (["z"] if "z" in b.columns else []) + ["zb"]
     b = b[cols+["geometry"]]
     # ★ 2026-09-26 (§260-4). RFC 7946 감김 — 외곽 반시계 · 구멍 시계. 12,679 외곽
     #   중 12,004 가 반대였다. **쓰는 자리에서** 맞춘다 — 감김 한 번 걸고 그 뒤에
@@ -280,6 +279,7 @@ def main():
         if (gone := int(g.isna().sum())):
             raise SystemExit(f"★ 건물 {gone}동이 격자 스냅으로 사라졌다 — 조용히 빼지 않는다")
         gdf.assign(geometry=g).to_file(W/"buildings.geojson", **PREC)
+        _bg.strip_null_cells(W/"buildings.geojson")
 
     _emit(b)
     # ★ 예산을 넘을 때만 단순화한다(§181-2). 늘 깎으면 스코프 안 건물 모양까지 바뀐다.

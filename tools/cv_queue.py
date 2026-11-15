@@ -58,6 +58,10 @@ import json
 import sys
 from pathlib import Path
 
+from contracts.vision import (
+    SEG_UID_RE,  # 파트 간 계약의 seg_uid 형식(하드 규칙 ①) — 이 큐가 비전 파트로 넘어가는 열쇠다 (PLAN #126 · DECISIONS §794)
+)
+
 ROOT = Path(__file__).resolve().parents[1]
 SEG = ROOT / "data" / "processed" / "segments.geojson"
 
@@ -88,6 +92,11 @@ def order(rows: list[dict]) -> list[dict]:
     return sorted(rows, key=lambda p: (rank[tier(p)],
                                        -(p.get("route_usage") or 0),
                                        -(p.get("length_m") or 0)))
+
+
+def malformed(rows: list[dict]) -> list[str]:
+    """계약(`contracts.vision.SEG_UID_RE`)에 안 맞는 `seg_uid`. 큐의 열쇠가 비전 파트에서 관측점을 찾는 열쇠이므로 형이 틀린 줄은 내보내지 않는다."""
+    return [str(p.get("seg_uid")) for p in rows if not SEG_UID_RE.match(str(p.get("seg_uid") or ""))]
 
 
 def load(path: Path = SEG) -> list[dict]:
@@ -122,6 +131,9 @@ def main(argv=None) -> int:
         print(f"★ {p} 가 없다 — 파이프라인을 먼저 돌려라")
         return 1
     rows = order(targets(load(p)))
+    if (bad := malformed(rows)):
+        print(f"★ 계약(SEG_UID_RE)에 안 맞는 seg_uid {len(bad)}건 — {bad[:3]}")
+        return 1
     s = summarize(rows)
     print(f"영상판정 큐 {s['queue']}구간  (CCTV 가 없어 못 붙이는 자리는 뺐다)")
     for t in TIERS:

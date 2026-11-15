@@ -22,10 +22,8 @@
  * 밖    실제 브라우저의 묶임 규칙 · 실제 중개자(Cloudflare)의 지연 · 차 여러 대 · 30분 지속 — 사람 몫이다(도착 ②③)
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  HB_MS, HB_TTL_MS, OPS_EMPTY, UNIT_STALE_MS, asNaviMsg, opsPresent, opsReduce, unitStale,
-  type OpsState,
-} from "../src/domain/opsProtocol";
+import { HB_MS, HB_TTL_MS, opsPresent, type OpsState } from "../src/domain/opsProtocol";
+import { OPS_EMPTY, UNIT_STALE_MS, asNaviMsg, opsReduce, unitStale } from "../src/domain/opsBoard";
 import type { UnitSnapshot, VisDoc } from "../src/app/useOpsUplink";
 
 const OPS_APP = Object.values(import.meta.glob(
