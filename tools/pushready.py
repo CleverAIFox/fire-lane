@@ -485,6 +485,9 @@ CHECKS: list[tuple[str, Callable[[Path, Runner], Block | None]]] = [
 
 #: 앞뒤에 홀로 도는 칸. ㉧ 은 싸고(0초) ㉣ 은 **다른 칸이 다 끝난 뒤의 작업 트리**를 본다 — 가운데와 겹치면 안 된다.
 _FIRST, _LAST = ("㉧",), ("㉣",)
+#: 가운데 칸 중 **혼자 돌아야 하는** 칸. ㉥ 은 `testpick` 이 이미 병렬 8 로 시험 파일을 돌려 CPU 를 다 쓴다 — 가벼운 칸(㉨ · ㉠ 등)과 같이 돌면 서로를 부풀려
+#: 시험 한 건이 시한 300초에 닿는다(DECISIONS §802-H · 축 순차 측정 3모드 × 3회: 전부 병렬 3/3 시한 초과 · 가벼운 칸 병렬 뒤 ㉥ 혼자 0/3 · 전부 순차 0/3).
+_HEAVY = ("㉥",)
 
 
 def survey(root: Path = ROOT, run: Runner = real_run, *, log: Callable[[str], None] | None = None, parallel: bool = True) -> list[Block]:
@@ -492,6 +495,7 @@ def survey(root: Path = ROOT, run: Runner = real_run, *, log: Callable[[str], No
 
     ★ 2026-11-14 (PLAN ㉕ B-③). 종전에는 아홉 칸을 한 줄로 돌았다 — 실측 325초 중 ㉥ 200 · ㉠ 58 · ㉨ 47 · ㉡ 8 · ㉢ 8. 가운데 일곱 칸은 **읽기만 한다**
       (시험은 거울에서 돌고 추적 파일 쓰기는 감사 훅이 문다 — PLAN #219 ①). 그래서 한꺼번에 띄워 가장 긴 하나로 줄인다. `parallel=False` 가 종전 한 줄 순서다.
+    ★ 2026-11-16 (DECISIONS §802-H). **무거운 칸(㉥)은 혼자 돈다** — 가벼운 칸을 먼저 병렬로 돌리고 ㉥ 은 그 뒤에 혼자다. 다 같이 띄우면 ㉥ 안의 시험 한 건이 시한 300초에 닿았다.
     ★ 칸 하나가 예외로 죽으면 **전체가 죽는다**(삼키지 않는다) — 죽은 칸을 초록으로 읽는 것이 이 도구가 막는 병이다.
     """
     def one(key: str, fn: Callable[[Path, Runner], Block | None]) -> Block | None:
@@ -508,10 +512,14 @@ def survey(root: Path = ROOT, run: Runner = real_run, *, log: Callable[[str], No
             done[k] = one(k, f)
     if parallel:
         from concurrent.futures import ThreadPoolExecutor
-        with ThreadPoolExecutor(max_workers=len(middle)) as ex:
-            futs = {k: ex.submit(one, k, f) for k, f in middle}
+        light = [(k, f) for k, f in middle if k not in _HEAVY]
+        with ThreadPoolExecutor(max_workers=max(1, len(light))) as ex:
+            futs = {k: ex.submit(one, k, f) for k, f in light}
             for k, fut in futs.items():
                 done[k] = fut.result()          # 예외는 여기서 다시 던져진다
+        for k, f in middle:                     # ★ 무거운 칸은 가벼운 칸이 다 끝난 뒤 **혼자** — 서로를 부풀려 시한을 넘기지 않는다
+            if k in _HEAVY:
+                done[k] = one(k, f)
     else:
         for k, f in middle:
             done[k] = one(k, f)
