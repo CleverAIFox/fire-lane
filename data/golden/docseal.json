@@ -14830,15 +14830,15 @@
   "fp": "view-v3",
   "kind": "read",
   "legacy": [
-   "3f929261a9ab3793",
-   "914b328dda48d2b6",
-   "94e1e7964fdc1a63",
-   "97736c7cf47395fc",
-   "bec46f7fd62e2319",
-   "bfcc7457db8509e5"
+   "0bcd8e3460924ca1",
+   "7ff1f8364c1145f4",
+   "a1210c6c8a2c2ca5",
+   "d836267d8e835027",
+   "dbce6f5b9629bd59",
+   "f12dacb678f015bf"
   ],
   "parts": {
-   "sources.yaml": "075161fa6c9b6c15",
+   "sources.yaml": "703fc60014d0f3b4",
    "tests/ratchet_names.py": "613a6d546aa8b755",
    "tests/test_npm_overrides_declared.py": "a6c2821d9c25e325",
    "tests/test_pushready.py": "760e1c29b2bf814e",
@@ -14850,9 +14850,9 @@
    "tools/uicheck.py": "ad23436f4c1778d9",
    "web/navi/package-lock.json": "52c2d7fcb4aa4c8c",
    "web/navi/package.json": "d44116c14d7ece6c",
-   "본문": "bef06b4854e55fcd"
+   "본문": "6151c282a80d9fe5"
   },
-  "sha": "3f929261a9ab3793"
+  "sha": "a1210c6c8a2c2ca5"
  },
  "DECISIONS/803": {
   "doc": "docs/DECISIONS.md",
@@ -18281,23 +18281,23 @@
   "fp": "view-v3",
   "kind": "read",
   "legacy": [
-   "1612b6f1f3f768f3",
-   "2f612abd016856a6",
-   "3b95b53ab90271d1",
-   "3c84a41c6f23bd09",
-   "67b3d921887d7fdf",
-   "6e472bbe4a514b0b",
-   "96ab1c69216ba03c",
-   "99ca2d7819063049",
-   "a0294c6583f27c93",
-   "b1d6d63dce103cbb",
-   "cba64cd3c61a8cc9",
-   "f0811bdfccd4b55a"
+   "134d08620533a1f1",
+   "16f6c58ef4170002",
+   "1de9061f637903b3",
+   "2d63b4cc7c633cd2",
+   "31195e895efcd8f1",
+   "35cb632db66e64d4",
+   "646627d1a44977e3",
+   "8a2af26f71813d6e",
+   "b390cd7540ae9adb",
+   "c32db4a019d0db05",
+   "c419cd8ef1c7c861",
+   "e5542a3fa632bada"
   ],
   "parts": {
    ".github/dependabot.yml": "c94e52fb81f72a40",
    "ops-worker/package-lock.json": "6ae92d11f98b3c5e",
-   "sources.yaml": "892483ee3e903e6e",
+   "sources.yaml": "1bc9cd1b48b00e63",
    "src/firelane/ortho.py": "8a5f26e279086237",
    "src/firelane/seg/width.py": "4660c720d5578558",
    "tests/audit_site/sitecustomize.py": "bf0801e252460223",
@@ -18333,9 +18333,9 @@
    "web/navi/test/clearance.test.ts": "9a3b411b0eedf91c",
    "web/navi/test/mapPitch.test.ts": "0e900e13d06b563c",
    "web/navi/test/opsPinPanel.test.ts": "1dffb9d4ffb2e574",
-   "본문": "c05bacae8bced4b5"
+   "본문": "a81fda34a29bb560"
   },
-  "sha": "3b95b53ab90271d1"
+  "sha": "2d63b4cc7c633cd2"
  },
  "PLAN/1-27": {
   "doc": "docs/PLAN.md",
