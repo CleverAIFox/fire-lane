@@ -84,3 +84,5 @@ export function dashSwatch(k: string): string | undefined {
   return `repeating-linear-gradient(90deg, transparent 0 ${px(on)}px,`
        + ` rgba(11,18,32,.92) ${px(on)}px ${px(on) + px(off)}px)`;
 }
+
+export { RouteCheckpoints } from "./RouteCheckpoints";

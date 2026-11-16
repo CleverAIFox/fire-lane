@@ -3334,7 +3334,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 3,542 전수 · **분모(blank) 0절** · 물림(inherit) 2,244절.
+★ **강제자 칸의 분모.** 절 3,545 전수 · **분모(blank) 0절** · 물림(inherit) 2,246절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -4925,7 +4925,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `src/firelane/guards.py` | 파이프라인 **방어 로직의 정본.** 계보 검사를 단독으로도 돌린다 |
 | `src/firelane/layerfsck.py` | `sources.yaml` 의 **계층 선언**과 디스크·git·기계 설정을 댄다. 부르는 자리는 `datalog` 하나다 |
 | `src/firelane/publish_fleet.py` | 관내 차종과 제원을 내비가 먹을 꼴로 낸다 |
-| `src/firelane/publish_checkpoints.py` | 소화전 · CCTV 를 **엣지 칸**(`hyd` · `cctv` — 수가 아니라 지점 번호 목록)으로 붙이고 엣지 번호 열만으로 「이 경로상 소화전 N개」를 낸다(`route_checkpoints` — 합이 아니라 합집합 · 하나라도 모르면 모름). 거리는 소화전 15m(호스 1본) · CCTV 19m(`CCTV_RANGE` 를 가져다 쓴다). 발행 그래프의 새 칸은 `edges[].hyd` · `edges[].cctv` · 최상위 `checkpoints` · `counts` 의 여덟이다. 판정 폐포 밖(PLAN #72) |
+| `src/firelane/publish_checkpoints.py` | 소화전 · CCTV 를 **엣지 칸**(`hyd` · `cctv` — 수가 아니라 지점 번호 목록)으로 붙이고 엣지 번호 열만으로 「이 경로상 소화전 N개」를 낸다(`route_checkpoints` — 합이 아니라 합집합 · 하나라도 모르면 모름). 거리는 소화전 15m(호스 1본) · CCTV 19m(`CCTV_RANGE` 를 가져다 쓴다). 발행 그래프의 새 칸은 `edges[].hyd` · `edges[].cctv` · 최상위 `checkpoints` · `counts` 의 여덟이다. 판정 폐포 밖(PLAN #72(닫힘)) |
 | `src/firelane/bldg_gap.py` | **빠진 건물 면의 추출 절차** — 건축물대장 건물 윤곽(`AL_D010`)에서 동명동(대표점 기준)의 면 중 발행 건물이 10% 미만으로 덮는 323면을 뽑아 커밋본과 **대조만** 한다(다르면 rc 1 · `--apply` 가 쓴다). 발행 건물 번호 칸을 직접 안 읽고 `publish_web.drop_gap` 을 부른다(DECISIONS §320). 읽기 전에 원천 zip 의 sha256 을 묻는다. 코드가 읽는 칸은 `A26`(지상 층수) 하나다 — 칸 뜻은 아래 표. 판정 폐포 밖(PLAN #232(닫힘)) |
 | `src/firelane/bldg_ground.py` | **경사면의 건물이 지형에 묻히거나 뜨는 만큼을 재서 발행 건물에 싣는다**(DECISIONS §797-A · PLAN #239(닫힘)). 발자국 아래 지형(구운 z16 타일 · 쌍선형)의 중심 · 최저 · 최고로 묻힘 · 뜸을 내고 0.5m 이상인 건물에만 `zb`(최저 − 중심 · 음수)를 달고 높이에 묻힘을 더한다. `publish_web` 이 부른다. 판정을 안 읽는다 · 안 바꾼다 | 타일이 없을 때(`terrain` 단계가 먼저다) · MapLibre 가 그리는 모양(헤드리스 실측) |
 | `src/firelane/valueprofile.py` | 표 자료(csv)의 **값의 성질**을 재서 대장 `schema.profile` 에 **집계만** 적는다 — 빈 셀 · 공백 문자열 · 좌표 칸의 센티넬(`0.0`) · 텍스트 없음(`미상`) · 좌표 범위. 표본값은 안 적는다. `--check` 는 커밋된 프로필과 실물을 대고 실물 방언이 `none:` 선언 안인지 본다(레이크가 있는 기계에서). 판정 폐포 밖이고 판정이 안 읽는다(DECISIONS §634) |
@@ -5021,7 +5021,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `tests/test_branch_tidy_green.py` | `refs/green/*` 청소가 안전한가 — 정확히 N일은 두고 넘은 것만 가린다 · 날짜를 못 읽은 ref 는 둔다 · 삭제 명령이 `--prune-green` 을 명시한 분기 안에만 있고 `--auto` 는 그것을 안 켠다 |
 | `tests/test_deliver_guards.py` | 배달 도구의 구멍 넷 — 포장 밑동이 끝과 같거나 조상이 아니면 멈춘다(W13-19) · 환경이 없는 워크트리에서 `uv run` 을 거친다(W13-21) · 없는 `--extra` 는 비우기 전에 운다(W13-22) · EXPECT 의 pytest 줄에 벽시계가 없다(W13-24) |
 | `tests/test_evalgen_building.py` | E-1 분모가 노드가 아니라 **건물**인가 — 출입구가 없는 범위 안 건물은 분모에서 안 빠지고 결손 항에 적힌다 · 건물 파일이 없으면 분모 0 으로 초록이 되지 않고 운다 · 판정 산출물의 해시가 평가 전후 같다 · 한 건물에 출입구가 여럿이면 주출입구가 먼저다 · 안전센터가 가장 가까운 골목 끝이 아니라 **앞의 통행 가능한 길**에 붙는가(파이프라인의 `station_node` 를 그대로 부른다 — 지산119안전센터가 3 노드 섬으로 나오던 병 · DECISIONS §782) |
-| `tests/test_publish_checkpoints.py` | 엣지의 소화전 · CCTV 칸 — 경로의 수가 **합이 아니라 합집합**인가 · 모름을 0 으로 안 적는가 · 발행 그래프의 실제 경로 셋에서 형상으로 다시 잰 수와 같은가 · 소화전 거리가 호스 1본 등급과 같은 수인가. 그리고 일방통행 판독표의 「적용」 행이 발행 방향으로 읽히고 「보류(충돌)」 행은 안 읽히는가 · 안 덮은 「적용」 행을 세는가(PLAN #72 · PLAN #1) |
+| `tests/test_publish_checkpoints.py` | 엣지의 소화전 · CCTV 칸 — 경로의 수가 **합이 아니라 합집합**인가 · 모름을 0 으로 안 적는가 · 발행 그래프의 실제 경로 셋에서 형상으로 다시 잰 수와 같은가 · 소화전 거리가 호스 1본 등급과 같은 수인가. 그리고 일방통행 판독표의 「적용」 행이 발행 방향으로 읽히고 「보류(충돌)」 행은 안 읽히는가 · 안 덮은 「적용」 행을 세는가(PLAN #72(닫힘) · PLAN #1) |
 | `tests/test_bldg_gap.py` | 빠진 건물 추출 규칙을 합성 도형으로 문다 — 제 지난 산출물을 빼고 재는가 · 동 거르기 · 덮임 문턱의 방향과 값 · 층수 0 과 빈 값을 1 로 올리는가 · 좌표계 · 원천 sha 검사. 대장이 그 절차를 `pending` · `datasets` 중 정확히 한 곳에 적는가(PLAN #232(닫힘)). 실물 대조는 모듈의 종료 코드가 든다(한 번에 25초라 시험에 안 실었다) |
 | `tests/test_bldg_ground.py` | 평지는 안 단다 · 비탈은 `zb` 가 음수이고 지붕이 최고 지반 위 · 문턱 아래와 타일 밖은 그대로 · 빈 `zb` 를 파일에서 뺀다 · 발행물의 `zb` 는 0 이하이고 희소하다(DECISIONS §797-A) |
 | `tests/test_npm_overrides_declared.py` | **`web/navi/package.json` 의 npm `overrides` 가 대장(`sources.yaml` 의 `pending`)에 걷을 조건과 함께 올라 있다** — override 마다 열린 `npm_override_*` 항목이 있고 열린 항목마다 override 가 실재하며 해소 항목의 override 는 없다(DECISIONS §802-E · 조용한 override 를 막는다) |
