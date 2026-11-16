@@ -1274,7 +1274,7 @@ ngii1k_light   11,439점                        측량 폴 위치. 구분만 있
 > **남은 일은 여기 없다. `PLAN.md` §1 이 정본이다.**
 > 이 절은 **지금 산출물이 무엇을 근사했고 무엇이 검증 안 됐는가**만 적는다.
 > 그것은 남은 일이 아니라 현재 상태다.
-> 강제자 — `tests/test_reproducibility.py::test_open_work_lives_only_in_plan`. 하위 둘이 이 칸을 물려받는다
+> 강제자 — `tests/test_reproducibility.py::test_open_work_lives_only_in_plan`. 하위 셋이 이 칸을 물려받는다
 
 ### 7-1. 알려진 근사
 
