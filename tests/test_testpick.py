@@ -179,10 +179,12 @@ def test_the_long_tests_touching_docs_and_ledger_are_over_the_cap_on_the_real_le
     ★ 2026-11-15 (DECISIONS §799-C · PLAN #252). 다섯이었다 — `test_guards.py` · `test_tools_are_wired.py` 는 **단독 값**으로 34.6초 · 22.0초라 상한 **아래**다. 다섯으로 박은 목록은 장부가
       병렬 8 로 부푼 값(75.5 · 67.7초)일 때의 사실이었다. 상한(`TOUCH_CAP`)을 내린 것이 아니라 **목록이 사실에 맞아졌다** — 둘은 이제 닿은 시험 묶음에 **든다**(아래가 문다)."""
     led = T.load_ledger()
-    three = ["test_ledger_accessor.py", "test_normalize_rules.py", "test_ledger_outputs.py"]
+    # ★ 2026-11-17 (DECISIONS §812). 셋이었다 — `test_ledger_outputs.py` 의 `test_check_does_not_write` 가 `ingest --check` 전수(48초)를 소스 하나로 바꿔 **8.8초**가 됐고
+    #   상한 **아래로 내려왔다.** 빠진 것은 좋은 일이다 — 그 시험은 이제 닿은 시험 묶음에 **든다**(아래가 문다). 상한을 올려서 넣은 것이 아니다.
+    three = ["test_ledger_accessor.py", "test_normalize_rules.py"]
     _, over = T.pick_touched({n: ["x"] for n in three}, led)
     assert sorted(over) == sorted(three)
-    under = ["test_guards.py", "test_tools_are_wired.py"]
+    under = ["test_guards.py", "test_tools_are_wired.py", "test_ledger_outputs.py"]
     go2, over2 = T.pick_touched({n: ["x"] for n in under}, led)
     assert sorted(go2) == sorted(under) and not over2, "단독 값으로 상한 아래여야 할 둘이 상한 위다 — 장부에 부푼 값이 되돌아왔다"
     go, none = T.pick_touched({"test_fix_door.py": ["x"]}, led)
