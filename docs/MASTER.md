@@ -4854,6 +4854,8 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `web/navi/src/ui/BottleneckPanel.tsx` | 병목 패널 — **다음 구간 하나 · 네 줄**(거리 · 도로명 · 위험 종류 · 여유 · 외 N곳). 누르는 곳은 76dp 이상이고 달리는 중에는 「자세히」 가 막힌다(`domain/motion.ts`) |
 | `web/navi/src/ui/BottleneckDetail.tsx` | 병목 **자세히**(정차 중 상세) — 유효폭 · 요구폭 · 여유폭 · 길이 · 사유 · 근거. 「측정 신뢰도」는 `width_cov` 다. 주행 중 수(`tools/uidrive.py`)에 안 드는 분류가 속도 잠금으로 참이다 |
 | `web/navi/src/ui/SegCard.tsx` | 관제가 도로 하나를 눌렀을 때의 구간 카드. 여유폭을 **수로** 내고 사유를 한 줄 단다 — 넉넉하면 그 칸이 통째로 빠진다 |
+| `web/navi/src/ui/RouteCheckpoints.tsx` | 관제 경로 카드의 접힌 「소화전 N · CCTV N」(PLAN #72(닫힘) · DECISIONS §805). 기본 접힘 · 모르면 「모름」 · 관제에만 붙는다 |
+| `web/navi/src/domain/checkpoints.ts` | 경로 엣지의 `hyd` · `cctv` 번지 목록 → 수(합집합 · 한 엣지라도 모르면 모름 · 빈 경로는 모름) — Python `route_checkpoints` 와 같은 규칙 |
 | `web/navi/src/ui/OpsBits.tsx` | 관제의 되풀이 조각 넷(`Row` · `Sec` · `Tile` · `Center`). 층(`LAYER`)을 받아 **휘도로** 무게를 가른다 |
 | `web/navi/src/ui/Legend.tsx` | 내비 지도 범례. 색은 `navi_graph.json.style` 이 주는 것을 그대로 쓴다 |
 | `web/navi/src/ui/VehicleArt.tsx` | 차종 옆모습. **우리가 그린 단순 도형**이고 실제 차량·제조사·도색을 본뜨지 않는다. 치수를 그림에서 읽지 않는다 |
@@ -4897,6 +4899,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `web/navi/test/dataSource.test.ts` | **없으면 죽는 것**과 없어도 도는 것. `style` 이 없으면 죽는다는 선언을 민다(§483) |
 | `web/navi/test/simulation.test.ts` | 경로를 따라 걷는 점 — **dt 0.1초 자름.** 없으면 시연 중에 점이 날아간다(§483) |
 | `web/navi/test/refOpacity.test.ts` | 관제가 발행 범위 밖(`reference`)을 **흐리게 그리고 숨김일 때만 질의에서 빼는가.** 곱셈이라 층 사이 위계가 안 깨지고 범위 안은 기존값 그대로이며 `?ref=` 가 모르는 값이면 보임이다 — 막힌 길을 오타 하나로 지우지 않는다(DECISIONS §614 · DECISIONS §617) |
+| `web/navi/test/checkpoints.test.ts` | 경로 위 소화전 · CCTV 수의 규칙 — 합집합 · 한 엣지라도 모르면 모름 · 빈 경로는 모름 · 실제 발행 그래프의 칸이 읽히는 모양인가 |
 | `web/navi/test/destSnap.test.ts` | 목적지 색인(`dest.geojson`) 2,347점 중 건물 · 상가 2,308점이 전부 60m 안에서 도로에 붙는지 · 60m 밖은 **이름으로 고정한 24점**(관공서 · 학교 23 + 지점 1 — 도로망이 판정 스코프만 덮는다)뿐인지 · 지도 안에 보이는 관공서(동구청 · 동부소방서 · 서석초)와 지점이 검색에 뜨는지(PLAN #59(닫힘) ②의 기계 쪽 확인 · DECISIONS §783)와, 접수 카드의 도로명 먼저 표기 · 자료 기준일 읽기(PLAN #73(닫힘))를 묶는다. 눈 확인이 아니다 |
 | `web/navi/test/mapPitch.test.ts` | 기울임 상한 고르기 — 기본 75 · `?pitch=85` · 틀린 값 열다섯 꼴이 전부 75 로 떨어지는가 · 하한이 코드가 주는 최대 기울임 이상인가 · 지도 컴포넌트에 숫자로 박혀 있지 않은가 |
 | `web/navi/test/opsUplink.test.ts` | 내비 → 관제 올림의 **침묵이 「끊김」 자(5초)를 넘는가**를 가짜 타이머로 가른다 — 앞 탭 · 뒤 탭 1초 묶임 · 1분 묶임 · 재접속 · 인사 없이 떠남. 들은 시각을 **자기 시계**로 적는가 · 붙는 순간과 앞으로 돌아온 순간에 한 통을 보내는가 · 재접속 간격이 자보다 길어지면 우는가(PLAN #234(닫힘) · 브라우저의 묶임은 흉내다) |
