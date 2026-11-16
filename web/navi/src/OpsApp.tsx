@@ -78,7 +78,7 @@ import { fmtDur, fmtSec, hhmm, hhmmss } from "./ui/tokens";
 import { VERDICT_ORDER } from "./ui/verdictMeaning";
 import { CLEARANCE_SCALE } from "./ui/clearanceMeaning";
 import { VehicleArt } from "./ui/VehicleArt";
-import { Center, Sec, Tile, dashSwatch } from "./ui/OpsBits";
+import { Center, RouteCheckpoints, Sec, Tile, dashSwatch } from "./ui/OpsBits";
 import { SegCard } from "./ui/SegCard";
 import {
   ackBtn, body, btnSm, card, chip, clock, colL, colR, cta, D, dot, feedRow, input, lab,
@@ -412,7 +412,7 @@ export default function OpsApp() {
                       최소폭 {Math.min(...plan.plan.edges.map((e) => e.width_min_m ?? 99)).toFixed(1)}m / 요구 {need.toFixed(1)}m ·
                       여유폭 <b style={{ color: D.ink }}>
                         {fmtClearance(Math.min(...plan.plan.edges.map((e) => e.width_min_m ?? 99)) - need)}
-                      </b>
+                      </b><RouteCheckpoints edges={plan.plan.edges} />
                     </div>
                     {(ruleSummary(plan.plan.rules) || limitSummary(plan.plan.rules)) && (
                       <div style={{ fontSize: 12, color: D.warn, fontWeight: 800, marginTop: 4 }}>
