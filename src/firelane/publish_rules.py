@@ -38,6 +38,7 @@ import math
 
 import geopandas as gpd
 from shapely.geometry import Point
+from shapely.ops import unary_union
 
 from firelane.paths import PROCESSED, ROOT
 from firelane.seg.params import NODE_TOL
@@ -146,8 +147,11 @@ def oneway(m: gpd.GeoDataFrame, field_path=None) -> tuple[list[int], dict]:
     oidx = ow.sindex
     for i, g in enumerate(m.geometry):
         L = _line(g)
-        cover = max((L.intersection(ow.geometry[j].buffer(OW_BUF_M)).length
-                     for j in oidx.query(L.buffer(OW_BUF_M))), default=0.0)
+        # ★ 2026-11-16 (DECISIONS §806-A). 덮음은 **조각 하나의 최대**가 아니라 **버퍼 합집합 위의 길이**다 — 한 중심선이 조각
+        #   넷으로 끊기면 각각 39% 라도 합은 100% 를 넘는다(구성로 4구간이 그렇게 양방향으로 읽혔다). 겹친 조각은 한 번만 센다.
+        #   고친 것은 계산이고 원천(1:1,000 중심선)은 그대로다.
+        _near = [ow.geometry[j].buffer(OW_BUF_M) for j in oidx.query(L.buffer(OW_BUF_M))]
+        cover = L.intersection(unary_union(_near)).length if _near else 0.0
         if cover < OW_COVER * L.length:
             continue
         stat["oneway"] += 1
