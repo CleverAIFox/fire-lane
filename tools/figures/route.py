@@ -56,8 +56,12 @@ BAR_X, BAR_W, NUM_X = 190, 420.0, 624
 
 
 def _bar(y: int, w: float, color: str, label: str, num: str) -> list[str]:
-    """막대 하나 · 왼쪽 라벨 · 오른쪽 수."""
-    return [f'<rect x="{BAR_X}" y="{y}" width="{w:.1f}" height="26" '
+    """막대 하나 · 왼쪽 라벨 · 오른쪽 수.
+
+    ★ 길이는 **소수 둘째 자리**까지 쓴다(DECISIONS §808). 한 자리로 반올림하면 한 자(420)에 아주 작은 값(1243 / 150801 → 3.46)이 3.5 로 찍혀
+      길이/값 비가 1.1% 어긋나 `test_every_bar_is_as_long_as_its_value`(허용 1%)가 운다 — 막대가 값에 비례하는 것은 생성기의 책임이다.
+    """
+    return [f'<rect x="{BAR_X}" y="{y}" width="{w:.2f}" height="26" '
             f'fill="{color}" rx="3"/>',
             f'<text x="12" y="{y + 18}" font-size="11" fill="#475569">{label}</text>',
             f'<text x="{NUM_X}" y="{y + 18}" font-size="12" fill="#0f172a">{num}</text>']
