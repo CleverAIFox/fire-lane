@@ -179,46 +179,18 @@ def test_every_declared_ratchet_is_a_real_module_constant():
             assert hasattr(m, name), f"{p.name} 이 없는 이름 `{name}` 을 선언했다"
 
 
-def test_declared_ratchet_names_equal_produced_names_per_tool():
-    """W13-17 — 선언한 축 집합 == `ratchet_values()` 가 내는 축 집합. **값이 아니라 수**를 센다.
-
-    한쪽만 움직이면 그 축이 조용히 죽는다(534-3 이 뺀 축을 산출이 계속 낸 때). `down-map` 은 표의 **키**가 산출 키다.
-    레이크 없이는 못 재는 도구는 `lake_only()` 에 선언된 것만 건너뛴다.
-    """
-    exempt = RT.lake_only()
-    checked = skipped = 0
-    for p, m in RT.owners():
-        try:
-            produced = set(m.ratchet_values())
-        except Exception as e:                  # noqa: BLE001 — 레이크 의존 도구의 실측 함수
-            # 변이 장부가 낡으면 `mutate.py` 가 **일부러** 죽는다(장부를 다시 재라는 사람 몫의 빨강). 그 하나만 건너뛴다 — 면제 선언된 레이크 도구도 건너뛴다.
-            stale_ledger = p.name == "mutate.py" and "mutate.py --write --stale" in str(e)
-            assert p.name in exempt or stale_ledger, f"{p.name} 의 `ratchet_values()` 가 죽었는데 면제 사유가 없다 — {e}"
-            skipped += 1
-            continue
-        src = p.read_text(encoding="utf-8")
-        declared: set[str] = set()
-        for name, direction in m.RATCHETS.items():
-            if direction == "down-map":
-                # 표는 **예외 항목**만 선언한다 — 산출은 모든 파일을 낸다. 그래서 선언 키 ⊆ 산출 키(산출이 모르는 키를 선언했으면 그 항목이 죽었다)이고
-                # 표 항목은 같음 비교에서 뺀다(그 표의 산출 키는 다른 선언이 없으면 표 키 전부다).
-                keys = set(RT._map_keys(src, name))
-                assert keys <= produced, f"{p.name}: 표 `{name}` 이 산출이 모르는 키를 선언했다 {sorted(keys - produced)[:5]}"
-                declared |= produced if len(m.RATCHETS) == 1 else keys
-            else:
-                declared.add(name)
-        # 레이크 없는 기계는 `ratchet_values()` 가 예외 대신 **이름을 안 낸다**(0 으로 쓰면 조용히 초록 — `contract.py`). 빠져도 되는 것은 소유 모듈이
-        # `LAKE_ONLY` 로 **이름까지** 선언한 것뿐이다(`ratchet.py` 본체와 같은 규칙) — 선언 안 된 이름이 빠지면 그대로 빨강이고, 산출이 선언 밖이어도 빨강이다.
-        lake = m.LAKE_ONLY if isinstance(getattr(m, "LAKE_ONLY", None), dict) else {}
-        missing = declared - produced
-        if missing and missing <= set(lake):
-            assert produced <= declared, f"{p.name}: 산출만 {sorted(produced - declared)[:5]}"
-            skipped += 1
-            continue
-        assert declared == produced, (
-            f"{p.name}: 선언만 {sorted(declared - produced)[:5]} · 산출만 {sorted(produced - declared)[:5]}")
-        checked += 1
-    assert checked >= 5 and checked > skipped, f"훑은 도구 {checked} · 건너뜀 {skipped} — 빈 그물이다"
+def test_the_name_slices_cover_every_owner():
+    """W13-17 — 「선언한 축 == 산출한 축」은 도구 조각 셋(`test_ratchet_names_<i>.py`)이 **세 파일로** 묻는다(DECISIONS §802-G — 한 시험이 61초 · 병렬 303초라 시한을 넘겼다).
+    여기는 조각이 **빠짐없이 이어졌는지**만 싸게 문다: 번호가 0..K-1 이고 K 개가 `RT.owners()` 를 `i::K` 로 가르면 합집합이 전부다."""
+    import ratchet_names as N  # tests/ 는 pytest 가 경로에 넣는다(조각 파일이 같은 이름으로 부른다)
+    files = N.slice_files()
+    assert len(files) >= 2, "조각이 하나뿐이면 가른 것이 아니다"
+    ks = {N.slice_of(str(p))[1] for p in files}
+    assert ks == {len(files)}, f"조각 수가 파일마다 다르다 {ks}"
+    owners = RT.owners()
+    covered = [o[0].name for i in range(len(files)) for o in owners[i::len(files)]]
+    assert sorted(covered) == sorted(o[0].name for o in owners), "조각의 합이 도구 전부와 다르다"
+    assert len(owners) >= 5, f"훑을 도구 {len(owners)} — 빈 그물이다"
 
 
 class _FakeMod:

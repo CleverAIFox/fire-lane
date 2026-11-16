@@ -3336,7 +3336,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 3,550 전수 · **분모(blank) 0절** · 물림(inherit) 2,250절.
+★ **강제자 칸의 분모.** 절 3,551 전수 · **분모(blank) 0절** · 물림(inherit) 2,251절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -5057,6 +5057,8 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `tests/test_lakecheck_l3.py` | L3 이 **레이크를 전부 해시하지 않는지** — 판정이 아니라 **비용**을 잰다 |
 | `tests/test_lakecheck_l5.py` | L5 가 norm 의 상류를 `_prep.json` 의 raw 경로 키(`lake.norm_owners`)로 판정하는지 — 형제 raw 가 있어도 **짝 없는 norm 은 잡힌다**(PLAN #197(닫힘)). 합성 레이크라 레이크 없는 기계에서도 돈다. 시험이라 「부류」 줄은 없다 |
 | `tests/test_pushready.py` | 「푸시해도 되는가」 한 명령(`tools/pushready.py` · PLAN #207 닫힘)이 **다섯 축(래칫 · 낡은 도장 · 도장 없음 · 커밋 안 된 변경 · 변이 장부)을 하나씩 막는가** — ㉣ 는 실제 git 저장소로 「도장만 찍고 커밋 안 함」을 만든다. 읽기 전용이고 합성 출력이라 2분짜리 실물을 안 돈다. 시험이라 「부류」 줄은 없다 |
+| `tests/ratchet_names.py` | 「선언한 축 == 산출한 축」을 도구 조각 단위로 훑는 문(시험이 아니다 · `test_` 로 안 시작해 수집되지 않는다). 옛 한 건(도구 38개 · 61초 · 병렬 303초)을 세 조각으로 갈랐고 단언은 옛 반복문의 몸통 그대로다(DECISIONS §802-G) |
+| `tests/test_ratchet_names_0.py` `tests/test_ratchet_names_1.py` `tests/test_ratchet_names_2.py` | 위 문을 `RT.owners()` 의 `i::3` 조각마다 부르는 시험 셋 — 파일 단위로 병렬을 도는 `testpick` 이 세 조각을 갈라 돌린다. 번호가 0..K-1 로 이어졌는지는 `test_ratchet.py` 의 `test_the_name_slices_cover_every_owner` 가 문다. 시험이라 「부류」 줄은 없다 |
 | `tests/test_ratchetstore.py` | 값을 밖에 둔 래칫이 **값만 움직이면 도장이 안 죽고 논리를 고치면 죽는가**(양성 대조 둘 · 실제 도장 지문으로) · 값 파일의 경로를 어느 문서 절도 백틱으로 안 적는가 · `ratchet --write` 가 값 파일에 쓰는가. 시험이라 「부류」 줄은 없다 |
 | `tests/test_git_env_scrub.py` | worktree 푸시가 물려준 `GIT_DIR` 이 본 저장소를 건드리지 못하는가(PLAN #200(닫힘)) — 훅 머리의 `unset` · `conftest` 의 픽스처 각각 + 막는 줄을 빼면 미끼 저장소가 오염되는 **양성 대조 둘**. 시험이라 「부류」 줄은 없다 |
 | `tests/gitenv_probe_case.py` | 위 시험이 **중첩 pytest 로** 돌리는 탐침 — `GIT_DIR` 을 물려받은 채 `tmp_path` 안에서 `git init` · `config` 를 부른다. 직접 모이지 않는다(`test_*.py` 가 아니다) |
