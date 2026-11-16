@@ -297,8 +297,9 @@ export const TUNING: TuningKnobs = {
   tightMarginM: 0.5,
   tight: 1.8,
   avoidUncertain: 2.0,
-  // ★ 넷이 아니라 다섯이고 **전부 0** 이다. 값을 넣기 전에 PLAN §1-27 에 행을 세운다.
-  parkPer1000: 0,
+  // ★ 다섯 중 **켜진 것은 `parkPer1000` 하나**다(2026-11-16 · 사람이 0.05 로 정했다 — DECISIONS §795-B · §807 · PLAN §1-27 `park-pressure`). 나머지 넷은 0 이고
+  //   값을 넣기 전에 PLAN §1-27 에 행을 세운다. 판정 폐포 밖이다(TS 계수 · 판정 네 수 불변).
+  parkPer1000: 0.05,
   ecamPerSite: 0,
   speedbumpEach: 0,
   speedcamEach: 0,

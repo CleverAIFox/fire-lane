@@ -30,14 +30,19 @@ function edge(over: Partial<GraphEdge> = {}): GraphEdge {
   };
 }
 
-test("압력 계수가 전부 0 이다 — 근거 없는 값을 새로 만들지 않았다", () => {
-  ok(pressureIsInert(TUNING), "TUNING 의 압력 계수가 0 이 아니다. "
-    + "값을 넣으려면 PLAN §1-27 측정 대장에 행을 먼저 세운다(가드 6)");
+test("켜진 압력 계수는 parkPer1000 = 0.05 하나다 — 나머지 넷은 0 이다", () => {
+  // ★ 2026-11-16 (DECISIONS §795-B · §807). 사람이 단속이력 가중치 0.05 를 정했다(PLAN §1-27 `park-pressure` 행이 섰다). 옛 시험은 「전부 0」을 물었다.
+  ok(TUNING.parkPer1000 === 0.05, `parkPer1000 이 0.05 가 아니다 — ${TUNING.parkPer1000}`);
+  ok(TUNING.ecamPerSite === 0 && TUNING.speedbumpEach === 0 && TUNING.speedcamEach === 0 && TUNING.zoneEach === 0,
+    "나머지 압력 계수가 0 이 아니다 — 값을 넣으려면 PLAN §1-27 측정 대장에 행을 먼저 세운다(가드 6)");
+  ok(!pressureIsInert(TUNING), "켜진 계수가 있는데 inert 로 본다");
+  ok(pressureIsInert({ ...TUNING, parkPer1000: 0 }), "나머지가 0 인데 parkPer1000 을 꺼도 inert 가 아니다");
 });
 
 test("계수 0 이면 배수가 정확히 1 — 경로가 한 치도 안 움직인다", () => {
+  const off = { ...TUNING, parkPer1000: 0 };      // 같은 성질을 명시적 0 에 건다 — TUNING 은 이제 0.05 가 켜져 있다
   for (const e of [edge(), edge({ park: 9999 }), edge({ park: 0, ecam: 7 })]) {
-    const f = pressureFactor(e, HZ, TUNING);
+    const f = pressureFactor(e, HZ, off);
     ok(f === 1, `배수가 1 이 아니다 — ${f}`);
   }
 });
