@@ -74,7 +74,7 @@ def test_selftest_a_parenthetical_context_name_is_not_a_designation():
     rows = [
         _row("지산복지회관 주변 동구 밤실로4번길 16(지산2동) 일대(구, 지호로)"),
         _row("금남맨션 : 중앙로196번길 14(금남로3가, 금남맨션)일대(구, 중앙초등길, 대의2길)"),
-        _row("거성마트옆길 ~ 살레시오여고 후문 동구 지산로 37(지산1동) 일대(구, 섬들1길, 살레시오여고옆길)"),
+        _row("거성마트옆길 ~ 살레시오여고 후문 동구 지산로 37(지산1동) 일대"),     # 옛 이름이 없는 본선 번지 행 — R4 는 (구, …) 가 있는 행을 뺀다
         _row("남광주 시장 : 제봉로17번길 9-9（학동）일대"),
     ]
     a = scopetier.address_rows(rows)
@@ -246,7 +246,7 @@ def _bld_fixture():
 def test_a_main_road_lot_row_keeps_only_segments_near_the_building():
     pytest.importorskip("geopandas", reason="환경skip(도구) — 건물 폴리곤 거리는 geopandas 가 잰다")
     bld, near, far = _bld_fixture()
-    rows = [_row("거성마트 동구 지산로 37(지산1동) 일대(구, 섬들1길)", length=120.0)]   # 반경 60m
+    rows = [_row("거성마트 동구 지산로 37(지산1동) 일대", length=120.0)]   # 반경 60m · 옛 이름이 없는 본선 번지 행(R4 는 옛 이름이 있는 행을 뺀다)
     got = scopetier.columns([False, False], [0, 0], ["지산로", "지산로"], rows, [near, far], bld, {"지산로": ["1"]})
     assert got["scope_tier"] == ["listed", "reference"]
     assert got["scope_basis"] == ["address", None]
@@ -256,7 +256,7 @@ def test_zero_buildings_falls_back_to_the_whole_road_and_says_so():
     """폴백 A — 번지의 건물을 못 찾으면 본선 전체를 유지한다(지정을 없애지 않는다). 근거는 `road` 다."""
     pytest.importorskip("geopandas", reason="환경skip(도구) — 건물 폴리곤 거리는 geopandas 가 잰다")
     bld, near, far = _bld_fixture()
-    rows = [_row("계림동 동구 경양로 333외(산수동)(구, 신작2길)", length=230.0)]
+    rows = [_row("계림동 동구 경양로 333외(산수동)", length=230.0)]    # 옛 이름이 없는 본선 번지 행
     got = scopetier.columns([False, False], [0, 0], ["경양로", "경양로"], rows, [near, far], bld, {"경양로": ["9"]})
     assert got["scope_tier"] == ["listed", "listed"] and got["scope_basis"] == ["road", "road"]
 
@@ -284,8 +284,33 @@ def test_designations_returns_flags_and_basis_per_segment():
     """`designations` 를 **이름으로** 부른다 — (지정인가, 근거) 두 목록이 구간 순서 그대로다."""
     pytest.importorskip("geopandas", reason="환경skip(도구) — 건물 폴리곤 거리는 geopandas 가 잰다")
     bld, near, far = _bld_fixture()
-    rows = [_row("거성마트 동구 지산로 37(지산1동) 일대(구, 섬들1길)", length=120.0)]
+    rows = [_row("거성마트 동구 지산로 37(지산1동) 일대", length=120.0)]    # 옛 이름이 없는 본선 번지 행
     des, basis = scopetier.designations(["지산로", "지산로", "없는길", None], [near, far, near, near], rows, bld,
                                         {"지산로": ["1"]})
     assert des == [True, False, False, False]
     assert basis == [scopetier.ADDRESS, None, None, None]
+
+
+def test_r4_a_main_road_lot_row_with_old_names_is_an_anchor_not_a_designation():
+    """R4 (DECISIONS §811) — **본선 번지 + 괄호 옛 이름**이 함께 있는 행의 본선은 지정이 아니라 기준 건물이다. 이름 하나를 예외로 두지 않는다 — 규칙 하나가 넷을 설명한다."""
+    real = [
+        "계림동, 산수동 고지대일대 동구 경양로 333외(산수동)(구, 신작2길)",
+        "계림동 남도예식장 주변주택가 동구 중앙로 283-1외(계림동) (구, 대림 2길)",
+        "삼성홈플러스 계림점 : 무등로 314 외(계림동) (구, 시청옆길, 대지길, 계림초등길)",
+        "거성마트옆길 ~ 살레시오여고 후문 동구 지산로 37(지산1동) 일대(구, 섬들1길, 살레시오여고옆길)",
+    ]
+    assert all(scopetier.is_anchor_row(x) for x in real), "네 행이 전부 기준 건물 행이어야 한다"
+    a = scopetier.address_rows([_row(x) for x in real])
+    assert a == [], "기준 건물 행은 주소부 행에서 빠진다"
+    for road in ("경양로", "중앙로", "무등로", "지산로"):
+        assert not scopetier.is_designated(road, a), f"{road} 가 기준 건물 행으로 지정이 됐다"
+    # 양성 대조 — 같은 행에서 **옛 이름만 떼면** 본선 번지 행이고 지정이다(규칙이 본선 번지 전부를 지우는 것이 아니다)
+    for x, road in ((real[0], "경양로"), (real[1], "중앙로"), (real[3], "지산로")):
+        bare = x.split("(구")[0].rstrip()
+        assert not scopetier.is_anchor_row(bare)
+        assert scopetier.is_designated(road, scopetier.address_rows([_row(bare)])), f"{road} 번지 행에서 옛 이름만 뗐는데 지정이 아니다"
+    # 번길 행은 본선 번지가 아니므로 옛 이름이 있어도 기준 건물 행이 아니다
+    bugil = "금남맨션 : 중앙로196번길 14(금남로3가, 금남맨션)일대(구, 중앙초등길, 대의2길)"
+    assert not scopetier.is_anchor_row(bugil)
+    assert scopetier.is_designated("중앙로196번길", scopetier.address_rows([_row(bugil)]))
+
