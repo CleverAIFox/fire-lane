@@ -9,7 +9,7 @@
  *   색만 뽑아오는 것이 더 부서지기 쉽다. **한쪽을 고치면 다른 쪽도
  *   고쳐라** — 이 주석이 그 강제자다.
  */
-import { C, F, S } from "./tokens";
+import { C, S } from "./tokens";
 import type { VerdictStyle } from "../domain/types";
 import { VERDICT_ORDER } from "./verdictMeaning";
 
@@ -66,12 +66,12 @@ export function Legend({ style, open }: Props) {
 function Row({ color, label, sub }: { color: string; label: string; sub?: string }) {
   return (
     <div style={{ display: "flex", alignItems: sub ? "flex-start" : "center", gap: 8,
-                  fontSize: F.small, padding: "2px 0" }}>
+                  fontSize: 24, padding: "2px 0" }}>
       <i style={{ width: 10, height: 10, borderRadius: 5, background: color, marginTop: sub ? 3 : 0,
                   border: "1px solid rgba(255,255,255,.25)", flex: "0 0 auto" }} />
       <span>
         {label}
-        {sub && <span style={{ display: "block", fontSize: F.tiny, opacity: .6 }}>{sub}</span>}
+        {sub && <span style={{ display: "block", fontSize: 24, opacity: .6 }}>{sub}</span>}
       </span>
     </div>
   );
@@ -84,5 +84,5 @@ const panel: React.CSSProperties = {
   padding: "12px 14px", backdropFilter: "blur(12px)",
 };
 const head: React.CSSProperties = {
-  fontSize: F.tiny, opacity: .55, marginBottom: 4, fontWeight: 700,
+  fontSize: 24, opacity: .55, marginBottom: 4, fontWeight: 700,
 };

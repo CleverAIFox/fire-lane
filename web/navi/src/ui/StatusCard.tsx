@@ -26,7 +26,7 @@ export function StatusCard({ chip, title, lines, foot }: {
         </svg>
       </div>
       {foot && foot.split(" 잠시만").map((t, i) => (
-        <div key={t} style={{ textAlign: "center", fontSize: i ? 13 : 16, fontWeight: i ? 600 : 800,
+        <div key={t} style={{ textAlign: "center", fontSize: 24, fontWeight: i ? 600 : 800,
                               color: i ? C.panelSub : C.cta, marginTop: i ? 4 : 0 }}>
           {i ? `잠시만${t}` : t}
         </div>
@@ -43,7 +43,7 @@ const card: CSSProperties = {
 };
 const chipS: CSSProperties = {
   display: "inline-block", background: C.cta, color: "#fff", borderRadius: 999,
-  padding: "3px 10px", fontSize: 12, fontWeight: 800,
+  padding: "3px 10px", fontSize: 24, fontWeight: 800,
 };
 const spinWrap: CSSProperties = {
   display: "grid", placeItems: "center", margin: "22px 0 14px", position: "relative",

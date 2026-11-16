@@ -4491,6 +4491,29 @@ pending:
     반입 순서(사람이 친다) — ① `tools/intake.py --stage --yes` 로 landing 에 복사 ② 정규명 · 제공기관 폴더는 사람이 정한다 ③ `datasets` 에 `kind: raw_only` 로 올리고
     acquire 로 raw 에 올린다 ④ 이 항목의 status 를 해소로 고친다. 22MB 라 `data/raw` 가 아니라 레이크에 둔다(저장소에 넣지 않는다 — §12-10).
 
+- key: npm_override_typescript_estree_minimatch
+  desc: web/navi 의 npm `overrides` — `@typescript-eslint/typescript-estree` 아래 `minimatch` 를 ^11.0.1 로 (개발 의존 · 번들 밖)
+  source: 'typescript-eslint 상류 릴리스 — 확인 명령 `npm view @typescript-eslint/typescript-estree dependencies.minimatch` (2026-11-15 실측 8.72.2 가 `^10.2.2`)'
+  status: 외부 대기 2026-11-15 — `typescript-estree` 가 `minimatch ^11` 로 오르는 날 이 override 를 걷는다
+  blocking: |
+    ★ 이것은 **날짜가 아니라 사건 조건**이다(`doc_fsck.DEFERRED` 는 날짜 기한이라 안 맞는다 — 여기가 맞는 자리다). 걷는 조건: 위 확인 명령이 `^11` 이상을 내고
+      `npm ls minimatch` 가 override 없이 11 이상으로 풀린다. 그 날 `package.json` 의 `overrides` 에서 이 항목을 빼고 이 항목의 status 를 해소로 고친다.
+    ★ 왜 있나 — `minimatch` 7.0.0~11.0.0 에 `globparts` 증폭 서비스 거부(GHSA-g3hv-75wg-m249 · moderate)가 있고 고친 판이 11.0.1 부터다. `typescript-estree` 최신이 `^10` 을 묶어
+      **override 가 없으면 lock 이 10.x 를 든다**(2026-11-15 `npm audit` 8건 중 하나 · Dependabot 경고 55번이 열려 있던 이유). 개발 의존이고 `web/navi/dist` 에 0건이다.
+    ★ **override 는 lock 이 조용히 거짓말하게 만드는 자리다** — 상류가 11 을 안 받는 것을 override 가 가린다. 그래서 이 항목이 있다.
+      `tests/test_npm_overrides_declared.py` 가 `package.json` 의 override 마다 여기 열린 항목이 있는지 · 여기 열린 항목마다 override 가 실재하는지를 문다.
+  fallback: |
+    ★ 걷을 날이 안 와도 앞으로 간다 — override 를 유지한다. 위험은 override 가 11 을 `typescript-estree` 의 `^10` 에 **억지로** 얹는 것이다(API 가 안 맞으면 린트가 깨진다 ·
+      지금까지는 `npm run lint` 초록). 린트가 깨지면 override 를 걷고 `typescript-eslint` 를 내리지 말고 Dependabot 경고를 사유와 함께 닫는다(DECISIONS §203 의 길).
+- key: npm_override_source_map_js
+  desc: web/navi 의 npm `overrides` — `source-map-js` 를 1.2.2 로 고정했던 것 (PLAN 없음 · Dependabot PR 301번 판올림 뒤)
+  source: npm — `source-map-js` 최신 1.2.2 · 부모(`postcss`)가 `^1.2.2` 를 요구한다
+  status: 해소 2026-11-15 — override 를 걷었다(아무 일도 안 하고 있었다)
+  blocking: |
+    ★ 재 보았다(저장소 밖 복사본에서): override 를 뺀 `package.json` 으로 `npm install --package-lock-only` → **lock 이 바이트 그대로**(`source-map-js` 1.2.2 · 부모 `^1.2.2`)이고
+      `npm ci --dry-run` 이 통과한다. 부모가 이미 `^1.2.2` 를 요구하고 최신이 1.2.2 라 override 가 풀이를 안 바꾼다. 그래서 걷었다.
+    ★ 다시 필요해지는 경우 — 부모가 `^1.2.1` 로 내려가 lock 이 낮은 판을 들 때. 그때는 위 `npm_override_typescript_estree_minimatch` 와 같은 꼴로 항목을 **열린 채로** 다시 올린다.
+
 # ── 배경지도 (다운로드 아님, 런타임 타일) ───────────────────
 basemap:
   provider: V-World

@@ -73,18 +73,28 @@ fi
 #   직렬 합 약 19초가 가장 긴 하나(`deadcheck` 약 10초)로 줄어든다. 출력 순서는 게이트 파일 순서 그대로다.
 #   **병렬이 이상하면** `FIRE_LANE_PREPUSH_SERIAL=1` 로 종전처럼 한 줄씩 돈다(원인을 가를 때).
 if [ ${#fail[@]} -eq 0 ]; then
-    names=(); outs=(); tdir="$(mktemp -d)"; trap 'rm -f "$out"; rm -rf "$tdir"' EXIT
-    i=0
-    while IFS=$'\t' read -r name cmd _secs; do   # 셋째 열(`_secs` · 훅 안 벽시계 초 · PLAN #210)은 읽고 **버린다** — 변수가 둘이면 `cmd` 꼬리에 붙어 게이트 명령의 인자가 된다
+    names=(); cmds=(); secs=(); tdir="$(mktemp -d)"; trap 'rm -f "$out"; rm -rf "$tdir"' EXIT
+    while IFS=$'\t' read -r name cmd _secs; do   # 셋째 열(`_secs` · 훅 안 벽시계 초 · PLAN #210)은 **돌리는 순서의 무게**로만 쓴다 — 변수가 둘이면 `cmd` 꼬리에 붙어 게이트 명령의 인자가 된다
         case "$name" in ''|'#'*) continue ;; esac
-        i=$((i + 1)); names+=("$name"); o="$tdir/$i"
-        run_gate() {   # 결과 — $o(출력) · $o.rc · $o.t(초)
-            local s; s=$(now)
-            bash -c "$cmd" </dev/null >"$o" 2>&1; echo $? >"$o.rc"
-            awk -v a="$s" -v b="$(now)" 'BEGIN { printf "%.1f", b - a }' >"$o.t"
-        }
-        if [ -n "${FIRE_LANE_PREPUSH_SERIAL:-}" ]; then run_gate; else run_gate & fi
+        names+=("$name"); cmds+=("$cmd"); secs+=("${_secs:-0}")
     done < "$gates_file"
+    run_gate() {   # 결과 — $tdir/<번호>(출력) · .rc · .t(초). 번호는 게이트 파일 순서(1부터)다
+        local k=$1 s o="$tdir/$(($1 + 1))"; s=$(now)
+        bash -c "${cmds[$k]}" </dev/null >"$o" 2>&1; echo $? >"$o.rc"
+        awk -v a="$s" -v b="$(now)" 'BEGIN { printf "%.1f", b - a }' >"$o.t"
+    }
+    # ★ 2026-11-15 (PLAN #253 · DECISIONS §802-B). **무거운 것부터 · 동시에 넷까지.** 25게이트를 한꺼번에 띄우면 8코어가 경합해 게이트마다 단독의 약 3배로 부푼다(deadcheck 9 → 28초).
+    #   긴 것(셋째 열 큰 순)부터 동시 `POOL` 개까지만 돌린다. **효과는 작다 — 원래 훅과 번갈아 5바퀴 돌린 실측: 원래 27.2~29.5초(평균 27.8) · 이 훅 26.6~27.4초(평균 26.8) — 약 1초 · 흔들림이 좁다.**
+    #   벽시계는 같은 훅이라도 기계 상태에 따라 27~37초로 움직였다(§802-B 표). `FIRE_LANE_PREPUSH_POOL` 로 바꾼다(기본 4). 출력 순서는 게이트 파일 순서다. 직렬은 `FIRE_LANE_PREPUSH_SERIAL=1`.
+    pool="${FIRE_LANE_PREPUSH_POOL:-4}"
+    order=($(for k in "${!names[@]}"; do printf '%s\t%s\n' "${secs[$k]}" "$k"; done | sort -t$'\t' -k1,1nr -k2,2n | cut -f2))
+    for k in "${order[@]}"; do
+        if [ -n "${FIRE_LANE_PREPUSH_SERIAL:-}" ]; then run_gate "$k"
+        else
+            while [ "$(jobs -rp | wc -l)" -ge "$pool" ]; do wait -n; done
+            run_gate "$k" &
+        fi
+    done
     wait
     i=0
     for name in "${names[@]}"; do

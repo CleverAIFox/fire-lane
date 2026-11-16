@@ -119,12 +119,12 @@ export const STATUS: Record<StatusKey, StatusSpec> = {
     title: "경로 안내 일시 중지", sub: "경로 계산 서버 응답 없음",
     eta: "none", route: "pending", blankRemain: true, injected: true },
   noRoute: { wf: ["13"], tone: "cyan", tag: "폭 조건 불충족", label: "다른 접근 지점 필요",
-    title: "차량 경로 없음", sub: "{vehicle} · 요구 폭 {need}m",
+    title: "차량 경로 없음", sub: "{vehicle} · 요구폭 {need}m",
     eta: "none", route: "pending", blankRemain: true },
   // ★ 2026-09-22 (§214-2). 신고 뒤에 경로가 없으면 **폭 문제가 아니다.** 종전에는 13 의
   //   「{차종} · 요구 폭 3.0m」 가 떠서 폭 때문인 것처럼 읽혔다. 원인을 말한다.
   noDetour: { wf: ["13"], tone: "cyan", tag: "통행 불가 · 우회 없음", label: "다른 접근 지점 필요",
-    title: "우회 경로 없음", sub: "{road} 통행 불가 · 300m 안 접근 지점 없음",
+    title: "우회 경로 없음", sub: "{road} 통행 불가",
     eta: "none", route: "pending", blankRemain: true },
   noData: { wf: ["14"], tone: "cyan", tag: "미측정 구간", label: "현장 점검 필요",
     title: "경로 폭 미측정", sub: "도로 폭 정보 부족",
@@ -138,7 +138,7 @@ export const STATUS: Record<StatusKey, StatusSpec> = {
   //   닿는 가장 가까운 곳에 대고 걸어 들어간다 — 도보는 **직선** 거리다.
   detourAccess: { wf: ["17"], tone: "cyan", tag: "우회 불가 · 접근 지점 변경",
     label: "대체 접근 지점 안내", title: "대체 접근 지점으로 안내",
-    sub: "{road} 통행 불가 · 도보 약 {walk}m(직선)", eta: "value", route: "solid" },
+    sub: "{road} · 직선 {walk}m", eta: "value", route: "solid" },
   arrived: { wf: ["15"], tone: "cyan", tag: "도착 완료", label: "차량 안내 종료",
     title: "접근 지점 도착", sub: "차량 안내 종료 · 현장 접근 준비", icon: "P",
     eta: "none", route: "solid", blankRemain: true, noRemain: true },
