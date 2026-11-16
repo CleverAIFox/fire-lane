@@ -221,7 +221,8 @@ def test_applied_table_rows_are_readable_as_ow_in_the_published_graph(graph, met
         assert sign in (1, -1) and e.get("ow") == sign, f"{r['seg_uid']} — 표의 방향 {sign} 이 발행 `ow` {e.get('ow')} 로 안 읽힌다"
     for r in rows:
         if r["use"] == "보류(충돌)":
-            assert by[r["seg_uid"]][0].get("ow", 0) == 0, f"{r['seg_uid']} — 보류(충돌) 행이 발행에 방향을 썼다(우선순위는 사람이 정한다 · PLAN #1 (d))"
+            # 의도는 「보류 행이 방향(±1)을 안 쓴다」다 — `ow=0`(양방향)과 `ow=2`(방향 모름)는 둘 다 방향을 안 쓴 것이라 둘 다 받는다(DECISIONS §806-A).
+            assert by[r["seg_uid"]][0].get("ow", 0) not in (1, -1), f"{r['seg_uid']} — 보류(충돌) 행이 발행에 방향을 썼다(우선순위는 사람이 정한다 · PLAN #1 (d))"
     c = graph["counts"]
     assert c["oneway_dir_field"] == len(applied), "표가 정한 수가 「적용」 행 수와 다르다 — 낡은 표이거나 안 덮은 행이 있다"
     assert c["oneway_dir_known"] == sum(1 for e in graph["edges"] if e.get("ow") in (1, -1))
