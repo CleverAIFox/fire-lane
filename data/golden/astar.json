@@ -2,15 +2,29 @@
  "nodes": 1147,
  "pairs": 200,
  "one_to_one": {
-  "astar": 54261,
-  "dijkstra": 115639
+  "astar": 57747,
+  "dijkstra": 115282
  },
  "one_to_all": {
-  "astar_sum": 146114,
+  "astar_sum": 150801,
   "dijkstra_sweep": 1243,
   "goals": 695
  },
  "history": [
+  {
+   "when": "2026-11-16 · 단속이력 가중치 parkPer1000 = 0.05 를 켠 뒤(DECISIONS §795-B · §807)",
+   "one_to_one": {
+    "astar": 57747,
+    "dijkstra": 115282
+   },
+   "one_to_one_share": 0.5,
+   "one_to_all": {
+    "astar_sum": 150801,
+    "dijkstra_sweep": 1243,
+    "goals": 695
+   },
+   "why": "비용 계수 하나(parkPer1000 0 → 0.05)가 켜져 간선 비용이 달라졌다. A* 1→1 은 54261 → 57747(+6.4%) · 다익스트라 115639 → 115282(-0.3%) · 1→전 노드 A* 합은 146114 → 150801(+3.2%). 휴리스틱 하한은 1.0 그대로라 비용이 오른 간선에서 하한과의 간격이 벌어져 A* 가 더 연다(§719 와 같은 설명 · 이번에 따로 검증하지 않았다). 성능 장부이고 판정 네 수는 그대로다."
+  },
   {
    "when": "2026-11-16 · 일방통행 덮음을 합집합으로 고친 뒤(DECISIONS §806-A)",
    "one_to_one": {

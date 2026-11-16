@@ -151,6 +151,7 @@
   "test_no_unbounded_waits.py": 1.16,
   "test_norm_wiring.py": 5.55,
   "test_normalize_rules.py": 62.99,
+  "test_npm_overrides_declared.py": 1.21,
   "test_obligations.py": 18.99,
   "test_occ_pressure.py": 0.0,
   "test_oneway_field.py": 0.5,
