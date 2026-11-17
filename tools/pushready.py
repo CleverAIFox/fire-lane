@@ -81,7 +81,7 @@ _SUMMARY = re.compile(r"래칫 (\d+)개 · 낡음 (\d+)")
 
 
 def check_ratchet(root: Path, run: Runner) -> Block | None:
-    """`ratchet.py` 전수. UNSEALED(㉢) 와 변이 장부(㉤) 항목은 그쪽이 맡으므로 여기서 세지 않는다.
+    """`ratchet.py` 전수. UNSEALED(㉢) 와 변이 장부가 낡은 것(㉤)은 그쪽이 맡으므로 여기서 세지 않는다. `mutate.py` 의 「✗ 느슨해지는 쪽」은 여기서 읽는다.
 
     ★ **닫힌 쪽으로 실패한다** — rc 가 0 이 아닌데 읽을 항목이 하나도 없으면 「원인 불명」으로 막는다.
     """
@@ -94,8 +94,10 @@ def check_ratchet(root: Path, run: Runner) -> Block | None:
         if not m:
             continue
         mark, tool, name = m.groups()
-        if (tool == "docseal.py" and name == "UNSEALED") or tool == "mutate.py":
-            continue
+        if tool == "docseal.py" and name == "UNSEALED":
+            continue                                # ㉢ 이 맡는다
+        if tool == "mutate.py" and (mark != "✗" or name == "—"):
+            continue                                # 장부가 낡았거나 죽은 것은 ㉤ 이 맡고 조이는 쪽의 `--write` 는 변이 지문을 낡게 한다(㉠→㉤). ★ 「✗ 느슨해지는 쪽」은 여기서 읽는다(DECISIONS §817 · 종전에는 이 도구의 항목을 전부 건너뛰어 CI 의 래칫 정합만 빨갰다)
         if mark == "·":
             tight.append(ln.strip())
         elif mark == "✗":
