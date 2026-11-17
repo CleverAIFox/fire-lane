@@ -229,21 +229,62 @@ def _allowed_block(lines: list[str]) -> set[int]:
     return out
 
 
+#: 낱말 → 컴파일된 정규식. ★ 2026-11-17 (PLAN #253 · DECISIONS §816). 종전에는 줄마다 `re.search(문자열, 줄)` 을 불러 780개 파일에서 1,040만 번 호출했고
+#: 호출마다 `re` 의 캐시 조회가 시간의 절반이었다. 같은 낱말은 한 번만 컴파일한다.
+_COMPILED: dict[str, re.Pattern[str]] = {}
+_LITERAL: dict[str, bool] = {}
+
+
+def _rx(w: str) -> re.Pattern[str]:
+    c = _COMPILED.get(w)
+    if c is None:
+        c = _COMPILED[w] = re.compile(w, re.M)
+    return c
+
+
+def _literal(w: str) -> bool:
+    """정규식 메타문자가 없는 낱말 — `w in 줄` 이 `re.search(w, 줄)` 과 같은 답이다(찾은 글자도 `w` 자신이다)."""
+    v = _LITERAL.get(w)
+    if v is None:
+        v = _LITERAL[w] = re.escape(w) == w
+    return v
+
+
+def _present(w: str, text: str) -> bool:
+    """낱말이 이 파일에 **나올 수 있는가** — 거짓이면 줄마다 볼 까닭이 없다(참은 「볼 수도 있다」)."""
+    if _literal(w):
+        return w in text
+    if "^" in w or "$" in w or "(?<" in w:
+        return True
+    return _rx(w).search(text) is not None
+
+
 def scan(items: list[tuple[str, str]] | None = None) -> list[str]:
     items = targets() if items is None else items
     bad: list[str] = []
+    plan = [(fam, words) for fam, (_why, words) in FAMILIES.items()]
     for rel, text in items:
         if exempt(rel):
+            continue
+        # ★ 같은 일을 줄마다 안 한다 — 낱말이 파일에 **한 번도 안 나오면** 모든 줄에서 뺀다(한 줄에 나오면 파일에도 나온다 · 낱말이 줄 경계를 못 넘는다).
+        #   정규식은 줄머리 · 줄끝(`^` `$`)이나 뒤돌아보기(`(?<`)가 없을 때만 같은 식으로 거른다 — 있으면 줄 경계 정의가 달라 줄마다 본다.
+        active = [(fam, [w for w in words if _present(w, text)]) for fam, words in plan]
+        active = [(fam, ws) for fam, ws in active if ws]
+        if not active:
             continue
         rows = text.splitlines()
         skip = _allowed_block(rows)
         keep = _prose_keep(text) if rel.endswith(".md") else None
         for i, line in enumerate(rows, 1):
-            for fam, (_why, words) in FAMILIES.items():
+            for fam, words in active:
                 if fam not in UNEXEMPTABLE and (i in skip or (keep is not None and i not in keep)):
                     continue                    # 용어 족만 인용 표시로 풀린다
                 for w in words:
-                    m = re.search(w, line, re.M)
+                    if _literal(w):
+                        if w in line:
+                            bad.append(f"{rel}:{i}  [{fam}] {w[:24]}  …{line.strip()[:70]}")
+                        continue
+                    m = _rx(w).search(line)
                     if m:
                         bad.append(f"{rel}:{i}  [{fam}] {m.group()[:24]}  …{line.strip()[:70]}")
     return bad

@@ -70,3 +70,13 @@ def test_every_exemption_names_a_reason():
     """면제마다 사유가 있다. 사유 없는 면제는 다음 사람이 못 지운다(§69)."""
     for k, why in C.EXEMPT.items():
         assert len(why.strip()) >= 15, f"`{k}` 의 사유가 너무 짧다"
+
+
+def test_the_defined_names_cache_follows_the_file_when_it_changes(tmp_path):
+    """★ 파일별 정의 이름 기억(PLAN #253 · DECISIONS §816)이 **파일이 바뀌면 다시 읽는다** — 낡은 이름으로 쌍을 인정하면 거짓 초록이다."""
+    import canaryshape as CS
+    q = tmp_path / "t.py"
+    q.write_text("def alpha():\n    pass\n", encoding="utf-8")
+    assert CS._file_defs(q) == {"alpha"}
+    q.write_text("def alpha():\n    pass\n\n\ndef beta_longer_name():\n    pass\n", encoding="utf-8")
+    assert CS._file_defs(q) == {"alpha", "beta_longer_name"}

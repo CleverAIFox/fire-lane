@@ -247,7 +247,7 @@ RATCHETS = {"UNSEALED": "down"}
 
 def ratchet_values() -> dict[str, int]:
     """래칫 이름 → 지금 실측값. **판정은 안 한다**(`check` 소관)."""
-    now, was, _ = survey()
+    now, was, _ = survey(lazy_legacy=True)
     return {"UNSEALED": sum(1 for k in now if k not in was)}
 
 
@@ -312,7 +312,7 @@ def moved_after(rows: list[dict], i: int, files: list[str],
     return newest if newest > sec else 0
 
 
-def survey() -> tuple[dict, dict, dict]:
+def survey(*, lazy_legacy: bool = False) -> tuple[dict, dict, dict]:
     """절 → 지금 지문 · 찍혀 있는 도장 · **절 본문**.
 
     ★ 2026-09-29 (§307-3). 본문을 같이 낸다. `why()` 가 저장된 공식으로 조각을
@@ -321,6 +321,7 @@ def survey() -> tuple[dict, dict, dict]:
     """
     rows = _sections()
     now, bodies = {}, {}
+    was = json.loads(SEAL.read_text(encoding="utf-8")) if SEAL.is_file() else {}
     for i, r in enumerate(rows):
         if r["state"] != "wired":
             continue                      # 무는 절은 부모 도장이 덮는다(머리말 `밖`)
@@ -339,7 +340,7 @@ def survey() -> tuple[dict, dict, dict]:
         # ★ 2026-09-29 (§297-2). `fp` 를 **찍는 모든 도장에 박는다.** 종전에는 상수만
         #   선언하고 아무 도장에도 안 적었다 — 「공식이 바뀌었는지 갈릴 수 있다」는
         #   주장이 그 자체로 거짓이었다. 선언만 하고 안 쓰는 것이 이 저장소의 상습이다.
-        now[r["id"]] = {"sha": digest(t, fs), "files": fs, "doc": r["doc"],
+        now[r["id"]] = {"sha": (sha := digest(t, fs)), "files": fs, "doc": r["doc"],
                         "parts": parts(t, fs), "fp": FP_METHOD,
                         # ★ 2026-09-29 (§307-1). **옛 관점 지문도 낸다.** 종전에는
                         #   옛 **본문 규칙**만 받았다(§273-10). 관점 공식을 v1 → v2 로
@@ -350,13 +351,12 @@ def survey() -> tuple[dict, dict, dict]:
                         #   **내용이 그대로면** 받는다. 내용이 움직이면 모든 조합이
                         #   같이 움직여 여전히 죽는다.
                         # ★ 2026-10-08 (§437-4) **셋째 축** — 경로 공식.
-                        "legacy": sorted({
+                        "legacy": [] if lazy_legacy and (was.get(r["id"]) or {}).get("sha") == sha else sorted({  # ★ #253 · §816 — 현행 지문이 도장과 같으면 옛 판은 안 낸다
                             d for f_s in [fs, *fs_olds]
                             for b in [t] + [f(rows, i) for f in LEGACY_BODIES]
                             for d in [digest(b, f_s), *(digest(b, f_s, vf)
                                                         for vf in LEGACY_VIEWS)]})}
         bodies[r["id"]] = t
-    was = json.loads(SEAL.read_text(encoding="utf-8")) if SEAL.is_file() else {}
     return now, was, bodies
 
 
@@ -381,7 +381,7 @@ def kind_of(one: dict | None) -> str:
 
 
 def status() -> int:
-    now, was, bodies = survey()
+    now, was, bodies = survey(lazy_legacy=True)
     ok = [k for k, v in now.items() if valid(v, was.get(k))]
     read = [k for k in ok if kind_of(was.get(k)) == "read"]
     unm = [k for k in ok if kind_of(was.get(k)) == "unmoved"]
@@ -445,7 +445,7 @@ def check(list_only: bool = False) -> int:
     ★ 그래서 **찍을 것을 그대로 먹일 수 있는 출력**을 둔다. 사람 눈용 전문은
       그대로다 — 둘은 독자가 다르다.
     """
-    now, was, bodies = survey()
+    now, was, bodies = survey(lazy_legacy=True)
     if not now:
         if list_only:
             return 1

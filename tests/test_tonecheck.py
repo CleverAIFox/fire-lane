@@ -90,3 +90,26 @@ def test_banned_terms_cannot_come_back() -> None:
         assert tc.scan([("docs/x.md", f"<!--voice-ok-->\n{bad}")]), bad
         assert tc.scan([("docs/x.md", f"```\n{bad}\n```")]), bad
     assert not tc.scan([("src/x.py", "# 이 틀은 구조를 정한다")])
+
+
+def test_the_prefilter_gives_the_same_hits_as_a_line_by_line_regex_search():
+    """★ 양성 대조(PLAN #253 · DECISIONS §816) — 파일에 안 나오는 낱말을 줄마다 건너뛰는 거름이 **줄마다 `re.search`** 와 같은 위반을 내는가.
+    글자 낱말 · 정규식 낱말 · 줄머리 정규식 · 안 나오는 낱말이 섞인 합성 문서로 옛 식(줄 × 족 × 낱말)을 그대로 짜 맞댄다."""
+    import re
+    tc = _tc()
+    text = "\n".join(["평범한 문장이다.", "앞 땅따먹기 뒤", "앞 씨발 뒤", "> 이게 뭐냐 거야 ", "그 미친 소리", "멀쩡한 줄", "쌉가능 하다"])
+    got = tc.scan([("x.md", text)])
+    want = []
+    rows = text.splitlines()
+    skip = tc._allowed_block(rows)
+    keep = tc._prose_keep(text)
+    for i, line in enumerate(rows, 1):
+        for fam, (_why, words) in tc.FAMILIES.items():
+            if fam not in tc.UNEXEMPTABLE and (i in skip or i not in keep):
+                continue
+            for w in words:
+                m = re.search(w, line, re.M)
+                if m:
+                    want.append(f"x.md:{i}  [{fam}] {m.group()[:24]}  …{line.strip()[:70]}")
+    assert want, "합성 문서가 아무것도 못 울리면 이 대조는 빈 그물이다"
+    assert got == want
