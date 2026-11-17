@@ -29,7 +29,7 @@ pushready.py — 「푸시해도 되는가」 **한 명령.**  (PLAN #207)
   ㉧ 로컬이 **로컬에 있는 원격 추적 가지**(`@{u}`)보다 뒤인가 — 뒤면 받을 명령을 댄다(PLAN #211). `fetch` 는 **안 한다**(사람이 정했다: 읽기 전용이 정체성이다)
 ★ **몇 바퀴 남았나**(PLAN #220): 막는 것 목록 끝에 `forecast` 가 「이번에 치면 다음에 무엇이 또 낡는가」를 말한다 — 되먹임 변 다섯(`EDGES` · 실측 · 서술을 달았다)만으로 **확정 바퀴 · 가능한 바퀴**를 센다.
   모델이다: 고정점을 증명하지 않고, 가능한 자기 루프 때문에 상한(`LAP_CAP`)에서 자른다. 표본은 옛 순서 다섯 바퀴 한 건 · 새 순서 한 바퀴 세 건이다(`SAMPLE_LAPS` · `SAMPLE_NEW_ORDER`). 이 도구는 여전히 **아무것도 안 친다**.
-순서는 사슬이다 — **받기 → 시험 → 등재 의무 → CI 미러 → 도장 없는 절(㉢) → 래칫(㉠) → 변이 장부(㉤) → 낡은 도장(㉡) → 커밋.** (2026-11-14 · PLAN #220: 사람이 이 순서로 쳐서 확정 바퀴가 2 → 1 로 줄었다 — `㉢` 이 `UNSEALED` 를 조이므로 래칫 **앞**이다) 목록은 그 순서로 낸다(받으면 트리가 바뀌어 뒤의 것이 다 낡으므로 ㉧ 이 맨 앞이다).
+순서는 사슬이다 — **받기 → 시험 · 읽기 장부(㉥ 의 낡음) → 등재 의무 → CI 미러 → 도장 없는 절(㉢) → 래칫(㉠) → 변이 장부(㉤) → 래칫(㉠ 한 번 더) → 낡은 도장(㉡) → 커밋.** (2026-11-14 · PLAN #220: 사람이 `㉢ ㉠ ㉤ ㉡` 순으로 쳐서 확정 바퀴가 2 → 1 로 줄었다 — `㉢` 이 `UNSEALED` 를 조이므로 래칫 **앞**이다. 2026-11-18 · 읽기 장부는 도장 · 래칫 · 변이 장부 어느 쪽 입력도 아니라 맨 앞이고, `㉠` 는 `㉤` 가 쓴 변이 장부를 읽어 상수가 움직일 수 있어(㉤→㉠) 뒤에 한 번 더다 — DECISIONS §827) 목록은 그 순서로 낸다(받으면 트리가 바뀌어 뒤의 것이 다 낡으므로 ㉧ 이 맨 앞이다).
 
 부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398 — 아직 어느 관문에도 안 올렸다: 2분이 예산 30초에 안 든다)
 IN    `tools/ratchet.py` · `tools/docseal.py` · `tools/mutate.py` 의 출력과 종료 코드 · `git status --porcelain` · (`--edges`) `FIRE_LANE_AUDIT_DIR/log`
@@ -203,6 +203,23 @@ def check_mutate(root: Path, run: Runner) -> Block | None:
 TESTS_JOBS = 4
 
 
+_STALE = re.compile(r"읽기 장부가 낡았다 — 새 시험 (\d+) · 바뀐 시험 (\d+) · 없어진 시험 (\d+)")
+_STALE_NAMES = re.compile(r"^\s+낡은 시험 (새|바뀐): ?(.*)$", re.M)
+
+
+def _stale_reads(out: str) -> Block | None:
+    """★ PLAN #257 · DECISIONS §822 — 시험이 초록이어도 `testpick` 의 「읽기 장부가 낡았다」 경고가 있으면 초록을 안 낸다(낡은 장부는 헬퍼로 읽는 시험을 못 뽑는다). 이름 · 명령을 같이 낸다."""
+    if not (m := _STALE.search(out)):
+        return None
+    new, chg, gone = (int(x) for x in m.groups())
+    names = {k: v.split() for k, v in _STALE_NAMES.findall(out)}
+    todo = names.get("새", []) + names.get("바뀐", [])
+    cmd = [*_PY, "tools/testpick.py", "--measure-reads", "--write"]
+    return Block("㉥", f"읽기 장부가 낡았다 — 새 시험 {new} · 바뀐 시험 {chg} · 없어진 시험 {gone} (시험은 초록이나 바뀐 파일에 닿는 시험을 고르는 장부가 하한이다)",
+                 [f"새 시험({new}): {' '.join(names.get('새', [])) or '(이름을 못 읽었다)'}", f"바뀐 시험({chg}): {' '.join(names.get('바뀐', [])) or '(이름을 못 읽었다)'}"],
+                 [" ".join([*cmd, "--only", *(todo or ["<파일…>"])]) + "   # 낡은 것만 — 예상 시간은 DECISIONS §822", " ".join(cmd) + "   # 전수 — 예상 시간은 DECISIONS §822"])
+
+
 def check_tests(root: Path, run: Runner) -> Block | None:
     """`testpick --run` — 실측 장부에서 **계산한** 시험 묶음(PLAN #209). 손 목록이 아니다.
 
@@ -211,7 +228,7 @@ def check_tests(root: Path, run: Runner) -> Block | None:
     """
     rc, out = run([*_PY, "tools/testpick.py", "--run", "--no-cap", "--jobs", str(TESTS_JOBS)], root)
     if rc == 0:
-        return None
+        return _stale_reads(out)
     tail = [x for x in out.strip().splitlines() if x.strip()]
     return Block("㉥", "시험 묶음이 빨갛다(또는 장부가 없다)", tail[-8:],
                  [" ".join([*_PY, "tools/testpick.py", "--run", "--no-cap", "--jobs", str(TESTS_JOBS)]) + "   # 빨간 파일을 읽고 고친다 — 고친 뒤 래칫 · 도장을 다시 사슬로"])
@@ -358,12 +375,9 @@ def notes(root: Path = ROOT, run: Runner = real_run, gh: Runner = _gh_run) -> li
 
 
 # ── 몇 바퀴 남았나 (PLAN #220) ───────────────────────────────────
-#: **되먹임 그래프**(2026-11-11 · `#220` 의 실측). 사슬은 도장 없는 절(㉢) → 래칫(㉠) → 변이 장부(㉤) → 낡은 도장(㉡) 순서다(2026-11-14 — 종전 ㉠ ㉤ ㉡ ㉢ 에서는 ㉢→㉠ 이 뒤로 가는 변이라 확정 2바퀴였다). 그래도 뒤가 앞이 읽는 것을 **쓰는** 변이 있어 위상 정렬이 안 된다.
-#: 각 변은 `(from, to, 확정인가, 앞으로 가는가, 사유)` 다. **앞으로 가는 변**(순서에서 to 가 뒤)은 같은 바퀴에서 풀리고, **뒤로 가는 변**은 바퀴를 늘린다.
-#: 근거 — `실측`: 감사 훅으로 읽기 · 쓰기를 쟀다(`fix.sh` 를 복사본에서 돌려 래칫이 `data/golden/{mutation,docseal}.json` 을 읽는 것까지) · `서술`: 도구 머리말만 근거다(그 도구는 사람 몫이라 안 돌렸다).
-#: `서술` 셋(㉠→㉤ · ㉠→㉡ · ㉤→㉤)은 2026-11-17 에 `실측`으로 바뀌었다 — 사람이 `FIRE_LANE_AUDIT_DIR` · `FIRE_LANE_AUDIT_TAG=<칸>` 을 켜고 사슬을 돈 로그를 `measured_edges` 가 읽었다(`--edges`). 이 도구는 그 사슬을 안 친다.
-#: ★ 순서 `㉢ → ㉠ → ㉤ → ㉡` 는 **실증됐다**(2026-11-14): 커밋 942bd48e(본문이 그 순서와 「2 → 1 확인」을 적었다) · 8f231eae · 70f353ac — 사슬 세 번이 각각 **커밋 하나**로 끝났다(되돌아온 사슬 커밋이 없다).
-#:   그 셋의 diff 가 쓴 것은 `data/golden/` 의 장부뿐이고 `tools/*.py` 는 0 이다 — 그 세 번에는 ㉠ 의 소스 상수 쓰기 · ㉤→㉤ 이 **안 밟혔다**(커밋 단위 쓰기 실측 · 읽기와 단계별 귀속은 아직 없다).
+#: **되먹임 그래프**(2026-11-11 · `#220` 의 실측). 사슬은 읽기 장부 → 도장 없는 절(㉢) → 래칫(㉠) → 변이 장부(㉤) → (래칫 한 번 더) → 낡은 도장(㉡) 순서다(2026-11-14 — 종전 ㉠ ㉤ ㉡ ㉢ 에서는 ㉢→㉠ 이 뒤로 가는 변이라 확정 2바퀴였다). 그래도 뒤가 앞이 읽는 것을 **쓰는** 변이 있어 위상 정렬이 안 된다.
+#: 각 변은 `(from, to, 확정인가, 앞으로 가는가, 사유)` 다. **앞으로 가는 변**(순서에서 to 가 뒤)은 같은 바퀴에서 풀리고, **뒤로 가는 변**은 바퀴를 늘린다. 근거 — `실측`: 감사 훅으로 읽기 · 쓰기를 쟀다(`fix.sh` 를 복사본에서 돌려 래칫이 `data/golden/{mutation,docseal}.json` 을 읽는 것까지) · `서술`: 도구 머리말만 근거다(그 도구는 사람 몫이라 안 돌렸다). `서술` 셋(㉠→㉤ · ㉠→㉡ · ㉤→㉤)은 2026-11-17 에 `실측`으로 바뀌었다 — 사람이 `FIRE_LANE_AUDIT_DIR` · `FIRE_LANE_AUDIT_TAG=<칸>` 을 켜고 사슬을 돈 로그를 `measured_edges` 가 읽었다(`--edges`). 이 도구는 그 사슬을 안 친다.
+#: ★ 순서 `㉢ → ㉠ → ㉤ → ㉡` 는 **실증됐다**(2026-11-14): 커밋 942bd48e(본문이 그 순서와 「2 → 1 확인」을 적었다) · 8f231eae · 70f353ac — 사슬 세 번이 각각 **커밋 하나**로 끝났다(되돌아온 사슬 커밋이 없다).   그 셋의 diff 가 쓴 것은 `data/golden/` 의 장부뿐이고 `tools/*.py` 는 0 이다 — 그 세 번에는 ㉠ 의 소스 상수 쓰기 · ㉤→㉤ 이 **안 밟혔다**(커밋 단위 쓰기 실측 · 읽기와 단계별 귀속은 아직 없다).
 EDGES: list[tuple[str, str, bool, str]] = [
     ("㉠", "㉤", False, "`ratchet --write` 가 **도구 소스에 사는 상수**를 조이면 그 도구의 변이 지문이 어긋난다 — 값이 `ratchets.json` 에 사는 상수는 소스를 안 바꾼다. 실측 2026-11-17: 한 회차에서 ㉠ 쓰기 0 · 안 밟혔다(조일 것이 없었다). 사슬 24건(순서 `㉢ ㉠ ㉤ ㉡` 가 선 뒤)의 커밋 중 `tools/*.py` 를 쓴 것은 1건(`planwork.PLAN_HISTORY` 279 → 0 · 같은 커밋에서 변이 장부도 움직였다) — 그래서 확정이 아니라 가능이다"),
     ("㉠", "㉡", False, "그 도구를 지목한 절이 있으면 도장도 낡는다(실측 2026-11-17: 한 회차 ㉠ 쓰기 0 · 안 밟혔다 — 한 회차로는 변이 없다는 증명이 못 된다)"),
@@ -433,6 +447,9 @@ def forecast(blocks: list[Block]) -> Forecast:
         return Forecast(0, 0, False, ["막는 것이 사슬 안에 없다 — 0바퀴(커밋만 남았을 수 있다)"])
     names = {"㉠": "래칫", "㉤": "변이 장부", "㉡": "도장(낡음)", "㉢": "도장(없음)"}
     steps = [f"{names[k]}({k})" for k in ORDER if k in start]
+    if "㉠" in start and "㉤" in start:        # ㉤ 가 쓴 변이 장부를 래칫이 읽는다(㉤→㉠) — 변이 장부 뒤에 한 번 더 친다
+        steps.insert(steps.index("변이 장부(㉤)") + 1, "래칫(㉠ 한 번 더)")
+    steps[:0] = ["읽기 장부(㉥)"] if (keys.get("㉥") and keys["㉥"].what.startswith("읽기 장부가 낡았다")) else []   # 도장과 무관해 맨 앞(DECISIONS §827)
     L = [f"이번에 {' → '.join(steps)} 순으로 치면 **확정 {sure}바퀴**" + (f" · 되돌아올 수 있는 변까지 밟으면 **{LAP_CAP}바퀴 이상**(가능한 자기 루프 — 고정점은 증명 안 됨)" if capped else f" · 가능한 변까지 밟으면 {most}바퀴"),
          *[f"    · {n}" for n in notes]]
     L.append(f"    · 표본: 옛 순서(래칫 먼저)로 2026-11-10~11 사람이 **{SAMPLE_LAPS}바퀴**를 돌았다(한 건 · 단계별 기록 없음) — 되돌아올 수 있는 변이 실제로 밟혔다는 뜻이다. "
@@ -545,7 +562,7 @@ def render(blocks: list[Block], notes: list[str] | None = None) -> str:
         return "\n".join(["✓ 푸시 가능 — 원격 대비 · 시험 묶음 · 새 파일 등재 · CI 빠른 잡 미러 · 래칫 · 변이 장부 · 도장(낡음 · 없음) · 커밋 여덟 축이 막지 않는다.",
                           "  (전수 pytest 는 안 돌았다 — 이 도구는 그 대신이 아니다.)",
                           f"  ★ {BEHIND_LIMIT}", *tail])
-    L = [f"✗ 푸시 불가 — 막는 것 {len(blocks)}가지 (사슬 순서: 받기 → 시험 → 등재 의무 → CI 미러 → 도장 없는 절 → 래칫 → 변이 장부 → 낡은 도장 → 커밋)\n"]
+    L = [f"✗ 푸시 불가 — 막는 것 {len(blocks)}가지 (사슬 순서: 받기 → 시험 · 읽기 장부 → 등재 의무 → CI 미러 → 도장 없는 절 → 래칫 → 변이 장부 → 래칫(한 번 더) → 낡은 도장 → 커밋)\n"]
     for b in blocks:
         L.append(f"  {b.key} {b.what}")
         L += [f"      {d}" for d in b.detail]

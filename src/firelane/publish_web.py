@@ -61,7 +61,7 @@ from firelane.seg.params import EMD_CD
 #: 판정 입력(`building_5186.gpkg`)은 그대로다 — 화면에만 뜨고 판정은 이 건물을 안 본다(그래서 「저 건물 앞은 왜 빨강」에 답할 수 없는 건물이다 · 목록은 DECISIONS §776).
 GAP_BUILDINGS = ROOT / "data" / "extra" / "bldg_gap_dongmyeong.geojson"
 GAP_ID0 = 100_000        # 발행 건물 번호(20~38,762)와 안 겹치는 자리
-#: ★ 2026-11-14 (PLAN #244 · #245 · DECISIONS §786 · §787-I). 동명동 **밖** 빠진 면 4,296 — `firelane.bldg_fill`(칸 `src` = `AL_D010`). 전부 얹는다(덮임 · 도로 위 걸름만 남는다). 발행 칸이 다섯뿐이라 번호 ≥ `GAP_ID0` 가 곧 `AL_D010` 이다(`drop_gap`)
+#: ★ 2026-11-14 (PLAN #244 · #245 · DECISIONS §786 · §787-I). 동명동 **밖** 빠진 면 4,237(종전 4,296 · DECISIONS §823) — `firelane.bldg_fill`(칸 `src` = `AL_D010`). 전부 얹는다(덮임 · 도로 위 걸름만 남는다). 발행 칸이 다섯뿐이라 번호 ≥ `GAP_ID0` 가 곧 `AL_D010` 이다(`drop_gap`)
 FILL_BUILDINGS = ROOT / "data" / "extra" / "bldg_gap_move.geojson"
 
 

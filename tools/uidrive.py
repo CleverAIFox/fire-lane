@@ -26,6 +26,10 @@ _HANGUL = re.compile(r"[가-힣]")
 # ★ **정적 근사다.** 렌더된 줄바꿈 · 계산된 글자 크기는 브라우저가 있어야 안다(`web/navi/e2e/glance.mjs` 가 그것을 잰다). 여기는 소스에서
 #   「한글이 든 문자열 리터럴 · JSX 글 중 20자 초과」와 「`fontSize` 가 24 미만인 선언」을 센다 — 늘면 운다. 문장이 줄바꿈으로 둘이 돼도 읽는 양은
 #   그대로라 **리터럴 길이가 줄 길이의 맞는 대리값**이다. 글자 크기는 선언 수라 렌더된 줄 수와 일대일이 아니다(방향만 같다).
+# ★ 2026-11-18 (DECISIONS §829). **글자 크기 선언의 꼴은 셋을 센다** — ① `fontSize:` ② 약식 `font: "… 24px/…"` 의 크기 ③ **약식 `font:` 위에 긴 이름(`fontSize` · `fontWeight` …)을 덮어 쓰는 꼴** — 둘을 섞으면 React 가 덮은 쪽을
+#   지울 때 약식의 크기가 같이 지워져 렌더가 기본 16px 로 떨어진다(`ui/TopBar.tsx` 의 주의 줄 · `reroute` → `noCctv`). 소스의 선언은 24 인데 렌더가 16 이라 ①만 세던 때는 0 이었다.
+# ★ 범위(`DRIVE_FILES`) 밖의 사실(2026-11-18 · 같은 판별식을 돌린 수): `web/navi/src` 98파일 중 범위 밖 29파일에 20자 넘는 말 66건 · 24 미만 선언 99건이 있다(관제 `OpsApp.tsx` · 정차 `ui/RouteCompare.tsx` · 정차 중 상세 ·
+#   `ui/DemoStrip.tsx` · `domain/demo.ts` …). **`domain/demo.ts`(`GPS 신호가 없다 — …` 27자)는 일부러 안 넣었다** — 그 문장은 측위가 `live` 가 아닐 때만 뜨고(`canStartDemo` · `usePositionSource`) 넣으면 `DRIVE_LONG` 이 0 → 1 로 느슨해진다.
 # ★ 못 재는 것: 지도 위 글자(maplibre 캔버스 라벨 — DOM 이 아니다) · `App.tsx` 에 섞인 토스트(출발 전 문구와 한 파일) · 터치 타깃(스타일이
 #   계산돼야 안다 — 렌더 측정 몫) · 자동 스크롤(소스에서 `scrollTo` · 마퀴가 없음을 아래 시험이 든다).
 DRIVE_FILES = (
@@ -71,16 +75,45 @@ def drive_long_lines(root: Path = SRC, limit: int = GLANCE_CHARS, files: tuple[s
     return out
 
 
+_SHORT = re.compile(r"\bfont:\s*([`\"'])(.*?)\1")
+_LONG_KEYS = r"(?:fontSize|fontWeight|fontFamily|lineHeight|fontStyle)"
+
+
+def _mixed_shorthand(src: str) -> list[str]:
+    """약식 `font:` 를 든 **이름 붙은 스타일 객체**(`const NAME = {… font: …}`)를 찾아, 그 위에 긴 이름을 덮어 쓰는 곳(`{ ...NAME, fontSize: … }`)과 한 객체 안에 둘이 같이 든 곳을 낸다."""
+    lines, names, cur, hits = src.split("\n"), set(), None, []
+    for ln in lines:
+        m = re.match(r"\s*(?:export\s+)?const\s+(\w+)\b[^=]*=\s*\{", ln)
+        if m:
+            cur = m.group(1)
+        if cur and re.search(r"\bfont:", ln):
+            names.add(cur)
+            if re.search(rf"\b{_LONG_KEYS}\s*:", ln):
+                hits.append(f"font: 약식과 긴 이름이 한 객체에 같이 있다({cur})")
+        if (cur and re.match(r"\s*\};?\s*$", ln)) or (m and ln.rstrip().endswith("};")):
+            cur = None
+    for n in sorted(names):
+        if re.search(rf"\.\.\.\s*{n}\b[^}}]*?\b{_LONG_KEYS}\s*:", src):
+            hits.append(f"font: 약식 `{n}` 위에 긴 이름을 덮어 쓴다")
+    return hits
+
+
 def drive_small_fonts(root: Path = SRC, floor: int = MIN_FONT_PX, files: tuple[str, ...] = DRIVE_FILES) -> list[tuple[str, str]]:
-    """주행 중 화면 파일의 **`fontSize` 선언 중 `floor` 미만을 하나라도 든 것**(파일 · 식). `F.small` 같은 토큰은 `tokens.ts` 표에서 푼다."""
+    """주행 중 화면 파일의 **글자 크기 선언 중 `floor` 미만**(① `fontSize` ② 약식 `font` 의 크기)과 **약식 위에 긴 이름을 섞는 꼴**(③)(파일 · 식). `F.small` 같은 토큰은 `tokens.ts` 표에서 푼다."""
     tok = {k: int(v) for k, v in re.findall(r"^\s*(\w+):\s*(\d+),", (root / "ui" / "tokens.ts").read_text(encoding="utf-8").split("export const F", 1)[1].split("} as const", 1)[0], re.M)}
     out: list[tuple[str, str]] = []
     for rel in files:
         p = root / rel
         assert p.is_file(), f"주행 중 화면 파일이 없다: {rel} — 없는 파일을 조용히 건너뛰면 수가 줄어 보인다"
-        for m in _FONT.finditer(uncomment(p.read_text(encoding="utf-8"))):
+        src = uncomment(p.read_text(encoding="utf-8"))
+        for m in _FONT.finditer(src):
             e = m.group(1).strip()
             vals = [float(x) for x in _NUM.findall(e)] + [float(tok[k]) for k in re.findall(r"F\.(\w+)", e) if k in tok]
             if vals and min(vals) < floor:
                 out.append((rel, e))
+        for m in _SHORT.finditer(src):                                           # ② 약식 `font: "800 24px/32px …"` 의 크기
+            sz = re.search(r"(\d+(?:\.\d+)?)px", m.group(2))
+            if sz and float(sz.group(1)) < floor:
+                out.append((rel, "font: " + m.group(2).strip()))
+        out += [(rel, h) for h in _mixed_shorthand(src)]                       # ③ 약식 위에 긴 이름을 섞는다
     return out

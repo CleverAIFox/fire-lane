@@ -145,6 +145,41 @@ test("달리는 중에는 병목 「자세히」 가 안 열리고 서면 열린
 });
 
 /**
+ * ★ 상단 안내 막대의 글자가 **상태를 넘긴 뒤에도** 24px 이상이다(PLAN #258 · DECISIONS §829). 정적 수(`uicheck` 의 `DRIVE_SMALL_FONT`)는 소스의 선언을 센다 —
+ *   약식 `font:` 와 긴 이름 `fontSize` 를 섞은 스타일이 **다시 그려질 때** 지워져 렌더가 기본 16px 로 떨어지는 것(`reroute` → `noCctv` 의 주의 줄)은 선언이 24 라 못 본다.
+ *   **전이 전 한 화면만 보는 시험은 이 결함을 못 잡는다** — 상태 18개를 차례로 넘기며 매번 잰다. 개발 막대가 있는 `dev` 프로젝트에서만 돈다.
+ */
+test("상단 안내 막대의 글자가 상태를 넘긴 뒤에도 24px 이상이다", async ({ page, baseURL }, info) => {
+  test.skip(info.project.name !== "dev", "개발 막대가 필요하다");
+  test.setTimeout(180_000);
+  await page.goto(`${baseURL}?dev=1&vehicle=pump-js&station=지산&incident=126.921389,35.154563&label=동구%20경양로%20293`);
+  await page.getByText("안내 시작").click();
+  await page.waitForTimeout(2500);
+  const small = () => page.evaluate(() => {
+    const out: string[] = [];
+    for (const el of document.querySelectorAll("#root *")) {
+      const own = [...el.childNodes].filter((n) => n.nodeType === 3 && (n.nodeValue ?? "").trim()).map((n) => (n.nodeValue ?? "").trim()).join(" ");
+      if (!own) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0 || r.top >= 124 || r.bottom <= 0) continue;           // 상단 막대 띠(높이 124)
+      const cs = getComputedStyle(el);
+      if (cs.display === "none" || cs.visibility === "hidden") continue;
+      if (parseFloat(cs.fontSize) < 24) out.push(`${own.slice(0, 20)}(${cs.fontSize})`);
+    }
+    return out;
+  });
+  const current = page.getByRole("button", { name: /^(시연 .*|신호대로)$/ }).first();
+  const next = current.locator("xpath=following-sibling::button[1]");
+  const bad: string[] = [];
+  for (let i = 0; i < 18; i++) {
+    await next.click();
+    await page.waitForTimeout(500);
+    for (const s of await small()) bad.push(`상태 ${i + 1}: ${s}`);
+  }
+  expect(bad, "상단 막대에 24px 미만 글자가 있다 — 상태를 넘긴 뒤의 계산 크기다(약식 `font:` 와 `fontSize` 를 섞으면 다시 그릴 때 지워진다)").toEqual([]);
+});
+
+/**
  * ★ 취소 처리(DECISIONS §708)를 **일부러 일으켜서** 문다 — 느린 러너에서만 나던 `ERR_ABORTED` 를 이 기계에서는 못 재현했다(CPU 8배 · 지연 1.2초 ·
  *   카메라 40번 이동 모두 0건). 그래서 지형 타일 요청을 **우리가 끊는다**: 끊긴 타일이 서버에는 멀쩡하면 소음이 아니고(취소), 안 받아지는 것은 소음이다.
  */

@@ -87,6 +87,32 @@ def test_ratchet_items_owned_by_other_axes_are_not_double_counted():
     assert _keys(ratchet=only_seal) == []      # ㉢ · ㉤ 이 맡는다 — 그 둘이 초록이면 여기서 막지 않는다
 
 
+def test_a_stale_reads_ledger_is_not_green_even_when_the_tests_pass():
+    """★ PLAN #257 · DECISIONS §822 — `testpick` 가 「읽기 장부가 낡았다」를 말해도 ㉥ 가 초록을 냈다(`test_ratchet_names_*` 가 안 뽑혀 CI 만 울었다)."""
+    out = ("묶음 241/279개 파일\n  ⚠ 읽기 장부가 낡았다 — 새 시험 2 · 바뀐 시험 1 · 없어진 시험 0: test_a.py, test_b.py, test_c.py\n"
+           "    낡은 시험 새: test_a.py test_b.py\n    낡은 시험 바뀐: test_c.py\n✓ 시험 묶음 241개 파일 · 빨강 0 · 295.5초\n")
+    b = P.survey(ROOT, _runner(tests=(0, out)))
+    assert [x.key for x in b] == ["㉥"] and "새 시험 2 · 바뀐 시험 1" in b[0].what
+    assert any("test_a.py test_b.py" in d for d in b[0].detail) and any("test_c.py" in d for d in b[0].detail), "어느 시험이 낡았는지 이름을 낸다"
+    assert any("--measure-reads --write --only test_a.py test_b.py test_c.py" in c for c in b[0].cmds), "사람이 바로 칠 `--only` 명령"
+    assert any(c.split("   #")[0].endswith("--measure-reads --write") for c in b[0].cmds), "전수 꼴도 같이 낸다"
+    assert _keys(tests=(0, "✓ 시험 묶음 241개 파일 · 빨강 0\n")) == [], "경고가 없으면 그대로 초록이다"
+    red = P.survey(ROOT, _runner(tests=(1, out + "FAILED tests/test_x.py::t\n")))
+    assert [x.key for x in red] == ["㉥"] and "빨갛다" in red[0].what, "시험이 빨가면 종전 설명이 앞선다"
+
+
+def test_the_forecast_puts_the_reads_ledger_first_and_the_ratchet_again_after_the_mutation_ledger():
+    """★ DECISIONS §827 — 사슬은 읽기 장부(㉥ 의 낡음) → ㉢ → ㉠ → ㉤ → ㉠ 한 번 더 → ㉡ 이다. ㉤ 가 쓴 변이 장부를 ㉠ 가 읽어 상수가 움직일 수 있다(㉤→㉠)."""
+    B = P.Block
+    stale = B("㉥", "읽기 장부가 낡았다 — 새 시험 1 · 바뀐 시험 0 · 없어진 시험 0 (…)", [], [])
+    red = B("㉥", "시험 묶음이 빨갛다(또는 장부가 없다)", [], [])
+    rest = [B("㉢", "도장 없는 절 1", [], []), B("㉠", "래칫", [], []), B("㉤", "변이 장부", [], []), B("㉡", "낡은 도장", [], [])]
+    line = P.forecast([stale, *rest]).lines[0]
+    assert line.index("읽기 장부(㉥)") < line.index("도장(없음)(㉢)") < line.index("래칫(㉠)") < line.index("변이 장부(㉤)") < line.index("래칫(㉠ 한 번 더)") < line.index("도장(낡음)(㉡)")
+    assert "읽기 장부(㉥)" not in P.forecast([red, *rest]).lines[0], "시험이 빨간 ㉥ 는 읽기 장부 칸이 아니다"
+    assert "한 번 더" not in P.forecast([B("㉢", "도장 없는 절 1", [], []), B("㉡", "낡은 도장", [], [])]).lines[0], "㉠ · ㉤ 가 없으면 한 번 더도 없다"
+
+
 def test_invalid_seals_are_caught():
     b = P.survey(ROOT, _runner(invalid=(0, "DECISIONS/190-5\nPLAN/10-5\n")))
     assert [x.key for x in b] == ["㉡"] and "2절" in b[0].what and any("stamp" in c for c in b[0].cmds)

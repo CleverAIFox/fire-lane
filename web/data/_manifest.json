@@ -17,8 +17,8 @@
   },
   "files": {
     "buildings.geojson": {
-      "sha256": "6e92bbadf636d9b2fb89ca12cfc96ae0659b81f42474dab274524b78ae4e0199",
-      "bytes": 5908375
+      "sha256": "23f4ed487b12264f63ac2f235d15970bcccc2b9ae021dd2cd77721c220dc912a",
+      "bytes": 5892596
     },
     "cctv.geojson": {
       "sha256": "5e7581b7aef530d269a4b2bae76ea23e250d4b73b1327c6fad1c08f0f843061d",

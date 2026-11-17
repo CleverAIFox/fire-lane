@@ -382,7 +382,7 @@ def run(write: bool) -> int:
 def _chain(loose: list, tight: list, err: list, write: bool) -> None:
     """울고 난 **다음 칸**을 우는 자리에서 말한다 — 절차 사슬을 한 곳에 순서대로.  (PLAN #185 · DECISIONS §620)
 
-    ★ 왜 여기인가. 사슬(래칫 → 변이 장부 → 문서 도장)이 **사람 머리에만** 있었다. 하루에 같은 사슬을 세 번 밟았고
+    ★ 왜 여기인가. 사슬(읽기 장부 → 도장 없는 절 → 래칫 → 변이 장부 → 래칫 한 번 더 → 문서 도장 — DECISIONS §827)이 **사람 머리에만** 있었다. 하루에 같은 사슬을 세 번 밟았고
       그때마다 다음 명령을 기억에서 꺼냈다. 래칫이 울면 그 자리가 **다음 줄을 말한다.** 사람 전용은 풀지 않는다 —
       끼어드는 횟수가 아니라 **끼어들 자리**를 알려준다.
     """
@@ -393,7 +393,7 @@ def _chain(loose: list, tight: list, err: list, write: bool) -> None:
     if tight and not write:
         steps.append("조이는 쪽 — `uv run python tools/ratchet.py --write`")
     if any(r["tool"] == "mutate.py" for r in err) or any(r["tool"] == "mutate.py" for r in loose):
-        steps.append("도구를 고쳤으니 변이 장부가 낡았다 — `uv run python tools/mutate.py --write --stale`")
+        steps.append("도구를 고쳤으니 변이 장부가 낡았다 — `uv run python tools/mutate.py --write --stale` 를 쓴 뒤 이 명령을 **한 번 더** 친다(`mutate` 가 쓴 장부를 래칫이 읽어 `SURVIVORS` · `UNSORTED` 가 움직일 수 있다)")
     if any(r["tool"] == "docseal.py" for r in loose + tight + err):
         steps.append("문서를 고쳤으니 도장이 무효다 — 읽은 뒤 `uv run python tools/docseal.py stamp "
                      "$(uv run python tools/docseal.py check --invalid-list | sed 's/^/--only /')`")
@@ -402,7 +402,7 @@ def _chain(loose: list, tight: list, err: list, write: bool) -> None:
     print("\n  ── 이 다음 — 사슬을 **이 순서로**(사람이 친다)")
     for i, t in enumerate(steps, 1):
         print(f"     {i}. {t}")
-    print("     ※ 순서 — 래칫 → 변이 장부 → 문서 도장. 새 파일이 있으면 **`git add` 를 날인 앞에** 한다(§278-10) · **MASTER §22·§23 등재는 `--write` 가 못 고친다**(`sealcov` 빈 곳 · §636).")
+    print("     ※ 순서 — (읽기 장부 — `pushready` ㉥ 가 따로 말한다 · 맨 앞) → 도장 없는 절 → 래칫 → 변이 장부 → 래칫 한 번 더 → 문서 도장. 새 파일이 있으면 **`git add` 를 날인 앞에** 한다(§278-10) · **MASTER §22·§23 등재는 `--write` 가 못 고친다**(`sealcov` 빈 곳 · §636).")
 
 
 def selftest() -> int:
