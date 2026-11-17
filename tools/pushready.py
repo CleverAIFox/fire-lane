@@ -196,18 +196,23 @@ def check_mutate(root: Path, run: Runner) -> Block | None:
 
 
 # ── ㉥ 구조 규약 시험 묶음 ───────────────────────────────────────
+#: ㉥ 안 병렬 수. `testpick` 기본은 코어 수(8)인데 실효 병렬이 약 5 라(`testpick.EFF`) 8 → 4 로 낮춰도 **벽시계가 거의 안 는다**(같은 261개 파일 묶음 세 번씩 중앙값
+#: 433.5 → 444.2초 · +2.5%) 가장 느린 시험은 **212.9 → 121.2초(−43%)** 로 시한 300초까지 여유가 87 → 179초가 된다(DECISIONS §812 · 6 은 438.8초 · 175.5초).
+TESTS_JOBS = 4
+
+
 def check_tests(root: Path, run: Runner) -> Block | None:
     """`testpick --run` — 실측 장부에서 **계산한** 시험 묶음(PLAN #209). 손 목록이 아니다.
 
     ★ **바뀐 파일에 닿는 시험을 상한 없이 전부 더한다**(`--no-cap` · PLAN #218 b). 훅은 30초를 지켜 이 연동을 끈다 — 느린 검사는 앞(여기)에, 빠른 그물은 뒤(훅)에 둔다(#216).
     ★ 훅(`--load 60`)보다 큰 묶음이다 — 여기는 남의 일이 없어 `test_layering` 같은 구조 규약 시험이 든다(2026-11-08 에 CI 만 물었다).
     """
-    rc, out = run([*_PY, "tools/testpick.py", "--run", "--no-cap"], root)
+    rc, out = run([*_PY, "tools/testpick.py", "--run", "--no-cap", "--jobs", str(TESTS_JOBS)], root)
     if rc == 0:
         return None
     tail = [x for x in out.strip().splitlines() if x.strip()]
     return Block("㉥", "시험 묶음이 빨갛다(또는 장부가 없다)", tail[-8:],
-                 [" ".join([*_PY, "tools/testpick.py", "--run", "--no-cap"]) + "   # 빨간 파일을 읽고 고친다 — 고친 뒤 래칫 · 도장을 다시 사슬로"])
+                 [" ".join([*_PY, "tools/testpick.py", "--run", "--no-cap", "--jobs", str(TESTS_JOBS)]) + "   # 빨간 파일을 읽고 고친다 — 고친 뒤 래칫 · 도장을 다시 사슬로"])
 
 
 # ── ㉦ 새 파일의 등재 의무 ───────────────────────────────────────

@@ -55,10 +55,29 @@ def address_part(text: str | None) -> str:
     return _PAREN.split(text or "", maxsplit=1)[0]
 
 
+#: 지역명 괄호의 **옛 이름** — `(구, 대림 2길)` · `(구, 신작2길)`. 설명이 아니라 지정된 길의 이름이다.
+_OLD_NAME = re.compile(r"[(（]\s*구\s*[,，]")
+
+
+def is_anchor_row(text: str | None) -> bool:
+    """**본선 번지 + 괄호 옛 이름**이 함께 있는 행인가 — 그 행의 본선 번지는 지정이 아니라 **기준 건물**이다 (R4 · DECISIONS §811).
+
+    「남도예식장 주변주택가 중앙로 283-1외(구, 대림 2길)」에서 지정된 길은 괄호 안 옛 이름(`대림 2길`)이고 `중앙로 283-1` 은 그 곁의 기준 건물이다.
+    그것을 본선 구간 반경 175m 로 읽으면 폭 16m 의 대로가 지정으로 걸린다(오독). 네 행(경양로 333외 · 중앙로 283-1외 · 무등로 314외 · 지산로 37)이 같은 꼴이다.
+    ★ 이름 하나를 예외로 두지 않는다 — 규칙 하나가 넷을 같은 이유로 설명한다.
+    """
+    return street_address(text) is not None and _OLD_NAME.search(text or "") is not None
+
+
 def address_rows(rows: list[dict]) -> list[dict]:
-    """`fireaccess.load` 행에서 `text` · `norm` 만 주소부로 좁힌 사본. 나머지 칸은 그대로다."""
+    """`fireaccess.load` 행에서 `text` · `norm` 만 주소부로 좁힌 사본. 나머지 칸은 그대로다.
+
+    ★ R4 — **기준 건물 행**(`is_anchor_row`)은 뺀다. 그 행의 본선 번지는 지정이 아니라 기준이다(위).
+    """
     out = []
     for r in rows:
+        if is_anchor_row(r["text"]):
+            continue
         head = address_part(r["text"])
         out.append({**r, "text": head, "norm": fireaccess._norm(head)})
     return out

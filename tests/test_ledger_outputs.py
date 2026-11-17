@@ -437,10 +437,14 @@ def test_check_does_not_write():
     if not man.exists():
         pytest.skip("환경skip(산출물) — 파이프라인 미실행")
     before = hashlib.sha256(man.read_bytes()).hexdigest()
-    r = subprocess.run([sys.executable, "-m", "firelane.ingest", "--check"],
+    # ★ 2026-11-16 (DECISIONS §812). 전수 `--check`(소스 전부의 sha256 · 직렬값 48초 · 병렬 8 에서 300초 초과)가 아니라 **작은 소스 하나**(`--only`)로 묻는다 —
+    #   쓰기 경로 앞의 `if a.check:` 반환은 루프가 무엇을 훑었는지와 무관하다(`--check` 의 루프 몸통은 `found` · `sha256` 뿐이고 그 뒤 `continue`).
+    #   종전 병(`--only` 가 대장을 통째로 덮은 것 · `--check` 가 쓰기로 떨어진 것)의 **조합**을 오히려 같이 문다. 반환 문구를 단언해 「그 반환까지 갔는가」를 확인한다.
+    r = subprocess.run([sys.executable, "-m", "firelane.ingest", "--check", "--only", "fire_access"],
                        cwd=ROOT, capture_output=True, text=True,
                        env={**os.environ, "PYTHONPATH": str(ROOT / "src")})
     after = hashlib.sha256(man.read_bytes()).hexdigest()
+    assert "조회만 했다" in r.stdout, f"`--check` 가 조회 반환까지 못 갔다 — 쓰기 경로 앞에서 죽었거나 반환 문구가 바뀌었다\n  종료코드 {r.returncode}\n{r.stdout[-300:]}{r.stderr[-300:]}"
     assert before == after, (
         "`ingest --check` 가 _manifest.json 을 바꿨다.\n"
         "  조회는 읽기만 한다. 쓰기 경로 앞에서 return 하는지 보라 —\n"

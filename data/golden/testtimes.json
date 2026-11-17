@@ -125,7 +125,7 @@
   "test_ledger_fields.py": 4.75,
   "test_ledger_file_key_reader.py": 0.05,
   "test_ledger_fsck.py": 2.82,
-  "test_ledger_outputs.py": 106.22,
+  "test_ledger_outputs.py": 8.78,
   "test_ledgercols.py": 6.25,
   "test_ledgercross.py": 0.92,
   "test_lineage_branches.py": 0.74,
