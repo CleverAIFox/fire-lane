@@ -274,6 +274,20 @@ def _defs(tree: ast.AST) -> set[str]:
             if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
 
 
+#: 파일 → 그 파일이 정의한 함수 이름. ★ 2026-11-17 (PLAN #253 · DECISIONS §816). `judge_names` 는 시험 하나마다 그 시험이 미는 도구와 `firelane` 모듈을
+#: 다시 읽어 파싱했다 — 같은 파일을 시험 153개가 되풀이해(정의 훑기 1,395번) 시간의 절반을 썼다. 열쇠에 수정 시각 · 크기를 넣어 파일이 바뀌면 다시 읽는다.
+_FILE_DEFS: dict[tuple[str, int, int], set[str]] = {}
+
+
+def _file_defs(q: Path) -> set[str]:
+    st = q.stat()
+    key = (str(q), st.st_mtime_ns, st.st_size)
+    got = _FILE_DEFS.get(key)
+    if got is None:
+        got = _FILE_DEFS[key] = _defs(ast.parse(q.read_text(encoding="utf-8")))
+    return got
+
+
 def judge_names(src: str, tree: ast.AST, tools: set[str],
                 root: Path = ROOT) -> set[str]:
     """이 시험이 **판정으로 부를 수 있는** 이름.
@@ -300,7 +314,7 @@ def judge_names(src: str, tree: ast.AST, tools: set[str],
         if not q.is_file():
             continue
         try:
-            out |= _defs(ast.parse(q.read_text(encoding="utf-8")))
+            out |= _file_defs(q)
         except (OSError, SyntaxError):
             continue
     fl = root / "src" / "firelane"
@@ -308,7 +322,7 @@ def judge_names(src: str, tree: ast.AST, tools: set[str],
         for q in sorted(fl.rglob("*.py")):
             if q.stem in src:
                 try:
-                    out |= _defs(ast.parse(q.read_text(encoding="utf-8")))
+                    out |= _file_defs(q)
                 except (OSError, SyntaxError):
                     continue
     return out

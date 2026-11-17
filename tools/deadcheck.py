@@ -89,9 +89,9 @@ def tree(p: Path) -> ast.Module | None:
 
 
 def _walk(n: ast.AST):
-    """`ast.walk` 와 같은 결과 — 모듈 뿌리만 한 번 펼쳐 기억한다(프로브마다 같은 나무를 다시 걷던 비용)."""
-    if not isinstance(n, ast.Module):
-        return ast.walk(n)
+    """`ast.walk` 와 같은 결과 — 노드마다 한 번 펼쳐 기억한다(프로브마다 같은 나무를 다시 걷던 비용).
+
+    ★ 2026-11-17 (PLAN #253 · DECISIONS §816). 종전에는 모듈 뿌리만 기억했다 — 함수 노드는 `_entry_reads` 가 세 번씩 다시 걸었다(`ast.walk` 가 시간의 63%)."""
     if id(n) not in _WALKED or _WALKED[id(n)][0] is not n:
         _WALKED[id(n)] = (n, list(ast.walk(n)))
     return iter(_WALKED[id(n)][1])

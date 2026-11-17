@@ -163,7 +163,7 @@ def test_selftest_is_not_an_empty_net(ds):
 
 def test_check_fails_when_there_is_nothing_to_check(ds, monkeypatch):
     """★ `deadcheck ③` 조용한 통과. 도장 대상이 0절이면 통과가 아니라 실패다."""
-    monkeypatch.setattr(ds, "survey", lambda: ({}, {}, {}))
+    monkeypatch.setattr(ds, "survey", lambda **_kw: ({}, {}, {}))
     assert ds.check() == 1
 
 
@@ -244,7 +244,7 @@ def test_an_old_stamp_without_a_kind_counts_as_read(ds):
 
 def test_stamping_one_section_marks_it_read(ds, monkeypatch):
     monkeypatch.setattr(ds, "survey",
-                        lambda: ({"D/1": {"sha": "a", "files": [], "doc": "d"}}, {}, {"D/1": ""}))
+                        lambda **_kw: ({"D/1": {"sha": "a", "files": [], "doc": "d"}}, {}, {"D/1": ""}))
     assert ds.stamp("D/1") == 0
     got = json.loads(ds.SEAL.read_text(encoding="utf-8"))
     assert got["D/1"]["kind"] == "read", "사람이 찍었는데 기계 갈래로 적혔다"
@@ -305,7 +305,7 @@ def test_the_invalid_list_prints_only_section_names(ds, monkeypatch, capsys):
     """
     void = {f"DOC/{i}": {"files": [], "parts": {}, "sha": "옛"} for i in range(1, 6)}
     now = {k: {"files": [], "parts": {}, "sha": "새"} for k in void}
-    monkeypatch.setattr(ds, "survey", lambda: (now, void, dict.fromkeys(void, "")))
+    monkeypatch.setattr(ds, "survey", lambda **_kw: (now, void, dict.fromkeys(void, "")))
 
     assert ds.check(True) == 0, "목록은 판정이 아니다 — rc 로 울면 문이 멈춘다"
     lines = [ln for ln in capsys.readouterr().out.splitlines() if ln.strip()]
@@ -320,7 +320,7 @@ def test_the_invalid_list_prints_only_section_names(ds, monkeypatch, capsys):
 def test_the_invalid_list_is_quiet_when_nothing_is_void(ds, monkeypatch, capsys):
     """비면 **한 줄도** 안 낸다 — 빈 목록을 `stamp` 에 먹이면 그쪽이 거절한다."""
     same = {"DOC/1": {"files": [], "parts": {}, "sha": "같다"}}
-    monkeypatch.setattr(ds, "survey", lambda: (same, dict(same), {"DOC/1": ""}))
+    monkeypatch.setattr(ds, "survey", lambda **_kw: (same, dict(same), {"DOC/1": ""}))
     assert ds.check(True) == 0
     assert capsys.readouterr().out.strip() == "", "무효가 없는데 무언가를 낸다"
 
@@ -386,7 +386,7 @@ def test_why_re_derives_the_parts_by_the_stored_formula_and_names_only_the_files
 def test_stamping_the_unmoved_sections_exits_zero_and_marks_them(ds, monkeypatch, capsys):
     """`stamp --unmoved` 가 성공하면 rc 0 이다 — 부르는 사슬(`verify`)이 이 값을 읽는다. 1 이면 성공한 날인이 실패로 센다."""
     now = {"D/1": {"sha": "n", "files": ["tools/x.py"], "parts": {}}}
-    monkeypatch.setattr(ds, "survey", lambda: (now, {}, {"D/1": "본문"}))
+    monkeypatch.setattr(ds, "survey", lambda **_kw: (now, {}, {"D/1": "본문"}))
     monkeypatch.setattr(ds, "_sections", lambda: [{"id": "D/1"}])
     monkeypatch.setattr(ds, "moved_after", lambda *a, **k: False)
     written = {}

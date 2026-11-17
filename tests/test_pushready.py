@@ -333,11 +333,11 @@ def test_a_red_mirror_check_blocks_names_the_check_and_prints_its_own_command():
 
 def test_a_red_hook_gate_in_the_mirror_is_named_with_its_layer():
     import gate_parity as GP
-    name, cmd = next((n, c) for n, c in GP.gate_commands() if "deadcheck" in c)
+    name, cmd = next((n, c) for n, c in GP.gate_commands() if "tonecheck" in c)      # ★ deadcheck 는 PLAN #253 에서 훅을 떠났다 — 아직 훅에 있는 게이트로 같은 물음을 민다
 
     def run(argv, cwd):
         if argv[0] == "bash" and argv[-1] == cmd:
-            return 1, "deadcheck 가 빨갛다\n"
+            return 1, "tonecheck 가 빨갛다\n"
         return (0, "") if argv[0] in ("bash", "env") else _runner()(argv, cwd)
 
     b = P.check_ci_mirror(ROOT, run)
@@ -479,7 +479,7 @@ def test_measured_edges_sees_the_self_loop_an_unmodelled_pair_and_an_unmeasured_
     assert got[("㉠", "㉤")][0] == got[("㉠", "㉡")][0] == got[("㉢", "㉠")][0] == "안 쟀다", "한쪽 칸의 줄이 0 이면 「안 밟혔다」가 아니라 「안 쟀다」다"
     assert m["extra"] == [("㉤", "㉡", ["tools/mutate.py"])], "모델에 없는 쓰기→읽기 쌍은 따로 낸다"
     out = P.render_edges(m)
-    assert "㉤→㉤ [가능] 실측 — 밟혔다: tools/mutate.py" in out and "㉤→㉡ [모델에 없다]" in out and "㉠→㉤ [확정] 실측 — 안 쟀다" in out
+    assert "㉤→㉤ [가능] 실측 — 밟혔다: tools/mutate.py" in out and "㉤→㉡ [모델에 없다]" in out and "㉠→㉤ [가능] 실측 — 안 쟀다" in out
     assert all(v == "안 쟀다" for _a, _b, _s, v, _f in P.measured_edges([])["edges"]), "빈 로그는 변이 없다는 뜻이 아니다"
 
 
@@ -518,15 +518,15 @@ def test_the_edges_reader_reads_a_log_that_real_tagged_children_wrote_and_runs_n
         assert r.returncode == 0, r.stderr
     assert P.audit_rows(audit) == [x[:3] for x in fsaudit.read_log(str(audit))], "로그 꼴을 `fsaudit.read_log` 와 다르게 읽는다"
     m = P.measured_edges(P.audit_rows(audit))
-    assert ("㉠", "㉤", True, "밟혔다", ["tools/x.py"]) in m["edges"], m["edges"]
+    assert ("㉠", "㉤", False, "밟혔다", ["tools/x.py"]) in m["edges"], m["edges"]
     assert m["steps"]["㉠"]["w"] == {"tools/x.py"}, "추적 안 된 파일은 안 센다"
     ran: list[list[str]] = []
     monkeypatch.setattr(P, "real_run", lambda argv, cwd: (ran.append(argv), (0, "tools/x.py\n"))[1])
     assert P.main(["--edges", str(audit), "abc123"]) == 0
     assert ran == [["git", "diff", "--name-only", "abc123"]], f"--edges 는 읽는 git 한 줄만 돈다 — {ran}"
-    assert "㉠→㉤ [확정] 실측 — 밟혔다: tools/x.py" in capsys.readouterr().out
+    assert "㉠→㉤ [가능] 실측 — 밟혔다: tools/x.py" in capsys.readouterr().out
     monkeypatch.setattr(P, "real_run", lambda argv, cwd: (0, ""))                # 사슬 뒤에 달라진 것이 없다 = 썼다 되돌렸다
-    assert P.main(["--edges", str(audit)]) == 0 and "㉠→㉤ [확정] 실측 — 안 밟혔다" in capsys.readouterr().out
+    assert P.main(["--edges", str(audit)]) == 0 and "㉠→㉤ [가능] 실측 — 안 밟혔다" in capsys.readouterr().out
     monkeypatch.setattr(P, "real_run", lambda argv, cwd: (128, "fatal: bad revision"))
     assert P.main(["--edges", str(audit), "없는커밋"]) == 1, "git 이 죽으면 닫힌 쪽 — 거르지 않은 실측을 내지 않는다"
     capsys.readouterr()
@@ -575,3 +575,18 @@ def test_notes_adds_the_alert_line_only_when_there_is_an_upstream(tmp_path: Path
     called: list[int] = []
     out = P.notes(tmp_path, P.real_run, lambda argv, cwd: (called.append(1) or (0, "2")))
     assert not called and "업스트림이 없는 가지" in " ".join(out)       # 업스트림이 없으면 망을 안 탄다
+
+
+def test_the_two_gates_taken_out_of_the_hook_still_run_before_a_push_through_the_mirror():
+    """★ 양성 대조(PLAN #253 · DECISIONS §816) — `deadcheck --ratchet` · `canary` 는 훅 목록에 없고(`pre-push.gates`) `pushready` ㉨ 가 **CI 의 명령 그대로** 도는 목록(`ready` 층)에 **있다**.
+    훅에서 뺀 검사가 어느 길에서도 안 도는 일(게이트가 조용히 사라지는 일)을 막는다. CI `contract-fast` 에도 같은 명령이 남아 있는가도 같이 묻는다."""
+    import gatefast as GF
+
+    jobs, _skipped = P.mirror_commands()
+    moved = {"canary.py": "tools/canary.py", "deadcheck.py": "tools/deadcheck.py --ratchet"}
+    for tool, cmd in moved.items():
+        in_hook = [j for j in jobs if j[0] == "훅" and tool in " ".join(j[2])]
+        in_mirror = [j for j in jobs if j[0] == "ready" and tool in " ".join(j[2])]
+        assert not in_hook, f"{tool} 가 아직 훅 목록에 있다 — 뺐다는 전제가 깨졌다"
+        assert in_mirror, f"{tool} 가 훅에도 ㉨ 에도 없다 — 푸시 전에 안 돈다"
+        assert any(cmd in c for c in GF.fast_commands()), f"{cmd} 가 CI contract-fast 에 없다"
