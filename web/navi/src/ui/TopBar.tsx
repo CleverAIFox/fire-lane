@@ -207,7 +207,8 @@ const subLines: CSSProperties = {
   fontSize: 24, color: C.topBarSub, marginTop: 3, lineHeight: 1.1, wordBreak: "keep-all", maxHeight: 53, overflow: "hidden",
 };
 /** 배지 · 시각 칸의 한 줄(32px). 세 줄 96 + 위아래 4×2 = 104 = 막대 안쪽 높이(124 − 20). 안 꺾는다 — 길면 칸이 넓어지고 제목 칸이 그만큼 준다. */
-const line: CSSProperties = { height: 32, font: `800 24px/32px ${F.family}`, color: C.toneInk, whiteSpace: "nowrap" };
+// ★ 2026-11-18 (PLAN #258 · DECISIONS §829). **약식 `font:` 로 안 쓴다.** 이 객체에 `fontSize` 를 덮어 쓰는 쪽(`{ ...line, fontSize: 27 }`)과 안 덮는 쪽(`line`)을 오가면, React 가 덮은 `fontSize` 를 지울 때 약식의 크기가 같이 지워져 기본 16px 로 떨어졌다(`reroute` → `noCctv` 의 주의 줄).
+const line: CSSProperties = { height: 32, fontFamily: F.family, fontWeight: 800, fontSize: 24, lineHeight: "32px", color: C.toneInk, whiteSpace: "nowrap" };
 const badge: CSSProperties = {
   position: "relative", flex: "0 0 auto", minWidth: 312, borderRadius: 16, padding: "4px 10px",
   boxShadow: "0 3px 12px rgba(0,0,0,.2)",

@@ -289,6 +289,28 @@ def test_a_small_font_is_counted_through_tokens_and_ternaries(tmp_path: Path):
     assert [e for _, e in got] == ["F.big", "F.base", "i ? 13 : 26"], got
 
 
+def test_a_shorthand_font_is_counted_by_size_and_a_shorthand_overridden_by_longhand_is_counted_as_the_defect(tmp_path: Path):
+    """★ DECISIONS §829 — 소스의 약식 `font: 800 24px/32px …` 는 24 라 크기로는 안 걸린다. 그런데 `{ ...line, fontSize: 27 }` 로 긴 이름을 덮는 꼴은 React 가 덮은 쪽을 지울 때 약식의 크기가 같이 지워져 렌더가 16px 로 떨어진다(`TopBar` 의 주의 줄). **그 꼴 자체**를 센다."""
+    body = ("const ok1 = { font: `800 24px/32px ${F.family}` };\n"                       # 약식 24 — 안 센다(섞는 곳도 없다)
+            "const small = { font: `700 18px/20px ${F.family}` };\n"                      # 약식 18 — 크기로 센다
+            "const line = { height: 32, font: `800 24px/32px ${F.family}`, color: 'x' };\n"
+            "const a = { ...line, fontSize: 27, letterSpacing: -0.3 };\n"               # 약식 위에 긴 이름 — 섞임으로 센다
+            "const b = line;\n"
+            "const both = { font: `800 24px/32px x`, fontSize: 27 };\n"                  # 한 객체에 둘 — 섞임으로 센다
+            "const longhand = { fontFamily: F.family, fontWeight: 800, fontSize: 24, lineHeight: '32px' };\n"
+            "const c = { ...longhand, fontSize: 27 };\n")                                # 긴 이름끼리는 덮어도 안전하다 — 안 센다
+    got = [e for _, e in DV.drive_small_fonts(_drive_tree(tmp_path, body), files=_F)]
+    assert got == ["font: 700 18px/20px ${F.family}", "font: 약식과 긴 이름이 한 객체에 같이 있다(both)", "font: 약식 `line` 위에 긴 이름을 덮어 쓴다"], got
+
+
+def test_the_top_bar_defect_before_the_fix_would_have_been_counted(tmp_path: Path):
+    """고치기 전 `TopBar` 의 `line`(약식)과 `{ ...line, fontSize: 27 }` 을 그대로 넣으면 1건이다 — 지금 트리는 0 이다(긴 이름으로만 쓴다)."""
+    before = ('const line: CSSProperties = { height: 32, font: `800 24px/32px ${F.family}`, color: C.toneInk, whiteSpace: "nowrap" };\n'
+              '<div style={s.caution ? line : { ...line, fontSize: 27, letterSpacing: -0.3 }}>x</div>\n')
+    assert len(DV.drive_small_fonts(_drive_tree(tmp_path, before), files=_F)) == 1
+    assert DV.drive_small_fonts() == [], "지금 주행 중 화면 파일에 약식 섞임이 있다"
+
+
 def test_driving_files_never_scroll_text_by_themselves():
     """★ Android Auto 품질 기준 ST-1 — **자동으로 흐르는 글자를 두지 않는다.** 소스에 `scrollTo` · `scrollIntoView` · 마퀴 · `setInterval` 이 없다(가운데 맞춤의 `translateX(-50%)` 는 정적이라 안 센다).
     (사용자가 손으로 넘기는 `overflowY: auto` 는 자동이 아니다.)"""
