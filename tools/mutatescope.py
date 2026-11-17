@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import ast
 import hashlib
+import inspect
 import re
 from pathlib import Path
 
@@ -148,6 +149,7 @@ def catch_print(tool: str) -> str:
       그러면 `--stale` 이 매번 전량이 된다 — 값을 못 치르는 관문은 안 돈다.
     """
     h = hashlib.sha256((TOOLS / f"{tool}.py").read_bytes())
+    h.update(sampler_print().encode())          # ★ 표본 고르는 규칙이 바뀌면 도구 전부가 낡는다(DECISIONS §817 · PLAN #255)
     src = (TOOLS / f"{tool}.py").read_text(encoding="utf-8")
     for m in local_imports(src):
         h.update(f"import:{m}".encode())
@@ -156,3 +158,40 @@ def catch_print(tool: str) -> str:
         h.update(q.relative_to(ROOT).as_posix().encode())
         h.update(q.read_bytes())
     return h.hexdigest()[:12]
+
+
+# ── 표본 고르기 (PLAN #255 · DECISIONS §817) ───────────────────────
+def _site_keys(muts: list[tuple[str, str]], src: str | None) -> list[str]:
+    """자리마다 **원문 줄 + 바꾼 꼴**을 키로 낸다. 줄 번호는 안 든다 — 위에 줄이 끼어도 같은 코드는 같은 키다.
+
+    ★ 같은 원문 줄 · 같은 바꿈이 되풀이되면 나온 차례를 붙여 가른다(`return 1` 이 여러 번 나온다). `src` 가 없으면(합성 표본) 설명 전체가 키다.
+    """
+    lines = src.split("\n") if src is not None else None
+    seen: dict[str, int] = {}
+    keys = []
+    for w, _body in muts:
+        ln, _, op = w.partition(": ")
+        text = lines[int(ln) - 1].strip() if lines and ln.isdigit() and 0 < int(ln) <= len(lines) else ""
+        base = f"{text}\x1f{op}" if text else w
+        n = seen.get(base, 0)
+        seen[base] = n + 1
+        keys.append(f"{base}\x1f{n}")
+    return keys
+
+
+def pick(muts: list[tuple[str, str]], cap: int, src: str | None = None) -> list[tuple[str, str]]:
+    """상한 안에서 고른다. 결정적이고 **자리 수 · 줄 번호에 안 묶인다.**
+
+    ★ 키의 해시가 작은 `cap` 개다. 종전(`int(i * 자리수 / cap)`)은 자리가 129 → 136 으로 늘자 넷 중 셋이 갈렸다(같은 자리 14/20 — DECISIONS §817).
+      이 규칙은 자리 하나가 늘면 표본이 바뀔 몫이 `cap / (자리수 + 1)` 뿐이고, 줄이 끼어 줄 번호가 밀려도 안 바뀐다.
+    ★ 해시는 머리말 쪽에 몰리지 않는다(키가 고르게 퍼진다) — 앞에서 자르면 행동 없는 줄만 흔들던 병은 그대로 막힌다. 보고 순서는 파일 순서다.
+    """
+    if cap <= 0 or len(muts) <= cap:
+        return muts
+    ranked = sorted((hashlib.sha256(k.encode()).hexdigest(), i) for i, k in enumerate(_site_keys(muts, src)))
+    return [muts[i] for i in sorted(i for _, i in ranked[:cap])]
+
+
+def sampler_print() -> str:
+    """표본 고르는 규칙의 지문 — `pick` 과 키 만들기의 소스. 규칙이 바뀌면 `catch_print` 가 도구 전부에서 달라져 `--write --stale` 이 전부를 다시 잰다."""
+    return hashlib.sha256((inspect.getsource(pick) + inspect.getsource(_site_keys)).encode()).hexdigest()[:12]

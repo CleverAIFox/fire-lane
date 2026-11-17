@@ -145,13 +145,18 @@ def selftest() -> int:
     if not mutants("if 1 >= 2:\n    pass\n"):
         fails.append("멀쩡한 소스에 하나도 안 낸다 — 그물이 비었다")
 
-    # ★ 상한이 **고르게** 고르는가 — 앞에서 자르면 머리말만 흔든다
-    ten = [(f"{i}", "") for i in range(10)]
-    got = [w for w, _ in pick(ten, 3)]
-    if got != ["0", "3", "6"]:
+    # ★ 상한이 **한쪽에 안 몰리고** · **줄이 끼어도 안 갈리는가** — 앞에서 자르면 머리말만 흔들고, 줄 번호를 키로 쓰면 위에 줄이 끼는 것만으로 표본이 갈린다(PLAN #255)
+    many = [(f"{i}: a → b", "") for i in range(200)]
+    got = [int(w.split(":")[0]) for w, _ in pick(many, 20)]
+    if got != sorted(got) or len(got) != 20 or max(got) < 100:
         fails.append(f"상한이 고르게 안 고른다 — {got}")
-    if pick(ten, 0) != ten or pick(ten, 99) != ten:
+    if pick(many, 0) != many or pick(many, 999) != many:
         fails.append("상한 0·초과에서 전수를 안 낸다")
+    a = "\n".join(f"def f{i}(x):\n    return x == {1000 + i}" for i in range(60)) + "\n"
+    b = "# 머리말\n" * 7 + a
+    ident = lambda s: {(s.split("\n")[int(w.split(": ")[0]) - 1].strip(), w.split(": ", 1)[1]) for w, _ in pick(mutants(s), 4, s)}
+    if ident(a) != ident(b):
+        fails.append("위에 줄이 끼자 표본이 갈렸다 — 줄 번호가 키에 들었다")
 
     # ★ 붙잡이 도출이 **자기 자신**을 찾는가
     c = catchers("mutate")

@@ -64,6 +64,7 @@ from mutatescope import (
     TOOLS,
     catch_print,
     named_tests,
+    pick,
     targets,
 )
 
@@ -378,18 +379,6 @@ def live_catchers(tool: str, deep: bool = False) -> tuple[list[list[str]], list[
 
 
 # ── ③ 재기 ──────────────────────────────────────────────────────
-def pick(muts: list[tuple[str, str]], cap: int) -> list[tuple[str, str]]:
-    """상한 안에서 **파일 전체에 고르게** 고른다. 결정적이다.
-
-    ★ 앞에서부터 자르면 머리말·import 쪽만 흔든다 — 거기는 어차피 행동이
-      없어서 「생존」이 쏟아지고, 수가 커지는데 뜻은 없다.
-    """
-    if cap <= 0 or len(muts) <= cap:
-        return muts
-    step = len(muts) / cap
-    return [muts[int(i * step)] for i in range(cap)]
-
-
 # ★ **흔드는 동안 트리는 거짓말을 한다**(DECISIONS §398-6). 과녁을 제자리에서
 #   바꿔 쓰고 `finally` 로 되돌린다. ★ 2026-10-08 (§435) 정정 — `finally` 는
 #   **신호에는 안 돈다.** 시간 상한으로 끊긴 실행이 `sealcov.py` 에 흔든 사본을
@@ -404,7 +393,7 @@ def shake(tool: str, cap: int = MAX_PER_TOOL, deep: bool = False) -> dict:
     _guard.install()
     _guard.hold(path, orig)
     keep, dropped = live_catchers(tool, deep)
-    muts = pick(mutants(orig), cap)
+    muts = pick(mutants(orig), cap, orig)
     survived: list[str] = []
     unmeasured: list[str] = []
     # ★ 붙잡이가 **0 이면 흔들지 않는다.** 2026-10-05 실측(DECISIONS §398-6).
