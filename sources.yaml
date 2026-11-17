@@ -4246,7 +4246,7 @@ datasets:
     what: |
       건축물대장 건물 윤곽(`AL_D010`) — 전남광주 1,831,883면 · 칸 29개(`A0`~`A28`) · EPSG:5186(zip 안 .prj) · 291MB (PLAN
     feeds_why: |
-      ★ `kind: raw_only` — `ingest` 가 SKIP 한다(판정 입력이 아니다). 읽는 것은 `bldg_gap.py`(동명동 빠진 건물 323면 · 표시용)와 `bldg_fill.py`(동명동 밖 4,296면 · 표시용)이고
+      ★ `kind: raw_only` — `ingest` 가 SKIP 한다(판정 입력이 아니다). 읽는 것은 `bldg_gap.py`(동명동 빠진 건물 323면 · 표시용)와 `bldg_fill.py`(동명동 밖 4,237면(종전 4,296 — 같은 윤곽 59쌍을 윤곽이 든 동의 레코드 하나로 줄였다 · DECISIONS §823) · 표시용)이고
         판정은 이 파일을 안 읽는다 — 전부 교체(방안 c)는 47구간의 판정을 움직여 안 갔다(DECISIONS §776). `normalize_raw` 는 원본명 → 정규명 규칙을 든다.
     note: |
       ★ **2026-11-15 — `pending` 에서 옮겼다**(PLAN 행 232(닫힘) ④ · 사람이 2026-11-13 정규 이름 `juso/juso_bldg_ledger_jngj_20261109.zip` 으로 옮겼고 `acquire --verify` 가 `_acquire.json` 에 적었다 · `normalize_raw` 규칙 `^al_d010_12_20261109\.zip$` 가 원본명 → 정규명이다).

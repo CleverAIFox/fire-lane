@@ -203,6 +203,23 @@ def check_mutate(root: Path, run: Runner) -> Block | None:
 TESTS_JOBS = 4
 
 
+_STALE = re.compile(r"읽기 장부가 낡았다 — 새 시험 (\d+) · 바뀐 시험 (\d+) · 없어진 시험 (\d+)")
+_STALE_NAMES = re.compile(r"^\s+낡은 시험 (새|바뀐): ?(.*)$", re.M)
+
+
+def _stale_reads(out: str) -> Block | None:
+    """★ PLAN #257 · DECISIONS §822 — 시험이 초록이어도 `testpick` 의 「읽기 장부가 낡았다」 경고가 있으면 초록을 안 낸다(낡은 장부는 헬퍼로 읽는 시험을 못 뽑는다). 이름 · 명령을 같이 낸다."""
+    if not (m := _STALE.search(out)):
+        return None
+    new, chg, gone = (int(x) for x in m.groups())
+    names = {k: v.split() for k, v in _STALE_NAMES.findall(out)}
+    todo = names.get("새", []) + names.get("바뀐", [])
+    cmd = [*_PY, "tools/testpick.py", "--measure-reads", "--write"]
+    return Block("㉥", f"읽기 장부가 낡았다 — 새 시험 {new} · 바뀐 시험 {chg} · 없어진 시험 {gone} (시험은 초록이나 바뀐 파일에 닿는 시험을 고르는 장부가 하한이다)",
+                 [f"새 시험({new}): {' '.join(names.get('새', [])) or '(이름을 못 읽었다)'}", f"바뀐 시험({chg}): {' '.join(names.get('바뀐', [])) or '(이름을 못 읽었다)'}"],
+                 [" ".join([*cmd, "--only", *(todo or ["<파일…>"])]) + "   # 낡은 것만 — 예상 시간은 DECISIONS §822", " ".join(cmd) + "   # 전수 — 예상 시간은 DECISIONS §822"])
+
+
 def check_tests(root: Path, run: Runner) -> Block | None:
     """`testpick --run` — 실측 장부에서 **계산한** 시험 묶음(PLAN #209). 손 목록이 아니다.
 
@@ -211,7 +228,7 @@ def check_tests(root: Path, run: Runner) -> Block | None:
     """
     rc, out = run([*_PY, "tools/testpick.py", "--run", "--no-cap", "--jobs", str(TESTS_JOBS)], root)
     if rc == 0:
-        return None
+        return _stale_reads(out)
     tail = [x for x in out.strip().splitlines() if x.strip()]
     return Block("㉥", "시험 묶음이 빨갛다(또는 장부가 없다)", tail[-8:],
                  [" ".join([*_PY, "tools/testpick.py", "--run", "--no-cap", "--jobs", str(TESTS_JOBS)]) + "   # 빨간 파일을 읽고 고친다 — 고친 뒤 래칫 · 도장을 다시 사슬로"])

@@ -1,7 +1,7 @@
 """
 test_bldg_fill.py — `bldg_fill` 의 **고르는 규칙**(PLAN #244 · DECISIONS §786)을 합성 면으로 문다.
 
-★ 레이크(대장 zip)를 안 읽는다 — 작은 사각형으로 규칙 ①~⑤ 가 각각 **한 면씩** 걸러내는지 본다. 실물 4,296면은 `python -m firelane.bldg_fill`(바이트 대조)이 든다.
+★ 레이크(대장 zip)를 안 읽는다 — 작은 사각형으로 규칙 ①~⑤ 가 각각 **한 면씩** 걸러내는지 본다. 실물 4,237면은 `python -m firelane.bldg_fill`(바이트 대조)이 든다.
 
 IN    src/firelane/bldg_fill.py (순수 함수 `agreement` · `pick` · 쓰기 `write` · `report` · `move_bounds`)
 OUT   없음
@@ -107,3 +107,42 @@ def test_load_reads_the_ledger_zip_with_the_move_bbox_and_the_dong_boundary(monk
     assert dong.equals(DONG) or dong.symmetric_difference(DONG).area < 1e-6, "동명동 경계가 EMD_CD 로 안 골라졌다"
     zip_call = next(c for c in calls if "vsizip" in c[0])
     assert zip_call[1]["bbox"] == tuple(move.bounds), "대장을 지도 이동 범위로 안 잘랐다 — 전국 윤곽을 읽는다"
+
+
+def _twin_frame(rows):
+    """같은 윤곽이 서로 다른 법정동 레코드로 오는 합성 행 — (기하, 층수, 용도, 이름, `A3`)."""
+    df = frame([r[:4] for r in rows])
+    df["A3"] = [r[4] for r in rows]
+    return df
+
+
+EMD = gpd.GeoDataFrame({"EMD_CD": ["12210109", "12300101"]},
+                       geometry=[box(X0 + 390, Y0 - 10, X0 + 700, Y0 + 100), box(X0 + 700, Y0 - 10, X0 + 1000, Y0 + 100)], crs=CRS)
+
+
+def test_twin_outlines_keep_the_record_of_the_dong_that_holds_the_outline():
+    """★ PLAN #256 · DECISIONS §823 — `AL_D010` 안에서 같은 기하가 계림동(동구) · 중흥동(북구) 레코드로 두 번 왔다. 윤곽이 든 동의 레코드만 남는다."""
+    for order in ((0, 1), (1, 0)):              # 파일 순서가 어느 쪽이어도 같은 레코드가 남는다
+        recs = [(sq(400, 0), 1, "단독주택", "", "1221010900"), (sq(400, 0), 4, "업무시설", "", "1230010100")]
+        x = _twin_frame([recs[i] for i in order])
+        out, tw = B.drop_twins(x, EMD)
+        assert tw == {"twin_groups": 1, "twin_dropped": 1, "twin_ambiguous": 0}
+        assert list(out["A3"]) == ["1221010900"] and list(out[B.USE_COL]) == ["단독주택"]
+    solo = _twin_frame([(sq(400, 0), 1, "", "", "1221010900"), (sq(500, 0), 1, "", "", "1230010100")])
+    assert B.drop_twins(solo, EMD)[1]["twin_dropped"] == 0, "기하가 다르면 안 뗀다"
+    # 윤곽이 어느 동에도 안 들거나 두 레코드 다 그 동이 아니면 첫 행을 남기고 「애매」로 적는다(조용히 고르지 않는다)
+    far = _twin_frame([(sq(900, 50), 1, "", "", "9999999999"), (sq(900, 50), 2, "", "", "8888888888")])
+    out, tw = B.drop_twins(far, EMD)
+    assert tw["twin_ambiguous"] == 1 and tw["twin_dropped"] == 1 and len(out) == 1
+
+
+def test_pick_runs_the_twin_rule_only_when_given_the_boundary_and_never_silently_without_a3():
+    rows = [(sq(400, 0), 1, "단독주택", "", "1221010900"), (sq(400, 0), 4, "업무시설", "", "1230010100")]
+    x = _twin_frame(rows)
+    plain, led = B.pick(x, MOVE, DONG, TL)
+    assert len(plain) == 2 and "twin_groups" not in led, "경계를 안 주면(합성 표본) 종전 그대로다"
+    out, led = B.pick(x, MOVE, DONG, TL, EMD)
+    assert len(out) == 1 and led["twin_groups"] == 1 and led["twin_dropped"] == 1 and led["added"] == 1
+    import pytest
+    with pytest.raises(ValueError, match="A3"):
+        B.pick(frame([r[:4] for r in rows]), MOVE, DONG, TL, EMD)

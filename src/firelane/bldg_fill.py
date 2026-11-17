@@ -18,6 +18,8 @@ bldg_fill.py — 지도 이동 범위 안에서 **도로명주소 건물 윤곽(
  ③ `TL_SPBD_BULD`(`processed/building_5186.gpkg` — 발행물이 아니라 **판정 입력**이라 이 파일이 발행에 안 기댄다)에 **덮인 몫 < 10%**.
  ④ ★ **어긋난 같은 건물을 뺀다.** 대표점 아닌 **무게중심이 `DUP_M` 안**이고 면적비가 `DUP_RATIO` 안인 `TL` 면이 있으면
     「빠진 면」이 아니라 같은 건물이 두 측량에서 비껴 그려진 것이다 — 더하면 겹쳐 두 번 솟는다. `DUP_M` 은 둘 다 가진 면의 중심 거리 p95(8.3m)다.
+ ④′ ★ **`AL_D010` 안의 같은 기하를 맞댄다**(DECISIONS §823 · PLAN #256). 같은 윤곽이 서로 다른 법정동 레코드로 두 번 오는 쌍(범위 안 16,454행 중 59쌍 · 59/59 가 계림동 ↔ 중흥동)에서 **윤곽이 든 동**
+    (`boundary_emd` 에 대표점이 드는 동)의 레코드를 남기고 나머지를 뺀다. 윤곽이 든 동의 레코드가 하나가 아니면(없거나 둘) 파일 순서의 첫 행을 남기고 장부에 「애매」로 적는다.
  ⑤ 칸 — `flo`(지상층수 `A26` · 비었거나 0 이면 1) · `use`(용도명 `A9`) · `nm`(건물명 `A24` · 없으면 빈 글자) · `src`(`AL_D010`).
  ⑥ 5186 에서 0.2m 단순화(위상 보존) → 경위도 → 좌표 6자리 GeoJSON.
 
@@ -37,6 +39,7 @@ from pathlib import Path
 
 import geopandas as gpd
 import pandas as pd
+from shapely import normalize, set_precision
 from shapely.geometry import box
 
 from firelane import bldg_gap, hashing, paths
@@ -76,7 +79,29 @@ def agreement(al: gpd.GeoDataFrame, tl: gpd.GeoDataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=["i", "n", "iou", "d", "ratio", "cover", "dx", "dy"])
 
 
-def pick(al: gpd.GeoDataFrame, move, dong, tl: gpd.GeoDataFrame) -> tuple[gpd.GeoDataFrame, dict]:
+def drop_twins(x: gpd.GeoDataFrame, emd: gpd.GeoDataFrame) -> tuple[gpd.GeoDataFrame, dict]:
+    """④′ — 같은 기하(정규화한 좌표열)가 둘 이상인 행에서 **윤곽이 든 동의 레코드**(`A3` 앞 8자리 == 대표점이 드는 `EMD_CD`)를 남긴다. 장부: 쌍 수 · 뗀 면 · 애매(남길 레코드가 하나로 안 정해진 쌍)."""
+    if "A3" not in x.columns:
+        raise ValueError("칸 `A3`(법정동 코드)이 없다 — 조용히 덜 하지 않는다")
+    emd = emd.to_crs(x.crs)
+    # 같은 기하 = **쓰는 모양**에서 같다 — 0.2m 단순화 · 경위도 6자리 반올림 뒤(원본 부동소수에서는 다르고 파일에서는 같은 쌍이 여섯이었다: 53 대 59)
+    shown = x.geometry.simplify(SIMPLIFY_M, preserve_topology=True).to_crs(4326)
+    groups = x.groupby(shown.map(lambda g: normalize(set_precision(g, 1e-6)).wkb_hex)).groups
+    drop, amb, n = [], 0, 0
+    for idx in groups.values():
+        if len(idx) < 2:
+            continue
+        n += 1
+        hit = emd[emd.contains(x.geometry.loc[idx[0]].representative_point())]
+        code = str(hit.iloc[0]["EMD_CD"])[:8] if len(hit) else None
+        match = [i for i in idx if str(x.at[i, "A3"])[:8] == code]
+        keep = match[0] if len(match) == 1 else idx[0]
+        amb += len(match) != 1
+        drop += [i for i in idx if i != keep]
+    return x.drop(index=drop), {"twin_groups": n, "twin_dropped": len(drop), "twin_ambiguous": amb}
+
+
+def pick(al: gpd.GeoDataFrame, move, dong, tl: gpd.GeoDataFrame, emd: gpd.GeoDataFrame | None = None) -> tuple[gpd.GeoDataFrame, dict]:
     """`al`(미터 좌표계) 중 규칙 ①~⑤ 를 통과한 면 → (경위도 · 4칸, 뺀 수 장부)."""
     if al.crs is None or al.crs.is_geographic:
         raise ValueError(f"건축물대장 윤곽의 좌표계가 미터가 아니다 — {al.crs}(면적 몫을 못 잰다)")
@@ -104,6 +129,9 @@ def pick(al: gpd.GeoDataFrame, move, dong, tl: gpd.GeoDataFrame) -> tuple[gpd.Ge
     dup = pd.Series(dup, index=x.index, dtype=bool)
     led["dup_suspect"] = int(dup.sum())
     x = x[~dup]
+    if emd is not None:         # 합성 표본(시험)은 법정동 경계를 안 준다 — 실물(`main`)은 늘 준다
+        x, tw = drop_twins(x, emd)
+        led.update(tw)
     nm = x[NAME_COL].fillna("").astype(str).str.strip()
     out = gpd.GeoDataFrame({
         "flo": x["A26"].fillna(1).clip(lower=1).astype(int),
@@ -155,7 +183,7 @@ def main(argv: list[str] | None = None) -> int:
     if a.report:
         report(al, move, tl)
         return 0
-    out, led = pick(al, move, dong, tl)
+    out, led = pick(al, move, dong, tl, gpd.read_file(paths.PROCESSED / bldg_gap.BOUNDARY))
     print("  장부 — " + " · ".join(f"{k} {v:,}" for k, v in led.items()))
     if a.apply:
         write(out, FILL_BUILDINGS)

@@ -468,6 +468,8 @@ def main(argv: list[str] | None = None) -> int:
                 if chg_r:
                     print(f"    → 바뀐 시험 {len(chg_r)}개는 **옛 실측 ∪ 정적 스캔**이다(본문이 바뀐 뒤 새로 읽게 된 파일은 못 센다)", file=sys.stderr)
                 print("    → `uv run python tools/testpick.py --measure-reads --write --only <파일…>` 로 다시 잰다", file=sys.stderr)
+                print(f"    낡은 시험 새: {' '.join(new_r)}", file=sys.stderr)             # `pushready` ㉥ 가 읽어 이름 · 명령을 낸다(PLAN #257)
+                print(f"    낡은 시험 바뀐: {' '.join(chg_r)}", file=sys.stderr)
         if reads:
             print(f"  배경으로 뺀 파일 {len(ledger_ambient() or ambient(load_reads(drop_ambient=False)))}개(시험 {AMBIENT_SHARE:.0%} 이상이 읽는다 — conftest 인프라): 실측으로는 안 센다", file=sys.stderr)
         for n, sec in info["over"].items():
