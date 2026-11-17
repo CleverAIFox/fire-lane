@@ -479,7 +479,7 @@ def test_measured_edges_sees_the_self_loop_an_unmodelled_pair_and_an_unmeasured_
     assert got[("㉠", "㉤")][0] == got[("㉠", "㉡")][0] == got[("㉢", "㉠")][0] == "안 쟀다", "한쪽 칸의 줄이 0 이면 「안 밟혔다」가 아니라 「안 쟀다」다"
     assert m["extra"] == [("㉤", "㉡", ["tools/mutate.py"])], "모델에 없는 쓰기→읽기 쌍은 따로 낸다"
     out = P.render_edges(m)
-    assert "㉤→㉤ [가능] 실측 — 밟혔다: tools/mutate.py" in out and "㉤→㉡ [모델에 없다]" in out and "㉠→㉤ [확정] 실측 — 안 쟀다" in out
+    assert "㉤→㉤ [가능] 실측 — 밟혔다: tools/mutate.py" in out and "㉤→㉡ [모델에 없다]" in out and "㉠→㉤ [가능] 실측 — 안 쟀다" in out
     assert all(v == "안 쟀다" for _a, _b, _s, v, _f in P.measured_edges([])["edges"]), "빈 로그는 변이 없다는 뜻이 아니다"
 
 
@@ -518,15 +518,15 @@ def test_the_edges_reader_reads_a_log_that_real_tagged_children_wrote_and_runs_n
         assert r.returncode == 0, r.stderr
     assert P.audit_rows(audit) == [x[:3] for x in fsaudit.read_log(str(audit))], "로그 꼴을 `fsaudit.read_log` 와 다르게 읽는다"
     m = P.measured_edges(P.audit_rows(audit))
-    assert ("㉠", "㉤", True, "밟혔다", ["tools/x.py"]) in m["edges"], m["edges"]
+    assert ("㉠", "㉤", False, "밟혔다", ["tools/x.py"]) in m["edges"], m["edges"]
     assert m["steps"]["㉠"]["w"] == {"tools/x.py"}, "추적 안 된 파일은 안 센다"
     ran: list[list[str]] = []
     monkeypatch.setattr(P, "real_run", lambda argv, cwd: (ran.append(argv), (0, "tools/x.py\n"))[1])
     assert P.main(["--edges", str(audit), "abc123"]) == 0
     assert ran == [["git", "diff", "--name-only", "abc123"]], f"--edges 는 읽는 git 한 줄만 돈다 — {ran}"
-    assert "㉠→㉤ [확정] 실측 — 밟혔다: tools/x.py" in capsys.readouterr().out
+    assert "㉠→㉤ [가능] 실측 — 밟혔다: tools/x.py" in capsys.readouterr().out
     monkeypatch.setattr(P, "real_run", lambda argv, cwd: (0, ""))                # 사슬 뒤에 달라진 것이 없다 = 썼다 되돌렸다
-    assert P.main(["--edges", str(audit)]) == 0 and "㉠→㉤ [확정] 실측 — 안 밟혔다" in capsys.readouterr().out
+    assert P.main(["--edges", str(audit)]) == 0 and "㉠→㉤ [가능] 실측 — 안 밟혔다" in capsys.readouterr().out
     monkeypatch.setattr(P, "real_run", lambda argv, cwd: (128, "fatal: bad revision"))
     assert P.main(["--edges", str(audit), "없는커밋"]) == 1, "git 이 죽으면 닫힌 쪽 — 거르지 않은 실측을 내지 않는다"
     capsys.readouterr()

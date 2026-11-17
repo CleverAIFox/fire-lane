@@ -3337,7 +3337,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 3,575 전수 · **분모(blank) 0절** · 물림(inherit) 2,269절.
+★ **강제자 칸의 분모.** 절 3,580 전수 · **분모(blank) 0절** · 물림(inherit) 2,272절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -3396,7 +3396,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 
 **봉인에 들어오려면.** 새 코드 · 시험 파일은 DECISIONS · PLAN · MASTER 어느 절의 **본문**이 백틱 경로로 지목해야 덮인다 — `강제자` 칸만으로는 안 센다(`tools/sealcov.py`). 안 지목하면 그 관문과 `test_every_file_is_read_by_some_section` 이 운다. 지목하면 덮임 래칫(`SEALED_FILES`)이 실측을 따라 **올라간다** — 덮임 · 커버리지류는 올라가는 것이 개선이고, 결함 상한(`CEILING` · `constbasis` 천장)과 다르다(DECISIONS §579). 새 DECISIONS 절은 유병률 칸 · 강제자 칸 · 하위 절 물림 수를 적고 `docgen` 이 MASTER 의 생성 수를 채운다.
 
-**같은 날 넘어진 다른 자리.** 시험이 추적 파일을 쓰지 않는다(세션 끝에 `tests/tracked_guard.py` 가 잰다) · 시험의 `subprocess` 에는 시한을 준다(`test_no_unbounded_waits`) · 대장은 `ledger.load()` 한 문으로 연다(`test_lake`) · `write_text` · `read_text` 에 `encoding="utf-8"`(`encoding_check`) · 시험 파일 길이 상한(`tools/testsizetable.py` — 늘리지 않고 줄인다) · 문서는 평어체 3인칭이다(`test_doc_style`).
+**같은 날 넘어진 다른 자리.** 시험이 추적 파일을 쓰지 않는다(세션 끝에 `tests/tracked_guard.py` 가 잰다 · 자식 파이썬에는 `tests/audit_site/sitecustomize.py` 가 `PYTHONPATH` 로 같은 감사 훅을 물려준다) · 시험의 `subprocess` 에는 시한을 준다(`test_no_unbounded_waits`) · 대장은 `ledger.load()` 한 문으로 연다(`test_lake`) · `write_text` · `read_text` 에 `encoding="utf-8"`(`encoding_check`) · 시험 파일 길이 상한(`tools/testsizetable.py` — 늘리지 않고 줄인다) · 문서는 평어체 3인칭이다(`test_doc_style`).
 
 ★ 푸시 전에 `.githooks/pre-push` 가 이 가운데 **정적으로 재는 것**(`deadcheck` · 카나리아 · 파일 길이 · 봉인 덮임 · 생성 블록)을 돈다. 시험 본체(전체 pytest)는 CI 몫이라 거기서 잡히는 것(위의 `subprocess` 시한 · 대장 직접 로드 같은 것)은 푸시 전에 안 걸린다 — 새 시험 파일을 만든 날은 관련 시험을 직접 돌린다. 훅의 시험 묶음은 **워커 6** 으로 돈다 — 24게이트를 8코어에 동시에 띄워 단일 스레드 `deadcheck` 가 마지막에 끝나던 경합을 줄였다(훅 벽시계 중앙 29.5 → 25.5초 · DECISIONS §679 · PLAN #214(닫힘)). 예산 30초는 그대로다.
 
@@ -4830,7 +4830,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | --- | --- | --- |
 | `web/navi/src/components/OpsMap.tsx` | 관제 지도. 내비 지도와 **같은 바탕**을 쓰고 그 위에 관제가 보는 것을 얹는다 | 판정 4색을 정의하지 않는다(정본은 `web/config.js`) |
 | `web/navi/src/components/opsLayers.ts` | **관제 전용 층.** `layers.ts` 가 상한을 치면서 **화면 경계**로 갈랐다 — 「두 화면의 일이 다르다」가 코드에도 선 자리다 | 내비가 쓰는 층은 안 든다 |
-| `web/navi/src/components/landuse.ts` | **바탕 면(토지이용 · 대지) 층과 그 소스 둘.** 진입 청크 밖에 둔다 — 내비는 지도가 뜬 뒤 동적으로 불러 `bg` 바로 뒤에 얹고(`attachLanduse`) 관제는 제 청크에서 읽는다. 꺼 둔 동안에는 번들러가 통째로 걷고 첫 화면이 소스(578KB)를 안 받는다(PLAN #235) | 켜고 끄는 결정(`LAND_ON`)은 지도 컴포넌트가 든다 |
+| `web/navi/src/components/landuse.ts` | **바탕 면(토지이용 · 대지) 층과 그 소스 둘.** 진입 청크 밖에 둔다 — 내비는 지도가 뜬 뒤 동적으로 불러 `bg` 바로 뒤에 얹고(`attachLanduse`) 관제는 제 청크에서 읽는다. 꺼 둔 동안에는 번들러가 통째로 걷고 첫 화면이 소스(578KB)를 안 받는다(PLAN #235(닫힘 · DECISIONS §813)) | 켜고 끄는 결정(`LAND_ON`)은 지도 컴포넌트가 든다 |
 | `web/navi/src/infra/mapPitch.ts` | **지도 기울임 상한을 주소 질의에서 고른다** — `?pitch=85` · 기본 75 · 정수 60‥85 밖과 틀린 값은 75(가까운 쪽으로 당기지 않는다 — 오타가 설정이 되면 안 된다 · PLAN #78) | 코드가 주는 기울임(1인칭 최대 60)은 안 바꾼다 — 사람 손의 기울임만 묶는다 |
 | `web/navi/src/components/roadLabels.ts` | **도로명 글자를 화면 기준으로 이름마다 한 점**(가로)으로 고른다 — 안쪽 상자로 자른 조각 중 가장 긴 것에 글자 상자가 통째로 드는 점. 점 소스(`road_labels`)를 채우고 `lbl-road` 층(이 파일의 `roadLabelLayers` — 아이콘 층 **앞**에 넣어 아이콘이 먼저 자리를 잡는다)이 그린다. 진입 청크 래칫 때문에 내비는 **동적 import** 한다. 선을 따라 눕히지 않는다(남북 길에서 한글이 세로로 눕는다) | 글자끼리 · 아이콘과의 충돌(지도 엔진이 든다 — 층 순서가 우선순위다) · HTML 마커(출발 · 사건 핀)와의 충돌(엔진 색인 밖) |
 | `web/navi/src/domain/serviceArea.ts` | 측위가 **우리 데이터 범위 안인가.** 범위 밖은 「GPS 가 안 잡힌다」와 다른 상태다 | 범위 밖일 때 무엇을 할지는 훅이 정한다 |
