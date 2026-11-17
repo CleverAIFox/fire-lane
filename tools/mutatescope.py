@@ -192,6 +192,25 @@ def pick(muts: list[tuple[str, str]], cap: int, src: str | None = None) -> list[
     return [muts[i] for i in sorted(i for _, i in ranked[:cap])]
 
 
+#: 후보를 만드는 소스 — `sampler_print` 가 이 파일의 `mutants()` 와 연산자 표를 해시한다(테스트가 다른 경로로 바꿔 본다).
+MUTATE_SRC = TOOLS / "mutate.py"
+_OPERATOR_NAMES = {"_CMP", "_CMP_SRC"}
+
+
+def operators_source() -> str:
+    """`mutate.py` 에서 **자리 목록을 정하는 것**의 소스 — `mutants()` 함수와 연산자 표(`_CMP` · `_CMP_SRC`). 나머지(상수 · 흔들기 실행)는 안 든다 — 래칫 상수 한 줄에 전부 낡지 않게."""
+    src = MUTATE_SRC.read_text(encoding="utf-8")
+    parts = []
+    for n in ast.parse(src).body:
+        hit = (isinstance(n, ast.FunctionDef) and n.name == "mutants") or (
+            isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id in _OPERATOR_NAMES for t in n.targets))
+        if hit:
+            parts.append(ast.get_source_segment(src, n) or "")
+    if len(parts) != 3:
+        raise RuntimeError(f"`mutate.py` 에서 `mutants` · `_CMP` · `_CMP_SRC` 셋을 못 찾았다({len(parts)}) — 지문이 후보 규칙을 못 든다")
+    return "\n".join(parts)
+
+
 def sampler_print() -> str:
-    """표본 고르는 규칙의 지문 — `pick` 과 키 만들기의 소스. 규칙이 바뀌면 `catch_print` 가 도구 전부에서 달라져 `--write --stale` 이 전부를 다시 잰다."""
-    return hashlib.sha256((inspect.getsource(pick) + inspect.getsource(_site_keys)).encode()).hexdigest()[:12]
+    """표본 규칙의 지문 — **고르는 규칙**(`pick` · 키 만들기)과 **후보 목록**(`mutants()` · 연산자 표)의 소스. 둘 중 하나가 바뀌면 `catch_print` 가 도구 전부에서 달라져 `--write --stale` 이 전부를 다시 잰다."""
+    return hashlib.sha256((inspect.getsource(pick) + inspect.getsource(_site_keys) + operators_source()).encode()).hexdigest()[:12]

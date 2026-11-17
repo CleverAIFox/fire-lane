@@ -166,8 +166,11 @@ def test_the_ratchet_is_two_way():
       옆집에 뒀다는 것이 「아무도 안 든다」가 되면 안 된다.
     """
     assert M.RATCHETS == {"SURVIVORS": "down", "MUTANTS": "up",
-                          "UNCATCHABLE": "down",
-                          "RATCHET_HELD": "up", "UNSORTED": "down"}
+                          "UNCATCHABLE": "down", "UNSORTED": "down"}
+    # ★ 2026-11-17 (DECISIONS §820). `RATCHET_HELD` 는 래칫이 아니다 — 새 표본에서 래칫 상수 56자리 중 1곳(1.8%)만 든다. 분류(`sort_survivors`)는 남는다.
+    assert "RATCHET_HELD" not in M.RATCHETS and not hasattr(M, "RATCHET_HELD")
+    held, rest = M.sort_survivors({"도구별": [{"도구": "sealcov", "생존": ["146: 0 → 1"]}]})
+    assert [h[0] for h in held] == ["sealcov"] and rest == [], "분류는 남아야 한다 — 장부 읽는 쪽이 이 가름을 쓴다"
 
 
 def test_the_silence_axis_is_held_next_door():
@@ -234,3 +237,27 @@ def test_shaking_restores_the_original(tmp_path, monkeypatch):
     assert (tools / "toy.py").read_text(encoding="utf-8") == src, "원본이 안 돌아왔다"
     assert r["붙잡이"] == 0, "자기검사가 없는 도구에 붙잡이가 생겼다"
     assert len(r["생존"]) == r["돌연변이"], "붙잡이가 0인데 뭔가 죽었다"
+
+
+def test_the_ledger_fingerprint_follows_the_operator_table(monkeypatch, tmp_path):
+    """★ DECISIONS §820 — 연산자 표에 `in → not in` · `is → is not` 을 더해도 지문이 달라진 도구가 0/37 이었다(자리 2,582 → 2,786 · 표본 6자리)."""
+    import mutatescope as MS
+    src = (ROOT / "tools/mutate.py").read_text(encoding="utf-8")
+    was, rule = MS.catch_print("sizecheck"), MS.sampler_print()
+    anchor = "_CMP = {ast.GtE:"
+    assert src.count(anchor) == 1
+    more = tmp_path / "mutate.py"
+    more.write_text(src.replace(anchor, '_CMP = {ast.In: "not in", ast.Is: "is not", ast.GtE:'), encoding="utf-8")
+    monkeypatch.setattr(MS, "MUTATE_SRC", more)
+    assert MS.sampler_print() != rule and MS.catch_print("sizecheck") != was, "연산자를 더했는데 지문이 안 달라졌다"
+    # 후보와 상관없는 줄(래칫 상수 · 주석)은 지문에 안 든다 — 상수 한 줄에 37 도구가 낡으면 값을 못 치른다
+    same = tmp_path / "mutate_same.py"
+    same.write_text(src.replace("UNCATCHABLE = 0", "UNCATCHABLE = 0  # 주석 한 줄", 1), encoding="utf-8")
+    monkeypatch.setattr(MS, "MUTATE_SRC", same)
+    assert MS.sampler_print() == rule
+    # 후보 규칙을 못 찾으면 조용히 비우지 않고 운다
+    broken = tmp_path / "mutate_broken.py"
+    broken.write_text("x = 1\n", encoding="utf-8")
+    monkeypatch.setattr(MS, "MUTATE_SRC", broken)
+    with pytest.raises(RuntimeError, match="못 찾았다"):
+        MS.sampler_print()

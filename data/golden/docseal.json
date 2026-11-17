@@ -15173,6 +15173,32 @@
   },
   "sha": "c08f9dd38fd3e600"
  },
+ "DECISIONS/819": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_mutate.py",
+   "tools/mutate.py",
+   "tools/mutatescope.py",
+   "tools/mutatetest.py",
+   "tools/sizetable.py"
+  ],
+  "fp": "view-v3",
+  "kind": "read",
+  "legacy": [
+   "300aabb75cb2f835",
+   "5bb2a2c3d5356779",
+   "72bee76e932a329f"
+  ],
+  "parts": {
+   "tests/test_mutate.py": "111474253089b9a7",
+   "tools/mutate.py": "0668d73ffb725fc4",
+   "tools/mutatescope.py": "043370360e4daf88",
+   "tools/mutatetest.py": "626634b7bb1b7828",
+   "tools/sizetable.py": "7d67ad6835d85fce",
+   "본문": "87f9bd272d857406"
+  },
+  "sha": "300aabb75cb2f835"
+ },
  "DECISIONS/82": {
   "doc": "docs/DECISIONS.md",
   "files": [
