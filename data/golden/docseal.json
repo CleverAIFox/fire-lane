@@ -15009,19 +15009,19 @@
   "fp": "view-v3",
   "kind": "read",
   "legacy": [
-   "4c993534c6479ccb",
-   "8883d42f4990af9f",
-   "a603dd774cc7eb2e",
-   "e5680bdba5ce0826"
+   "5da7d1955670e57b",
+   "9a6e67b07b4c6564",
+   "c37093a39c9383b8",
+   "d4fc03cb1f8f4b48"
   ],
   "parts": {
    "src/firelane/scopetier.py": "b23ae9f4ab94ead3",
    "tests/test_scope_tier.py": "3706f0e6381ed3ff",
    "tools/docnum_check.py": "c95bb146d38e429e",
    "tools/scopecheck.py": "9808d8d7c0894f55",
-   "본문": "8bcfb186e6f76be1"
+   "본문": "71b16ee90fad6737"
   },
-  "sha": "4c993534c6479ccb"
+  "sha": "9a6e67b07b4c6564"
  },
  "DECISIONS/812": {
   "doc": "docs/DECISIONS.md",
