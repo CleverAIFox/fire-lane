@@ -275,7 +275,11 @@ def test_plan_status_probe_is_alive():
     text = _plan()
     ok = _legend(text)
     assert ok, "§0-2 범례를 못 읽었다 — 표식 파서가 죽었다"
-    assert len(_rows(text)) > 20, "§1 표 행을 못 찾았다 — 행 파서가 죽었다"
+    # ★ 2026-11-17 (PLAN #253). 문턱이 `> 20` 이라 행이 20개로 줄자 **행을 닫는 것이 이 시험을 깼다** — 행은 닫히려고 있다. 고정 문턱 대신 절 제목이 **선언한 행 수**(`## 1. 남은 일 — N행`)와
+    #   파서가 센 수가 같은가를 묻는다: 더 엄하고(어긋나면 운다) 행이 닫혀도 안 깨진다. 선언이 0 이면 빈 그물이라 그것도 운다.
+    import re as _re
+    declared = int(_re.search(r"^## 1\. 남은 일 — (\d+)행", text, _re.M).group(1))
+    assert declared > 0 and len(_rows(text)) == declared, f"§1 표 행을 {len(_rows(text))}개 셌고 제목은 {declared}행이라 한다 — 행 파서가 죽었거나 제목이 낡았다"
 
     synth = text.replace("| 1 | ", "| 1 | ", 1)
     lines = synth.splitlines(keepends=True)
