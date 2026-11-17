@@ -1,14 +1,13 @@
 # 이름<TAB>명령<TAB>초 — 지금 초록인 게이트만(빨간 것은 풀린 뒤에 한 줄 더한다). 합쳐서 30초 안이어야 한다(PLAN #192 ② 실측 8코어 약 15초 · 2코어 20초 · 직렬 33초).
 # ★★ 셋째 열(초)은 **훅 안에서 잰 벽시계**다 — 단독 초가 아니다(2026-11-08: deadcheck 단독 10.7초 · 훅 안 28~29초). 게이트가 병렬로 돌며 CPU 를 나눈 값이고 조건은 DECISIONS §665 가 정했다(훅 전체 벽시계 · 게이트 동시 · 8코어). `tools/gatetimes.py --measure --write` 가 쓴다 — 손으로 안 적고 훅은 읽고 버린다.
+# ★ 2026-11-17 (PLAN #253 · DECISIONS §816). `deadcheck 래칫` · `카나리아` 를 이 목록에서 뺐다 — 읽기 전용 정적 검사고 훅 CPU 를 먹어 벽시계를 35 ~ 37초로 밀었다. 푸시 전에는 `pushready` ㉨ 가 CI 명령 그대로 돌고(`gatefast.LAYERS` 의 ready 층 · `tests/test_pushready.py` 가 문다) CI `contract-fast` 가 푸시마다 돈다.
 # ★ 시험 묶음은 **워커 6** 이다(PLAN #214 · DECISIONS §679). 8 은 훅이 띄운 24게이트와 8코어를 다퉈 단일 스레드 `deadcheck` 가 마지막에 끝났다 — 같은 커밋 다섯 번 26.7~32.3초(둘이 예산 초과). 6 은 24.4~26.6초(열 번)다. 파일 집합은 같다(`min(jobs, EFF)`).
-deadcheck 래칫	uv run python tools/deadcheck.py --ratchet	26.0
 파일 길이 래칫	uv run python tools/testsizetable.py	0.2
 봉인 덮임	uv run python tools/sealcov.py	2.2
 판정 상수 출처	uv run python tools/constbasis.py	0.3
 계보 대장 정합	uv run python -m firelane.datalog check	4.4
 문서 생성 블록	uv run python tools/docgen.py --check	3.3
 커밋 정책(추적 전체)	uv run python tools/commit_policy.py --tracked	0.5
-카나리아(합성 결함 쌍)	uv run python tools/canary.py	20.8
 # ── Zm52 — 사람이 `fieldseal --write` 로 봉인해 지문이 초록이 되어 줄을 풀었다(`tests/test_fieldseal.py::test_when_the_seal_is_green_the_prepush_gate_must_be_on` 이 이 줄이 켜져 있는지 문다 · 0.1초) ──
 봉인 대조(data/field)	uv run python tools/fieldseal.py	0.7
 # ── PLAN #192 ② · DECISIONS §633 — 문서 정합 묶음. 11-04 의 날인 누락 푸시 둘(31c334bf · 9b374a16)은 `docseal check` 가 막을 자리였다.

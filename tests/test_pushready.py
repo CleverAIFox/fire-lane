@@ -333,11 +333,11 @@ def test_a_red_mirror_check_blocks_names_the_check_and_prints_its_own_command():
 
 def test_a_red_hook_gate_in_the_mirror_is_named_with_its_layer():
     import gate_parity as GP
-    name, cmd = next((n, c) for n, c in GP.gate_commands() if "deadcheck" in c)
+    name, cmd = next((n, c) for n, c in GP.gate_commands() if "tonecheck" in c)      # ★ deadcheck 는 PLAN #253 에서 훅을 떠났다 — 아직 훅에 있는 게이트로 같은 물음을 민다
 
     def run(argv, cwd):
         if argv[0] == "bash" and argv[-1] == cmd:
-            return 1, "deadcheck 가 빨갛다\n"
+            return 1, "tonecheck 가 빨갛다\n"
         return (0, "") if argv[0] in ("bash", "env") else _runner()(argv, cwd)
 
     b = P.check_ci_mirror(ROOT, run)
@@ -575,3 +575,18 @@ def test_notes_adds_the_alert_line_only_when_there_is_an_upstream(tmp_path: Path
     called: list[int] = []
     out = P.notes(tmp_path, P.real_run, lambda argv, cwd: (called.append(1) or (0, "2")))
     assert not called and "업스트림이 없는 가지" in " ".join(out)       # 업스트림이 없으면 망을 안 탄다
+
+
+def test_the_two_gates_taken_out_of_the_hook_still_run_before_a_push_through_the_mirror():
+    """★ 양성 대조(PLAN #253 · DECISIONS §816) — `deadcheck --ratchet` · `canary` 는 훅 목록에 없고(`pre-push.gates`) `pushready` ㉨ 가 **CI 의 명령 그대로** 도는 목록(`ready` 층)에 **있다**.
+    훅에서 뺀 검사가 어느 길에서도 안 도는 일(게이트가 조용히 사라지는 일)을 막는다. CI `contract-fast` 에도 같은 명령이 남아 있는가도 같이 묻는다."""
+    import gatefast as GF
+
+    jobs, _skipped = P.mirror_commands()
+    moved = {"canary.py": "tools/canary.py", "deadcheck.py": "tools/deadcheck.py --ratchet"}
+    for tool, cmd in moved.items():
+        in_hook = [j for j in jobs if j[0] == "훅" and tool in " ".join(j[2])]
+        in_mirror = [j for j in jobs if j[0] == "ready" and tool in " ".join(j[2])]
+        assert not in_hook, f"{tool} 가 아직 훅 목록에 있다 — 뺐다는 전제가 깨졌다"
+        assert in_mirror, f"{tool} 가 훅에도 ㉨ 에도 없다 — 푸시 전에 안 돈다"
+        assert any(cmd in c for c in GF.fast_commands()), f"{cmd} 가 CI contract-fast 에 없다"

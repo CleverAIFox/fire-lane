@@ -82,6 +82,8 @@ _WRITES1 = "읽기 전용이 아니다 — `data/interim/lineage.mmd`(추적 밖
 _WRITES2 = "느리고(단독 58초) 읽기 전용이 아니다 — `data/processed/clearance_cross.json` 을 쓴다"
 _AXIS_A = "㉠ 이 같은 도구(`tools/ratchet.py` 전수)를 이미 돈다"
 _AXIS_T = "㉥ 이 시험 묶음을 돈다 — CI 는 전수를 네 조각으로 나눠 돌고 ㉥ 은 그 부분집합(바뀐 파일에 닿는 것 + 예산 묶음)이다"
+_MOVED = ("훅 벽시계 예산(30초)에서 뺐다(2026-11-17 · PLAN #253 · DECISIONS §816) — 읽기 전용이고 단독 7.8 · 9.1초(같은 일을 한 번만 하게 고친 뒤 · 종전 7.9 · 9.5초)지만 훅 CPU 를 먹어 "
+          "벽시계를 35 ~ 37초로 밀었다. 푸시 전에는 `pushready` ㉨ 가 CI 의 명령 글자 그대로 돈다")
 _STRICT = "엄격 잡(`contract-strict`)의 검사 — 싸고(0.1~0.9초) 읽기만 한다. 훅 예산에 안 넣고 ㉨ 가 든다"
 LAYERS: dict[tuple[str, str], tuple[str, str]] = {
     ("deptry", "src tools"): ("ci", _NET),
@@ -104,9 +106,11 @@ LAYERS: dict[tuple[str, str], tuple[str, str]] = {
     ("tools/testsplit.py", "--part $PART --of 4"): ("ci", _AXIS_T),
     ("tools/archcost.py", ""): ("ready", _BUDGET),
     ("tools/argcheck.py", ""): ("ready", _BUDGET),
+    ("tools/canary.py", ""): ("ready", _MOVED),
     ("tools/clearance_cross.py", ""): ("ci", _WRITES2),
     ("tools/colorsim.py", ""): ("ready", _BUDGET),
     ("tools/countcheck.py", ""): ("ready", _BUDGET),
+    ("tools/deadcheck.py", "--ratchet"): ("ready", _MOVED),
     ("tools/depgroups_check.py", ""): ("ready", _BUDGET),
     ("tools/docnum_check.py", ""): ("ready", _STRICT),
     ("tools/dupcheck.py", "--min 40 --max 0"): ("ready", _SLOW3),
