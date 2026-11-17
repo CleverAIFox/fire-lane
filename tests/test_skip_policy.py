@@ -2,6 +2,8 @@
 
 ★ 2026-09-17 (DECISIONS §175). 정책이 문서에만 있으면 51 이 다시 쌓인다.
   판별식은 합성 사유로, 훅은 합성 테스트 파일을 별도 pytest 프로세스로 돌려 흔든다.
+
+PLAN 본문  규칙 없음 — PLAN §1 의 표 파서가 산 것(제목 수가 선언한 행 수 이상)만 보고 본문 내용에는 규칙을 안 건다
 """
 from __future__ import annotations
 
@@ -53,7 +55,10 @@ def test_judge_rejects_what_hides():
 def test_plan_titles_are_read():
     """PLAN §1 행 제목을 못 읽으면 모든 유예가 거부된다 — 파서가 살아 있는가."""
     titles = sp.plan_titles()
-    assert len(titles) > 20, f"PLAN §1 행 제목 {len(titles)}개 — 표 파서가 죽었다"
+    # ★ 2026-11-18 — 고정 문턱(`> 20`)은 열린 행이 20 밑으로 내려가는 날(행을 닫는 날) 파서가 멀쩡해도 울었다. 제목이 **선언한 행 수 이상**을 읽는지로 바꿨다(`test_doc_fsck` 의 같은 시험과 같은 꼴).
+    m = re.search(r"^## 1\. 남은 일 — (\d+)행", (ROOT / "docs" / "PLAN.md").read_text(encoding="utf-8"), re.M)
+    declared = int(m.group(1)) if m else 0
+    assert declared > 0 and len(titles) >= declared, f"PLAN §1 행 제목 {len(titles)}개 < 선언 {declared}행 — 표 파서가 죽었다"
 
 
 def test_hook_turns_unclassified_skip_into_failure(tmp_path):
