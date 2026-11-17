@@ -74,11 +74,59 @@ def test_syntax_error_yields_nothing_rather_than_a_lie():
     assert M.mutants("def (:::") == []
 
 
-def test_cap_samples_evenly_and_passes_through():
-    """앞에서 자르면 머리말만 흔든다 — 거기는 행동이 없어 생존이 쏟아진다."""
-    ten = [(str(i), "") for i in range(10)]
-    assert [w for w, _ in M.pick(ten, 3)] == ["0", "3", "6"]
+def _src(n: int, extra: dict[int, str] | None = None, head: int = 0) -> str:
+    """비교 자리가 `n` 개인 소스 — 줄마다 다른 상수. `extra[i]` 는 `i` 번째 앞에 끼우는 줄, `head` 는 맨 위에 끼우는 주석 줄 수."""
+    body = [f"def f{i}(x):\n    return x == {1000 + i}" for i in range(n)]
+    for at, line in sorted((extra or {}).items(), reverse=True):
+        body.insert(at, line)
+    return "\n".join(["# 머리말"] * head + body) + "\n"
+
+
+def _ident(src: str, got: list[tuple[str, str]]) -> set[tuple[str, str]]:
+    """표본의 정체 — (원문 줄, 바꾼 꼴). 줄 번호는 정체가 아니다."""
+    lines = src.split("\n")
+    return {(lines[int(w.split(": ")[0]) - 1].strip(), w.split(": ", 1)[1]) for w, _ in got}
+
+
+def test_cap_passes_through_is_deterministic_and_reports_in_file_order():
+    ten = [(f"{i}: a → b", "") for i in range(10)]
     assert M.pick(ten, 0) == ten and M.pick(ten, 99) == ten
+    got = [w for w, _ in M.pick(ten, 3)]
+    assert got == [w for w, _ in M.pick(ten, 3)] and len(got) == 3
+    assert got == sorted(got, key=lambda w: int(w.split(":")[0])), "보고 순서는 파일 순서다"
+    many = [(f"{i}: a → b", "") for i in range(200)]
+    assert max(int(w.split(":")[0]) for w, _ in M.pick(many, 20)) >= 100, "앞에서 자르면 머리말만 흔든다 — 표본이 한쪽에 몰렸다"
+
+
+def test_the_sample_does_not_move_when_lines_are_inserted_above():
+    """★ PLAN #255 — 줄 번호를 키로 쓰면 위에 줄이 끼는 것만으로 표본이 갈린다(DECISIONS §817: `tonecheck` 4 중 2)."""
+    a, b = _src(60), _src(60, head=7)
+    assert M.mutants(a) and len(M.mutants(a)) == len(M.mutants(b))
+    assert _ident(a, M.pick(M.mutants(a), 4, a)) == _ident(b, M.pick(M.mutants(b), 4, b))
+
+
+def test_the_sample_barely_moves_when_sites_are_added():
+    """★ PLAN #255 — 종전 규칙(`int(i * 자리수 / 4)`)은 자리가 129 → 136 으로 늘자 같은 자리가 1/4 만 남았다. 이 규칙은 자리 하나에 최대 하나만 바뀐다."""
+    old = lambda n: {int(i * (n / 4)) for i in range(4)}      # 종전 규칙의 자리 번호 — 통제군
+    assert len(old(129) & old(136)) <= 1, "통제군이 이미 안 갈리면 이 시험은 아무것도 안 잰다"
+    base = _src(129)
+    got = _ident(base, M.pick(M.mutants(base), 4, base))
+    for at in (0, 40, 100, 129):
+        src = _src(129, {at: "def g(x):\n    return x != 7"})
+        assert len(got & _ident(src, M.pick(M.mutants(src), 4, src))) >= 3, f"자리 하나({at}번째 앞)가 표본을 둘 이상 갈랐다"
+    seven = _src(129, {at: f"def h{at}(x):\n    return x < {at}" for at in (5, 30, 55, 80, 100, 120, 128)})
+    assert len(M.mutants(seven)) - len(M.mutants(base)) >= 7
+    assert len(got & _ident(seven, M.pick(M.mutants(seven), 4, seven))) >= 2, "일곱 자리가 늘어 표본이 거의 다 갈렸다"
+
+
+def test_the_ledger_fingerprint_follows_the_sampling_rule(monkeypatch):
+    """★ PLAN #255 의 둘째 구멍 — `catch_print` 가 `mutate.py` 를 안 해시해 `pick` 을 고쳐도 `--write --stale` 이 낡은 도구를 0 개로 냈다."""
+    import mutatescope as MS
+    was, rule = MS.catch_print("sizecheck"), MS.sampler_print()
+    assert MS.catch_print("sizecheck") == was and MS.sampler_print() == rule
+    monkeypatch.setattr(MS, "pick", lambda muts, cap, src=None: muts[:cap])      # 규칙이 바뀐다
+    assert MS.sampler_print() != rule
+    assert MS.catch_print("sizecheck") != was and MS.catch_print("planclose") != MS.catch_print("sizecheck")
 
 
 def test_catchers_are_derived_and_pytest_is_opt_in():
@@ -118,8 +166,11 @@ def test_the_ratchet_is_two_way():
       옆집에 뒀다는 것이 「아무도 안 든다」가 되면 안 된다.
     """
     assert M.RATCHETS == {"SURVIVORS": "down", "MUTANTS": "up",
-                          "UNCATCHABLE": "down",
-                          "RATCHET_HELD": "up", "UNSORTED": "down"}
+                          "UNCATCHABLE": "down", "UNSORTED": "down"}
+    # ★ 2026-11-17 (DECISIONS §820). `RATCHET_HELD` 는 래칫이 아니다 — 새 표본에서 래칫 상수 56자리 중 1곳(1.8%)만 든다. 분류(`sort_survivors`)는 남는다.
+    assert "RATCHET_HELD" not in M.RATCHETS and not hasattr(M, "RATCHET_HELD")
+    held, rest = M.sort_survivors({"도구별": [{"도구": "sealcov", "생존": ["146: 0 → 1"]}]})
+    assert [h[0] for h in held] == ["sealcov"] and rest == [], "분류는 남아야 한다 — 장부 읽는 쪽이 이 가름을 쓴다"
 
 
 def test_the_silence_axis_is_held_next_door():
@@ -186,3 +237,39 @@ def test_shaking_restores_the_original(tmp_path, monkeypatch):
     assert (tools / "toy.py").read_text(encoding="utf-8") == src, "원본이 안 돌아왔다"
     assert r["붙잡이"] == 0, "자기검사가 없는 도구에 붙잡이가 생겼다"
     assert len(r["생존"]) == r["돌연변이"], "붙잡이가 0인데 뭔가 죽었다"
+
+
+def test_the_ledger_fingerprint_follows_the_operator_table(monkeypatch, tmp_path):
+    """★ DECISIONS §820 — 연산자 표에 `in → not in` · `is → is not` 을 더해도 지문이 달라진 도구가 0/37 이었다(자리 2,582 → 2,786 · 표본 6자리)."""
+    import mutatescope as MS
+    src = (ROOT / "tools/mutate.py").read_text(encoding="utf-8")
+    was, rule = MS.catch_print("sizecheck"), MS.sampler_print()
+    anchor = "_CMP = {ast.GtE:"
+    assert src.count(anchor) == 1
+    more = tmp_path / "mutate.py"
+    more.write_text(src.replace(anchor, '_CMP = {ast.In: "not in", ast.Is: "is not", ast.GtE:'), encoding="utf-8")
+    monkeypatch.setattr(MS, "MUTATE_SRC", more)
+    assert MS.sampler_print() != rule and MS.catch_print("sizecheck") != was, "연산자를 더했는데 지문이 안 달라졌다"
+    # 후보와 상관없는 줄(래칫 상수 · 주석)은 지문에 안 든다 — 상수 한 줄에 37 도구가 낡으면 값을 못 치른다
+    same = tmp_path / "mutate_same.py"
+    same.write_text(src.replace("UNCATCHABLE = 0", "UNCATCHABLE = 0  # 주석 한 줄", 1), encoding="utf-8")
+    monkeypatch.setattr(MS, "MUTATE_SRC", same)
+    assert MS.sampler_print() == rule
+    # 후보 규칙을 못 찾으면 조용히 비우지 않고 운다
+    broken = tmp_path / "mutate_broken.py"
+    broken.write_text("x = 1\n", encoding="utf-8")
+    monkeypatch.setattr(MS, "MUTATE_SRC", broken)
+    with pytest.raises(RuntimeError, match="못 찾았다"):
+        MS.sampler_print()
+
+
+def test_the_produced_ratchet_names_equal_the_declared_ones_even_when_the_ledger_is_stale(monkeypatch):
+    """★ DECISIONS §820 — 선언에서 `RATCHET_HELD` 를 뺐는데 `ratchet_values()` 가 그 이름을 계속 냈다. 장부가 낡은 작업 트리에서는 `tests/test_ratchet_names_*` 가 `mutate.py` 를 건너뛰어 로컬에서 안 보였다(CI 만 울었다)."""
+    d = json.loads((ROOT / "data/golden/mutation.json").read_text(encoding="utf-8"))
+    fp = {r["도구"]: r["지문"] for r in d["도구별"]}
+    monkeypatch.setattr(M, "catch_print", lambda tool: fp[tool])          # 장부가 신선하다고 친다(읽기만 한다)
+    got = M.ratchet_values()
+    assert set(got) == set(M.RATCHETS), f"선언만 {sorted(set(M.RATCHETS) - set(got))} · 산출만 {sorted(set(got) - set(M.RATCHETS))}"
+    held, rest = M.sort_survivors(d)
+    assert len(held) + len(rest) == d["생존"], "분류는 남아 있어야 한다(`--classify` · 장부)"
+

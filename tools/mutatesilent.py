@@ -64,7 +64,7 @@ def count(ledger: dict) -> int:
 #: 침묵한 과녁 수 — **내려가는 쪽으로만.**
 #: ★ 2026-10-14 (DECISIONS 532) 초기값은 실측이다 —
 #:   `docgen` · `planclose` · `ratchet` · `sizecheck`. 넷 다 같은 자리다.
-SILENCED = 4
+SILENCED = 0
 RATCHETS = {"SILENCED": "down"}
 
 

@@ -64,6 +64,7 @@ from mutatescope import (
     TOOLS,
     catch_print,
     named_tests,
+    pick,
     targets,
 )
 
@@ -206,7 +207,7 @@ TIMEOUT = 180
 #   ★ 교훈은 절차다: 측정이 빨간 상태에서 조이면 가짜로 조여지고 막는 것이 없다. 전말 · 재현은 DECISIONS §657-3.
 #: ★ 2026-11-08 (PLAN #198 · DECISIONS §657-13). 82 → **83.** 과녁이 옮겨 간
 #:   증가이고 **구멍이 아니다** — 사유와 실측은 §657-13 이 든다.
-SURVIVORS = 83   # ★ 2026-11-17 (DECISIONS §817) 82 → 83 — 표본 이동으로 드러난 수다 — 시험이 약해진 것이 아니다(⑥ 이전 코드와 시험에서도 살았다)
+SURVIVORS = 85   # ★ 2026-11-17 (DECISIONS §820) 83 → 85 — 표본 규칙을 바꾼(#255(닫힘)) 새 표본의 실측이다 · 생존율 56.1% → 57.4%. 82 → 83 은 §817(표본 이동)
 #: 흔든 수 — 올라가는 쪽으로만. 분모를 안 잠그면 생존 수는 수가 아니다.
 # ★ 2026-10-11 — 124 → 128 (DECISIONS §478-1). **조이는 쪽이다.** 도구가
 #   31 → 32 로 늘어 흔든 수가 넷 늘었다(`tools/selftests.py`). `SURVIVORS` 가
@@ -217,11 +218,8 @@ SURVIVORS = 83   # ★ 2026-11-17 (DECISIONS §817) 82 → 83 — 표본 이동�
 MUTANTS = 148
 #: 붙잡이가 **0 인 과녁** 수. 흔들어도 못 재는 자리다 — 내려가는 쪽으로만.
 UNCATCHABLE = 0
-#: 생존 중 **래칫이 드는 것.** 이 문이 안 붙들 뿐 다른 문이 붙든다 — 올라가는
-#: 쪽으로만. 줄면 래칫 선언이 사라졌다는 뜻이고 그건 나쁜 쪽이다.
-# ★ 2026-10-12 (§482) 23 → 24 — `navicov.NAVI_UNTESTED`. 선언을 흔들면
-#   `ratchet.py` 가 「선언과 실측이 다르다」로 운다. 이 문이 아니라 그 문이 든다.
-RATCHET_HELD = 26   # ★ 2026-11-14 27 → 26 — `themecheck` 의 하한 변이(`LAND_DE_MIN` 6→7 · 래칫이 든 자리로 셌다)를 자기검사로 죽여 붙잡이가 하나 줄었다(`mutate --classify` 실측 26 = 래칫이 든다 · 82 = 26 + 56). ★ 2026-10-09 (§445) 22 → 23 — `canary.NO_CANARY`
+#: 생존 중 **래칫이 드는 것** — 분류는 남고(`--classify` · 장부) 래칫 선언 · 산출은 없앴다(2026-11-17 · DECISIONS §820). 이 문이 안 붙들 뿐 다른 문(`ratchet.py`)이 붙든다.
+#: 없앤 이유 — 전수 2,582자리 중 래칫 상수는 56(2.2%) · 무작위면 148 중 3.2 · 옛 표본 28 은 래칫을 고른 것이 아니라 파일 첫 자리(i = 0)였다(도구 37 중 28 이 첫 자리에 상수를 둔다) · 새 표본은 56 중 1곳(1.8%)만 든다 — 재던 것이 수가 아니었다.
 #: 생존 중 **아직 아무도 안 가른 것.** 내려가는 쪽으로만.
 # ★ **이력은 수와 사유 한 줄씩**만 둔다. 긴 사유는 그 판의 DECISIONS 절에
 #   있고, 여기 두 벌로 적으면 **갈린다**(이 저장소가 다섯 번 겪은 그 병).
@@ -243,11 +241,14 @@ RATCHET_HELD = 26   # ★ 2026-11-14 27 → 26 — `themecheck` 의 하한 변�
 #     §509    63 → 64   자기검사의 합성 좌표 — 행동을 안 바꾼다
 #     532     65 → 61   **조인 쪽** — `__main__` 가드 넷이 `SILENCED` 로 갔다. §445 가 「아직 안 가른 것」으로 적은 그 자리다
 #     §657    57 → 58   **되돌림** — 위 `SURVIVORS` 와 같은 생존자(`sealcov.py:186` 등가 변이) 하나가 아직 안 가른 쪽에 든다
-UNSORTED = 57   # ★ 2026-11-17 (DECISIONS §817) 56 → 57 — 표본 이동으로 드러난 수다 — 시험이 약해진 것이 아니다(`SURVIVORS` 와 같은 생존자 하나)
+#     §817    56 → 57   표본 이동으로 드러난 수다 — 시험이 약해진 것이 아니다. `SURVIVORS` 와 같은 생존자 하나
+#     §820    57 → 84   표본 규칙을 바꾼(#255(닫힘)) 새 표본의 실측이다 — 옛 표본의 래칫 상수 28 자리(첫 자리 i = 0)가 비상수 자리 77 로 바뀌었다
+# ★ **`SURVIVORS` 와 최대 1 차이인 종속값이다** — `RATCHET_HELD` 가 0 에 가까워(새 표본 1) 독립된 정보가 거의 없다. 다음에 이 수를 볼 때 `SURVIVORS` 와 따로 읽지 않는다.
+UNSORTED = 84   # ★ 2026-11-17 (DECISIONS §820) 57 → 84
 #: ★ 침묵한 과녁 수(`SILENCED`)는 **옆집이 든다** — `mutatesilent`. 그 축을
 #:   아는 도구가 제 래칫을 드는 것이 이 저장소의 꼴이다(DECISIONS 532-3).
 RATCHETS = {"SURVIVORS": "down", "MUTANTS": "up", "UNCATCHABLE": "down",
-            "RATCHET_HELD": "up", "UNSORTED": "down"}
+            "UNSORTED": "down"}      # ★ `RATCHET_HELD` 는 여기 없다(DECISIONS §820)
 
 
 _HARMLESS = "\n# mutation-probe — 무해 돌연변이. 행동을 안 바꾼다.\n"
@@ -378,18 +379,6 @@ def live_catchers(tool: str, deep: bool = False) -> tuple[list[list[str]], list[
 
 
 # ── ③ 재기 ──────────────────────────────────────────────────────
-def pick(muts: list[tuple[str, str]], cap: int) -> list[tuple[str, str]]:
-    """상한 안에서 **파일 전체에 고르게** 고른다. 결정적이다.
-
-    ★ 앞에서부터 자르면 머리말·import 쪽만 흔든다 — 거기는 어차피 행동이
-      없어서 「생존」이 쏟아지고, 수가 커지는데 뜻은 없다.
-    """
-    if cap <= 0 or len(muts) <= cap:
-        return muts
-    step = len(muts) / cap
-    return [muts[int(i * step)] for i in range(cap)]
-
-
 # ★ **흔드는 동안 트리는 거짓말을 한다**(DECISIONS §398-6). 과녁을 제자리에서
 #   바꿔 쓰고 `finally` 로 되돌린다. ★ 2026-10-08 (§435) 정정 — `finally` 는
 #   **신호에는 안 돈다.** 시간 상한으로 끊긴 실행이 `sealcov.py` 에 흔든 사본을
@@ -404,7 +393,7 @@ def shake(tool: str, cap: int = MAX_PER_TOOL, deep: bool = False) -> dict:
     _guard.install()
     _guard.hold(path, orig)
     keep, dropped = live_catchers(tool, deep)
-    muts = pick(mutants(orig), cap)
+    muts = pick(mutants(orig), cap, orig)
     survived: list[str] = []
     unmeasured: list[str] = []
     # ★ 붙잡이가 **0 이면 흔들지 않는다.** 2026-10-05 실측(DECISIONS §398-6).
@@ -503,10 +492,10 @@ def ratchet_values() -> dict[str, int]:
         raise RuntimeError(
             f"{len(stale)}개가 잰 뒤로 바뀌었다 — {', '.join(stale[:6])}. "
             "`uv run python tools/mutate.py --write --stale` 로 그것만 다시 재라")
-    held, rest = sort_survivors(d)
+    _held, rest = sort_survivors(d)        # 분류는 남는다(`--classify` · 장부) — 래칫 산출에는 안 낸다(DECISIONS §820)
     return {"SURVIVORS": d["생존"], "MUTANTS": d["돌연변이"],
             "UNCATCHABLE": sum(1 for r in d["도구별"] if r["붙잡이"] == 0),
-            "RATCHET_HELD": len(held), "UNSORTED": len(rest)}
+            "UNSORTED": len(rest)}
 
 
 # ── ④ 자기검사 ──────────────────────────────────────────────────
