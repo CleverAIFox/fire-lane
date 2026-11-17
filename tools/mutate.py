@@ -218,7 +218,7 @@ SURVIVORS = 85   # ★ 2026-11-17 (DECISIONS §820) 83 → 85 — 표본 규칙�
 MUTANTS = 148
 #: 붙잡이가 **0 인 과녁** 수. 흔들어도 못 재는 자리다 — 내려가는 쪽으로만.
 UNCATCHABLE = 0
-#: 생존 중 **래칫이 드는 것** — 분류는 남고(`ratchet_values()` · `--classify` · 장부) **래칫 선언은 없앴다**(2026-11-17 · DECISIONS §820). 이 문이 안 붙들 뿐 다른 문(`ratchet.py`)이 붙든다.
+#: 생존 중 **래칫이 드는 것** — 분류는 남고(`--classify` · 장부) 래칫 선언 · 산출은 없앴다(2026-11-17 · DECISIONS §820). 이 문이 안 붙들 뿐 다른 문(`ratchet.py`)이 붙든다.
 #: 없앤 이유 — 전수 2,582자리 중 래칫 상수는 56(2.2%) · 무작위면 148 중 3.2 · 옛 표본 28 은 래칫을 고른 것이 아니라 파일 첫 자리(i = 0)였다(도구 37 중 28 이 첫 자리에 상수를 둔다) · 새 표본은 56 중 1곳(1.8%)만 든다 — 재던 것이 수가 아니었다.
 #: 생존 중 **아직 아무도 안 가른 것.** 내려가는 쪽으로만.
 # ★ **이력은 수와 사유 한 줄씩**만 둔다. 긴 사유는 그 판의 DECISIONS 절에
@@ -492,10 +492,10 @@ def ratchet_values() -> dict[str, int]:
         raise RuntimeError(
             f"{len(stale)}개가 잰 뒤로 바뀌었다 — {', '.join(stale[:6])}. "
             "`uv run python tools/mutate.py --write --stale` 로 그것만 다시 재라")
-    held, rest = sort_survivors(d)
+    _held, rest = sort_survivors(d)        # 분류는 남는다(`--classify` · 장부) — 래칫 산출에는 안 낸다(DECISIONS §820)
     return {"SURVIVORS": d["생존"], "MUTANTS": d["돌연변이"],
             "UNCATCHABLE": sum(1 for r in d["도구별"] if r["붙잡이"] == 0),
-            "RATCHET_HELD": len(held), "UNSORTED": len(rest)}
+            "UNSORTED": len(rest)}
 
 
 # ── ④ 자기검사 ──────────────────────────────────────────────────

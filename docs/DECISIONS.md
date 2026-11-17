@@ -53833,7 +53833,7 @@ uv run python tools/mutate.py --write --stale
 
 ### 마. 결론 — 사람이 ㉯ 를 골랐고 ㄹ 도 같이 닫았다 (2026-11-17)
 
-- **`RATCHET_HELD` 래칫을 없앴다.** 래칫 선언(`RATCHETS` 의 항목 · 상수 `RATCHET_HELD = 26`)만 없앴고 **분류는 남았다** — 생존 중 래칫이 드는 것은 `sort_survivors` · `ratchet_values()` · `--classify` 가 계속 내고 장부에 계속 적힌다. 느슨해진 것이 아니라 **재던 것이 수가 아니었다.** 이유는 수 넷이다.
+- **`RATCHET_HELD` 래칫을 없앴다.** 래칫 선언(`RATCHETS` 의 항목 · 상수 `RATCHET_HELD = 26`)만 없앴고 **분류는 남았다** — 생존 중 래칫이 드는 것은 `sort_survivors` · `--classify` 가 계속 내고 장부에 계속 적힌다. 느슨해진 것이 아니라 **재던 것이 수가 아니었다.** 이유는 수 넷이다.
   1. 전수 2,582자리 중 래칫 상수는 **56(2.2%)**이고 무작위로 뽑으면 148 중 약 **3.2**다.
   2. 옛 표본의 28곳은 래칫을 고른 것이 아니라 **파일 첫 자리(`i = 0`)**를 고른 결과다 — 28곳이 전부 첫 자리였다.
   3. 도구 37개 중 **28개**가 첫 자리에 래칫 상수를 둔다.
@@ -53841,9 +53841,51 @@ uv run python tools/mutate.py --write --stale
   결론은 「실제로 감시를 한 적이 없다」이다 — 옛 값 26 은 파일 모양의 우연이었고 이 래칫이 「선언이 사라지면 운다」를 한 번도 표본으로 지킨 적이 없다. 선언이 사라지는 것은 `ratchet.py`(선언 = 실측)가 이미 든다. 그 자리와 `tools/mutate.py` 의 해당 주석에 같은 수를 적었다.
 - **`SURVIVORS` 83 → 85 · `UNSORTED` 57 → 84.** 표본 규칙을 바꾼 새 표본의 실측이다(생존율 56.1% → 57.4%). `UNSORTED` 자리에 「`SURVIVORS` 와 최대 1 차이인 종속값이다 — `RATCHET_HELD` 가 0 에 가까워 독립된 정보가 거의 없다」를 적었다. 다음에 이 수를 보는 사람이 `SURVIVORS` 와 따로 읽지 않게 한다. `tools/mutate.py` 줄 수는 607 그대로다(줄 수 예외 표가 안 움직인다).
 - **지문이 후보 목록을 든다(ㄹ).** `catch_print` 의 `sampler_print()` 가 `pick` · 키 만들기에 더해 `mutate.py` 의 `mutants()` 와 연산자 표(`_CMP` · `_CMP_SRC`)의 소스를 해시한다 — 후보에 상관없는 줄(래칫 상수 · 주석)은 안 든다. 시험 `tests/test_mutate.py` 가 연산자 표에 `in → not in` · `is → is not` 을 더한 사본에서 지문이 달라지고(종전 0/37) 래칫 상수 줄 · 주석만 바꾸면 안 달라지며 후보 규칙을 못 찾으면 조용히 비우지 않고 운다는 세 가지를 문다. 따로 하면 전수를 두 번 재고 같이 하면 한 번이라 지금 같이 했다. 시간은 0이다.
+- **분류는 남기고 래칫 산출에서만 뺀 이유.** `ratchet_values()` 가 내는 이름의 집합은 `RATCHETS` 의 선언과 같아야 하고(`tests/test_ratchet_names_*` 가 「선언 축 == 산출 축」으로 문다 — 첫 커밋은 산출이 이름을 계속 내서 CI 에서 「선언만 [] · 산출만 [RATCHET_HELD]」로 울었다), 분류는 `--classify` 와 장부 읽기가 `sort_survivors` 로 따로 내므로 산출에서 빼도 안 잃는다.
 - **래칫이 줄었다.** `ratchet.py` 의 `mutate.py` 항목은 넷(`SURVIVORS` · `MUTANTS` · `UNCATCHABLE` · `UNSORTED`)이다. `PLAN` 행은 세우지 않았다 — 구현까지 끝났다.
 - **장부가 또 낡았다.** 지문이 바뀌어 도구 37개가 낡은 채다. 재는 명령은 아래 하나이고 사람 전용이라 안 쳤다. 그 뒤 `SURVIVORS` 와 `UNSORTED` 가 85 · 84 에서 또 움직일 수 있고 움직이면 사람이 다시 가른다.
 
 ```
 uv run python tools/mutate.py --write --stale
 ```
+
+## 821. 푸시 전 ㉥ 가 `test_ratchet_names_2` 를 못 뽑았다 — 점수도 의존 규칙도 아니고 **읽기 장부가 낡아서**였다 · `RATCHET_HELD` 이름을 산출에서도 뺐다 · 행 `#257`
+
+> 2026-11-17
+
+유병률  **5회** — 푸시 전 도구는 초록인데 CI 는 같은 검사에서 빨갛다: §206(검사가 `.git` 을 훑었다) · §323(검사가 로컬 환경의 자리를 박았다) · 2026-11-08(`test_layering` — 구조 규약 시험이 어느 관문에도 없었다 · `tools/testpick.py` 머리말) · §817(㉠ 가 `mutate.py` 항목을 건너뛰었다) · 이번. 앞 넷은 이 절이 다시 읽지 않았다. 이번은 §817 과도 원인이 다르다 — 검사가 건너뛴 것이 아니라 **시험이 뽑히지 않았다**
+
+강제자  `tools/testpick.py`(`touching` · `reads_stale` · `select`) · `tools/pushready.py`(㉥ 가 `testpick --run --no-cap` 을 부른다) · `tests/test_ratchet_names_0.py` · `_1` · `_2`(선언 축 == 산출 축) · `tools/mutate.py`(`ratchet_values()`). 하위 둘이 이 칸을 물려받는다
+
+쓴 칸  없음 — 사유: 첫 소절은 `tools/mutate.py` 의 산출에서 이름 하나를 뺐고(`ratchet_values()` 가 `RATCHET_HELD` 를 안 낸다 · 래칫 값 · 변이 장부는 안 움직였다) 시험 하나를 더했으며, 둘째는 측정 조사로 코드 · 장부를 안 건드렸다. 감사 훅으로 시험 둘을 따로 돌린 읽기 실측은 장부에 안 썼다
+
+**한 줄 요약.** `§820-마` 에서 선언(`RATCHETS`)에서만 `RATCHET_HELD` 를 빼고 산출(`ratchet_values()`)에는 남겨 `test_ratchet_names_2` 가 「선언만 [] · 산출만 [RATCHET_HELD]」로 CI 에서 울었다 — 산출에서도 뺐다. 푸시 전 ㉥ 가 그 시험을 못 뽑은 것은 설계 밖의 구멍이다: 읽기 장부(`data/golden/testreads.json`)에 시험 셋의 칸이 없어서 실측 닿음이 안 섰다
+
+### 가. 산출에서도 뺐다 (ㄱ)
+
+- **고친 것.** `tools/mutate.py` 의 `ratchet_values()` 가 `RATCHET_HELD` 를 안 낸다. 분류(`sort_survivors` · `--classify` · 장부)는 그대로다. 줄 수 607 그대로(줄 수 예외 표가 안 움직인다)이고 래칫 값 · 변이 장부는 안 움직였다 — 산출 이름은 `SURVIVORS` 85 · `MUTANTS` 148 · `UNCATCHABLE` 0 · `UNSORTED` 84 로 선언과 같다.
+- **왜 분류는 남기고 산출에서만 뺐나.** 산출 이름의 집합은 선언과 같아야 하고(`tests/test_ratchet_names_*` 가 문다) 분류는 `--classify` 와 장부 읽기가 `sort_survivors` 로 따로 내므로 산출에서 빼도 잃는 것이 없다. §820-마 에도 같은 줄을 적었다.
+- **로컬에서 왜 안 보였나.** 변이 장부가 낡은 작업 트리에서는 `tests/ratchet_names.py` 의 `check_tool` 이 `mutate.py` 를 일부러 건너뛴다(장부를 다시 재라는 사람 몫의 빨강 하나만 건너뛴다). 그래서 로컬 시험 셋은 초록이었고 CI(장부가 신선한 쪽)만 울었다. 장부가 신선하다고 치고(`catch_print` 를 장부의 지문으로 바꿔 읽기만 했다) 이름 집합을 대조하는 시험을 `tests/test_mutate.py` 에 더했다 — 선언 == 산출 · 분류가 남아 있음.
+- **직접 돌린 결과.** `test_ratchet_names_0 · 1 · 2` · `tests/test_mutate.py` 20건 초록(1분 1초).
+
+### 나. ㉥ 는 왜 못 뽑았나 (ㄴ) — 수로 가렸다
+
+`uv run python tools/testpick.py --list --no-cap --load 0 --files tools/mutate.py` 는 묶음 **241/279** 파일을 내고 `test_ratchet_names_*` 는 **0/3** 이다.
+
+| 후보 원인 | 실측 | 판정 |
+|---|---|---|
+| 조각 파일이 얇아 점수가 낮다 | 닿는 시험은 `--no-cap` 이면 장부 초와 무관하게 전부 든다(`pushready` ㉥ 가 `--no-cap`). 장부 초는 `_0` 19.0 · `_1` 23.0 · `_2` 20.2초 | **아니다** |
+| 고르는 규칙이 `tests/ratchet_names.py` 를 거치는 의존을 못 본다 | 정적 스캔(`touching` · `_mentions`)은 시험 본문에 경로 · 파일명 · import 이름이 나와야 닿는다. 셋의 본문은 `from ratchet_names import run_slice` 뿐이라 `tools/mutate.py` 를 안 댄다 — **이것은 설계된 하한이다**(`testpick` 머리말: 경로를 헬퍼 · 상수로 조립해 읽는 시험은 못 센다). 헬퍼 `ratchet_names.py` 도 `ratchet.py` 만 이름 대고 도구는 `owners()` 로 동적으로 정한다 | 부분 원인(설계의 하한) |
+| 읽기 장부가 낡았다 | `data/golden/testreads.json` 에 셋의 칸이 **없다.** 279개 중 새 시험 **24**(`test_ratchet_names_0 · 1 · 2` · `test_pushready_ratchet.py` · `test_bldg_*` 다섯 …) · 본문이 바뀐 시험 **43** = 67개(24%). 감사 훅으로 `_2` 를 따로 돌려 재면 추적 파일 781개를 읽고 `tools/mutate.py` 가 들어 **닿음이 선다**(`_0` 은 802개 · 같다). 정적만이면 `{}`, 실측을 얹으면 `{'test_ratchet_names_2.py': ['tools/mutate.py']}` | **진짜 원인** |
+
+- **도구는 이 낡음을 이미 말한다.** 같은 명령 출력에 `⚠ 읽기 장부가 낡았다 — 새 시험 24 · 바뀐 시험 43 · 없어진 시험 0` 이 있다. 그러나 `pushready` ㉥ 는 이 경고를 보고도 초록을 낸다 — 경고가 판정에 안 닿는다.
+- **구멍이다.** 「바뀐 도구의 값을 부르는 시험이 푸시 전에 안 돈다」가 낡은 장부 한 칸으로 가능하고, 낡음은 새 시험이 들 때마다 다시 생긴다(24개가 쌓였다). 행 **`#257`** 로 세웠다 — 길 넷을 쟀다(구현은 안 했다):
+
+| 길 | 시간 | 바뀌는 파일 | 효과 |
+|---|---:|---:|---|
+| ㉮ 읽기 장부를 다시 잰다(새 24 + 바뀐 43 만이면 `--only`) | 장부 초 합 **402.9초**(전수 합 1,213.0초) | 1(`data/golden/testreads.json`) | 한 번 풀리고 새 시험이 들면 다시 낡는다 · 쓰기는 사람 몫 |
+| ㉯ ㉥ 가 읽기 장부가 낡았으면 빨갛다 | 추가 0 | 2(`tools/pushready.py` · `tests/test_pushready.py`) | 닫는 쪽 · **오늘 바로 빨갛다**(낡음 67) — 사람이 다시 재야 풀린다 |
+| ㉰ 정적 스캔이 import 한 헬퍼 본문까지 따라간다 | 0 | 2 | 이 사례를 **못 푼다**(도구가 동적으로 정해진다) |
+| ㉱ 시험이 읽는 범위를 선언한다(셋의 머리말) | 0 | 3 | 새 시험마다 사람이 적어야 해 잊으면 같은 구멍 |
+
+- **무엇이 설계대로인가.** 전수는 CI(`contract-tests`)의 몫이고 푸시 전 ㉥ 는 「바뀐 파일에 닿는 시험」의 하한이다 — 하한이 이 사례처럼 비는 것은 읽기 장부가 낡아 **하한마저 못 채워서**다. 하한 아래로 새는 것을 경고로 두고 판정에 안 넣은 것이 구멍이고 `#257` 이 든다.

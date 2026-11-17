@@ -261,3 +261,15 @@ def test_the_ledger_fingerprint_follows_the_operator_table(monkeypatch, tmp_path
     monkeypatch.setattr(MS, "MUTATE_SRC", broken)
     with pytest.raises(RuntimeError, match="못 찾았다"):
         MS.sampler_print()
+
+
+def test_the_produced_ratchet_names_equal_the_declared_ones_even_when_the_ledger_is_stale(monkeypatch):
+    """★ DECISIONS §820 — 선언에서 `RATCHET_HELD` 를 뺐는데 `ratchet_values()` 가 그 이름을 계속 냈다. 장부가 낡은 작업 트리에서는 `tests/test_ratchet_names_*` 가 `mutate.py` 를 건너뛰어 로컬에서 안 보였다(CI 만 울었다)."""
+    d = json.loads((ROOT / "data/golden/mutation.json").read_text(encoding="utf-8"))
+    fp = {r["도구"]: r["지문"] for r in d["도구별"]}
+    monkeypatch.setattr(M, "catch_print", lambda tool: fp[tool])          # 장부가 신선하다고 친다(읽기만 한다)
+    got = M.ratchet_values()
+    assert set(got) == set(M.RATCHETS), f"선언만 {sorted(set(M.RATCHETS) - set(got))} · 산출만 {sorted(set(got) - set(M.RATCHETS))}"
+    held, rest = M.sort_survivors(d)
+    assert len(held) + len(rest) == d["생존"], "분류는 남아 있어야 한다(`--classify` · 장부)"
+
