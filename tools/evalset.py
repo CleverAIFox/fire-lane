@@ -495,7 +495,7 @@ def rv_check(path: Path, feats: list[dict], samples: dict[str, list[dict]], n: i
         h = RV_HYPO[hyp]
         if (len(g["가설군"]), len(g["대조군"])) != h[:2] and n is None:
             bad.append(f"가설 {hyp}: 가설군 · 대조군 수가 {len(g['가설군'])} · {len(g['대조군'])} — {h[0]} · {h[1]} 이어야 한다")
-        every = [r for v in g.values() for r in v]
+        every = [r for k, v in g.items() if k != "지명" for r in v]   # ★ 지명(가설을 낳은 사례)은 검정에서 빠지는 행이다 — 완료 조건에도 안 든다(비어 있어도 판정을 안 막는다 · PLAN #187)
         if not every or not all(rv_complete(hyp, r) for r in every):
             stat[hyp] = f"{sum(1 for r in every if rv_complete(hyp, r))}/{len(every)} 채움 — 다 채우면 가른다"
             continue

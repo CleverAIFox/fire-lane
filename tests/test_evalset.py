@@ -489,6 +489,22 @@ def test_the_verdict_comes_only_when_a_hypothesis_is_fully_answered(tmp_path: Pa
     assert "기각하지 못한다" in E.rv_check(path, feats, samples)[1]["가"]["판정"]
 
 
+def test_the_named_rows_left_blank_do_not_hold_back_the_verdict(tmp_path: Path) -> None:
+    """★ 「가설을 낳은 사례라 뺀다」(CSV 머리 8번)는 두 행은 검정에서 빠지는 행이다 — 비어 있어도 가설 「가」의 판정을 안 막는다.
+    종전에는 완료 조건이 지명 행까지 세어 사람이 15/15 를 다 채워도 「15/17 채움」으로 멈췄다(2026-11-18). 채우면 지명 칸에 답이 나오되 수에는 안 든다."""
+    n1, n0 = E.RV_HYPO["가"][:2]
+    feats, samples = _hy_world()
+    picks = E.rv_draw(feats, samples)
+    role = dict(zip([u for _, u in picks], [r for _, r in _roles(feats, samples, [{"가설": h, "seg_uid": u} for h, u in picks])], strict=True))
+    ans = {u: {**SEEN, "답": "양쪽" if role[u] == "가설군" else "없다", **(FLAT if role[u] == "가설군" else {})} for h, u in picks if h == "가" and role[u] != "지명"}
+    path, feats, samples, _ = _hy_sheet(tmp_path, ans)
+    stat = E.rv_check(path, feats, samples)[1]
+    assert isinstance(stat["가"], dict) and stat["가"]["지명"] == ["", ""] and stat["가"]["가설군"] == f"{n1}/{n1}" and stat["가"]["대조군"] == f"0/{n0}", stat
+    part = dict(list(ans.items())[:-1])                          # 지명이 아닌 행이 하나라도 비면 여전히 안 가른다
+    path, feats, samples, _ = _hy_sheet(tmp_path, part)
+    assert "다 채우면" in E.rv_check(path, feats, samples)[1]["가"]
+
+
 def test_rv_main_never_overwrites_a_filled_sheet_and_never_opens_the_key(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     feats, samples = _hy_world()
     seg, smp = tmp_path / "segments.geojson", tmp_path / "width_samples.csv"
