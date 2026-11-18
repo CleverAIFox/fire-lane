@@ -505,6 +505,42 @@ def test_the_named_rows_left_blank_do_not_hold_back_the_verdict(tmp_path: Path) 
     assert "다 채우면" in E.rv_check(path, feats, samples)[1]["가"]
 
 
+def test_every_axis_can_say_not_a_road_and_the_dead_end_is_not_that(tmp_path: Path) -> None:
+    """★ DECISIONS §834 · PLAN #262 — 세 축이 「차가 다니는 길이 아니다」를 같은 낱말로 답한다. 종전: 가는 메모(H5) · 나는 「길끝」 한 낱말에 막다른 길과 섞음 · 다는 수단이 없었다.
+    「길 아님」은 가설이 참이면 많을 답이 아니고(세 축 모두) 「가림」과 다르다 — 길인데 안 보이는 것이 아니라 길이 아닌 것이다. 막다른 길은 길이 맞아 「길 아님」이 아니다."""
+    for k, h in E.RV_HYPO.items():
+        assert "길 아님" in h[5] and "길 아님" not in h[6] and "길끝" not in h[5], f"가설 {k}: 길 아님이 없거나 가설이 참인 쪽에 들었다"
+    assert "막다른 길" in E.RV_HYPO["나"][5] and "막다른 길" not in E.RV_HYPO["나"][6] and "길 아님" != "막다른 길"
+    feats, samples = _hy_world()
+    ids = {h: _rows_of(feats, samples, tmp_path, h) for h in ("가", "나", "다")}
+
+    def check(hyp: str, cell: dict) -> list[str]:
+        path, f, s_, _ = _hy_sheet(tmp_path, {ids[hyp][-1]: cell})
+        return E.rv_check(path, f, s_)[0]
+
+    assert check("가", {**SEEN, "답": "길 아님"}) == [] and any("답2" in b for b in check("가", {**SEEN, "답": "길 아님", **FLAT})), "가: 길 아님이면 답2 는 비운다"
+    assert check("나", {"답": "길 아님", "포장폭": "좁다"}) == [] and check("나", {"답": "막다른 길", "포장폭": "좁다"}) == []
+    assert any("허용값" in b for b in check("나", {"답": "길끝", "포장폭": "좁다"})), "옛 낱말 길끝이 아직 허용된다"
+    assert check("다", {**SEEN, "답": "길 아님", "포장폭": "좁다"}) == [], "다 에 길 아님 칸이 없다"
+    rows = _table_rows(FIELD / E.RV_FILE)
+    assert not [r["순번"] for r in rows if r["답"] == "길끝"], "판독표에 옛 낱말 길끝이 남았다"
+    assert [r["순번"] for r in rows if r["답"] == "길 아님"] == ["23", "34", "39"] and [r["순번"] for r in rows if r["답"] == "막다른 길"] == ["15"], "이식한 네 행이 다르다"
+
+
+def test_a_not_a_road_row_is_left_out_of_the_test_and_counted_apart(tmp_path: Path) -> None:
+    """길 아님은 가림처럼 검정의 분모에서 빠진다 — 안 빼면 「가설이 참이면 많을 답」이 아닌 한 표로 세어 효과가 희석된다(실제 판독표에서 가설군 2/4 가 2/7 · p 0.9959 로 바뀐다). 따로 센다."""
+    feats, samples = _hy_world()
+    picks = E.rv_draw(feats, samples)
+    role = dict(zip([u for _, u in picks], [r for _, r in _roles(feats, samples, [{"가설": h, "seg_uid": u} for h, u in picks])], strict=True))
+    ans = {u: {**SEEN, "답": "양쪽" if role[u] == "가설군" else "없다", **(FLAT if role[u] == "가설군" else {})} for h, u in picks if h == "가" and role[u] != "지명"}
+    gone = next(u for u in ans if role[u] == "가설군")
+    ans[gone] = {**SEEN, "답": "길 아님"}
+    path, feats, samples, _ = _hy_sheet(tmp_path, ans)
+    stat = E.rv_check(path, feats, samples)[1]["가"]
+    n1 = E.RV_HYPO["가"][0]
+    assert stat["가설군"] == f"{n1 - 1}/{n1 - 1}" and stat["그중 길 아님"] == 1 and stat["못 본 행(거리뷰 없다 · 가림 · 길 아님)"] == 1, stat
+
+
 def test_rv_main_never_overwrites_a_filled_sheet_and_never_opens_the_key(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     feats, samples = _hy_world()
     seg, smp = tmp_path / "segments.geojson", tmp_path / "width_samples.csv"
