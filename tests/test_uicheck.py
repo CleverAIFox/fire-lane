@@ -335,3 +335,63 @@ def test_the_driving_ratchets_match_the_tree_and_are_declared_down_only():
 def test_the_ops_screen_is_not_a_driving_file():
     """★ 관제 화면은 **운전 중이 아니다** — 앉아서 여러 정보를 동시에 보는 화면이라 규범이 다르다. 주행 중 수에 관제 전용 파일이 들면 안 된다."""
     assert not any(f.startswith(("OpsApp", "ui/Ops", "ui/SegCard")) for f in DV.DRIVE_FILES)
+
+
+# ── 주행 범위의 분모 (PLAN #259) — 본 몫을 말하고, 선언 밖에서 새로 걸리는 것을 문다 ──────────────
+
+_LONG = '"이 문장은 운전자가 한 번에 읽기에는 너무 길게 적었다 — 스무 자를 넘는다"'
+
+
+def _census_tree(tmp_path: Path, extra: dict[str, str] | None = None) -> tuple[Path, dict]:
+    """`App.tsx` · `OpsApp.tsx` · 주행 파일 하나 · 정차 파일 하나 · 0건 파일 하나 · 관제 전용 파일 하나로 된 작은 소스 트리와 그것을 다 선언한 묶음표."""
+    files = {"App.tsx": 'import "./ui/TopBar";\nimport "./util";\n', "OpsApp.tsx": 'import "./ui/OpsOnly";\nimport "./util";\n', "ui/TopBar.tsx": "export const a = 1;\n",
+             "ui/Sheet.tsx": f"export const s = {_LONG};\n", "util.ts": "export const u = 1;\n", "ui/OpsOnly.tsx": "export const o = 1;\n",
+             "ui/tokens.ts": "export const F = {\n  big: 22,\n} as const;\n"}
+    files.update(extra or {})
+    for rel, body in files.items():
+        (tmp_path / rel).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / rel).write_text(body, encoding="utf-8")
+    groups = {"ops": ("관제", ("OpsApp.tsx", "ui/OpsOnly.tsx")), "stopped": ("정차", ("ui/Sheet.tsx",)),
+              "hold": ("보류", ("App.tsx",)), "quiet": ("0건", ("util.ts", "ui/tokens.ts"))}
+    return tmp_path, groups
+
+
+def test_the_real_tree_is_exactly_the_scope_plus_the_declared_groups():
+    """★ 전수 = 범위 + 선언된 묶음 — **한 파일도 겹치거나 빠지지 않는다.** 숫자 문턱이 아니라 선언과 맞대므로 파일이 늘고 줄어도 낡지 않는다."""
+    declared = [f for _, (_, fs) in DV.OUT_OF_SCOPE.items() for f in fs]
+    assert len(declared) == len(set(declared)), "두 묶음에 든 파일이 있다"
+    assert sorted(declared + list(DV.DRIVE_FILES)) == DV.src_files()
+    assert DV.census_faults() == []
+    assert all("판별식" in why for why, _ in DV.OUT_OF_SCOPE.values()), "묶음마다 「주행 화면이 아니다」의 판별식을 적는다 — 「안 본다」만 적지 않는다"
+
+
+def test_the_census_line_says_the_share_it_saw():
+    """출력이 **본 몫**을 말한다 — 「N파일 중 M파일(P%)을 보고」. 값은 센서스에서 읽어 맞댄다(고정 상수가 아니다)."""
+    c = DV.drive_census()
+    assert c["seen"] == len(DV.DRIVE_FILES) and c["total"] == len(DV.src_files())
+    assert DV.census_line().startswith(f"{c['total']}파일 중 {c['seen']}파일({100 * c['seen'] / c['total']:.1f}%)을 보고")
+    assert c["long"] > 0 and c["small"] > 0, "범위 밖에 아무것도 안 나오면 센서스가 죽은 것이다 — 범위 밖에는 관제 · 정차 화면이 있다"
+
+
+def test_a_new_file_outside_the_declaration_is_red_whether_or_not_it_has_text(tmp_path: Path):
+    """★ 선언 밖에서 새로 걸리는 것. 20자 넘는 말을 든 새 파일도, 빈 새 파일도 선언 없이는 빨갛다 — 나중에 말이 들어올 자리라서다."""
+    root, groups = _census_tree(tmp_path, {"ui/NewPanel.tsx": f"export const n = {_LONG};\n", "domain/empty.ts": "export {};\n"})
+    bad = DV.census_faults(root, ("ui/TopBar.tsx",), groups)
+    assert len(bad) == 1 and "ui/NewPanel.tsx" in bad[0] and "domain/empty.ts" in bad[0], bad
+
+
+def test_the_declarations_with_nothing_wrong_are_green_and_each_fault_kind_is_caught(tmp_path: Path):
+    root, groups = _census_tree(tmp_path)
+    assert DV.census_faults(root, ("ui/TopBar.tsx",), groups) == []
+    assert DV.census_faults(root, ("ui/TopBar.tsx",), {**groups, "stopped": ("정차", ("ui/Sheet.tsx", "ui/Gone.tsx"))})[0].startswith("선언된 파일이 없다")
+    assert any("두 묶음" in b for b in DV.census_faults(root, ("ui/TopBar.tsx",), {**groups, "diag": ("진단", ("ui/Sheet.tsx",))}))
+    assert any("둘 다 든다" in b for b in DV.census_faults(root, ("ui/TopBar.tsx", "ui/Sheet.tsx"), groups))
+    (root / "util.ts").write_text(f"export const u = {_LONG};\n", encoding="utf-8")
+    assert any("`quiet` 인데" in b and "util.ts" in b for b in DV.census_faults(root, ("ui/TopBar.tsx",), groups)), "0건 묶음의 파일이 말을 들이면 빨갛다"
+
+
+def test_an_ops_file_that_the_driving_app_reaches_is_red(tmp_path: Path):
+    """`ops` 의 판별식은 기계가 든다 — `App.tsx` 에서 import 로 닿으면 관제 전용이 아니다(`util.ts` 를 `ops` 에 적으면 둘 다에 닿아 걸린다)."""
+    root, groups = _census_tree(tmp_path)
+    bad = DV.census_faults(root, ("ui/TopBar.tsx",), {**groups, "ops": ("관제", ("OpsApp.tsx", "ui/OpsOnly.tsx", "ui/TopBar.tsx")), "quiet": groups["quiet"]})
+    assert any("`App.tsx` 에서 import 로 닿는다" in b and "ui/TopBar.tsx" in b for b in bad), bad

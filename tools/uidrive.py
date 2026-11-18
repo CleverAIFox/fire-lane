@@ -4,7 +4,8 @@ uidrive.py — **주행 중 화면의 시선 기준을 소스에서 센다.**  (
 
 IN    `web/navi/src` 의 주행 중 화면 파일들(`DRIVE_FILES`)
 OUT   (파일 · 말) 쌍의 목록 — 한글이 든 말 중 20자 넘는 것 · `fontSize` 가 24 미만인 선언
-PARAM `GLANCE_CHARS`(20) · `MIN_FONT_PX`(24) · `PLACEHOLDER_CHARS`(6) · `DRIVE_FILES`
+      + **분모**(PLAN #259) — `web/navi/src` 전수 중 본 몫 · 안 본 파일의 묶음 선언(`OUT_OF_SCOPE`) · 선언 밖 파일
+PARAM `GLANCE_CHARS`(20) · `MIN_FONT_PX`(24) · `PLACEHOLDER_CHARS`(6) · `DRIVE_FILES` · `OUT_OF_SCOPE`
 밖    **렌더된 수는 안 잰다** — 꺾인 줄 · 계산된 글자 크기 · 터치 타깃은 브라우저가 있어야 안다(`web/navi/scripts/glance.mjs`).
       **관제 화면은 안 든다** — 운전 중이 아니다.
 부류  몸통 — 입구가 없다(`uicheck` 가 부른다). 래칫 값(`DRIVE_LONG` · `DRIVE_SMALL_FONT`)은 `ratchet.py` 가 고쳐 적는 자리인 `uicheck.py` 에 산다.
@@ -39,6 +40,34 @@ DRIVE_FILES = (
     #   그 문장과 옛 몸통은 `ui/BottleneckDetail.tsx`(자세히 — 정차 중 상세)로 갔고 **둘은 이 수에 안 든다.** 이 분류는 **속도 잠금으로 참이다**(§704) —
     #   달리는 중에는 「자세히」 가 안 열리고 열려 있던 것도 닫힌다(`domain/motion.ts` · `BottleneckPanel` 의 `locked` · `e2e/smoke.spec.ts` 가 문다).
 )
+# ★ 2026-11-18 (PLAN #259 · DECISIONS §829-마). **본 몫(분모)과 안 본 몫의 선언.** 위 `DRIVE_FILES` 는 `web/navi/src` 의 일부라 「0건」은 **본 파일에서의 0건**이다 —
+#   안 본 파일을 이름과 사유 없이 두면 파일이 늘 때 조용히 샌다. 범위 밖 파일은 **전부 한 묶음에 든다** — 묶음마다 「주행 중 화면이 아니다」의 판별식을 적는다.
+#   `ops` 만 **기계가 든다**(`App.tsx` 에서 import 로 안 닿고 `OpsApp.tsx` 에서만 닿는다). 나머지는 사람이 가른 것이라 판별식이 문장이다.
+#   선언 밖 파일 · 없는 파일 · 두 묶음에 든 파일 · `quiet` 인데 0건이 아닌 파일 · `ops` 인데 `App.tsx` 에 닿는 파일은 `census_faults` 가 낸다.
+OUT_OF_SCOPE: dict[str, tuple[str, tuple[str, ...]]] = {
+    "ops": ("관제 화면 전용 — 판별식: `OpsApp.tsx` 에서만 import 로 닿고 `App.tsx` 에서는 안 닿는다(시험이 import 도달성으로 든다). 운전 중이 아니다.", (
+        "OpsApp.tsx", "components/OpsMap.tsx", "components/opsLayers.ts", "domain/checkpoints.ts", "domain/dispatch.ts", "domain/opsBoard.ts",
+        "domain/search.ts", "domain/unitBoard.ts", "ui/OpsBits.tsx", "ui/OpsHistory.tsx", "ui/RouteCheckpoints.tsx", "ui/SegCard.tsx",
+        "ui/VehicleArt.tsx", "ui/motion.ts", "ui/opsTheme.ts")),
+    "stopped": ("정차 중 · 출발 전 화면 — 판별식: 달리는 동안 안 열린다(속도 잠금 `domain/motion.ts` · 출발 전 경로 카드 · 대기 · 개발 막대). 사람이 가른 것이다(§704).", (
+        "ui/BottleneckDetail.tsx", "ui/RouteCompare.tsx", "ui/WaitPanel.tsx", "ui/routeOption.ts", "ui/clearanceMeaning.ts", "ui/verdictMeaning.ts",
+        "ui/Sheet.tsx", "ui/appShell.tsx", "ui/DemoStrip.tsx", "ui/DevBar.tsx")),
+    "voice": ("귀로 듣는 말 — 판별식: 음성 합성(`useVoice`)이 읽는 문장을 만드는 파일이라 눈이 아니라 귀의 기준이다(시선 2초 룰 밖). 같은 문장이 화면에도 뜨는지는 렌더 측정(`e2e/glance`) 몫이다.", (
+        "domain/context.ts", "domain/cv.ts", "domain/reroute.ts", "domain/rules.ts", "domain/turn.ts", "domain/voice.ts")),
+    "diag": ("진단 · 오류 문구 — 판별식: 콘솔 · 예외 · 출발 설정 거절 사유 · 정차 중 상세의 부기라 달리는 중에 안 뜬다. 사람이 가른 것이다.", (
+        "app/useBundle.ts", "app/useNavigation.ts", "infra/dataSource.ts", "domain/vehicle.ts", "domain/pressure.ts")),
+    "hold": ("사람이 정할 때까지 보류 — 판별식: 출발 전 문구와 한 파일에 섞였거나(`App.tsx` 토스트) 측위가 `live` 가 아닐 때만 뜨는 GPS 안내(`domain/demo.ts` · `domain/serviceArea.ts`)라 넣으면 래칫이 느슨해진다(PLAN #258).", (
+        "App.tsx", "domain/demo.ts", "domain/serviceArea.ts")),
+    "quiet": ("글자 선언이 0건 — 판별식: 이 판별식이 지금 20자 넘는 말도 24 미만 글자 선언도 0건 낸다(훅 · 도메인 · 지도 층 · 입출력). 0건이 아니게 되면 여기 못 남는다 — 이름 붙은 묶음으로 옮기거나 `DRIVE_FILES` 로 들인다.", (
+        "app/useDeadReckoning.ts", "app/useDemo.ts", "app/useFading.ts", "app/useFleet.ts", "app/useHudData.ts", "app/useNow.ts", "app/useOpsUplink.ts",
+        "app/useScreens.ts", "app/useShare.ts", "app/useVoice.ts", "components/NaviMap.tsx", "components/landuse.ts", "components/layers.ts",
+        "components/roadLabels.ts", "config.ts", "domain/access.ts", "domain/adjacency.ts", "domain/clearance.ts", "domain/compare.ts", "domain/edgeSnap.ts",
+        "domain/egobox.ts", "domain/fleetName.ts", "domain/geo.ts", "domain/graph.ts", "domain/handoff.ts", "domain/motion.ts", "domain/opsProtocol.ts",
+        "domain/phase.ts", "domain/progress.ts", "domain/routeDerive.ts", "domain/routeSolve.ts", "domain/snap.ts", "domain/speed.ts", "domain/track.ts",
+        "domain/turning.ts", "domain/types.ts", "infra/dataBase.ts", "infra/mapPitch.ts", "infra/opsLink.ts", "infra/position/gps.ts",
+        "infra/position/replay.ts", "infra/position/simulation.ts", "infra/position/types.ts", "infra/speech.ts", "main.tsx", "ui/TurnArrow.tsx", "ui/deferred.tsx",
+        "ui/icons.tsx", "ui/tokens.ts", "vite-env.d.ts")),
+}
 #: 값이 들어갈 자리(`${…}` · `{road}`)가 화면에서 차지하는 글자 수의 근사 — 숫자 · 도로명이 이만큼이라 치고 길이를 잰다
 PLACEHOLDER_CHARS = 6
 GLANCE_CHARS = 20
@@ -117,3 +146,91 @@ def drive_small_fonts(root: Path = SRC, floor: int = MIN_FONT_PX, files: tuple[s
                 out.append((rel, "font: " + m.group(2).strip()))
         out += [(rel, h) for h in _mixed_shorthand(src)]                       # ③ 약식 위에 긴 이름을 섞는다
     return out
+
+
+# ── 분모 (PLAN #259) ─────────────────────────────────────────────────────────
+
+_IMPORT = re.compile(r"""(?:from|import)\s*(?:[^"';]*?from\s*)?["'](\.[^"']*)["']|import\(\s*["'](\.[^"']*)["']\s*\)""")
+
+
+def src_files(root: Path = SRC) -> list[str]:
+    """`web/navi/src` 의 **전수**(상대 경로) — 분모다. 소스가 아닌 것(`.css` · 그림)은 글을 안 만들어 빼지 않고 **같이 센다**: 그림 파일이 들어와도 선언을 요구한다."""
+    return sorted(p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_file())
+
+
+def reachable(entry: str, root: Path = SRC) -> set[str]:
+    """`entry` 에서 상대 import 로 닿는 파일(자기 포함). 없는 진입점은 빈 집합 — 호출한 쪽이 따진다."""
+    start = (root / entry).resolve()
+    if not start.is_file():
+        return set()
+    seen, todo = {start}, [start]
+    while todo:
+        f = todo.pop()
+        for m in _IMPORT.finditer(uncomment(f.read_text(encoding="utf-8"))):
+            base = (f.parent / (m.group(1) or m.group(2))).resolve()
+            for c in (base, base.with_suffix(".ts"), base.with_suffix(".tsx"), base / "index.ts", base / "index.tsx"):
+                if c.is_file():
+                    if c not in seen:
+                        seen.add(c)
+                        todo.append(c)
+                    break
+    return {x.relative_to(root.resolve()).as_posix() for x in seen}
+
+
+def drive_census(root: Path = SRC, files: tuple[str, ...] = DRIVE_FILES, groups: dict | None = None) -> dict:
+    """본 몫 · 안 본 몫. `seen`(범위) · `out`(범위 밖 묶음별 파일) · `undeclared`(어느 묶음에도 없는 범위 밖 파일) 와 범위 밖의 20자 넘는 말 · 24 미만 선언 수를 낸다."""
+    groups = OUT_OF_SCOPE if groups is None else groups
+    allf = src_files(root)
+    declared = {f for _, (_, fs) in groups.items() for f in fs}
+    out_all = [f for f in allf if f not in files]
+    code = [f for f in out_all if f.endswith((".ts", ".tsx"))]
+    return {
+        "total": len(allf), "seen": len([f for f in allf if f in files]), "out": {g: list(fs) for g, (_, fs) in groups.items()},
+        "undeclared": [f for f in out_all if f not in declared],
+        "long": sum(len(drive_long_lines(root, files=(f,))) for f in code), "small": sum(len(drive_small_fonts(root, files=(f,))) for f in code),
+    }
+
+
+def census_faults(root: Path = SRC, files: tuple[str, ...] = DRIVE_FILES, groups: dict | None = None) -> list[str]:
+    """선언과 전수가 어긋난 곳 — **선언 밖 파일이 새로 들어오면 여기서 빨갛다**(없는 파일 · 두 묶음 · 범위와 겹침 · `quiet` 이 0건 아님 · `ops` 가 `App.tsx` 에 닿음)."""
+    groups = OUT_OF_SCOPE if groups is None else groups
+    c, bad, allf, where = drive_census(root, files, groups), [], set(src_files(root)), {}
+    if c["undeclared"]:
+        bad.append(f"범위 밖인데 선언이 없는 파일 {len(c['undeclared'])}: {', '.join(c['undeclared'][:6])} — 주행 중 화면이면 `DRIVE_FILES` 에 넣고, 아니면 `OUT_OF_SCOPE` 의 묶음에 사유와 함께 적어라")
+    for g, (_, fs) in groups.items():
+        for f in fs:
+            if f not in allf:
+                bad.append(f"선언된 파일이 없다: {g} · {f} — 낡은 선언은 지워라")
+            if f in files:
+                bad.append(f"범위(`DRIVE_FILES`)와 범위 밖 선언에 둘 다 든다: {f}")
+            if f in where:
+                bad.append(f"두 묶음에 든다: {f} ({where[f]} · {g})")
+            where[f] = g
+    for f in groups.get("quiet", ("", ()))[1]:
+        if f in allf and f.endswith((".ts", ".tsx")) and (drive_long_lines(root, files=(f,)) or drive_small_fonts(root, files=(f,))):
+            bad.append(f"`quiet` 인데 글자 선언이 0건이 아니다: {f} — 이름 붙은 묶음으로 옮기거나 `DRIVE_FILES` 로 들여라")
+    ops = groups.get("ops", ("", ()))[1]
+    if ops:
+        app, opsr = reachable("App.tsx", root), reachable("OpsApp.tsx", root)
+        bad += [f"`ops` 인데 `App.tsx` 에서 import 로 닿는다: {f} — 관제 전용이 아니다" for f in ops if f in app]
+        bad += [f"`ops` 인데 `OpsApp.tsx` 에서 안 닿는다: {f}" for f in ops if f in allf and f not in opsr]
+    return bad
+
+
+def census_line(root: Path = SRC, files: tuple[str, ...] = DRIVE_FILES) -> str:
+    """한 줄 요약 — 「98파일 중 9파일(9.2%)을 보고 …」. 안 본 몫의 묶음별 파일 수와 그 안의 수를 같이 낸다."""
+    c = drive_census(root, files)
+    gs = " · ".join(f"{g} {len(fs)}" for g, fs in c["out"].items())
+    return (f"{c['total']}파일 중 {c['seen']}파일({100 * c['seen'] / c['total']:.1f}%)을 보고 · 범위 밖 {c['total'] - c['seen']}파일({gs}) — 범위 밖에 20자 넘는 말 {c['long']} · "
+            f"{MIN_FONT_PX}px 미만 선언 {c['small']} · 선언 밖 {len(c['undeclared'])}")
+
+
+def drive_gate(rec_long: int, rec_small: int) -> list[str]:
+    """`uicheck` ㉩ — 실측이 기록과 **양방향**으로 어긋나면(늘면 시선 부담 · 줄면 기록을 내린다) · 범위 밖 선언이 전수와 어긋나면 낸다. 기록은 `uicheck.py` 가 쥔다(`ratchet.py` 가 고쳐 적는 자리)."""
+    bad = []
+    for name, now, rec, what in (("DRIVE_LONG", len(drive_long_lines()), rec_long, f"주행 중 {GLANCE_CHARS}자 넘는 말"),
+                                 ("DRIVE_SMALL_FONT", len(drive_small_fonts()), rec_small, f"주행 중 {MIN_FONT_PX}px 미만 글자 선언")):
+        if now != rec:
+            bad.append(f"{what} {now} " + (f"> 기록 {rec} — 한 시선 2초(DECISIONS §702): 줄이거나 정차 중에만 뜨는 곳으로 옮겨라" if now > rec
+                                            else f"< 기록 {rec} — 줄었다. `tools/uicheck.py` 의 `{name}` 을 {now} 으로 내려라"))
+    return bad + census_faults()

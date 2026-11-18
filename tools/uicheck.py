@@ -70,6 +70,8 @@ import srgb
 from uidrive import (  # 주행 중 화면의 시선 기준(DECISIONS §702) — 세는 쪽은 `uidrive.py`
     GLANCE_CHARS,
     MIN_FONT_PX,
+    census_line,
+    drive_gate,
     drive_long_lines,
     drive_small_fonts,
 )
@@ -379,12 +381,8 @@ def split() -> list[str]:
         bad.append(f"화면 글자 {now}자 < 기록 {UI_TEXT}자 — 줄었다. "
                    f"`tools/uicheck.py` 의 `UI_TEXT` 를 {now} 으로 내려라")
 
-    # ㉩ 주행 중 화면의 시선 기준(DECISIONS §702) — **양방향.** 늘면 「운전자가 한 번에 읽을 것이 늘었다」이고 줄면 기록을 내린다. 고치는 일은 사람이 가른다.
-    for name, now2, rec, what in (("DRIVE_LONG", len(drive_long_lines()), DRIVE_LONG, f"주행 중 {GLANCE_CHARS}자 넘는 말"),
-                                  ("DRIVE_SMALL_FONT", len(drive_small_fonts()), DRIVE_SMALL_FONT, f"주행 중 {MIN_FONT_PX}px 미만 글자 선언")):
-        if now2 != rec:
-            bad.append(f"{what} {now2} " + (f"> 기록 {rec} — 한 시선 2초(DECISIONS §702): 줄이거나 정차 중에만 뜨는 곳으로 옮겨라" if now2 > rec
-                                            else f"< 기록 {rec} — 줄었다. `tools/uicheck.py` 의 `{name}` 을 {now2} 으로 내려라"))
+    # ㉩ 주행 중 화면의 시선 기준(DECISIONS §702) — 양방향 · 분모와 선언 밖 파일(PLAN #259). 고치는 일은 사람이 가른다.
+    bad += drive_gate(DRIVE_LONG, DRIVE_SMALL_FONT)
 
     # ㉨ 층의 휘도 순서 (§445 · #143) — 값은 사람이 고르고 **순서는 기계가 든다**
     bad += tier_faults(layers_declared(_THEME.read_text(encoding="utf-8")))
@@ -581,7 +579,7 @@ def main() -> int:
         print(f"화면 분리 — 공유 지도 층 {len(sh)} · 래칫 {SHARED_LAYERS}"
               f" · 화면 글자 {ui_text_chars()}자 · 래칫 {UI_TEXT}자"
               f" · 주행 중 {GLANCE_CHARS}자 넘는 말 {len(drive_long_lines())}(래칫 {DRIVE_LONG})"
-              f" · {MIN_FONT_PX}px 미만 글자 선언 {len(drive_small_fonts())}(래칫 {DRIVE_SMALL_FONT})")
+              f" · {MIN_FONT_PX}px 미만 글자 선언 {len(drive_small_fonts())}(래칫 {DRIVE_SMALL_FONT})\n주행 범위 — {census_line()}")
         bad += split()
     if a.build:
         print(f"빌드본 — {DIST.relative_to(ROOT)}")

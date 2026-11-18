@@ -265,7 +265,7 @@
 "test_tracked_guard.py": "1e69782a22836a06",
 "test_train_order.py": "5596770c5c279db3",
 "test_turn_restriction_filter.py": "b66b33b46b48ca09",
-"test_uicheck.py": "bd4b4155d7fba1c5",
+"test_uicheck.py": "f2e75288a7459547",
 "test_unionfind.py": "f1f599107d6b6b62",
 "test_unusedcheck.py": "8411273902f3f0bb",
 "test_vehicle_card.py": "9e463e2afaf92565",
@@ -36165,7 +36165,8 @@
 "web/navi/src/ui/opsTheme.ts",
 "web/navi/src/ui/routeOption.ts",
 "web/navi/src/ui/tokens.ts",
-"web/navi/src/ui/verdictMeaning.ts"
+"web/navi/src/ui/verdictMeaning.ts",
+"web/navi/src/vite-env.d.ts"
 ],
 "test_unionfind.py": [
 "sources.yaml",
