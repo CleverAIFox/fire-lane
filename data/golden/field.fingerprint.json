@@ -11,6 +11,11 @@
    "bytes": 2320,
    "lines": 52
   },
+  "nonroad_marks.csv": {
+   "sha256": "a52b8ed6747dda236f652f41a68c12aedbc11902e834c1bc579969ad923f77f1",
+   "bytes": 2017,
+   "lines": 12
+  },
   "oneway_direction_2611.csv": {
    "sha256": "49b59262dbc7fc27eee4d211aa12584df70f6aaa6af0ca73a1c8f8f9551cf2c5",
    "bytes": 5863,
