@@ -65,6 +65,8 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+import testforecast as F  # 예보 줄 · 정확도 표 · 예산 중앙값 판정(PLAN #264 · DECISIONS §837)
+
 ROOT = Path(__file__).resolve().parent.parent
 LEDGER = ROOT / "data" / "golden" / "testtimes.json"
 READS_LEDGER = ROOT / "data" / "golden" / "testreads.json"     # 시험 파일 → 실행 중 **실제로 연** 추적 파일들(`--measure-reads --write` 가 쓴다 · PLAN #218)
@@ -107,18 +109,24 @@ def pick(files: list[str], ledger: dict[str, float], budget: float, jobs: int, s
     med = statistics.median(known.values()) if known else 0.0
     spent = med * len(new)
     eff = min(jobs, EFF)
-    chosen = list(new)
-    skipped = []
-    for f, s in sorted(known.items(), key=lambda kv: (kv[1], kv[0])):
-        if startup + s > budget or startup + (load + spent + s) / eff > budget:
-            skipped.append(f)
-            continue
-        spent += s
-        chosen.append(f)
+
+    def fill(spent0: float) -> tuple[list[str], list[str], float]:
+        got, out, spent = [], [], spent0
+        for f, s in sorted(known.items(), key=lambda kv: (kv[1], kv[0])):
+            if startup + s > budget or startup + (load + spent + s) / eff > budget:
+                out.append(f)
+                continue
+            spent += s
+            got.append(f)
+        return got, out, spent
+
+    got, skipped, spent = fill(spent)
+    chosen = list(new) + got
     gone = sorted(set(ledger) - set(files))
+    base = len(fill(0.0)[0])          # 새 시험이 없었다면 들었을 짧은 시험의 수 — 차가 새 시험이 **밀어낸** 몫이다(예보 줄이 말한다 · PLAN #264)
     return sorted(chosen), {
         "new": sorted(new), "gone": gone, "skipped": skipped, "est": startup + (load + spent) / eff, "median": med,
-        "total": sum(known.values()), "known": len(known),
+        "total": sum(known.values()), "known": len(known), "new_est": med * len(new) / eff, "displaced": base - len(got),
     }
 
 
@@ -352,6 +360,16 @@ def run_all(names: list[str], jobs: int, ledger: dict[str, float], root: Path = 
     return secs, red
 
 
+def forecast(ranges: list[str] | None) -> int:
+    """`--forecast` — 읽기 정확도 단계별 표. 범위를 안 주면 마지막 커밋 1 · 3 · 6개. 작업 트리의 추적 파일 변경도 같이 센다(범위를 줘도 `changed_files` 가 더한다)."""
+    ledger, files = load_ledger(), test_files()
+    raw = load_reads(drop_ambient=False)
+    texts = {n: (ROOT / "tests" / n).read_text(encoding="utf-8", errors="replace") for n in files}
+    rows = {r: changed_files(ROOT, [r])[0] for r in (ranges or ["HEAD~1..HEAD", "HEAD~3..HEAD", "HEAD~6..HEAD"])}
+    print("\n".join(F.forecast_table(rows, texts, raw, ledger, touching, ambient)))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="testpick", description=__doc__.split("──")[0], formatter_class=argparse.RawTextHelpFormatter)
     g = ap.add_mutually_exclusive_group(required=True)
@@ -359,6 +377,7 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--measure-reads", action="store_true", help="시험 파일마다 따로 돌며 **실제로 연 추적 파일**을 잰다(PLAN #218 · 감사 훅 · 느리다 · 사람이 가끔)")
     g.add_argument("--list", action="store_true", help="고른 묶음을 낸다")
     g.add_argument("--run", action="store_true", help="고른 묶음을 병렬로 돌린다")
+    g.add_argument("--forecast", action="store_true", help="읽기 정확도 단계별 표 — 정확도가 오르면 ㉥ 의 초가 얼마나 느는가(읽기 전용 · PLAN #264)")
     ap.add_argument("--write", action="store_true", help="--measure 결과를 장부에 쓴다")
     ap.add_argument("--only", nargs="+", metavar="FILE", help="--measure 가 이 파일들만 다시 잰다(나머지 장부 칸은 그대로 — 고친 시험 하나를 11분 안 들이고 갱신)")
     ap.add_argument("--budget", type=float, default=DEFAULT_BUDGET, help="벽시계 예산(초)")
@@ -431,6 +450,9 @@ def main(argv: list[str] | None = None) -> int:
             print(f"장부 {LEDGER} 를 썼다")
         return 1 if red else 0
 
+    if a.forecast:
+        return forecast(a.range)
+
     ledger = load_ledger()
     if not ledger:
         # ★ 장부가 비면 모든 파일이 「새 시험」이라 전부 든다 — 조용히 25분짜리 묶음이 된다. 닫힌 쪽으로 실패한다.
@@ -450,6 +472,10 @@ def main(argv: list[str] | None = None) -> int:
     chosen, info = select(files, ledger, texts, changed, a.budget, a.jobs, a.load, touched=not a.no_touched, cap=cap, reads=reads)
     print(f"묶음 {len(chosen)}/{len(files)}개 파일 · 추정 {info['est']:.1f}초(예산 {a.budget:g}초 · 병렬 {a.jobs} · 남의 일 {a.load:g}) · "
           f"장부 {info['known']}개 합 {info['total']:.0f}초", file=sys.stderr)
+    stale_new, stale_chg, _ = reads_stale(files)
+    print("  " + F.accuracy_line(len(files) - len(stale_new) - len(stale_chg), len(files), info["est"], a.budget, not a.no_touched), file=sys.stderr)
+    if (w := F.over_budget_warning(info["est"], a.budget)) is not None:
+        print(f"  {w}", file=sys.stderr)
     if info["new"]:
         print(f"  장부에 없음(새 시험 · 무조건 든다) {len(info['new'])}개: {', '.join(info['new'][:5])}"
               f"{' …' if len(info['new']) > 5 else ''}  → `--measure --write`", file=sys.stderr)
@@ -486,7 +512,9 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  ⚠ {n} 가 장부({ledger[n]:.1f}초)보다 훨씬 걸렸다({s:.1f}초) — 장부가 낡았다", file=sys.stderr)
     for n, o in sorted(red.items()):
         print(f"  ✗ {n}\n" + "\n".join("      " + x for x in o.splitlines()[-12:]), file=sys.stderr)
-    print(f"{'✗' if red else '✓'} 시험 묶음 {len(chosen)}개 파일 · 빨강 {len(red)} · {time.monotonic() - t:.1f}초 (추정 {info['est']:.1f}초)")
+    took = time.monotonic() - t
+    print(f"{'✗' if red else '✓'} 시험 묶음 {len(chosen)}개 파일 · 빨강 {len(red)} · {took:.1f}초 (추정 {info['est']:.1f}초)")
+    print(F.hook_line(info, took))                # 훅이 이 줄을 그대로 옮겨 적는다 — 「예보 」 로 시작한다(PLAN #264)
     return 1 if red else 0
 
 
