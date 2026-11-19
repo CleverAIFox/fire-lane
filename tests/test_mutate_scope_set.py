@@ -17,13 +17,16 @@ test_mutate_scope_set.py — 돌연변이 장부가 과녁 전부를 들고 있�
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "tools"))
+import mutatescope as MS
 
-import mutatescope as MS  # noqa: E402
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def _gap(want: set[str], held: set[str]) -> list[str]:
+    """어긋난 이름. 같으면 빈 목록이고 이 값이 「조용하다」다."""
+    return sorted(want - held) + sorted(held - want)
 
 
 def _diff(want: set[str], held: set[str]) -> str:
@@ -37,7 +40,7 @@ def _held(path: Path) -> set[str]:
 def test_the_ledger_holds_exactly_the_targets():
     want, held = set(MS.targets()), _held(ROOT / "data/golden/mutation.json")
     print(f"과녁 {len(want)} · 장부 {len(held)}")
-    assert want == held, _diff(want, held)
+    assert not _gap(want, held), _diff(want, held)
 
 
 def test_a_missing_or_extra_row_is_caught(tmp_path, monkeypatch):
@@ -46,8 +49,9 @@ def test_a_missing_or_extra_row_is_caught(tmp_path, monkeypatch):
     ledger = tmp_path / "mutation.json"
     ledger.write_text(json.dumps({"도구별": [{"도구": n} for n in sorted(real)]}), encoding="utf-8")
     monkeypatch.setattr(MS, "targets", lambda: sorted(real | {"a_new_target"}))
-    assert set(MS.targets()) != _held(ledger), "새 과녁이 장부에 없는데 같다고 했다"
+    assert not _gap(real, _held(ledger)), "정상 입력에서 울었다 — 장부와 같은 집합인데 어긋났다고 했다"
+    assert _gap(set(MS.targets()), _held(ledger)) == ["a_new_target"], "새 과녁이 장부에 없는데 같다고 했다"
     assert "a_new_target" in _diff(set(MS.targets()), _held(ledger))
     monkeypatch.setattr(MS, "targets", lambda: sorted(real - {sorted(real)[0]}))
-    assert set(MS.targets()) != _held(ledger), "장부에만 남은 행을 같다고 했다"
+    assert _gap(set(MS.targets()), _held(ledger)) == [sorted(real)[0]], "장부에만 남은 행을 같다고 했다"
     assert sorted(real)[0] in _diff(set(MS.targets()), _held(ledger))

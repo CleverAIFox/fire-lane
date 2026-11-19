@@ -104,7 +104,9 @@ def region_stat(props: list[dict], col: dict[str, list], n_stale: int) -> dict:
 
 def region_line(s: dict) -> str:
     """한계 절 한 줄 — 「영역 304 중 표지 4(1.3%) · 본 17(5.6%) · 안 본 287 · 층별 본 몫 …」. 표지는 본 몫 안의 것이다."""
-    pct = lambda a: f"{100 * a / s['영역']:.1f}%" if s["영역"] else "–"          # noqa: E731
+    def pct(a: int) -> str:
+        return f"{100 * a / s['영역']:.1f}%" if s["영역"] else "–"
+
     layers = " · ".join(f"{v} {a}/{b}" for v, (a, b) in s["층"].items())
     return (f"영역(최소폭 {REGION_WIDTH_M:g}m 미만 · {' 또는 '.join(REGION_VERDICTS)}) {s['영역']} 중 표지 {s['표지']}({pct(s['표지'])}) · 본 {s['본']}({pct(s['본'])}) · "
             f"안 본 {s['안 본']} · 층별 본 몫 {layers} · 낡은 표지 {s['낡은 표지']} — 표지는 본 구간에만 붙는다(안 봤다는 비도로가 아니라는 말이 아니다)")

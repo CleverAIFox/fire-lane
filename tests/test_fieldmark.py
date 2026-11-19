@@ -40,6 +40,7 @@ def test_the_columns_never_say_not_seen_as_false() -> None:
 
 def test_a_mark_whose_key_is_not_in_the_published_set_is_counted_as_stale() -> None:
     marks = [{"seg_uid": "있다", "종류": "계단"}, {"seg_uid": "없다", "종류": "계단"}]
+    assert not F.stale_marks(marks, {"있다", "없다"}), "발행본에 다 있는데 낡은 표지로 셌다"
     assert [m["seg_uid"] for m in F.stale_marks(marks, {"있다"})] == ["없다"]
     props = [{"seg_uid": "있다", "verdict": "unknown", "width_min_m": 1.0}]
     col = F.columns(["있다"], marks, F.seen_uids([], marks))
@@ -47,6 +48,7 @@ def test_a_mark_whose_key_is_not_in_the_published_set_is_counted_as_stale() -> N
 
 
 def test_duplicate_keys_and_unknown_kinds_are_faults() -> None:
+    assert not F.mark_faults([{"seg_uid": "a", "종류": "계단"}, {"seg_uid": "b", "종류": "계단"}]), "멀쩡한 표지를 결함이라 했다"
     marks = [{"seg_uid": "a", "종류": "계단"}, {"seg_uid": "a", "종류": "공터"}]
     assert len(F.mark_faults(marks)) == 2
 
