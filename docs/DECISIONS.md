@@ -54762,7 +54762,7 @@ uv run python tools/mutate.py --write --stale
 | ⑤ | 22.6 | 22.4 | ×0.80 |
 
 중앙값 22.6초(예산 30초 · 판정 줄 「최근 5회 중앙값 22.6초(이번 회차 22.6초 · 예산 30초)」). 기준(남의 일 60)의 같은 트리 다섯 회 중앙 28.1초에서 5.5초 줄었다 — 기울기의 예측(4.4초)보다 1.1초 크고 이는 호스트 흔들림 안이다.
-- **덜 보게 되는 것.** 훅 묶음에서 12개 파일(장부 1.06 ~ 1.38초 · 합 14.6초)이 빠졌다: `test_intake_rules` · `test_layering` · `test_no_unbounded_waits` · `test_npm_overrides_declared` · `test_ownership` · `test_publish_checkpoints` · `test_ratchet` · `test_scope_tier` · `test_seg_uid_first_class` · `test_stagerun_vehicle` · `test_uicheck` · `test_vehicle_parity`. 구조 규약 시험인 앞의 둘(PLAN #209 가 훅에 들이려던 것)이 훅에서 빠진 것이 실제 손실이다. 열두 파일 모두 푸시 전 `pushready` ㉥ 의 묶음(남의 일 0 · 205개 파일)에는 든다(`pick` 으로 계산했다). 훅이 막던 것 중 이 열두 파일이 문 것은 CI 와 `pushready` 로 한 단계 늦어진다.
+- **덜 보게 되는 것.** 훅 묶음에서 12개 파일(장부 1.06 ~ 1.38초 · 합 14.6초)이 빠졌다: `test_intake_rules` · `test_layering` · `test_no_unbounded_waits` · `test_npm_overrides_declared` · `test_ownership` · `test_publish_checkpoints` · `test_ratchet` · `test_scope_tier` · `test_seg_uid_first_class` · `test_stagerun_vehicle` · `test_uicheck` · `test_vehicle_parity`. 구조 규약 시험인 앞의 둘(PLAN #209(닫힘)가 훅에 들이려던 것)이 훅에서 빠진 것이 실제 손실이다. 열두 파일 모두 푸시 전 `pushready` ㉥ 의 묶음(남의 일 0 · 205개 파일)에는 든다(`pick` 으로 계산했다). 훅이 막던 것 중 이 열두 파일이 문 것은 CI 와 `pushready` 로 한 단계 늦어진다.
 
 ### 라. 남은 것 (ㄹ)
 
