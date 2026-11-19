@@ -23,6 +23,7 @@ PARAM `REGION_WIDTH_M`(3.0) · `REGION_VERDICTS` · `NONROAD_KINDS`(닫힌 집�
 """
 from __future__ import annotations
 
+import argparse
 import csv
 import json
 import sys
@@ -140,8 +141,10 @@ def selftest() -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    a = sys.argv[1:] if argv is None else argv
-    if "--selftest" in a:
+    ap = argparse.ArgumentParser(description="현장 표지(PLAN #260)를 판정 뒤에 얹는 후처리 — 한계 절 한 줄 · 판정 집합의 전후 · 낡은 표지를 낸다(읽기 전용)")
+    ap.add_argument("--selftest", action="store_true", help="합성 입력으로 열 둘 · 빼기 · 영역 수를 확인한다(자료 없이 돈다)")
+    a = ap.parse_args(sys.argv[1:] if argv is None else argv)
+    if a.selftest:
         return selftest()
     r = run()
     for x in r["faults"]:
