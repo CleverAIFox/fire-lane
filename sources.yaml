@@ -5192,11 +5192,11 @@ outputs:
     produced_by: 사람 (판독표를 보며 · 현장 방문에서 — 차가 다니는 길이 아닌 구간에 표지를 붙인다)
     path: data/field/nonroad_marks.csv
     inputs: [segments]
-    consumers: []      # 아직 읽는 코드가 없다(PLAN #260 도착 조건 ③ — 판독표 검정이 표지된 행에 이름을 붙여 센다). 판정 폐포는 읽지 않는다(판정에 안 쓴다 · DECISIONS §833)
+    consumers: [tools/fieldmark.py]      # 판정 뒤의 후처리(A안 — 비도로 표지 구간을 센 집합에서 뺀다 · 열 둘 · 한계 절 한 줄). 판정 폐포(segments · seg/classify)는 읽지 않는다 · `verdict` 칸을 안 고친다
     what: 현장 표지 목록 — 비도로(지붕통로 · 계단 · 비포장진입 · 적치로덮임)와 막다른마당(길은 맞다 · 비도로 합계에 안 든다) 6행. 열쇠는 seg_uid. 표지는 사람이 본 구간에만 붙는다(전수 1,287 중 40지점 · 3.1%)
     verified: false
     known_issues:
-    - ★ 판정에 안 쓴다 — 표지가 본 40곳만 덮어 안 본 곳의 같은 자리는 안 빠지므로 쓰면 「본 곳만 정확한 판정」이 된다(DECISIONS §833). 쓸 조건은 PLAN #260 에 있다
+    - ★ 판정 폐포는 안 읽는다. `tools/fieldmark.py` 가 판정 뒤에 비도로 표지 구간을 센 집합에서 뺀다(A안) — 표지가 본 40곳만 덮어 안 본 곳의 같은 자리는 안 빠지는 「본 곳만 정확한 판정」이다(DECISIONS §833)
     - ★ 표지가 없다는 것은 「비도로가 아니다」가 아니라 「안 봤다」다. 표지 수를 전수로 읽지 않는다
     - 지문(`tools/fieldseal.py --write`)을 박는 것은 사람이 친다(도구는 안 한다)
   corridor:
