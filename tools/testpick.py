@@ -20,7 +20,9 @@ testpick.py — 푸시 전에 도는 시험 묶음을 **실측으로** 고른다
 
 ★ **예산 30초는 어느 조건의 30초인가** (PLAN #210 ㉡ · 2026-11-08 실측) — **`pre-push` 훅 전체의 벽시계, 모든 게이트가 동시에, 8코어 조용한 기계.**
   사람이 기다리는 시간이 그것이기 때문이다. 단독으로 재면 거짓이다: 시험 묶음은 단독 24.4초인데 같은 훅 안의 22게이트와 코어를 다퉈 36~37초였고
-  (게이트만 14.7초), 그 차 약 12초는 게이트들이 쓰는 CPU 약 60초(`LOAD`)다. 그래서 훅에 거는 줄은 `--budget 28 --load 60`, 훅 밖(pushready)은 `--load 0`.
+  (게이트만 14.7초), 그 차 약 12초는 같은 훅 안 게이트들이 쓰는 CPU 몫(`LOAD`)이다. 이 몫은 2026-11-08 에 약 60초로 역산했으나 2026-11-20(DECISIONS §840)의 훅 안 실측은 호스트가
+  느린 날 중앙값이 33.9초로 예산을 넘었고, 훅 안 실측이 묶음 장부초 합 1초당 0.29초 · 절편 14.2초(남의 일 30 · 60 · 90 세 점)이며 호스트 흔들림 몫이 약 5.8초라서 60 은 모자랐다.
+  모형 `6.5 + (L + 34) ÷ 5 = 28` 에서 L = 73.5 이므로 훅에 거는 줄은 `--budget 28 --load 75`, 훅 밖(pushready)은 `--load 0`.
   ★ **그 조건에서 훅에 드는 묶음은 `test_layering`(장부 2.3초 · 짧은 순 187번째)을 못 품는다** — 품으려면 훅이 약 38초다. 훅은 예산 안의 짧은 쪽을,
   pushready 가 더 큰 쪽(`--budget 30 --load 0`)을 돈다.
 
@@ -73,7 +75,7 @@ READS_LEDGER = ROOT / "data" / "golden" / "testreads.json"     # 시험 파일 �
 DEFAULT_BUDGET = 28.0     # 초 — **훅 전체의 벽시계**(아래 ★ 조건) 30초에서 여유 2초를 뺀 값
 STARTUP = 6.5            # 초 — 단독 실행의 고정 비용(통 시작 · 수집 · 마무리). 실측: 묶음 크기를 바꿔 잰 세 점의 절편
 EFF = 5.0                # 실효 병렬 수 — 코어 8개여도 통의 꼬리 · 입출력 · 수집이 겹쳐 **단독으로 4.7~5.3** 이다(실측)
-LOAD = 60.0              # CPU-초 — **같은 훅 안의 다른 게이트들이 쓰는 몫**. 훅 36.3초 − 단독 24.4초 = 11.9초 × EFF 에서 역산(`--load`)
+LOAD = 75.0              # CPU-초 — **같은 훅 안의 다른 게이트들이 쓰는 몫**(도움말 표시용 · 계산에는 안 쓴다 — 훅의 `--load 75` 가 넘긴다). §840 실측: 묶음 장부초 합 1초당 0.29초 · 절편 14.2초 · 흔들림 약 5.8초 → 6.5+(L+34)/5=28 에서 L=73.5 → 75
 TOUCH_CAP = 40.0         # 초 — 바뀐 파일에 닿는 시험 하나의 상한(장부 초 · 8병렬 경합이 낀 값이라 단독의 약 3배). 넘으면 CI 몫이다(PLAN #218)
 PROC_TIMEOUT = 900        # 시한 없는 기다림은 빨강을 무한 대기로 바꾼다. 파일 하나의 상한(pytest 자체 시한은 시험당 300초)
 # ★ **재는 쪽만 시한이 다르다**(PLAN #214 재고 · 2026-11-11). `--measure` 는 **시험이 아니라 재는 것**이다 — 시험의 300초 시한은
@@ -387,7 +389,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--write", action="store_true", help="--measure 결과를 장부에 쓴다")
     ap.add_argument("--only", nargs="+", metavar="FILE", help="--measure 가 이 파일들만 다시 잰다(나머지 장부 칸은 그대로 — 고친 시험 하나를 11분 안 들이고 갱신)")
     ap.add_argument("--budget", type=float, default=DEFAULT_BUDGET, help="벽시계 예산(초)")
-    ap.add_argument("--load", type=float, default=0.0, help=f"같은 시간에 도는 남의 일(CPU-초). 훅 안에서는 {LOAD:g}")
+    ap.add_argument("--load", type=float, default=0.0, help=f"같은 시간에 도는 남의 일(CPU-초). 훅 안에서는 {LOAD:g} — 훅 안 실측 묶음 장부초 1초당 0.29초 · 절편 14.2초 · 흔들림 약 5.8초에서 역산(DECISIONS §840), 훅 밖은 0")
     ap.add_argument("--range", action="append", metavar="A..B", help="바뀐 파일의 커밋 범위(여럿 가능). 안 주면 @{u}..HEAD")
     ap.add_argument("--files", nargs="+", metavar="PATH", help="바뀐 파일을 직접 준다(실측 · 시험용 — git 을 안 본다)")
     ap.add_argument("--no-touched", action="store_true", help="바뀐 파일에 닿는 시험을 안 더한다(예전 동작 — 실측 대조용)")

@@ -227,3 +227,19 @@ def test_the_testpick_run_prints_the_axis_before_running(capsys: pytest.CaptureF
     assert P.main(["--list", "--no-touched", "--budget", "28", "--load", "60", "--jobs", "6"]) == 0
     err = capsys.readouterr().err
     assert "예상" in err and "(모형 · pre-push 묶음 · 남의 일 60)" in err and "예보 [pre-push 묶음 · 남의 일 60]" in err
+
+
+def test_experiment_rounds_under_other_keys_do_not_move_the_current_median(tmp_path: Path) -> None:
+    """훅 키는 훅과 게이트 파일의 해시라서 커밋마다 안 바뀌고 `--load` 를 바꾼 실험은 다른 키로 쌓인다 — 마지막 다섯 줄이 실험이어도 현재 키의 판정은 오염되지 않는다."""
+    rec = tmp_path / "secs"
+    for s in (24.0, 25.0, 26.0, 24.5, 25.5):
+        F.append_record(rec, s, "now")
+    for s in (36.6, 35.1, 36.3, 19.2, 19.3):      # 남의 일 30 · 90 실험(2026-11-19 에 실제로 쌓인 값)
+        F.append_record(rec, s, "exp")
+    prev = F.read_records(rec, "now")
+    assert prev == [24.0, 25.0, 26.0, 24.5, 25.5]
+    lvl, _ = F.judge(prev, 25.0, 30.0, 5)
+    assert lvl == "ok"
+    unfiltered = [float(x.split("\t")[1]) for x in rec.read_text(encoding="utf-8").splitlines()]
+    lvl_all, _ = F.judge(unfiltered[:-1], 19.3, 30.0, 5)
+    assert lvl_all == "cry"      # 키로 거르지 않았다면 실험 줄이 중앙값을 35.1초로 끌어 울렸을 것이다(오염의 재현)
