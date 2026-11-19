@@ -6,7 +6,7 @@ pushready.py — 「푸시해도 되는가」 **한 명령.**  (PLAN #207)
     uv run python tools/pushready.py --edges <감사 디렉터리> [<사슬 전 커밋>]    사람이 감사 훅을 켜고 사슬을 돈 로그 → 단계별 읽기 · 쓰기와 `EDGES` 각 변의 실측(읽기만 · PLAN #220)
 
 ★ **읽기만 한다.** 아무것도 안 쓰고 아무것도 안 찍는다 — 도장 · 래칫 · 변이 장부는 이 도구가 고치지 않는다.
-  막는 것마다 **사람이 칠 명령**을 적는다.
+  막는 것마다 **사람이 칠 명령**을 적는다. ㉠ · ㉥ 는 초록일 때도 **분모**(`pushdenom`)를 한 줄로 적는다.
 
 ── 왜 있나 ────────────────────────────────────────────────────
 2026-11-08 한 배치에서 도장 상태를 **셋으로 따로** 물었다. 그때마다 「됐다」고 판단했고, 다음 관문에서 막혔다.
@@ -49,6 +49,8 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import pushdenom as D  # 칸이 자기 분모를 말한다(PLAN #259 · DECISIONS §835)
+
 ROOT = Path(__file__).resolve().parent.parent
 
 #: `(argv, cwd) → (rc, 출력)`. 시험이 합성 출력을 먹이려고 갈아 끼운다.
@@ -76,8 +78,7 @@ def real_run(argv: list[str], cwd: Path) -> tuple[int, str]:
 
 
 # ── ㉠ 래칫 ─────────────────────────────────────────────────────
-_ITEM = re.compile(r"^\s+([✗·~]) (\S+) · (\S+)")
-_SUMMARY = re.compile(r"래칫 (\d+)개 · 낡음 (\d+)")
+_ITEM, _SUMMARY = D.ITEM, D.SUMMARY      # 읽는 꼴은 분모와 한 곳이다(`pushdenom`)
 
 
 def check_ratchet(root: Path, run: Runner) -> Block | None:
@@ -86,6 +87,7 @@ def check_ratchet(root: Path, run: Runner) -> Block | None:
     ★ **닫힌 쪽으로 실패한다** — rc 가 0 이 아닌데 읽을 항목이 하나도 없으면 「원인 불명」으로 막는다.
     """
     rc, out = run([*_PY, "tools/ratchet.py"], root)
+    D.record("㉠", D.ratchet_denom(out))
     if rc == 0:
         return None
     loose, tight = [], []
@@ -94,10 +96,8 @@ def check_ratchet(root: Path, run: Runner) -> Block | None:
         if not m:
             continue
         mark, tool, name = m.groups()
-        if tool == "docseal.py" and name == "UNSEALED":
-            continue                                # ㉢ 이 맡는다
-        if tool == "mutate.py" and (mark != "✗" or name == "—"):
-            continue                                # 장부가 낡았거나 죽은 것은 ㉤ 이 맡고 조이는 쪽의 `--write` 는 변이 지문을 낡게 한다(㉠→㉤). ★ 「✗ 느슨해지는 쪽」은 여기서 읽는다(DECISIONS §817 · 종전에는 이 도구의 항목을 전부 건너뛰어 CI 의 래칫 정합만 빨갰다)
+        if D.skip_rule(mark, tool, name):           # 넘기는 규칙 둘은 `pushdenom.RATCHET_SKIPS` 에 사유와 같이 선언돼 있다 — 분모에 센다(PLAN #259 · DECISIONS §835)
+            continue
         if mark == "·":
             tight.append(ln.strip())
         elif mark == "✗":
@@ -227,8 +227,9 @@ def check_tests(root: Path, run: Runner) -> Block | None:
     ★ 훅(`--load 60`)보다 큰 묶음이다 — 여기는 남의 일이 없어 `test_layering` 같은 구조 규약 시험이 든다(2026-11-08 에 CI 만 물었다).
     """
     rc, out = run([*_PY, "tools/testpick.py", "--run", "--no-cap", "--jobs", str(TESTS_JOBS)], root)
+    D.record("㉥", D.tests_denom(out))
     if rc == 0:
-        return _stale_reads(out)
+        return _stale_reads(out) or ((g := D.gap_block(out)) and Block("㉥", *g))
     tail = [x for x in out.strip().splitlines() if x.strip()]
     return Block("㉥", "시험 묶음이 빨갛다(또는 장부가 없다)", tail[-8:],
                  [" ".join([*_PY, "tools/testpick.py", "--run", "--no-cap", "--jobs", str(TESTS_JOBS)]) + "   # 빨간 파일을 읽고 고친다 — 고친 뒤 래칫 · 도장을 다시 사슬로"])
@@ -386,8 +387,7 @@ EDGES: list[tuple[str, str, bool, str]] = [
     ("㉢", "㉠", True, "도장 없는 절이 줄어 `UNSEALED` 가 조여진다 — 래칫이 `data/golden/docseal.json` 을 읽는다(실측 2026-11-17: ㉢ 이 그 파일에 한 절을 더해 762 → 763 절 · 밟혔다 · 조이는 쪽이 생긴다)"),
 ]
 #: ㉡→㉠ 는 모델에 **넣지 않는다**(실측 2026-11-17 `쓰기→읽기 쌍` 으로 찍혔다): ㉡ 은 `docseal.json` 을 쓰고 ㉠ 은 읽지만 ㉠ 이 거기서 읽는 값은 `UNSEALED`
-#: 하나이고 그것은 **절 키 집합**(`docseal.ratchet_values` — 지문이 아니라 찍힌 절의 유무)의 함수다. ㉡ 은 낡은 도장 10절의 값을 바꿨고 **키는 0개 더했다**(762 → 763 의 한 개는 ㉢ 몫).
-#: 그래서 ㉡ 이 ㉠ 의 입력을 바꾸는 길이 없다 — 파일이 같아도 값이 안 닿는다. `sealcov` 는 `docseal.json` 을 안 읽는다(`docseal._sections` 로 절 본문을 직접 읽는다).
+#: 하나이고 그것은 **절 키 집합**(`docseal.ratchet_values` — 지문이 아니라 찍힌 절의 유무)의 함수다. ㉡ 은 낡은 도장 10절의 값을 바꿨고 **키는 0개 더했다**(762 → 763 의 한 개는 ㉢ 몫). 그래서 ㉡ 이 ㉠ 의 입력을 바꾸는 길이 없다 — 파일이 같아도 값이 안 닿는다. `sealcov` 는 `docseal.json` 을 안 읽는다(`docseal._sections` 로 절 본문을 직접 읽는다).
 ORDER = ["㉢", "㉠", "㉤", "㉡"]       # 사람이 칠 순서(㉣ 커밋은 늘 맨 끝 — 바퀴 밖)
 LAP_CAP = 4
 #: 표본 — 2026-11-10~11 사람이 **옛 순서**(㉠ ㉤ ㉡ ㉢)로 돈 바퀴. **한 건이다** · 단계별 기록은 없다. 모델의 확정 바퀴는 이 표본보다 작다 — 되돌아올 수 있는 변이 실제로 밟혔다는 뜻이다.
@@ -592,7 +592,7 @@ def main(argv: list[str] | None = None) -> int:
         print(__doc__)
         return 2
     blocks = survey(log=lambda s: print(s, file=sys.stderr))
-    print(render(blocks, notes()))
+    print(render(blocks, [*notes(), *D.lines()]))
     return 1 if blocks else 0
 
 

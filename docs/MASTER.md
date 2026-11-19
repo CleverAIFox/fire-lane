@@ -3337,7 +3337,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 3,663 전수 · **분모(blank) 0절** · 물림(inherit) 2,335절.
+★ **강제자 칸의 분모.** 절 3,667 전수 · **분모(blank) 0절** · 물림(inherit) 2,338절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -4989,6 +4989,8 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `tools/bldg_buried.py` | **경사면에서 건물이 지형에 묻히는 정도를 건물마다 재는 조사 도구**(읽기 전용 · 판정 불변 · DECISIONS §796-A). 구운 z16 지형(쌍선형)으로 발자국 아래 중심 · 최저 · 최고를 내고 묻힘(최고 − 중심) · 뜸 · 통째 묻힘의 분포와 후보 둘(`base` 를 최고 − 중심 / 최저 − 중심)의 **건물 파일 바이트**를 낸다 | MapLibre 가 실제로 어떻게 그리는가(헤드리스 실측) · 후보를 고르는 일 |
 | `tools/park_forecast.py` | **단속이력 가중치의 예보**(읽기 전용 · 판정 불변 · DECISIONS §794-A). 후보 `parkPer1000` 마다 센터 → 노드 800쌍의 경로가 길이 최단과 달라지는 비율 · 늘어난 길이 · 비용 배수와, 영상판정 불가 구간 중 단속 도로 가중치를 받는 수를 낸다. 값은 사람이 고른다 | 실제 `edge_cost`(폭 · 판정 · 회전) · 단속이 점유를 뜻하는가 |
 | `tools/rvsheet.py` | **거리뷰 판독표의 선언** — 가설 · 허용 답 · 가설마다 요구 칸(`RV_NEED` — 나 는 지도로 보므로 촬영시점 면제) · 보는 화면 · 머리말. 순수 상수이고 동작은 `tools/evalset.py` 의 `rv_*` 가 든다(줄 수 상한 때문에 옮겼다 · DECISIONS §788) | 가설이 좋은가 · 판독이 옳은가 |
+| `tools/rvpower.py` | **거리뷰 판독표 검정의 검정력**(PLAN #263(닫힘) · DECISIONS §835) — 판독 전에 「대조군이 X% 이하여야 기각할 수 있다」를 조건부로 말하고, 판독 뒤 실측 대조군이 가설마다 선언한 상한(`RV_CTRL_MAX`)이나 본 표본의 천장을 넘으면 「이 표본으로는 결론을 못 낸다」를 낸다. 피셔 정확검정(`fisher`)도 든다. 울음은 결과를 무효로 만들지 않는다 | 대조군 비율이 얼마여야 옳은가(사전 추정이 없다) · 판독 값 |
+| `tools/pushdenom.py` | **pushready ㉠ · ㉥ 가 자기 분모를 말하게 한다**(PLAN #259 · DECISIONS §835) — ㉠ 는 「래칫 N개 중 읽은 수 · 넘기는 규칙 둘(`RATCHET_SKIPS` · 사유)」 · ㉥ 는 「읽기 실측 n/M개 파일 · 새 시험으로 설명 안 되는 몫」을 초록일 때도 낸다. 설명 안 되는 몫이 있으면 ㉥ 가 막는다 | 막을지의 최종 판단(`pushready` 몫) · 래칫 값과 시험이 초록인지 |
 | `tools/firstscreen.py` | **첫 화면이 받는 gzip 바이트** 래칫 — Pages 모양 로컬 서버(응답마다 기록) + 헤드리스 크로미움(`tools/firstscreen_drive.cjs`)으로 내비 · 관제를 재 선언(타일 제외)과 대조한다. 현장 로딩의 진짜 축이다(`web/data` 총량이 아니다 · DECISIONS §787-H). CI `contract-smoke` 가 돈다 | 렌더링 시간(PLAN #246(닫힘)) · 서비스 워커가 든 2회차 · Pages 가 gzip 을 주는지 |
 | `tools/testsplit.py` | **`contract-tests` 의 조각을 CI 에서 잰 파일별 시간(`data/golden/ci_testtimes.json`)으로 가른다**(LPT · 결정적 · 새 파일은 장부 중앙값). 워크플로가 `--part N --of 4` 로 부른다 | 장부의 초가 CI 실측과 맞는지(푸시 뒤 첫 CI 가 그 오차) · 러너 속도 |
 | `ops-worker/scripts/deploy.sh` | **중개자를 Cloudflare 에 올리는 스크립트 — 사람이 친다**(로그인 · 비밀 입력). GitHub 변수 · 비밀은 안 건드리고 다음 명령만 찍는다. `ops-worker/` 가 `server.py` 와 같은 표면(DECISIONS §755) | 계정 · 실제 배포(사람 몫) |
@@ -5058,6 +5060,8 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `tests/test_lakecheck_l3.py` | L3 이 **레이크를 전부 해시하지 않는지** — 판정이 아니라 **비용**을 잰다 |
 | `tests/test_lakecheck_l5.py` | L5 가 norm 의 상류를 `_prep.json` 의 raw 경로 키(`lake.norm_owners`)로 판정하는지 — 형제 raw 가 있어도 **짝 없는 norm 은 잡힌다**(PLAN #197(닫힘)). 합성 레이크라 레이크 없는 기계에서도 돈다. 시험이라 「부류」 줄은 없다 |
 | `tests/test_pushready.py` | 「푸시해도 되는가」 한 명령(`tools/pushready.py` · PLAN #207 닫힘)이 **다섯 축(래칫 · 낡은 도장 · 도장 없음 · 커밋 안 된 변경 · 변이 장부)을 하나씩 막는가** — ㉣ 는 실제 git 저장소로 「도장만 찍고 커밋 안 함」을 만든다. 읽기 전용이고 합성 출력이라 2분짜리 실물을 안 돈다. 시험이라 「부류」 줄은 없다 |
+| `tests/test_rvpower.py` | 판독표 검정의 검정력(`tools/rvpower.py` · PLAN #263(닫힘))이 **판독 전에 천장을 말하고 · 실물 판독표에서 가 · 다 는 울고 나 는 안 우는가** · 선언이 느슨하거나 비면 결함인가 · 울어도 결과 칸을 안 지우는가. 시험이라 「부류」 줄은 없다 |
+| `tests/test_pushdenom.py` | pushready ㉠ · ㉥ 의 분모(`tools/pushdenom.py` · PLAN #259)가 **초록일 때도 서는가** · 넘기는 규칙이 선언표의 둘뿐인가(래칫 소유 도구 전부 × 표지) · 표에서 규칙을 지우면 막는가 · 새 시험으로 설명 안 되는 몫이 막는가 · `testpick` 실물 출력 꼴을 읽는가. 시험이라 「부류」 줄은 없다 |
 | `tests/ratchet_names.py` | 「선언한 축 == 산출한 축」을 도구 조각 단위로 훑는 문(시험이 아니다 · `test_` 로 안 시작해 수집되지 않는다). 옛 한 건(도구 38개 · 61초 · 병렬 303초)을 세 조각으로 갈랐고 단언은 옛 반복문의 몸통 그대로다(DECISIONS §802-G) |
 | `tests/test_ratchet_names_0.py` `tests/test_ratchet_names_1.py` `tests/test_ratchet_names_2.py` | 위 문을 `RT.owners()` 의 `i::3` 조각마다 부르는 시험 셋 — 파일 단위로 병렬을 도는 `testpick` 이 세 조각을 갈라 돌린다. 번호가 0..K-1 로 이어졌는지는 `test_ratchet.py` 의 `test_the_name_slices_cover_every_owner` 가 문다. 시험이라 「부류」 줄은 없다 |
 | `tests/test_ratchetstore.py` | 값을 밖에 둔 래칫이 **값만 움직이면 도장이 안 죽고 논리를 고치면 죽는가**(양성 대조 둘 · 실제 도장 지문으로) · 값 파일의 경로를 어느 문서 절도 백틱으로 안 적는가 · `ratchet --write` 가 값 파일에 쓰는가. 시험이라 「부류」 줄은 없다 |

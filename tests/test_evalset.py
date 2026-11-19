@@ -467,7 +467,8 @@ def test_the_verdict_comes_only_when_a_hypothesis_is_fully_answered(tmp_path: Pa
     """중간에 가설군/대조군 수를 내면 어느 행이 대조군인지 샌다 — 다 채운 가설만 가른다. 피셔 정확검정의 수도 댄다."""
     assert E.rv_fisher(4, 4, 0, 4) == pytest.approx(1 / 70) and E.rv_fisher(0, 5, 0, 5) == 1.0 and E.rv_fisher(3, 6, 3, 6) == pytest.approx(0.7164502)
     n1, n0 = E.RV_HYPO["가"][:2]
-    assert E.rv_fisher(n1, n1, 0, n0) <= E.RV_ALPHA < E.rv_fisher(n1 // 2, n1, n0 // 2, n0), "이 표본 수로는 완전히 갈려도 기각하지 못한다"
+    c = max((b for b in range(n0 + 1) if E.rv_fisher(n1, n1, b, n0) <= E.RV_ALPHA), default=-1)   # ★ 대조군 0% 를 가정하지 않는다(PLAN #263) — 기각이 가능한 대조군 최대. 선언은 `RV_CTRL_MAX` · 시험은 `test_rvpower`
+    assert c >= 1 and E.rv_fisher(n1, n1, c, n0) <= E.RV_ALPHA < E.rv_fisher(n1 // 2, n1, n0 // 2, n0), "이 표본 수로는 완전히 갈려도 기각하지 못한다"
     feats, samples = _hy_world()
     picks = E.rv_draw(feats, samples)
     role = dict(zip([u for _, u in picks], [r for _, r in _roles(feats, samples, [{"가설": h, "seg_uid": u} for h, u in picks])], strict=True))

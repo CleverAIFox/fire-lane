@@ -60,6 +60,7 @@ import random
 import sys
 from pathlib import Path
 
+import rvpower as RP  # 검정력 — 판독 전 · 뒤(PLAN #263 · DECISIONS §835)
 from evalgen import SEED
 from ledgercross import _midpoints, gap, is_step, steps_of
 from rvsheet import (  # 판독표 선언 — 줄 수 상한 때문에 옮겼다(DECISIONS §788). 아래 `rv_*` 가 쓴다
@@ -446,10 +447,7 @@ def rv_complete(hyp: str, r: dict) -> bool:
     return rv_filled(r) and not rv_missing(hyp, v) and bool(v["답"] or (("거리뷰" in RV_NEED[hyp]) and v["거리뷰"] == "없다"))
 
 
-def rv_fisher(a: int, n1: int, b: int, n0: int) -> float:
-    """피셔 정확검정 한쪽 p — 가설군 n1 중 a · 대조군 n0 중 b 가 「그 답」일 때, 비율이 같다면 가설군에 a 이상이 몰릴 확률."""
-    k = a + b
-    return sum(math.comb(n1, x) * math.comb(n0, k - x) for x in range(a, min(n1, k) + 1) if 0 <= k - x <= n0) / math.comb(n1 + n0, k)
+rv_fisher = RP.fisher    # 피셔 정확검정 한쪽 p — `rvpower.fisher`(옮겼다 · 줄 수 상한)
 
 
 def rv_check(path: Path, feats: list[dict], samples: dict[str, list[dict]], n: int | None = None) -> tuple[list[str], dict]:
@@ -490,7 +488,8 @@ def rv_check(path: Path, feats: list[dict], samples: dict[str, list[dict]], n: i
                 bad.append(f"{tag}: 답2 는 가설 {RV_Q2_HYP} 에서 가-1 이 {' · '.join(RV_Q2_WHEN)}일 때만 적는다")
             if "거리뷰" in RV_NEED[hyp] and cov == "없다" and (ans or wid):
                 bad.append(f"{tag}: 채우다 만 행이다 — 거리뷰 「없다」면 답 · 답2 · 포장폭을 비운다")
-    stat: dict = {"행": len(rows), "채운 행": sum(1 for r in rows if rv_filled(r))}
+    bad += RP.declaration_flaws()
+    stat: dict = {"행": len(rows), "채운 행": sum(1 for r in rows if rv_filled(r)), "판독 전 검정력(설계 · 조건부)": RP.design_stat()}
     for hyp, g in tally.items():
         h = RV_HYPO[hyp]
         if (len(g["가설군"]), len(g["대조군"])) != h[:2] and n is None:
@@ -504,7 +503,7 @@ def rv_check(path: Path, feats: list[dict], samples: dict[str, list[dict]], n: i
         seen = {k: [r["답"].strip() for r in v if (r["거리뷰"].strip() == "있다" or not views) and r["답"].strip() not in ("", "가림", "길 아님")] for k, v in g.items()}
         a, n1, b, n0 = sum(x in h[6] for x in seen["가설군"]), len(seen["가설군"]), sum(x in h[6] for x in seen["대조군"]), len(seen["대조군"])
         pv = rv_fisher(a, n1, b, n0) if n1 and n0 else None
-        stat[hyp] = {"가설": h[7], "가설군": f"{a}/{n1}", "대조군": f"{b}/{n0}", "못 본 행(거리뷰 없다 · 가림 · 길 아님)": len(g["가설군"]) + len(g["대조군"]) - n1 - n0, "그중 길 아님": sum(r["답"].strip() == "길 아님" for k in ("가설군", "대조군") for r in g[k]), "p": None if pv is None else round(pv, 4),
+        stat[hyp] = {"가설": h[7], "가설군": f"{a}/{n1}", "대조군": f"{b}/{n0}", "못 본 행(거리뷰 없다 · 가림 · 길 아님)": len(g["가설군"]) + len(g["대조군"]) - n1 - n0, "검정력": RP.power_report(hyp, n1, n0, a, b), "그중 길 아님": sum(r["답"].strip() == "길 아님" for k in ("가설군", "대조군") for r in g[k]), "p": None if pv is None else round(pv, 4),
                      "판정": "못 가른다 — 볼 수 있는 행이 한쪽에 없다" if pv is None else "귀무가설을 기각한다 — 가설을 받친다" if pv <= RV_ALPHA else "귀무가설을 기각하지 못한다 — 가설을 받칠 근거가 없다(표본이 작아 「가설이 거짓」이라는 뜻은 아니다)",
                      "지명": [r["답"].strip() for r in g["지명"]],
                      **({"가-2(턱 있다 / 답2 를 쓴 행)": " | ".join(f"{sum(r['답2'].strip() == '턱 있다' for r in g[k])}/{sum(bool(r['답2'].strip()) for r in g[k])}" for k in ('가설군', '대조군'))} if hyp == RV_Q2_HYP else {}), "포장폭(가설군 | 대조군)": " | ".join(" ".join(r["포장폭"].strip() or "–" for r in g[k]) for k in ("가설군", "대조군"))}
@@ -517,11 +516,13 @@ def rv_main(check: bool, force: bool, out_dir: Path | None = None) -> int:
     if check:
         bad, stat = rv_check(path, feats, samples) if path.exists() else (["없다 — `--roadview` 로 뽑는다"], {})
         print(f"{'✓' if not bad else '✗'} {RV_FILE}: {json.dumps(stat, ensure_ascii=False, indent=1)}" + "".join(f"\n    ✗ {x}" for x in bad))
+        print("".join(f"\033[31m✗ 검정력 — {c}\033[0m\n" for c in RP.cries(stat)) + (f"  ↳ {RP.MEANING}" if RP.cries(stat) else ""))
         return 1 if bad else 0
     if path.exists() and (any(rv_filled(r) for r in rv_read(path)[1]) or not force):
         print(f"{RV_FILE}: 이미 있다 — 채워진 행이 있으면 --force 로도 안 덮는다. 건너뛴다")
         return 0
     rv_write(rv_build(feats, samples, rv_draw(feats, samples)), path)
+    print(json.dumps(RP.design_stat(), ensure_ascii=False, indent=1))
     print(f"{RV_FILE}: {RV_N}행 → {path}")
     return 0
 
