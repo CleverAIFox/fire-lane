@@ -255,6 +255,7 @@
 "test_sweep_retired.py": "cec46c93f5ed11da",
 "test_tasktpl.py": "780906f2fb6313b7",
 "test_test_hygiene.py": "4f0fc560bae1265f",
+"test_testforecast.py": "65d5f7190647a60d",
 "test_testpick.py": "5dfd6e2c5dd85fd3",
 "test_testsplit.py": "70a2d5bea76c4d9b",
 "test_text_table.py": "80bfa8b0c39c9f29",
@@ -34366,6 +34367,21 @@
 "tools/widthlr.py",
 "tools/widthmatch.py",
 "tools/wmax_audit.py"
+],
+"test_testforecast.py": [
+".githooks/pre-push",
+"sources.yaml",
+"src/firelane/__init__.py",
+"src/firelane/ledger.py",
+"src/firelane/naming.py",
+"src/firelane/paths.py",
+"src/firelane/scope.py",
+"src/firelane/seg/__init__.py",
+"src/firelane/seg/params.py",
+"src/firelane/seg/vehicle.py",
+"tools/env_check.py",
+"tools/testforecast.py",
+"tools/testpick.py"
 ],
 "test_testpick.py": [
 ".githooks/pre-push.gates",
