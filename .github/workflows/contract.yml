@@ -889,10 +889,19 @@ jobs:
           npm ci --no-audit --no-fund
           npm run build
       - name: 브라우저 — 헤드리스 크로미움(셸만)
-        # ★ `--only-shell` 이다 — 전체 크롬이 아니라 헤드리스 셸만 받는다(내려받기가 작다). `--with-deps` 는 러너에 없는 시스템 라이브러리를 깐다.
+        # ★ `--only-shell` 이다 — 전체 크롬이 아니라 헤드리스 셸만 받는다(내려받기가 작다).
+        # ★ 2026-11-19 (DECISIONS §839). **`--with-deps` 를 뺐다** — 시스템 패키지를 apt 로 까는 단계라 security.ubuntu.com 의 503 · 연결 실패가 이 잡을 네 번 세웠다.
+        #   헤드리스 셸이 직접 링크하는 mesa 계열은 `libgbm.so.1` 하나이고 러너에 이미 있다 · GL 은 번들 SwiftShader 다(메모리 맵으로 쟀다). 글꼴은 아래 줄이 센다.
         run: |
           cd web/navi
-          npx playwright install --with-deps --only-shell chromium
+          npx playwright install --only-shell chromium
+      - name: 러너의 한국어 글꼴을 센다 (찍기만 한다 — 0 이어도 잡을 세우지 않는다)
+        # ★ `--with-deps` 가 깔던 글꼴(wqy-zenhei · unifont 등)이 없을 때 시험 화면의 한글이 네모가 되는가는 러너를 봐야 안다(DECISIONS §839). 이 줄이 한 회차에 말한다.
+        run: |
+          n=$( (fc-list :lang=ko 2>/dev/null || true) | wc -l )
+          echo "러너의 한국어 글꼴 fc-list :lang=ko = ${n}줄"
+          (fc-list :lang=ko family 2>/dev/null || true) | sort -u | head -5
+          echo "::notice title=러너 한국어 글꼴::${n}줄(0 이면 시험 화면의 한글이 네모로 그려진다 — 시험은 글리프를 안 묻는다)"
       - name: ★ 브라우저 스모크 — 두 화면이 뜨고 콘솔이 조용한가 (개발 서버 · 빌드본 · 재최적화)
         run: |
           cd web/navi
