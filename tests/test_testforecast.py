@@ -122,7 +122,7 @@ def test_the_hook_judges_by_the_median_from_an_untracked_record(tmp_path: Path) 
     gates = work.parent / "gates.txt"
     gates.write_text("초록\ttrue\n", encoding="utf-8")
     key = subprocess.run(["git", "hash-object", "--stdin"], input=(work / ".githooks/pre-push").read_text(encoding="utf-8") + gates.read_text(encoding="utf-8"),
-                         capture_output=True, text=True, check=True, cwd=work).stdout.strip()[:12]
+                         capture_output=True, text=True, check=True, cwd=work, timeout=60).stdout.strip()[:12]
     gitdir = Path(git("rev-parse", "--absolute-git-dir").stdout.strip())
     (gitdir / "fire-lane-prepush-secs").write_text("".join(f"{i}\t41.0\t{key}\n" for i in range(4)), encoding="utf-8")
     sha = git("rev-parse", "HEAD").stdout.strip()
