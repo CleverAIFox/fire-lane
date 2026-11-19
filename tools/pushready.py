@@ -224,7 +224,7 @@ def check_tests(root: Path, run: Runner) -> Block | None:
     """`testpick --run` — 실측 장부에서 **계산한** 시험 묶음(PLAN #209). 손 목록이 아니다.
 
     ★ **바뀐 파일에 닿는 시험을 상한 없이 전부 더한다**(`--no-cap` · PLAN #218 b). 훅은 30초를 지켜 이 연동을 끈다 — 느린 검사는 앞(여기)에, 빠른 그물은 뒤(훅)에 둔다(#216).
-    ★ 훅(`--load 75`)보다 큰 묶음이다 — 여기는 남의 일이 없어 `test_layering` 같은 구조 규약 시험이 든다(2026-11-08 에 CI 만 물었다).
+    ★ 훅(`--load 60`)보다 큰 묶음이다 — 여기는 남의 일이 없어 `test_layering` 같은 구조 규약 시험이 든다(2026-11-08 에 CI 만 물었다).
     """
     rc, out = run([*_PY, "tools/testpick.py", "--run", "--no-cap", "--jobs", str(TESTS_JOBS)], root)
     D.record("㉥", D.tests_denom(out))
