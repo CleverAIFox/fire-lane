@@ -42,7 +42,7 @@ testpick.py — 푸시 전에 도는 시험 묶음을 **실측으로** 고른다
     · **파일당 상한**(`TOUCH_CAP` 초 · 장부 기준 · `--no-cap` 이 아니면)을 넘는 시험은 못 든다 — **출력에 이름을 대고 「CI 몫」으로 적는다**(조용히 빼지 않는다).
   `--files` 로 바뀐 파일을 직접 줄 수 있다(실측 · 시험용).
 
-부류  조사   `--measure` 는 사람이 손으로 돌린다. `--list` · `--run` 은 읽기 전용이다(장부도 안 쓴다)
+부류  조사   `--measure` 는 사람이 손으로 돌린다. `--list` · `--run` 은 읽기 전용이다(시간 장부 · 추적 파일은 안 쓴다 — `--run` 이 초록으로 끝나면 **추적 안 하는** 비 기록 `<git 공용 디렉터리>/fire-lane-forecast-ratios` 에 한 줄을 더한다 · DECISIONS §838)
 IN    `tests/test_*.py` 의 목록 · `data/golden/testtimes.json` · `--measure` 는 pytest `--durations=0` 의 파일별 합(setup+call+teardown)
 OUT   화면 · 종료 코드(`--run`: 빨간 파일이 있으면 1). `--measure --write` 만 장부 한 파일을 쓴다
 밖    **`web/navi/test/*` (vitest)는 고르지 않는다 — pytest 만 본다**(DECISIONS §719). 읽기 장부는 파이썬 감사 훅이 잰 것이라 node 의 읽기를 못 본다.
@@ -128,6 +128,12 @@ def pick(files: list[str], ledger: dict[str, float], budget: float, jobs: int, s
         "new": sorted(new), "gone": gone, "skipped": skipped, "est": startup + (load + spent) / eff, "median": med,
         "total": sum(known.values()), "known": len(known), "new_est": med * len(new) / eff, "displaced": base - len(got),
     }
+
+
+def ratio_path(root: Path = ROOT) -> Path | None:
+    """비 기록 파일 — `<git 공용 디렉터리>/fire-lane-forecast-ratios`(추적 안 한다). git 을 못 읽으면 `None` 이고 그때는 기록도 보정도 없다."""
+    d = _git(["rev-parse", "--path-format=absolute", "--git-common-dir"], root)
+    return Path(d.strip()) / F.RATIO_FILE if d and d.strip() else None
 
 
 def _git(args: list[str], root: Path) -> str | None:
@@ -473,7 +479,13 @@ def main(argv: list[str] | None = None) -> int:
     print(f"묶음 {len(chosen)}/{len(files)}개 파일 · 추정 {info['est']:.1f}초(예산 {a.budget:g}초 · 병렬 {a.jobs} · 남의 일 {a.load:g}) · "
           f"장부 {info['known']}개 합 {info['total']:.0f}초", file=sys.stderr)
     stale_new, stale_chg, _ = reads_stale(files)
-    print("  " + F.accuracy_line(len(files) - len(stale_new) - len(stale_chg), len(files), info["est"], a.budget, not a.no_touched), file=sys.stderr)
+    axis = F.axis_tag(a.load, not a.no_touched)
+    axis_key = f"{axis} · 병렬 {a.jobs} · 예산 {a.budget:g}"           # 비는 병렬 · 예산이 다르면 다른 수다 — 같은 축끼리만 쌓는다
+    rpath = ratio_path()
+    prev_ratios = F.read_ratios(rpath, axis_key) if rpath else []
+    fc, fc_msg = F.corrected(prev_ratios, info["est"])
+    print("  " + F.accuracy_line(len(files) - len(stale_new) - len(stale_chg), len(files), info["est"], a.budget, not a.no_touched, axis), file=sys.stderr)
+    print(f"  예보 [{axis}] {fc_msg}", file=sys.stderr)
     if (w := F.over_budget_warning(info["est"], a.budget)) is not None:
         print(f"  {w}", file=sys.stderr)
     if info["new"]:
@@ -514,7 +526,13 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  ✗ {n}\n" + "\n".join("      " + x for x in o.splitlines()[-12:]), file=sys.stderr)
     took = time.monotonic() - t
     print(f"{'✗' if red else '✓'} 시험 묶음 {len(chosen)}개 파일 · 빨강 {len(red)} · {took:.1f}초 (추정 {info['est']:.1f}초)")
-    print(F.hook_line(info, took))                # 훅이 이 줄을 그대로 옮겨 적는다 — 「예보 」 로 시작한다(PLAN #264)
+    print(F.hook_line(info, took, axis=axis))     # 훅이 이 줄을 그대로 옮겨 적는다 — 「예보 」 로 시작한다(PLAN #264)
+    if not red:        # 빨간 회차는 비를 안 쌓는다(빨강은 장부 밖의 시간을 먹는다 — 쌓으면 중앙값이 흔들린다)
+        lvl, msg = F.ratio_verdict(prev_ratios, took / info["est"]) if info["est"] > 0 else ("short", "추정이 0이라 비를 못 낸다")
+        print(f"예보 [{axis}] {fc_msg}")
+        print(("\033[33m" if lvl == "cry" else "") + f"예보 비 판정 — {msg}" + ("\033[0m" if lvl == "cry" else ""))
+        if rpath:
+            F.append_ratio(rpath, info["est"], took, axis_key)
     return 1 if red else 0
 
 
