@@ -17,7 +17,7 @@
  * OUT   조각 넷
  * 밖    무엇을 보일지 고르지 않는다. 고르는 것은 `OpsApp.tsx` 다.
  */
-import { VERDICT_DASH } from "../components/opsLayers";
+import { VERDICT_DASH, VERDICT_HALO } from "../components/opsLayers";
 import { D, LAYER, secBox, tile, shell } from "./opsTheme";
 import type { Tier } from "./opsTheme";
 import { emphasis } from "./motion";
@@ -83,6 +83,32 @@ export function dashSwatch(k: string): string | undefined {
   const px = (v: number) => Math.max(1.5, v * 2.4);
   return `repeating-linear-gradient(90deg, transparent 0 ${px(on)}px,`
        + ` rgba(11,18,32,.92) ${px(on)}px ${px(on) + px(off)}px)`;
+}
+
+/** 범례 조각 — 파선이 없는 판정의 둘째 채널(흰 점 테두리)을 작은 띠 가장자리에 그대로 보인다. */
+export function haloSwatch(k: string): React.CSSProperties | undefined {
+  return VERDICT_HALO[k] ? { outline: "1.5px dotted #ffffff", outlineOffset: 1 } : undefined;
+}
+
+/** 판정 넷의 수를 한 줄에 같은 크기로 나란히 놓는다 — 어느 하나를 작게 쓰지 않는다(PLAN #265 · DECISIONS §842).
+ *  말은 범례와 같은 한 곳(`style[k].label`)에서 가져온다 — 범례와 이 줄이 다르게 말할 수 없다. */
+export function VerdictTally({ style, counts }: { style: Record<string, { label: string; color: string }>;
+                                                  counts: Record<string, number> }) {
+  const order = ["clear", "blocked", "needs_cv", "unknown"].filter((k) => style[k]);
+  const total = order.reduce((s, k) => s + (counts[k] ?? 0), 0);
+  return (
+    <div role="status" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", padding: "5px 14px",
+                                fontSize: 13, borderBottom: `1px solid ${D.line}`, background: "#070d18" }}>
+      <span style={{ color: D.sub }}>{total.toLocaleString("ko-KR")}개 구간 중</span>
+      {order.map((k) => (
+        <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}>
+          <i style={{ width: 10, height: 10, borderRadius: 5, background: style[k].color,
+                      outline: k === "unknown" ? "1.5px dotted #ffffff" : undefined, outlineOffset: 1 }} />
+          {style[k].label} <b>{counts[k] ?? 0}</b>
+        </span>
+      ))}
+    </div>
+  );
 }
 
 export { RouteCheckpoints } from "./RouteCheckpoints";

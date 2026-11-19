@@ -78,7 +78,7 @@ import { fmtDur, fmtSec, hhmm, hhmmss } from "./ui/tokens";
 import { VERDICT_ORDER } from "./ui/verdictMeaning";
 import { CLEARANCE_SCALE } from "./ui/clearanceMeaning";
 import { VehicleArt } from "./ui/VehicleArt";
-import { Center, RouteCheckpoints, Sec, Tile, dashSwatch } from "./ui/OpsBits";
+import { Center, RouteCheckpoints, Sec, Tile, VerdictTally, dashSwatch, haloSwatch } from "./ui/OpsBits";
 import { SegCard } from "./ui/SegCard";
 import {
   ackBtn, body, btnSm, card, chip, clock, colL, colR, cta, D, dot, feedRow, input, lab,
@@ -299,6 +299,7 @@ export default function OpsApp() {
               urgent={!!waiting} />
         <div style={clock}>{hhmmss(new Date(now))}</div>
       </header>
+      <VerdictTally style={style} counts={counts} />
 
       <div style={body}>
         {/* ══ 좌 — 접수 · 지령 ═════════════════════════════════════ */}
@@ -481,18 +482,17 @@ export default function OpsApp() {
             </div>
             {colorMode === "verdict" ? (
               <>
-                <div style={{ fontSize: 11, fontWeight: 800, color: D.sub, marginBottom: 4 }}>판정 (CV = 영상판정)</div>
+                <div style={{ fontSize: 11, fontWeight: 800, color: D.sub, marginBottom: 4 }}>판정</div>
                 {VERDICT_ORDER.filter((k) => style[k]).map((k) => {
                   const off = hidden.has(k);
                   return (
-                    <button key={k} style={{ ...legendRow, opacity: off ? .35 : 1 }}
+                    <button key={k} style={{ ...legendRow, opacity: off ? .35 : 1 }} title={style[k].desc}
                             onClick={() => setHidden((h) => { const n = new Set(h); if (n.has(k)) n.delete(k); else n.add(k); return n; })}>
-                      {/* ★ 2026-10-10 (§448 · #145). 범례도 **둘째 채널**을 보인다 —
-                          지도는 무늬로 가르는데 범례가 색으로만 가르면 사람이 그
-                          무늬를 어디서도 못 배운다. 무늬는 `VERDICT_DASH` 하나가 든다. */}
+                      {/* ★ 2026-10-10 (§448 · #145). 범례도 **둘째 채널**을 보인다 — 지도는 무늬로 가르는데
+                          범례가 색으로만 가르면 무늬를 어디서도 못 배운다(`VERDICT_DASH` · `VERDICT_HALO`). */}
                       <i style={{ ...dot, background: style[k].color,
                                   borderRadius: 2, height: 4, width: 22,
-                                  backgroundImage: dashSwatch(k) }} />
+                                  backgroundImage: dashSwatch(k), ...haloSwatch(k) }} />
                       <span style={{ flex: 1, textAlign: "left" }}>{style[k].label}</span>
                       <b>{counts[k] ?? 0}</b>
                     </button>
