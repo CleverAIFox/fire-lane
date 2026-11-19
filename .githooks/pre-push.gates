@@ -29,8 +29,8 @@ PLAN 이력 빚	uv run python tools/planwork.py	0.7
 좌표 칸 리터럴(대장 coords)	uv run pytest tests/test_coord_literals.py -q -p no:cacheprovider	6.8
 # ── PLAN #209 — 구조 규약을 무는 시험(test_layering · test_no_unbounded_waits · test_sizecheck …)이 어느 관문에도 없었다. 손 목록이 아니라 **실측 장부**(data/golden/testtimes.json)에서 예산 안에 드는 파일을 계산해 돈다.
 #    새 시험은 장부에 없어도 무조건 든다. 장부 갱신은 `tools/testpick.py --measure --write`.
-#    예산은 **훅 전체 벽시계 · 게이트 동시 · 8코어**(testpick 머리말 · PLAN #210) — `--load 60` 은 이 훅의 다른 게이트들이 쓰는 CPU-초다. ──
-시험 묶음(실측으로 고름)	uv run python tools/testpick.py --run --budget 28 --load 60 --jobs 6 --no-touched	23.0
+#    예산은 **훅 전체 벽시계 · 게이트 동시 · 8코어**(testpick 머리말 · PLAN #210) — `--load 75` 는 이 훅의 다른 게이트들이 쓰는 CPU-초에 장부 모자람과 흔들림 여유를 얹은 값이다(DECISIONS §840 · 60 에서 올렸다 — 훅이 호스트가 느린 날 33 ~ 42초로 중앙값 예산을 넘었다). ──
+시험 묶음(실측으로 고름)	uv run python tools/testpick.py --run --budget 28 --load 75 --jobs 6 --no-touched	23.0
 # ── PLAN #216 · 세 층 정합 — CI 빠른 잡에는 있고 훅에 없던 검사 55 중 **하나만** 들었다(나머지는 `tools/gatefast.py` 의 층 선언표 · `pushready` ㉨). 싼 37개를 다 넣으면 훅 중앙 31.1초로 예산을 넘는다.
 #    `env_check` 는 반드시 넣는다 — 2026-11-11 `FIRE_LANE_PUSH_RANGES`(paths.py 밖의 os.environ 독자)가 로컬에서 안 잡히고 CI 에서만 빨갰다. 같은 날 이것을 다시 안 지키는 줄이 하나 더 났다(testpick). ──
 환경변수 선언 ↔ 실물	uv run python tools/env_check.py	1.3
