@@ -16888,18 +16888,18 @@
   "fp": "view-v3",
   "kind": "read",
   "legacy": [
-   "581e12544dc3c35e",
-   "6c8c3d0e9acdcdfd",
-   "6df01879bb6e6209",
-   "8424f2d8c8fa34e2",
-   "84e83db044918d13",
-   "a4eedcf3bc637c76",
-   "b52f400f9e3fc5c9",
-   "c2d2d9b14655b00c",
-   "ca01f10fda83019e",
-   "da1100e7faab16d2",
-   "eb58265dc426eafa",
-   "fff01353601d5bbf"
+   "03f4bb45628527d6",
+   "0aeea6dcc4544ef7",
+   "330abfd1072cbf4f",
+   "3c7c80ab581f5582",
+   "53d2616059a51dea",
+   "7a82c84c51c34e01",
+   "7fb458d1a0601f8b",
+   "81276901c5f4b4da",
+   "9d3d15c2bf9fb04d",
+   "a0f4217c04a3aa8d",
+   "a9300a54974014a0",
+   "b847ebd16cd57b68"
   ],
   "parts": {
    ".devcontainer/devcontainer.json": "b7e90d1b7282ad4e",
@@ -16938,9 +16938,9 @@
    "web/navi/src/domain/geo.ts": "83c9ea1316faa851",
    "web/navi/src/domain/vehicle.ts": "416f5631b2fa2139",
    "web/navi/src/ui/tokens.ts": "771c1573e8b768ca",
-   "본문": "62154c2b8c005782"
+   "본문": "11f0ad30322fcbfd"
   },
-  "sha": "da1100e7faab16d2"
+  "sha": "330abfd1072cbf4f"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
