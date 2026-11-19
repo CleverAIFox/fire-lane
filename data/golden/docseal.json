@@ -16858,6 +16858,7 @@
    "tests/pyfiles.py",
    "tests/skip_policy.py",
    "tests/test_ci_env.py",
+   "tests/test_cli_surface.py",
    "tests/test_declaration_sync.py",
    "tests/test_doc_style.py",
    "tests/test_field_layout.py",
@@ -16888,18 +16889,18 @@
   "fp": "view-v3",
   "kind": "read",
   "legacy": [
-   "080cf4fb60b98b44",
-   "5dbe50fb4a57df6c",
-   "70cfc489fb26fc8b",
-   "7d74dbbc6d5b1256",
-   "8b5fae793fb59478",
-   "8b865f57727ed648",
-   "9285515db3471474",
-   "97dcee7f68ec3b57",
-   "a566a06ebf9fb0ba",
-   "d1f6e601bcb4edfa",
-   "d9c26e0e42360542",
-   "e38c29ca5c0a5dfb"
+   "08c69faa4140e142",
+   "252dda5ed36d5638",
+   "29d063beb1fa4662",
+   "62766574df430024",
+   "66aa6499401c9ed6",
+   "67bfe355917bf41b",
+   "692d1e24bb8a8f93",
+   "75e9f4813983a83b",
+   "81e42253487f2155",
+   "a1dc90c871a84d67",
+   "b1318f466d444927",
+   "d446a995161f2d33"
   ],
   "parts": {
    ".devcontainer/devcontainer.json": "b7e90d1b7282ad4e",
@@ -16912,6 +16913,7 @@
    "tests/pyfiles.py": "613a6d546aa8b755",
    "tests/skip_policy.py": "613a6d546aa8b755",
    "tests/test_ci_env.py": "0490d1e9180684d7",
+   "tests/test_cli_surface.py": "26f7c3965b8a1d79",
    "tests/test_declaration_sync.py": "600ece1e5a10305d",
    "tests/test_doc_style.py": "c8a4bf0e5c769be2",
    "tests/test_field_layout.py": "55b246ca0cccc539",
@@ -16938,9 +16940,9 @@
    "web/navi/src/domain/geo.ts": "83c9ea1316faa851",
    "web/navi/src/domain/vehicle.ts": "416f5631b2fa2139",
    "web/navi/src/ui/tokens.ts": "771c1573e8b768ca",
-   "본문": "e4c11656c8fab10d"
+   "본문": "816c6a55c52df497"
   },
-  "sha": "8b5fae793fb59478"
+  "sha": "29d063beb1fa4662"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
@@ -16967,6 +16969,7 @@
    "tests/conftest.py",
    "tests/pyfiles.py",
    "tests/skip_policy.py",
+   "tests/test_cli_surface.py",
    "tests/test_field_layout.py",
    "tests/test_skip_policy.py",
    "tests/tracked_guard.py",
@@ -16978,18 +16981,19 @@
   "fp": "view-v3",
   "kind": "read",
   "legacy": [
-   "02eaa18ea9c9f7c5",
-   "1165a613de9be66f",
-   "2d6ea6237483bb98",
-   "3acac526ff25ba46",
-   "5eb61ff0783fbf95",
-   "cb291992e7d04981"
+   "320ee27129e47d1f",
+   "4837f6a3f581d261",
+   "5449231fd2fc95bd",
+   "7fef757c493b6a19",
+   "ba8c7ddc3a31bf04",
+   "f64b9f5465bb6394"
   ],
   "parts": {
    "tests/audit_site/sitecustomize.py": "613a6d546aa8b755",
    "tests/conftest.py": "613a6d546aa8b755",
    "tests/pyfiles.py": "613a6d546aa8b755",
    "tests/skip_policy.py": "613a6d546aa8b755",
+   "tests/test_cli_surface.py": "26f7c3965b8a1d79",
    "tests/test_field_layout.py": "55b246ca0cccc539",
    "tests/test_skip_policy.py": "6084a78a1fad9a81",
    "tests/tracked_guard.py": "613a6d546aa8b755",
@@ -16997,9 +17001,9 @@
    "tools/deadcheck.py": "1308250833bf1779",
    "tools/sealcov.py": "016d2a52a04d843d",
    "tools/testsizetable.py": "b561808d89127f45",
-   "본문": "4986394b13d9a98f"
+   "본문": "0576d64385c12e1f"
   },
-  "sha": "1165a613de9be66f"
+  "sha": "4837f6a3f581d261"
  },
  "MASTER/17-1": {
   "doc": "docs/MASTER.md",
@@ -18056,12 +18060,12 @@
   "fp": "view-v3",
   "kind": "read",
   "legacy": [
-   "02aeed8e7b958330",
-   "43319c280f35066c",
-   "61de5e133f10e214",
-   "afae907a26b7a22d",
-   "ccc9166d12506e80",
-   "d036282b00325a7a"
+   "186272c51f633b48",
+   "21f53683196d9dd2",
+   "72221c01feb1e4da",
+   "890850a40b3da9d4",
+   "abeeb0d33f6403a4",
+   "b9910294b1ae36da"
   ],
   "parts": {
    "ops-worker/scripts/deploy.sh": "65cc7cd4211fdcca",
@@ -18172,7 +18176,7 @@
    "tools/docnumhist.py": "5738dbdaa0126e46",
    "tools/evalset.py": "50e093bb5bfcdaab",
    "tools/fetch_api.py": "603ddce889bf53ea",
-   "tools/fieldmark.py": "7ae2b8fe90922839",
+   "tools/fieldmark.py": "e7577530005b14da",
    "tools/firstscreen.py": "9bc58649035d9e23",
    "tools/gatefast.py": "412612ed7a8cb46b",
    "tools/gatetimes.py": "112e0f9d050849f0",
@@ -18198,7 +18202,7 @@
    "web/navi/package.json": "a1e30a72f5affcec",
    "본문": "8577658e7c69f69d"
   },
-  "sha": "61de5e133f10e214"
+  "sha": "21f53683196d9dd2"
  },
  "MASTER/24": {
   "doc": "docs/MASTER.md",
