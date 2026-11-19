@@ -240,5 +240,6 @@ def test_experiment_rounds_under_other_keys_do_not_move_the_current_median(tmp_p
     assert prev == [24.0, 25.0, 26.0, 24.5, 25.5]
     lvl, _ = F.judge(prev, 25.0, 30.0, 5)
     assert lvl == "ok"
-    lvl_all, _ = F.judge([float(x.split("\t")[1]) for x in rec.read_text(encoding="utf-8").splitlines()], 25.0, 30.0, 5)
-    assert lvl_all == "ok" and F.read_records(rec, "exp") != prev      # 거르지 않은 길과 구별되는 것은 키 몫뿐이다
+    unfiltered = [float(x.split("\t")[1]) for x in rec.read_text(encoding="utf-8").splitlines()]
+    lvl_all, _ = F.judge(unfiltered[:-1], 19.3, 30.0, 5)
+    assert lvl_all == "cry"      # 키로 거르지 않았다면 실험 줄이 중앙값을 35.1초로 끌어 울렸을 것이다(오염의 재현)
