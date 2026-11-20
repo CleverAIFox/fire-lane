@@ -100,6 +100,14 @@ def test_holes_2_3_canary_a_definition_outside_the_declaration_is_counted_as_a_m
     assert got == ["선언 밖의 새 정의: mutate.py::brand_new_helper"]
 
 
+def test_holes_2_3_canary_the_same_check_is_quiet_on_the_real_sources_and_cries_on_a_new_definition() -> None:
+    """카나리아 쌍(DECISIONS §445) — 같은 판별 함수를 실물 소스에는 `assert not` 으로, 선언 밖 정의를 얹은 합성 소스에는 `assert` 로 민다."""
+    srcs = {f: (ROOT / "tools" / f).read_text(encoding="utf-8") for f in D.PRINT_FILES}
+    assert not D.problems(srcs, D.IN_PRINT, D.OUT_OF_PRINT, D.CLOSURE_OUT)
+    bad = {**srcs, "mutate.py": srcs["mutate.py"] + "\n\ndef brand_new_helper():\n    return 1\n"}
+    assert D.problems(bad, D.IN_PRINT, D.OUT_OF_PRINT, D.CLOSURE_OUT)
+
+
 # ── ④ ㉥ 읽기 실측 분모 ────────────────────────────────────────
 def test_hole_4_the_tests_column_states_measured_over_total_from_the_real_list() -> None:
     r = subprocess.run([sys.executable, str(ROOT / "tools/testpick.py"), "--list"], cwd=ROOT, capture_output=True, text=True,
