@@ -35,10 +35,10 @@ def _pub() -> dict[str, str]:
     return {f["properties"]["seg_id"]: f["properties"]["seg_uid"] for f in json.loads(PUB.read_text(encoding="utf-8"))["features"]}
 
 
-def _csvs() -> list[Path]:
+def _csvs(base: Path = ROOT) -> list[Path]:
     out = []
     for d in ("data/field", "data/processed"):
-        out += [p for p in sorted((ROOT / d).glob("*.csv")) if ".stale" not in p.name]
+        out += [p for p in sorted((base / d).glob("*.csv")) if ".stale" not in p.name]
     return out
 
 
@@ -69,11 +69,11 @@ def test_the_seg_uid_beside_each_seg_id_is_the_published_one() -> None:
     assert not bad, f"seg_id 가 발행본과 다른 구간을 가리킨다(번호가 밀렸다): {bad[:5]}"
 
 
-def _jsons() -> list[Path]:
+def _jsons(base: Path = ROOT) -> list[Path]:
     out = []
     # ★ Zm36. 생성물 루트는 등록부가 든다(`test_generated_registry`) — 여기서 다시 적지 않는다. `data/field` 는 생성물이 아니라 사람의 표 자리라 따로 더한다.
     for d in ("data/field", *for_role("fresh")):
-        out += [p for p in sorted((ROOT / d).glob("*.json")) if p.name not in SKIP_JSON and ".stale" not in p.name and not p.name.endswith(SEALED)]
+        out += [p for p in sorted((base / d).glob("*.json")) if p.name not in SKIP_JSON and ".stale" not in p.name and not p.name.endswith(SEALED)]
     return out
 
 
@@ -83,3 +83,22 @@ def test_every_json_that_names_a_segment_by_number_also_carries_its_seg_uid(path
     text = path.read_text(encoding="utf-8")
     missing = sorted({t for t in DM.findall(text) if t in pub and pub[t] not in text})
     assert not missing, f"{path.relative_to(ROOT)}: seg_id {len(missing)}개의 seg_uid 가 같은 파일에 없다 — {missing[:5]}"
+
+
+# ── 목록이 비면 시험이 0건이 되어 초록이다 — 그 꼴을 막는다(PLAN #266 (나)) ─────────────────
+# `data/processed` 생성물은 CI 에 없다(DECISIONS §173-6 · §175-2 — 없는 기계에서는 그 칸이 안 생기는 것이 설계다). 그래서 「없으면 운다」가 아니라
+# **추적 파일 쪽 목록이 비면 운다** · 목록 만드는 거름(.stale · 스키마 · 봉인 키)이 합성 입력에서 제 뜻대로 거르는지 본다.
+
+def test_the_tracked_side_of_each_list_is_not_empty() -> None:
+    assert [p for p in _csvs() if p.parent == ROOT / "data/field"], "`data/field/*.csv` 를 한 장도 못 찾았다 — 목록이 비면 위 시험이 0건으로 초록이다"
+    assert [p for p in _jsons() if p.parent == ROOT / "web/data"], "`web/data/*.json` 을 한 장도 못 찾았다 — 목록이 비면 위 시험이 0건으로 초록이다"
+
+
+def test_the_list_builders_keep_what_they_should_and_drop_the_rest(tmp_path: Path) -> None:
+    for rel in ("data/field/a.csv", "data/field/a.stale.csv", "data/processed/b.csv", "data/processed/b.txt",
+                "data/field/c.json", "data/field/c.key.json", "data/field/segments.schema.json", "data/field/c.stale.json"):
+        f = tmp_path / rel
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text("x", encoding="utf-8")
+    assert [p.name for p in _csvs(tmp_path)] == ["a.csv", "b.csv"]
+    assert [p.name for p in _jsons(tmp_path)] == ["c.json"]

@@ -243,3 +243,47 @@ def test_experiment_rounds_under_other_keys_do_not_move_the_current_median(tmp_p
     unfiltered = [float(x.split("\t")[1]) for x in rec.read_text(encoding="utf-8").splitlines()]
     lvl_all, _ = F.judge(unfiltered[:-1], 19.3, 30.0, 5)
     assert lvl_all == "cry"      # 키로 거르지 않았다면 실험 줄이 중앙값을 35.1초로 끌어 울렸을 것이다(오염의 재현)
+
+
+# ── 산출물 시험의 보장 줄 (PLAN #266 (가) · DECISIONS §848) ─────────────────────────────────
+_OUT = ("PASSED tests/test_evalgen.py::test_a\nPASSED tests/test_evalgen.py::test_b\nPASSED tests/test_other.py::test_x\n"
+        "SKIPPED [2] tests/test_evalset.py:88: 환경skip(산출물) — 표본 파일이 없다\nSKIPPED [1] tests/test_evalset.py:9: 환경skip(도구) — git 이 없다\n")
+
+
+def test_the_artifact_marker_finds_the_real_skip_files_and_not_prose() -> None:
+    texts = {n: (ROOT / "tests" / n).read_text(encoding="utf-8") for n in P.test_files()}
+    got = F.artifact_files(texts)
+    assert {"test_evalgen.py", "test_evalset.py", "test_lineage_last_writer.py"} <= set(got), got
+    assert "test_skip_policy.py" not in got, "사유를 설명하는 글을 사유로 센다"
+
+
+def test_the_tally_counts_passes_in_marked_files_and_skips_by_reason() -> None:
+    t = F.artifact_tally([_OUT], ["test_evalgen.py", "test_evalset.py"])
+    assert t == {"P": 2, "M": 2, "O": 1}, t
+
+
+def test_the_line_carries_when_and_says_it_only_exists_when_measured() -> None:
+    lvl, msg = F.artifact_line({"P": 5, "M": 0, "O": 0}, 32, True, "2026-11-21 10:00", False)
+    assert lvl == "ok" and "2026-11-21 10:00" in msg and "전수 측정을 칠 때만" in msg and "산출물 있음" in msg
+
+
+def test_the_line_cries_in_the_three_false_green_spots_and_stays_quiet_where_skipping_is_the_design() -> None:
+    """★ 카나리아 — 거짓 초록 자리 셋(DECISIONS §847 나)에서 운다: 결과를 못 읽어 0 · 표지 파일이 0 · 산출물이 있는데 건너뜀. 산출물이 없는 기계의 건너뜀(설계)은 조용하다."""
+    assert F.artifact_line({"P": 0, "M": 0, "O": 0}, 32, True, "t", False)[0] == "cry"
+    assert F.artifact_line({"P": 5, "M": 0, "O": 0}, 0, True, "t", False)[0] == "cry"
+    lvl, msg = F.artifact_line({"P": 5, "M": 3, "O": 0}, 32, True, "t", False)
+    assert lvl == "cry" and "3개가 건너뛰었다" in msg
+    assert F.artifact_line({"P": 5, "M": 20, "O": 0}, 32, False, "t", False)[0] == "ok"
+    assert "일부(--only)" in F.artifact_line({"P": 5, "M": 0, "O": 0}, 32, True, "t", True)[1]
+
+
+def test_measure_prints_the_artifact_line_from_the_bins_output(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(P, "test_files", lambda root=P.ROOT: ["test_evalgen.py"])
+
+    def fake(names, jobs, ledger, root=P.ROOT, measuring=False):
+        P.LAST_OUTS[:] = [_OUT]
+        return {"test_evalgen.py": 0.5}, {}
+
+    monkeypatch.setattr(P, "run_all", fake)
+    assert P.main(["--measure"]) == 0
+    assert "산출물 시험 — 표지 파일 1개 · 통과 2 · 환경skip(산출물) 건너뜀 2" in capsys.readouterr().out

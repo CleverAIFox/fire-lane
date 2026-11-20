@@ -303,6 +303,7 @@ def bins(names: list[str], jobs: int, ledger: dict[str, float]) -> list[list[str
     return [b for b in out if b]
 
 
+LAST_OUTS: list[str] = []          # 마지막 `--measure` 의 통별 pytest 출력 — 산출물 시험 줄의 입력
 _DUR = re.compile(r"^\s*([0-9.]+)s (?:setup|call|teardown)\s+(tests/\S+?\.py)::")
 _RED = re.compile(r"^(?:FAILED|ERROR) (tests/\S+?\.py)")
 
@@ -315,7 +316,7 @@ def run_bin(names: list[str], root: Path = ROOT, measuring: bool = False) -> tup
     limit = MEASURE_PROC_TIMEOUT if measuring else PROC_TIMEOUT
     try:
         r = subprocess.run([sys.executable, "-m", "pytest", *[f"tests/{n}" for n in names], "-q", "-p", "no:cacheprovider",
-                            "--no-header", "-o", "addopts=", *extra, "--durations=0", "--durations-min=0", "-rfE"],
+                            "--no-header", "-o", "addopts=", *extra, "--durations=0", "--durations-min=0", "-rfE", *(["-rps"] if measuring else [])],
                            cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace",
                            timeout=limit, stdin=subprocess.DEVNULL)
         rc, out = r.returncode, (r.stdout or "") + (r.stderr or "")
@@ -363,6 +364,7 @@ def run_all(names: list[str], jobs: int, ledger: dict[str, float], root: Path = 
     groups = bins(names, jobs, ledger)
     with ThreadPoolExecutor(max_workers=len(groups) or 1) as ex:
         results = list(ex.map(lambda g: run_bin(g, root, measuring), groups))
+    LAST_OUTS[:] = [r[1] for r in results] if measuring else []        # 산출물 시험 줄이 읽는다(`testforecast.artifact_line`)
     secs: dict[str, float] = {}
     red: dict[str, str] = {}
     for _rc, out, sec, rd in results:
@@ -450,6 +452,10 @@ def main(argv: list[str] | None = None) -> int:
         top = sorted(secs.items(), key=lambda kv: -kv[1])
         print(f"{len(secs)}/{len(files)}개 파일 · 합 {sum(secs.values()):.0f}초 · 벽시계 {time.monotonic() - t:.0f}초 (병렬 {a.jobs}) · 빨강 {len(red)}")
         print(f"  상위 25 합 {sum(s for _, s in top[:25]):.0f}초 · 나머지 합 {sum(s for _, s in top[25:]):.0f}초")
+        marked = F.artifact_files({n: p.read_text(encoding="utf-8", errors="replace") for n in test_files() if (p := ROOT / "tests" / n).is_file()})
+        have = all((ROOT / "data" / "processed" / f).is_file() for f in ("segments.geojson", "route_vehicle.csv", "_manifest.json"))
+        lvl, msg = F.artifact_line(F.artifact_tally(LAST_OUTS, marked), len(marked), have, time.strftime("%Y-%m-%d %H:%M"), bool(a.only))
+        print(("\033[31m" if lvl == "cry" else "") + msg + ("\033[0m" if lvl == "cry" else ""))
         if a.write and red:
             print("✗ 빨간 파일이 있어 장부를 안 썼다 — 빨강을 고치거나 흔들림인지 가린 뒤 다시 잰다", file=sys.stderr)
             return 1

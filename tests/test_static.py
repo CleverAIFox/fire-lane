@@ -134,7 +134,10 @@ def test_no_conflict_markers():
     out = subprocess.run(
         ["git", "grep", "-lE", r"^(<<<<<<< |>>>>>>> |=======$)", "--",
          ":!*.md", ":!tests/test_static.py"],
-        cwd=ROOT, capture_output=True, text=True).stdout.split()
+        cwd=ROOT, capture_output=True, text=True, timeout=120)
+    # ★ `git grep` 은 못 찾으면 1, **죽으면 1 보다 크다**. 죽은 것이 「마커 없음」으로 읽히지 않게 한다(PLAN #266).
+    assert out.returncode in (0, 1), f"git grep 이 죽었다(returncode {out.returncode}): {out.stderr.strip()[:200]}"
+    out = out.stdout.split()
     assert not out, (
         f"충돌 마커가 추적 파일에 남아 있다: {out}\n"
         "  머지를 끝내지 않고 커밋했다. 이 상태로도 golden 은 초록불이다.")
@@ -143,11 +146,13 @@ def test_no_conflict_markers():
 def test_tracked_python_compiles():
     import subprocess
     files = subprocess.run(["git", "ls-files", "*.py"], cwd=ROOT,
-                           capture_output=True, text=True).stdout.split()
+                           capture_output=True, text=True, timeout=120).stdout.split()
+    # ★ 목록이 비면 아래 반복이 한 번도 안 돌고 초록이다 — git 이 죽었거나 추적 저장소가 아닌 사본이다(PLAN #266).
+    assert files, "`git ls-files *.py` 가 한 장도 안 낸다 — 컴파일 검사가 0건으로 초록이 된다"
     # ★ 2026-09-22. 작업 트리에서 지웠고 아직 커밋 전인 파일은 뺀다(`--deleted`). 지운 것을
     #   읽으려다 FileNotFoundError 로 죽으면 「컴파일되는가」가 아니라 「커밋했는가」를 묻게 된다.
     gone = set(subprocess.run(["git", "ls-files", "--deleted", "*.py"], cwd=ROOT,
-                              capture_output=True, text=True).stdout.split())
+                              capture_output=True, text=True, timeout=120).stdout.split())
     files = [f for f in files if f not in gone]
     bad = []
     for f in files:
@@ -157,3 +162,9 @@ def test_tracked_python_compiles():
         except SyntaxError as e:
             bad.append(f"  {f}:{e.lineno}  {e.msg}")
     assert not bad, "추적 파이썬이 컴파일되지 않는다:\n" + "\n".join(bad)
+
+
+def test_every_scanned_folder_contributes_files() -> None:
+    """훑는 폴더 셋이 각각 파일을 낸다 — 목록이 비면 `test_no_undefined_names` 가 0건으로 초록이다(PLAN #266). 추적 파일이라 CI 에도 있다."""
+    for d in (SRC, ROOT / "tools", ROOT / "tests"):
+        assert [p for p in PY_FILES if d in p.parents], f"`{d.relative_to(ROOT)}/**/*.py` 를 한 장도 못 찾았다 — 위 시험이 그 폴더에서 0건이다"

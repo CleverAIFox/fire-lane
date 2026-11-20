@@ -84,6 +84,12 @@ RANDOM_USE = re.compile(r"\b(random\.|np\.random|numpy\.random|\.sample\(|shuffl
 SEED_SET = re.compile(r"\bSEED\b|seed\s*\(|random_state\s*=")
 
 
+def _unseeded(files: list[Path]) -> list[str]:
+    """랜덤을 쓰는데 시드가 없는 파일 이름."""
+    users = [p for p in files if RANDOM_USE.search(p.read_text(encoding="utf-8"))]
+    return [p.name for p in users if not SEED_SET.search(p.read_text(encoding="utf-8"))]
+
+
 def test_r4_random_has_seed():
     """
     ★ R4. 랜덤이 들어가면 시드를 파일 상단에 고정한다.
@@ -97,9 +103,7 @@ def test_r4_random_has_seed():
     """
     # ★ 2026-09-22 (PLAN §13 W10-1 · deadcheck ⑤). 종전에는 `src/firelane` 만 봤다. 표본을 뽑는 탐색 도구
     #   (`tools/matchcheck.py`)도 랜덤을 쓴다 — 재현 규약은 산출을 내는 코드 전부다.
-    users = [p for p in sorted(ETL.rglob("*.py")) + sorted((ROOT / "tools").rglob("*.py"))
-             if RANDOM_USE.search(p.read_text(encoding="utf-8"))]
-    bad = [p.name for p in users if not SEED_SET.search(p.read_text(encoding="utf-8"))]
+    bad = _unseeded(sorted(ETL.rglob("*.py")) + sorted((ROOT / "tools").rglob("*.py")))
     assert not bad, f"랜덤을 쓰는데 시드 고정이 없다: {bad}"
 
 
@@ -143,7 +147,9 @@ def test_master_rule_table_matches_reality():
     tbl = re.search(r"\| 규칙 \| 강제자 \|(.+?)\n\n", m, re.S)
     assert tbl, "§18-5 강제자 표를 찾을 수 없다"
     missing = []
-    for ref in re.findall(r"`([\w./]+\.py)(?:::[\w:]+)?`", tbl.group(1)):
+    refs = re.findall(r"`([\w./]+\.py)(?:::[\w:]+)?`", tbl.group(1))
+    assert refs, "§18-5 강제자 표에서 `.py` 이름을 하나도 못 잡았다 — 아래 반복이 0회 돌아 초록이 된다(PLAN #266)"
+    for ref in refs:
         if not ((ROOT / "tests" / ref).exists() or (ETL / ref).exists()
                 or (ROOT / ref).exists()):
             missing.append(ref)
@@ -294,15 +300,18 @@ def test_readme_structure_lists_real_files():
     assert blocks, "MASTER §24-4~24-6 구조 블록을 찾을 수 없다"
 
     missing = []
+    checked = 0
     for line in "\n".join(blocks).splitlines():
         name = line.strip().split()[0] if line.strip() else ""
         if not name.endswith(".py"):
             continue
         if "*" in name:                      # 글롭 표기는 건너뛴다
             continue
+        checked += 1
         hits = list(ROOT.rglob(name.split("/")[-1]))
         if not any("__pycache__" not in str(h) for h in hits):
             missing.append(name)
+    assert checked, "구조 블록에서 `.py` 이름을 하나도 못 맞대 봤다 — 위 반복이 0회 돌아 초록이 된다(PLAN #266)"
     assert not missing, f"README 에 적혔는데 없는 파일: {missing}"
 
 
@@ -352,15 +361,18 @@ def test_every_doc_declares_the_same_lifecycle():
     설명이 여러 곳에 사는 것 자체가 냄새다. 없앨 수 없다면(README 는 첫 인상,
     PLAN 머리는 그 문서를 여는 사람의 첫 화면) 최소한 어긋남은 잡는다.
     """
+    asked = 0
     for rel in ("README.md", "docs/PLAN.md", "docs/MASTER.md"):
         txt = (ROOT / rel).read_text(encoding="utf-8")
         if "docs/PLAN.md" not in txt and "PLAN.md" not in txt:
             continue
         # 문서 축을 설명하는 문서라면 셋을 다 언급해야 한다
         if "MASTER" in txt and "PLAN" in txt and "문서" in txt:
+            asked += 1
             assert "DECISIONS" in txt, (
                 f"{rel} 이 문서 축을 설명하면서 DECISIONS 를 빠뜨렸다 — "
                 "옛 3축 표가 남아 있다")
+    assert asked, "문서 축을 설명하는 문서를 하나도 못 맞대 봤다 — 위 반복이 단언 0회로 초록이 된다(PLAN #266)"
 
 
 _AXIS = re.compile(
@@ -428,6 +440,7 @@ def test_master_headings_are_numbered():
 
     §0 서술 규약이 이것을 정한다. 이 테스트가 지킨다.
     """
+    assert any(s.startswith("## ") for _, s in _body_lines("docs/MASTER.md")), "MASTER 에서 `##` 절을 하나도 못 읽었다 — 아래가 0줄을 훑어 초록이 된다(PLAN #266)"
     bad = [f"{rel}:{no}  {s}"
            for rel in ("docs/MASTER.md",)
            for no, s in _body_lines(rel)
@@ -457,6 +470,7 @@ def test_master_is_not_a_letter():
     결과다. 회고와 사과는 DECISIONS 소관이다(R14).
     """
     body = "\n".join(s for _, s in _body_lines("docs/MASTER.md"))
+    assert body.strip(), "MASTER 본문을 한 줄도 못 읽었다 — 아래가 빈 글을 훑어 초록이 된다(PLAN #266)"
     hits = [w for w in ("습니다", "합니다", "제 잘못", "드립니다") if w in body]
     assert not hits, (f"경어·사과 표현이 남아 있다: {hits}\n"
                       "  §0 서술 규약 — 평어체 3인칭.")
@@ -489,6 +503,7 @@ def test_plan_headings_are_numbered_and_unique():
         if m.group(1) in seen:
             dup.append(f"§{m.group(1)}  {no} 과 {seen[m.group(1)]}")
         seen[m.group(1)] = no
+    assert seen, "PLAN 에서 번호 붙은 절을 하나도 못 읽었다 — 위 반복이 단언 0회로 초록이 된다(PLAN #266)"
     assert not dup, "중복 절 번호:\n  " + "\n  ".join(dup)
     assert not unnum, "번호 없는 절:\n  " + "\n  ".join(unnum)
 
@@ -645,3 +660,18 @@ def test_baseline_nfa_delta_matches_by_road():
     row = {r["road"]: r for r in d["rows"]}["가로1번길"]
     assert (row["old_dev_m"], row["new_dev_m"], row["new_n"]) == (-0.5, 0.2, 4)
 
+
+# ── 목록이 비면 시험이 0건 · 반복이 비면 단언 0회로 초록이다 — 그 꼴을 막는다(PLAN #266 (나)) ──────────────
+# 파이썬 소스는 추적 파일이라 CI 에도 있다 — 비면 운다. R4 의 거름은 합성 입력에서 제 뜻대로 거르는지 본다.
+
+def test_the_scanned_source_lists_are_not_empty() -> None:
+    for d in ("src/firelane", "tools", "tests"):
+        assert sorted((ROOT / d).rglob("*.py")), f"`{d}/**/*.py` 를 한 장도 못 찾았다 — 그 폴더를 훑는 매개변수 시험이 0건으로 초록이다"
+
+
+def test_r4_filter_flags_unseeded_random_and_nothing_else(tmp_path: Path) -> None:
+    (tmp_path / "bad.py").write_text("import numpy as np\nidx = np.random.choice(3)\n", encoding="utf-8")
+    (tmp_path / "good.py").write_text("import numpy as np\nSEED = 7\nidx = np.random.choice(3)\n", encoding="utf-8")
+    (tmp_path / "none.py").write_text("x = 1\n", encoding="utf-8")
+    assert _unseeded(sorted(tmp_path.glob("*.py"))) == ["bad.py"]
+    assert _unseeded([]) == []
