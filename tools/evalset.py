@@ -60,6 +60,7 @@ import random
 import sys
 from pathlib import Path
 
+import fieldmark as FM  # 현장 표지(PLAN #260 ②) — 표지된 행을 검정의 분모에서 뺀다(보고용 · 판정 불변)
 import rvpower as RP  # 검정력 — 판독 전 · 뒤(PLAN #263 · DECISIONS §835)
 from evalgen import SEED
 from ledgercross import _midpoints, gap, is_step, steps_of
@@ -450,10 +451,12 @@ def rv_complete(hyp: str, r: dict) -> bool:
 rv_fisher = RP.fisher    # 피셔 정확검정 한쪽 p — `rvpower.fisher`(옮겼다 · 줄 수 상한)
 
 
-def rv_check(path: Path, feats: list[dict], samples: dict[str, list[dict]], n: int | None = None) -> tuple[list[str], dict]:
+def rv_check(path: Path, feats: list[dict], samples: dict[str, list[dict]], n: int | None = None, marks: list[dict] | None = None) -> tuple[list[str], dict]:
     """(결함 목록, 진행 · 판정). 칸 · 행 수 · 허용값 · 좌표가 최소폭 표본 지점인가 · 가설군/대조군 수 · 앞뒤를 본다. 빈 행은 결함이 아니다(아직 안 본 행). 판정은 **다 채운 가설만** 낸다."""
     import re
     bad: list[str] = []
+    marks = FM.load_marks() if marks is None else marks
+    marked = FM.nonroad_uids(marks)
     cols, rows = rv_read(path)
     if tuple(cols) != RV_COLS:
         return [f"칸이 다르다 — 있어야 할 것 {list(RV_COLS)} · 있는 것 {cols}"], {}
@@ -489,7 +492,7 @@ def rv_check(path: Path, feats: list[dict], samples: dict[str, list[dict]], n: i
             if "거리뷰" in RV_NEED[hyp] and cov == "없다" and (ans or wid):
                 bad.append(f"{tag}: 채우다 만 행이다 — 거리뷰 「없다」면 답 · 답2 · 포장폭을 비운다")
     bad += RP.declaration_flaws()
-    stat: dict = {"행": len(rows), "채운 행": sum(1 for r in rows if rv_filled(r)), "판독 전 검정력(설계 · 조건부)": RP.design_stat()}
+    stat: dict = {"행": len(rows), "채운 행": sum(1 for r in rows if rv_filled(r)), "판독 전 검정력(설계 · 조건부)": RP.design_stat(), "현장 표지": FM.sheet_marks(rows, marks)}
     for hyp, g in tally.items():
         h = RV_HYPO[hyp]
         if (len(g["가설군"]), len(g["대조군"])) != h[:2] and n is None:
@@ -500,10 +503,10 @@ def rv_check(path: Path, feats: list[dict], samples: dict[str, list[dict]], n: i
             continue
         # 로드뷰로 보는 가설(가 · 다)은 거리뷰 「있다」인 행만 센다 · 지도로 보는 가설(나)은 거리뷰 칸과 무관하다
         views = "거리뷰" in RV_NEED[hyp]
-        seen = {k: [r["답"].strip() for r in v if (r["거리뷰"].strip() == "있다" or not views) and r["답"].strip() not in ("", "가림", "길 아님")] for k, v in g.items()}
+        seen = {k: FM.answers_seen(v, views, marked) for k, v in g.items()}
         a, n1, b, n0 = sum(x in h[6] for x in seen["가설군"]), len(seen["가설군"]), sum(x in h[6] for x in seen["대조군"]), len(seen["대조군"])
         pv = rv_fisher(a, n1, b, n0) if n1 and n0 else None
-        stat[hyp] = {"가설": h[7], "가설군": f"{a}/{n1}", "대조군": f"{b}/{n0}", "못 본 행(거리뷰 없다 · 가림 · 길 아님)": len(g["가설군"]) + len(g["대조군"]) - n1 - n0, "검정력": RP.power_report(hyp, n1, n0, a, b), "그중 길 아님": sum(r["답"].strip() == "길 아님" for k in ("가설군", "대조군") for r in g[k]), "p": None if pv is None else round(pv, 4),
+        stat[hyp] = {"가설": h[7], "가설군": f"{a}/{n1}", "대조군": f"{b}/{n0}", "못 본 행(거리뷰 없다 · 가림 · 길 아님)": len(g["가설군"]) + len(g["대조군"]) - n1 - n0, "검정력": RP.power_report(hyp, n1, n0, a, b), "그중 현장 표지(분모에서 뺌)": sum(r["seg_uid"] in marked for k in ("가설군", "대조군") for r in g[k]), "그중 길 아님": sum(r["답"].strip() == "길 아님" for k in ("가설군", "대조군") for r in g[k]), "p": None if pv is None else round(pv, 4),
                      "판정": "못 가른다 — 볼 수 있는 행이 한쪽에 없다" if pv is None else "귀무가설을 기각한다 — 가설을 받친다" if pv <= RV_ALPHA else "귀무가설을 기각하지 못한다 — 가설을 받칠 근거가 없다(표본이 작아 「가설이 거짓」이라는 뜻은 아니다)",
                      "지명": [r["답"].strip() for r in g["지명"]],
                      **({"가-2(턱 있다 / 답2 를 쓴 행)": " | ".join(f"{sum(r['답2'].strip() == '턱 있다' for r in g[k])}/{sum(bool(r['답2'].strip()) for r in g[k])}" for k in ('가설군', '대조군'))} if hyp == RV_Q2_HYP else {}), "포장폭(가설군 | 대조군)": " | ".join(" ".join(r["포장폭"].strip() or "–" for r in g[k]) for k in ("가설군", "대조군"))}
