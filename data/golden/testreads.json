@@ -143,7 +143,7 @@
 "test_ledgercols.py": "9a856561ad2647b4",
 "test_ledgercross.py": "815d8510e0dba604",
 "test_lineage_branches.py": "af0bb80189c425ce",
-"test_lineage_last_writer.py": "f89fd558b41ba0a0",
+"test_lineage_last_writer.py": "883a384897c05760",
 "test_localplane.py": "793936601df79b77",
 "test_lock_closure.py": "709bb59262c9da25",
 "test_logic_print.py": "2bf3e04943ef7adb",
@@ -381,8 +381,7 @@
 ".env"
 ],
 "test_cli_surface.py": [
-".env",
-"data/processed/_lineage.json"
+".env"
 ],
 "test_closecap.py": [
 ".env"
