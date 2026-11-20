@@ -54,7 +54,7 @@ import { StatusCard } from "./ui/StatusCard";
 import { readHandoff, routeOf } from "./domain/handoff";
 import { PlanHeader, TimeBox } from "./ui/Sheet";
 import { WaitPanel } from "./ui/WaitPanel";
-import { riskKindText, routeOption } from "./ui/routeOption";
+import { routeOption } from "./ui/routeOption";
 import { Center, SMOKE_CSS, shell, toast, vehChip } from "./ui/appShell";
 import { BottleneckPanel, DemoStrip, DevBar, Legend, RouteBrief, ShareChip, prefetch } from "./ui/deferred";
 import { Truck } from "./ui/icons";
@@ -277,7 +277,7 @@ export default function App() {
     const rest = n.plan.edges.slice(n.plan.edges.findIndex((x) => x.seg_uid === e.seg_uid) + 1);
     return {
       kind: riskKind(e, need)?.kind ?? "tight",
-      kindText: riskKindText(riskKind(e, need)?.kind ?? "tight", nm),
+      nm,
       more: rest.filter((x) => isHeadsUp(x, need)).length,
       segUid: e.seg_uid,
       segLabel: e.seg_label ?? e.road_name ?? e.seg_uid,

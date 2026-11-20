@@ -37,6 +37,7 @@ import { Cta, Sheet } from "./Sheet";
 import { clearanceBand, fmtClearance } from "../domain/clearance";
 import { SAME_ROUTE_TITLE } from "../domain/compare";
 import { CLEARANCE_SCALE } from "./clearanceMeaning";
+import type { VerdictName } from "./verdictMeaning";
 
 export interface RouteOption {
   title: string;
@@ -44,8 +45,8 @@ export interface RouteOption {
   sec: number;
   lengthM: number;
   /** 확인 필요(`needs_cv`) 구간 수 — 관제가 CCTV 로 확인해 줄 수 있다 */
-  /** 판정 이름 — 범례와 같은 `style` 에서 읽은 것이다(PLAN #265). 카드가 따로 적지 않는다 */
-  names: { blocked: string; needs_cv: string; unknown: string };
+  /** 판정 이름을 읽는 길 — 범례와 같은 `style` 에서 읽는다(PLAN #265). 카드가 따로 적지 않는다 */
+  nm: VerdictName;
   needsCvCount: number;
   /** 폭 모름(`unknown`) 구간 수 — 확인 수단이 없다. 최소폭이 이 구간을 못 본다 */
   unknownCount: number;
@@ -128,7 +129,7 @@ export function verdictLine(safe: RouteOption, fast: RouteOption): { text: strin
   const dt = Math.round(fast.sec - safe.sec);
   const dn = fast.needsCvCount - safe.needsCvCount;
   const time = dt === 0 ? "시간이 같고" : dt < 0 ? `${fmtDur(-dt)} 빠르고` : `${fmtDur(dt)} 느리고`;
-  const risk = dn === 0 ? `${safe.names.needs_cv} 수는 같다` : `${safe.names.needs_cv} ${Math.abs(dn)}곳 ${dn > 0 ? "많다" : "적다"}`;
+  const risk = dn === 0 ? `${safe.nm("needs_cv")} 수는 같다` : `${safe.nm("needs_cv")} ${Math.abs(dn)}곳 ${dn > 0 ? "많다" : "적다"}`;
   return { text: `빠른 경로가 ${time} ${risk}`, worse: dn > 0 };
 }
 
@@ -168,12 +169,12 @@ function Col({ o, on, accent, chip, title, scope }: {
         <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.1, color: on ? C.safeInk : "#c2570c" }}>
           {fmtDur(o.sec)} <span style={{ fontSize: 13, fontWeight: 700, color: C.panelSub }}>{(o.lengthM / 1000).toFixed(1)}km</span>
         </div>
-        <div style={{ ...lab, marginTop: 10 }}>{o.names.needs_cv}</div>
+        <div style={{ ...lab, marginTop: 10 }}>{o.nm("needs_cv")}</div>
         <div style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.1, color: o.needsCvCount > 0 ? C.danger : C.panelInk }}>
           {o.needsCvCount}곳
         </div>
-        <div style={{ fontSize: 13, fontWeight: 800, color: o.unknownCount > 0 ? C.danger : C.panelSub, marginTop: 6 }}>{o.names.unknown} {o.unknownCount}곳</div>
-        {o.blockedCount > 0 && <div style={{ fontSize: 13, fontWeight: 800, color: C.danger, marginTop: 6 }}>{o.names.blocked} {o.blockedCount}곳</div>}
+        <div style={{ fontSize: 13, fontWeight: 800, color: o.unknownCount > 0 ? C.danger : C.panelSub, marginTop: 6 }}>{o.nm("unknown")} {o.unknownCount}곳</div>
+        {o.blockedCount > 0 && <div style={{ fontSize: 13, fontWeight: 800, color: C.danger, marginTop: 6 }}>{o.nm("blocked")} {o.blockedCount}곳</div>}
         <div style={{ ...lab, marginTop: 10, lineHeight: 1.5 }}>
           최소폭 <b style={{ color: C.panelInk }}>{o.minWidthM != null ? `${o.minWidthM.toFixed(1)}m` : "—"}</b>
           {o.unknownCount > 0 && <sup>*</sup>}
@@ -199,7 +200,7 @@ function cells(o: RouteOption): Record<Section, ReactNode> {
       </div>
     ) : null,
     note: <div style={note}>{o.note}</div>,
-    foot: o.unknownCount > 0 ? <div style={{ fontSize: 11, color: C.panelSub }}>* {o.names.unknown} {o.unknownCount}곳은 뺀 수</div> : null,
+    foot: o.unknownCount > 0 ? <div style={{ fontSize: 11, color: C.panelSub }}>* {o.nm("unknown")} {o.unknownCount}곳은 뺀 수</div> : null,
   };
 }
 

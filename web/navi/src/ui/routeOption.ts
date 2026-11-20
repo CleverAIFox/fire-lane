@@ -45,14 +45,15 @@ export function routeOption(
   const deltaSec = other ? sec - travelSeconds(other) : 0;
   const otherUnc = other ? routeStats(other).needsCvCount : unc.length;
   const slower = deltaSec > 1 ? `${fmtDur(deltaSec)} 느리지만 ` : "";
-  const recNote = !unc.length ? `${slower}${nm("needs_cv")} 구간을 우회합니다.`
-    : unc.length < otherUnc ? `${slower}${nm("needs_cv")} 구간이 ${otherUnc - unc.length}개 적습니다.`
-    : `${nm("needs_cv")} 구간 ${unc.length}개를 지납니다 — 피할 수 있는 경로가 없습니다.`;
+  const cv = nm("needs_cv");
+  const recNote = !unc.length ? `${slower}${cv} 구간을 우회합니다.`
+    : unc.length < otherUnc ? `${slower}${cv} 구간이 ${otherUnc - unc.length}개 적습니다.`
+    : `${cv} 구간 ${unc.length}개를 지납니다 — 피할 수 있는 경로가 없습니다.`;
   const tail = access?.alt
     ? ` 차량은 사건 지점 약 ${Math.round(access.walkM)}m(직선) 앞 대체 접근 지점까지 갑니다.` : "";
   return {
     title: rec ? "안전 경로" : "빠른 경로", recommended: rec, sec, lengthM: st.lengthM,
-    names: { blocked: nm("blocked"), needs_cv: nm("needs_cv"), unknown: nm("unknown") },
+    nm,
     needsCvCount: st.needsCvCount,
     unknownCount: st.unknownCount,
     uncertainM: st.uncertainM,
@@ -76,9 +77,10 @@ export function routeOption(
  */
 export function riskSummary(p: Pick<RoutePlan, "edges">, need: number, other: Pick<RoutePlan, "edges"> | null, nm: VerdictName): RouteOption["risks"] {
   const all = riskList(p, need);
-  if (!other) return { lines: all.slice(0, RISK_LINES_MAX).map((r) => riskLine(r, nm)), more: Math.max(0, all.length - RISK_LINES_MAX) };
+  const line = (r: RiskItem) => riskLine(r, nm);
+  if (!other) return { lines: all.slice(0, RISK_LINES_MAX).map(line), more: Math.max(0, all.length - RISK_LINES_MAX) };
   const theirs = new Set(riskList(other, need).map((r) => r.segUid));
   const ordered = [...all.filter((r) => !theirs.has(r.segUid)), ...all.filter((r) => theirs.has(r.segUid))];   // 각 묶음 안은 경로 순서 그대로
   const shown = ordered.slice(0, RISK_LINES_MAX);
-  return { lines: shown.map((r) => riskLine(r, nm)), more: Math.max(0, ordered.length - shown.length), shared: shown.filter((r) => theirs.has(r.segUid)).length };
+  return { lines: shown.map(line), more: Math.max(0, ordered.length - shown.length), shared: shown.filter((r) => theirs.has(r.segUid)).length };
 }

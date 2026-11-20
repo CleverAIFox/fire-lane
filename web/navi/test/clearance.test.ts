@@ -379,7 +379,7 @@ test("앞서 알릴 구간의 정의는 하나다 — 확인 필요 · 폭 모�
 
 function opt(over: Partial<RouteOption>): RouteOption {
   return {
-    title: "안전 경로", recommended: true, sec: 600, lengthM: 2290, names: { blocked: NM("blocked"), needs_cv: NM("needs_cv"), unknown: NM("unknown") }, needsCvCount: 7, uncertainM: 100,
+    title: "안전 경로", recommended: true, sec: 600, lengthM: 2290, nm: NM, needsCvCount: 7, uncertainM: 100,
     unknownCount: 0, minWidthM: 3.1, requiredM: 2.6, blockedCount: 0, ruleCount: 2, deltaSec: 0,
     note: "NOTE문장", rules: "RULES요약", limits: "LIMITS한계",
     risks: { lines: [`0m RISK구간 · ${NM("needs_cv")} · 여유 +0.5m`], more: 3 }, ...over,
