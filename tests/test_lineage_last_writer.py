@@ -164,3 +164,17 @@ def test_the_real_local_lineage_now_passes_the_segments_check_if_it_exists():
     except lineage.LineageError as e:
         text = str(e)
         assert "fire_station" not in text and "_manifest.json" not in text, f"덧쓰기 때문에 막히던 두 칸이 아직 막는다:\n{text}"
+
+
+def test_the_cli_refuses_an_unknown_command_even_when_the_lineage_file_is_absent(tmp_path, monkeypatch, capsys):
+    """★ 2026-11-21 (PLAN #266 · DECISIONS §846). 계보 파일이 없는 기계(CI)에서는 명령줄이 「파일 없음」으로 먼저 1 로 끝나, 모르는 깃발을 조용히 무시하는
+    결함을 넣어도 전수 탐침(`test_cli_surface`)이 초록이었다(합성 결함 사본 + 빈 계보 디렉터리로 재면 1). 이제 명령을 먼저 거른다 —
+    빈 디렉터리(= 파일 없음)에서도 모르는 명령은 2 와 「모르는 명령」이다. 시험이 입력을 스스로 만든다(생성물을 안 읽는다)."""
+    import firelane.paths as P
+
+    m = _load()
+    monkeypatch.setattr(P, "PROCESSED", tmp_path)
+    monkeypatch.setattr(sys, "argv", ["lineage.py", "--zz-unknown"])
+    assert m._cli() == 2
+    assert "모르는 명령" in capsys.readouterr().out
+    assert not (tmp_path / m.LINEAGE).exists(), "거절이 파일을 만들었다"
