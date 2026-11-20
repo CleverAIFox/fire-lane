@@ -14,10 +14,10 @@
       "hydrant_point",
       "fire_station"
     ],
-    "tiles": "web/data/terrain/{z}/{x}/{y}.png (22장, z12~15)",
+    "tiles": "web/data/terrain/{z}/{x}/{y}.png (70장, z12~16)",
     "encoding": "mapbox Terrain-RGB: -10000 + (R*65536+G*256+B)*0.1",
     "purpose": "표현용. 90m 격자는 구간별 경사 산출 불가. 판정에 사용하지 않는다.",
-    "generated_at": "2026-09-16T14:58:57+00:00"
+    "generated_at": "2026-11-20T15:29:07+00:00"
   },
   "ortho": {
     "source": "국토지리정보원 항공정사영상 2025 (도엽 35616037/038/047/048)",
