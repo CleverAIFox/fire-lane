@@ -67,7 +67,7 @@ def untracked_read(rel: str, root: str) -> bool:
     `isfile` 은 열기 **이벤트가 난 경로**에만 부른다 — 존재하지 않는 경로를 여는 시도(없으면 거르는 `Path.exists()` 는 열기가 아니다)는 읽기가 아니다."""
     if rel.endswith(_SKIP_SUFFIX) or not _SKIP_DIRS.isdisjoint(rel.split("/")[:-1]):
         return False
-    return os.path.isfile(os.path.join(root, rel))
+    return (Path(root) / rel).is_file()
 
 
 def test_file_of(current: str) -> str:
