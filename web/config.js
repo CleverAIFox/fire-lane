@@ -36,12 +36,12 @@ const CONFIG = {
   verdict: {
     blocked : { color:[255, 77, 61], lightColor:[224, 53, 38], label:"통행 불가",
                 desc:"벽 사이 폭 3.0m 미만. 주차 차량이 없어도 소방차가 못 지나간다" },
-    needs_cv: { color:[255,171, 46], lightColor:[212,124, 10], label:"확인 필요",
-                desc:"도면만으로 결론이 안 난다. 영상판정(호모그래피) 대상" },
+    needs_cv: { color:[255,171, 46], lightColor:[212,124, 10], label:"영상판정 전",
+                desc:"영상이 닿는 구간이지만 아직 판정하지 않았다. 영상판정(호모그래피) 대상" },
     clear   : { color:[ 74,209,143], lightColor:[ 26,150, 96], label:"통행 가능",
                 desc:"도로 폭 7.0m 이상. 양쪽에 주차가 있어도 통과. 영상판정 불필요" },
-    unknown : { color:[ 90, 98,114], lightColor:[110,120,138], label:"폭 모름",
-                desc:"CCTV 유효범위 19m 밖. 영상판정 자체가 성립하지 않는다" },
+    unknown : { color:[154,163,181], lightColor:[110,120,138], label:"영상으로 확정 못 함",
+                desc:"폭은 쟀으나 영상이 닿지 않아 통과 여부를 못 정했다" },
   },
 
   /* noCctvColor(갈색)는 제거했다. 화면 색은 verdict 4종이 전부다.

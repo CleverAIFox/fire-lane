@@ -67,7 +67,17 @@ export function opsVerdictColor(col: (k: string) => string): unknown {
 export const VERDICT_DASH: Record<string, [number, number]> = {
   needs_cv: [2.4, 1.0],   // 성긴 파선
   blocked: [0.6, 0.9],    // 촘촘한 점선
-  unknown: [5.0, 1.4],    // 긴 파선
+};
+
+/**
+ * ── ★ 2026-11-20 (PLAN #265 · DECISIONS §842) `unknown` 은 파선이 아니라 **밝은 실선 + 흰 점 테두리**다 ──
+ * 종전 `unknown` 은 긴 파선 [5.0, 1.4](색이 보이는 길이 22%)이고 색이 어두워(청회색 90,98,114)
+ * **실제 렌더에서 3:1 이상인 몫이 2.3%**(관제 · 도로선 위)였다. 파내는 방식은 색이 보이는 길이를 줄이므로
+ * 밝기가 낮은 판정에는 맞지 않다. 색을 올리고(154,163,181 — 계약 파일) 실선으로 두고, 둘째 채널은 선
+ * **옆**의 흰 점 테두리가 든다. 빨강 계열을 안 쓴다 — `blocked` 와 섞인다.
+ */
+export const VERDICT_HALO: Record<string, [number, number]> = {
+  unknown: [0.05, 2.2],   // 흰 점(둥근 끝) — 선 양옆에 점선처럼 보인다
 };
 
 /**
@@ -88,7 +98,7 @@ export const REF_FACTOR = { general: 0.3, blocked: 0.7 } as const;
 /** 층별 기존 불투명도. 발행 범위 안(target · corridor · listed)은 이 값 그대로다. */
 export const OPS_SEG_OPACITY = {
   "ops-verdict-case": 0.55, "ops-verdict": 1,
-  "ops-verdict-dash-needs_cv": 0.9, "ops-verdict-dash-blocked": 0.9, "ops-verdict-dash-unknown": 0.9,
+  "ops-verdict-dash-needs_cv": 0.9, "ops-verdict-dash-blocked": 0.9, "ops-verdict-halo-unknown": 0.9,
   "ops-unreach": 0.75,
   "seg-tint": 0.85,
 } as const;
@@ -145,6 +155,15 @@ export function opsSegLayers(col: (k: string) => string, showRef = true): LayerS
     { id: "ops-verdict-case", type: "line", source: "segments",
       layout: { "line-cap": "round", "line-join": "round" },
       paint: { "line-width": W(2), "line-color": "#1f2937", "line-opacity": op("ops-verdict-case") } },
+    // ★ 흰 점 테두리 — 색 선 **아래**에 폭을 넓혀 깔아 양옆으로만 점이 비친다.
+    ...Object.entries(VERDICT_HALO).map(([k, dash]) => ({
+      id: `ops-verdict-halo-${k}`, type: "line", source: "segments",
+      filter: ["==", ["get", "verdict"], k] as never,
+      layout: { "line-cap": "round" },
+      paint: { "line-width": W(4), "line-color": "#ffffff",
+               "line-opacity": op(`ops-verdict-halo-${k}` as keyof typeof OPS_SEG_OPACITY),
+               "line-dasharray": dash },
+    } as LayerSpecification)),
     { id: "ops-verdict", type: "line", source: "segments",
       layout: { "line-cap": "round", "line-join": "round" },
       paint: {
