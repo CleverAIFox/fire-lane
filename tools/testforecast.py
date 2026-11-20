@@ -26,6 +26,7 @@ PARAM `N_RECENT`(중앙값을 재는 회차 수) · `N_RATIO` · `MIN_RATIO` · 
 from __future__ import annotations
 
 import argparse
+import re
 import statistics
 import sys
 import time
@@ -203,6 +204,50 @@ def ratio_verdict(prev: list[float], now: float, n: int = N_RATIO, k_min: int = 
     if errs[-1] > spike:
         return "note", f"이번 회차 비 ×{now:.2f}는 보정에서 ×{errs[-1]:.2f} 벗어났다(최근 {len(errs)}회 오차 중앙값 ×{med:.2f}는 안이다 · 호스트 흔들림으로 읽는다)"
     return "ok", f"비 판정 안 — 최근 {len(errs)}회 보정 오차 중앙값 ×{med:.2f}(밴드 ×{band:g})"
+
+
+# ── 산출물 시험의 보장 줄 (PLAN #266 (가) · DECISIONS §848) ─────────────────────────────────
+# 산출물이 없는 기계(CI)의 건너뜀은 설계다(DECISIONS §173-6 · §175-2). 빠진 것은 「산출물이 있는 기계에서 그 시험들이 돈다」는 보장이다 — 전수 측정이
+# 이미 그 파일들을 돌므로 거기서 한 줄을 낸다(푸시에는 안 얹는다).
+# ① 본 몫  표지 파일(소스에 사유 `환경skip(산출물)` 를 건너뜀 사유로 든 시험 파일)의 시험 중 통과 P · 그 사유로 건너뜀 M · 그 밖 건너뜀 O. P 에는 CI 에서도 도는 시험이 섞인다 — 수가 아니라 「산출물이 있는데 M 이 0 이 아닌가」가 판별이다
+# ② 못 세는 값이 갈 칸  결과 줄을 하나도 못 읽으면 0 이 아니라 「읽지 못했다」(✗) · 일부(--only)만 쟀으면 그렇다고 적는다 · 헬퍼 안에서 건너뛰는 시험도 사유 줄로 M 에 든다(표지 파일 밖이면 O)
+# ③ 전제  산출물 유무를 `data/processed` 의 세 파일(segments · route_vehicle · manifest)로 본다 · 사유 문자열이 시험 소스에 남는다 · **정기성은 없다 — 이 줄은 전수 측정을 칠 때만 나온다**(안 치면 값이 없다 · 줄에 적는다)
+ARTIFACT_MARK = "환경skip(산출물)"
+_MARK_SRC = re.compile(r'(?:reason\s*=\s*f?|skip\(\s*f?)["\']환경skip\(산출물\)')
+_PASS = re.compile(r"^PASSED (tests/\S+?\.py)::", re.M)
+_SKIP = re.compile(r"^SKIPPED \[(\d+)\] (tests/\S+?\.py):\d+: (.*)$", re.M)
+
+
+def artifact_files(texts: dict[str, str]) -> list[str]:
+    """표지 파일 — 건너뜀 사유로 `환경skip(산출물)` 를 든 시험 파일."""
+    return sorted(n for n, t in texts.items() if _MARK_SRC.search(t))
+
+
+def artifact_tally(outs: list[str], marked: list[str]) -> dict[str, int]:
+    """pytest `-rps` 출력들에서 (P 통과 · M 사유 환경skip(산출물) · O 그 밖 건너뜀)."""
+    mk = {f"tests/{n}" for n in marked}
+    t = {"P": 0, "M": 0, "O": 0}
+    for o in outs:
+        t["P"] += sum(1 for m in _PASS.finditer(o) if m.group(1) in mk)
+        for m in _SKIP.finditer(o):
+            if m.group(3).startswith(ARTIFACT_MARK):
+                t["M"] += int(m.group(1))
+            elif m.group(2) in mk:
+                t["O"] += int(m.group(1))
+    return t
+
+
+def artifact_line(tally: dict[str, int], nfiles: int, has_artifacts: bool, when: str, partial: bool) -> tuple[str, str]:
+    """(수준 · 한 줄). 수준 `cry` = 산출물이 있는데 그 사유로 건너뛴 시험이 있거나 결과를 못 읽었다."""
+    tail = (f" · 잰 때 {when}" + (" · 일부(--only)만 쟀다" if partial else "")
+            + " · 전수 측정을 칠 때만 나오는 줄이다(정기성 없음 — 안 치면 값이 없다)")
+    if nfiles == 0 or tally["P"] + tally["M"] + tally["O"] == 0:
+        return "cry", f"산출물 시험 — 읽지 못했다(표지 파일 {nfiles}개 · 결과 줄 0 — 0 이 아니라 못 센 것이다){tail}"
+    where = "산출물 있음" if has_artifacts else "산출물 없음(건너뜀이 설계)"
+    body = f"산출물 시험 — 표지 파일 {nfiles}개 · 통과 {tally['P']} · 환경skip(산출물) 건너뜀 {tally['M']} · 그 밖 건너뜀 {tally['O']} · {where}"
+    if has_artifacts and tally["M"]:
+        return "cry", body + f" — ✗ 산출물이 있는 기계에서 {tally['M']}개가 건너뛰었다(DECISIONS §175-2 는 실패로 친다){tail}"
+    return "ok", body + tail
 
 
 def main(argv: list[str] | None = None) -> int:

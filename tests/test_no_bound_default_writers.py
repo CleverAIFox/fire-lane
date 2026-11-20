@@ -95,3 +95,9 @@ def test_restore_stale_reads_its_root_at_call_time() -> None:
 
     import tidy  # tools/ — pyproject 의 pytest pythonpath 로 잡힌다
     assert inspect.signature(tidy.restore_stale).parameters["root"].default is None, "restore_stale 이 ROOT 를 정의 시점에 묶었다"
+
+
+def test_every_scanned_folder_contributes_files() -> None:
+    """훑는 폴더 셋이 각각 파일을 낸다 — 목록이 비면 위 매개변수 시험이 0건으로 초록이다(PLAN #266). 추적 파일이라 CI 에도 있다."""
+    for d in ("src", "tools", "tests"):
+        assert [p for p in FILES if (ROOT / d) in p.parents], f"`{d}/**/*.py` 를 한 장도 못 찾았다 — 위 시험이 그 폴더에서 0건이다"

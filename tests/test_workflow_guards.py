@@ -82,21 +82,18 @@ def _callees(doc: dict) -> list[str]:
     return out
 
 
-def test_reusable_workflow_permissions_are_subsets() -> None:
-    """호출자의 권한이 피호출자의 것을 덮는가.
+def _chain_gaps(wf: Path = WF) -> tuple[list[str], int]:
+    """권한 사슬의 끊김 목록과, **실제로 맞대 본 (호출자 → 피호출자) 쌍의 수.**
 
-    ★ GitHub 은 재사용 워크플로에 **호출자보다 큰 권한을 주지 않는다.**
-      모자라면 경고가 아니라 **파일 무효**이고, 오류는 **맨 위 파일의 줄
-      번호**를 가리켜 어디가 진짜인지 읽기 어렵다.
-    ★ 사슬은 끝까지 센다. 2026-09-19 에 두 칸만 고쳐 한 칸 아래에서 같은
-      오류가 다시 났다.
+    ★ 쌍이 0 이면 아래 루프가 한 번도 안 돈 것이다 — 빈 목록이 「끊긴 데 없음」으로 읽힌다(PLAN #266).
     """
     yaml = YAML(typ="safe")
     docs: dict[str, dict] = {}
-    for p in sorted(WF.glob("*.yml")):
+    for p in sorted(wf.glob("*.yml")):
         docs[p.name] = yaml.load(p.read_text(encoding="utf-8")) or {}
 
     bad: list[str] = []
+    pairs = 0
     for name, doc in docs.items():
         mine = _perms(doc)
         if "*" in mine:
@@ -106,6 +103,7 @@ def test_reusable_workflow_permissions_are_subsets() -> None:
                 bad.append(f"  {name} 이 없는 워크플로 {callee} 를 부른다")
                 continue
             need = _perms(docs[callee])
+            pairs += 1
             if "*" in need:
                 continue
             for key, want in need.items():
@@ -114,7 +112,19 @@ def test_reusable_workflow_permissions_are_subsets() -> None:
                     bad.append(
                         f"  {name} → {callee}: `{key}` 가 필요한데 "
                         f"호출자는 `{have}` 다 (필요 `{want}`)")
+    return bad, pairs
 
+
+def test_reusable_workflow_permissions_are_subsets() -> None:
+    """호출자의 권한이 피호출자의 것을 덮는가.
+
+    ★ GitHub 은 재사용 워크플로에 **호출자보다 큰 권한을 주지 않는다.**
+      모자라면 경고가 아니라 **파일 무효**이고, 오류는 **맨 위 파일의 줄
+      번호**를 가리켜 어디가 진짜인지 읽기 어렵다.
+    ★ 사슬은 끝까지 센다. 2026-09-19 에 두 칸만 고쳐 한 칸 아래에서 같은
+      오류가 다시 났다.
+    """
+    bad, _ = _chain_gaps()
     assert not bad, (
         "권한 사슬이 끊겼다 — GitHub 이 이 파일을 **무효**로 본다.\n"
         + "\n".join(bad)
@@ -145,6 +155,25 @@ UNTRUSTED = ("github.head_ref", "github.base_ref", "github.event.pull_request.ti
 _RUN_BLOCK = re.compile(r"^(\s+)run:\s*\|?\s*$\n((?:\1\s+.*\n|\s*\n)*)", re.M)
 
 
+def _interpolations(wf: Path = WF) -> tuple[list[str], int]:
+    """`run:` 안의 신뢰할 수 없는 보간 목록과, **훑은 `run:` 블록 수.** 0 이면 거름이 한 번도 안 돈 것이다(PLAN #266)."""
+    bad: list[str] = []
+    blocks = 0
+    for p in sorted(wf.glob("*.yml")):
+        src = p.read_text(encoding="utf-8")
+        for m in _RUN_BLOCK.finditer(src):
+            blocks += 1
+            body = m.group(2)
+            line0 = src[:m.start()].count("\n") + 1
+            for k, line in enumerate(body.splitlines()):
+                if line.lstrip().startswith("#"):
+                    continue
+                for ctx in UNTRUSTED:
+                    if "${{" in line and ctx in line:
+                        bad.append(f"  {p.name}:{line0 + k + 1}  {ctx}  — {line.strip()[:70]}")
+    return bad, blocks
+
+
 def test_untrusted_context_is_never_interpolated_into_run() -> None:
     """`run:` 안에 **남이 정하는 값**을 `${{ }}` 로 박지 않는가.
 
@@ -159,18 +188,7 @@ def test_untrusted_context_is_never_interpolated_into_run() -> None:
     ★ **인스턴스가 아니라 클래스를 본다.** 한 줄을 고치는 것으로 끝내면
       다음 워크플로가 같은 것을 다시 쓴다(§197-2 와 같은 자리).
     """
-    bad = []
-    for p in sorted(WF.glob("*.yml")):
-        src = p.read_text(encoding="utf-8")
-        for m in _RUN_BLOCK.finditer(src):
-            body = m.group(2)
-            line0 = src[:m.start()].count("\n") + 1
-            for k, line in enumerate(body.splitlines()):
-                if line.lstrip().startswith("#"):
-                    continue
-                for ctx in UNTRUSTED:
-                    if "${{" in line and ctx in line:
-                        bad.append(f"  {p.name}:{line0 + k + 1}  {ctx}  — {line.strip()[:70]}")
+    bad, _ = _interpolations()
     assert not bad, (
         "`run:` 안에 신뢰할 수 없는 값을 직접 보간한다. " + str(len(bad)) + "건\n"
         + "\n".join(bad)
@@ -403,3 +421,32 @@ def test_a_declared_exemption_that_became_registered_or_unused_is_flagged(monkey
     assert any("등록됐는데 면제 선언이 남아 있다" in g for g in got), got
     got = _rsc_with(monkeypatch, ["FIRE_LANE_OPS_TOKEN"], {**ok, "FL_NOT_USED_ANYWHERE": "x"})
     assert any("FL_NOT_USED_ANYWHERE" in g and "안 부른다" in g for g in got), got
+
+
+# ── 목록이 비면 시험이 0건 · 반복이 비면 단언 0회로 초록이다 — 그 꼴을 막는다(PLAN #266 (나)) ──────────────
+# 워크플로 파일은 추적 파일이라 CI 에도 있다 — 비면 운다. 거르는 두 반복문(권한 사슬 · `run:` 보간)은 **한 번이라도 돌았는지**를 센다.
+
+def test_the_workflow_list_and_both_walks_are_not_empty() -> None:
+    assert sorted(WF.glob("*.yml")), "`.github/workflows/*.yml` 을 한 장도 못 찾았다 — 목록이 비면 파싱 시험이 0건으로 초록이다"
+    assert _interpolations()[1] > 0, "`run:` 블록을 하나도 못 잡았다 — 보간 거름이 한 번도 안 돈다(`_RUN_BLOCK` 이 죽었거나 워크플로가 비었다)"
+
+
+def test_the_two_walks_catch_a_synthetic_violation_and_pass_a_clean_tree(tmp_path: Path) -> None:
+    bad_dir, ok_dir = tmp_path / "bad", tmp_path / "ok"
+    for d in (bad_dir, ok_dir):
+        d.mkdir()
+    (bad_dir / "callee.yml").write_text("on: workflow_call\npermissions:\n  contents: write\njobs:\n  j:\n    runs-on: x\n    steps:\n      - run: echo\n", encoding="utf-8")
+    (bad_dir / "caller.yml").write_text(
+        "on: push\npermissions:\n  contents: read\njobs:\n  j:\n    uses: ./.github/workflows/callee.yml\n"
+        "  k:\n    runs-on: x\n    steps:\n      - name: s\n        run: |\n          git fetch \"+${{ github.head_ref }}\"\n", encoding="utf-8")
+    (ok_dir / "callee.yml").write_text((bad_dir / "callee.yml").read_text(encoding="utf-8"), encoding="utf-8")
+    (ok_dir / "caller.yml").write_text(
+        "on: push\npermissions:\n  contents: write\njobs:\n  j:\n    uses: ./.github/workflows/callee.yml\n"
+        "  k:\n    runs-on: x\n    steps:\n      - name: s\n        env:\n          R: ${{ github.head_ref }}\n        run: |\n          git fetch \"+$R\"\n", encoding="utf-8")
+    gaps, pairs = _chain_gaps(bad_dir)
+    assert pairs == 1 and len(gaps) == 1, (gaps, pairs)
+    hits, blocks = _interpolations(bad_dir)
+    assert blocks == 1 and len(hits) == 1 and "github.head_ref" in hits[0], (hits, blocks)
+    assert _chain_gaps(ok_dir) == ([], 1)
+    assert _interpolations(ok_dir) == ([], 1)
+    assert _chain_gaps(tmp_path / "none") == ([], 0) and _interpolations(tmp_path / "none") == ([], 0)
