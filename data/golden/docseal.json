@@ -16893,18 +16893,18 @@
   "fp": "view-v3",
   "kind": "read",
   "legacy": [
-   "0095a4bb2fe47c3b",
-   "060ff55b4b0c294e",
-   "0878f6e928d6085f",
-   "08d98b73d4aadaef",
-   "14a6090e4691e33e",
-   "2cf688195728d13b",
-   "3a7a5b433cc2875d",
-   "48ed346d87f9752c",
-   "557883c7013fa021",
-   "80544e7d1cf43e91",
-   "82d13094c44f18f2",
-   "fc9c6a5a37a23734"
+   "18e64cfd586ebc9f",
+   "1abaae19e319bce4",
+   "2c42e2ca2307125b",
+   "304f1f1aa6a2c8f3",
+   "5cdc2a92e53db8bc",
+   "6fd8bf9222c5eb39",
+   "7fe835473f072cc3",
+   "8951aebaf24dfb15",
+   "c20cc4cf84c83dc3",
+   "de28ad2e5e1653c9",
+   "f3768303216a01b9",
+   "fb10b3281bdac77b"
   ],
   "parts": {
    ".devcontainer/devcontainer.json": "b7e90d1b7282ad4e",
@@ -16944,9 +16944,9 @@
    "web/navi/src/domain/geo.ts": "83c9ea1316faa851",
    "web/navi/src/domain/vehicle.ts": "416f5631b2fa2139",
    "web/navi/src/ui/tokens.ts": "771c1573e8b768ca",
-   "본문": "1e519e29a30bb10b"
+   "본문": "c08fd73719e78613"
   },
-  "sha": "0095a4bb2fe47c3b"
+  "sha": "8951aebaf24dfb15"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
@@ -18873,18 +18873,18 @@
   "fp": "view-v3",
   "kind": "read",
   "legacy": [
-   "0809f2125361f8e6",
-   "1fe1e7095baf4f88",
-   "577ebb1512deba35",
-   "5a9d1c423c6365ad",
-   "5aa37cf9460fda19",
-   "9fcf88c597534c7d",
-   "a6d4473f6df3480c",
-   "aa1c3baabc44252c",
-   "c343bc32fc92afaf",
-   "d9d730e808b4e488",
-   "f1394128848d178c",
-   "fb2fee5fe70658aa"
+   "197a8b0d9befdd20",
+   "1cea16c80869eb22",
+   "28df9341b9cd502d",
+   "3a2a52df77356484",
+   "48b57599040fdc53",
+   "4bcf9986acb93bc0",
+   "75b603c154610052",
+   "91399f40583ed9e5",
+   "91ced67684b9fcd2",
+   "cae4dbf640a16d9b",
+   "f2cd6ec64e88607d",
+   "f84275536daf1be5"
   ],
   "parts": {
    ".github/dependabot.yml": "c94e52fb81f72a40",
@@ -18921,9 +18921,9 @@
    "web/navi/test/mapPitch.test.ts": "0e900e13d06b563c",
    "web/navi/test/motion.test.ts": "136fae0870672a47",
    "web/navi/test/opsPinPanel.test.ts": "1dffb9d4ffb2e574",
-   "본문": "3f034b4a4a688049"
+   "본문": "4263eb3928add405"
   },
-  "sha": "d9d730e808b4e488"
+  "sha": "91ced67684b9fcd2"
  },
  "PLAN/1-27": {
   "doc": "docs/PLAN.md",
