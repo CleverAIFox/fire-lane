@@ -400,6 +400,9 @@ def _cli() -> int:
     from firelane.paths import PROCESSED
 
     cmd = sys.argv[1] if len(sys.argv) > 1 else "show"
+    if cmd not in ("show", "verify"):          # 계보 파일을 열기 전에 거절한다 — 파일이 없는 기계(CI)에서도 같은 답이 나야 한다
+        print(f"모르는 명령: {cmd}  (show | verify)")
+        return 2
     lg = load(PROCESSED)
     if not lg:
         print(f"! {PROCESSED / LINEAGE} 없음 — 파이프라인을 한 번 돌려라")
@@ -431,8 +434,7 @@ def _cli() -> int:
                         bad += 1
         print("계보 일치" if not bad else f"\n★ {bad}건 어긋남")
         return 1 if bad else 0
-    print(f"모르는 명령: {cmd}  (show | verify)")
-    return 2
+    return 2                                   # 닿지 않는다 — 위에서 거절했다
 
 
 if __name__ == "__main__":

@@ -77,6 +77,9 @@ STARTUP = 6.5            # 초 — 단독 실행의 고정 비용(통 시작 · 
 EFF = 5.0                # 실효 병렬 수 — 코어 8개여도 통의 꼬리 · 입출력 · 수집이 겹쳐 **단독으로 4.7~5.3** 이다(실측)
 LOAD = 75.0              # CPU-초 — **같은 훅 안의 다른 게이트들이 쓰는 몫**(도움말 표시용 · 계산에는 안 쓴다 — 훅의 `--load 75` 가 넘긴다). §840 실측: 묶음 장부초 합 1초당 0.29초 · 절편 14.2초 · 흔들림 약 5.8초 → 6.5+(L+34)/5=28 에서 L=73.5 → 75
 TOUCH_CAP = 40.0         # 초 — 바뀐 파일에 닿는 시험 하나의 상한(장부 초 · 8병렬 경합이 낀 값이라 단독의 약 3배). 넘으면 CI 몫이다(PLAN #218)
+#: 재는 길에서만 빼는 시험 하나 — 장부가 비었음(`untracked` 칸 없음)을 **빨갛게** 말하는 시험이라, 그 장부를 **재는 중에는** 뜻이 없고(재는 것이 치료다) 빨강이 쓰기를 막아 첫 재측정이 안 끝난다.
+#: 평소 · pushready · CI 는 그대로 문다. 이름이 낡으면 `test_testpick` 이 운다.
+MEASURE_DESELECT = {"test_untracked_reads.py": ["--deselect", "tests/test_untracked_reads.py::test_the_real_ledger_has_measured_every_test_for_untracked_reads_and_every_one_is_declared"]}
 PROC_TIMEOUT = 900        # 시한 없는 기다림은 빨강을 무한 대기로 바꾼다. 파일 하나의 상한(pytest 자체 시한은 시험당 300초)
 # ★ **재는 쪽만 시한이 다르다**(PLAN #214 재고 · 2026-11-11). `--measure` 는 **시험이 아니라 재는 것**이다 — 시험의 300초 시한은
 #   「이 시험이 멈췄는가」를 가리는 문턱이고, 재는 쪽은 「얼마나 걸리나」를 적는다. 장부 값이 이미 그 문턱에 붙은 시험(`test_fix_door` 304 ·
@@ -330,8 +333,8 @@ def run_bin(names: list[str], root: Path = ROOT, measuring: bool = False) -> tup
     return rc, out, secs, red
 
 
-def run_reads(name: str, root: Path = ROOT, out_dir: Path | None = None) -> tuple[int, str, list[str]]:
-    """시험 파일 **하나를 자기 프로세스에서** 돌려 그 시험이 연 추적 파일을 얻는다. (rc, 출력 꼬리, 읽은 파일들)
+def run_reads(name: str, root: Path = ROOT, out_dir: Path | None = None) -> tuple[int, str, list[str], list[str]]:
+    """시험 파일 **하나를 자기 프로세스에서** 돌려 그 시험이 연 추적 파일 · **비추적 실존 파일**을 얻는다. (rc, 출력 꼬리, 읽은 추적 파일들, 읽은 비추적 파일들)
 
     ★ 파일마다 프로세스가 따로여야 한다 — 이미 import 된 모듈은 다시 안 읽혀서 한 프로세스에 여럿이면 뒤 파일의 읽기가 샌다(`fsaudit` 머리말).
     ★ 훅은 `tests/tracked_guard.py` 의 세션 훅이 켠다. 이 길은 `--fl-reads-out` 인자만 더한다(환경변수가 아니다 — `env_check`) — 시험을 느슨하게 하지 않는다."""
@@ -340,18 +343,19 @@ def run_reads(name: str, root: Path = ROOT, out_dir: Path | None = None) -> tupl
     dest = d / f"{name}.json"
     try:
         r = subprocess.run([sys.executable, "-m", "pytest", f"tests/{name}", "-q", "-p", "no:cacheprovider", "--no-header", "-o", "addopts=",
-                            "-o", f"timeout={MEASURE_TEST_TIMEOUT}", "-rfE", "--fl-reads-out", str(dest)],
+                            "-o", f"timeout={MEASURE_TEST_TIMEOUT}", "-rfE", "--fl-reads-out", str(dest), *MEASURE_DESELECT.get(name, [])],
                            cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace",
                            timeout=MEASURE_PROC_TIMEOUT, stdin=subprocess.DEVNULL)
     except subprocess.TimeoutExpired:
-        return 124, f"시한 {MEASURE_PROC_TIMEOUT}초 초과", []
+        return 124, f"시한 {MEASURE_PROC_TIMEOUT}초 초과", [], []
     out = (r.stdout or "") + (r.stderr or "")
     try:
         got = json.loads(dest.read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        return (r.returncode if r.returncode not in (0, 5) else 1), out[-800:], []
+        return (r.returncode if r.returncode not in (0, 5) else 1), out[-800:], [], []
     reads = sorted({p for k, v in got.items() if k == name for p in v if p != f"tests/{name}"})
-    return (0 if r.returncode in (0, 5) else r.returncode), out[-800:], reads
+    untracked = sorted(got.get("_untracked", {}).get(name, []))          # 예약 키 — 비추적 읽기(`tracked_guard` 가 적는다 · 선언 검사는 `tests/audit_site/untracked_reads.py`)
+    return (0 if r.returncode in (0, 5) else r.returncode), out[-800:], reads, untracked
 
 
 def run_all(names: list[str], jobs: int, ledger: dict[str, float], root: Path = ROOT, measuring: bool = False) -> tuple[dict[str, float], dict[str, str]]:
@@ -409,8 +413,9 @@ def main(argv: list[str] | None = None) -> int:
         t = time.monotonic()
         with ThreadPoolExecutor(max_workers=max(1, a.jobs)) as ex:
             results = list(ex.map(lambda n: (n, *run_reads(n)), names))
-        red = {n: tail for n, rc, tail, _ in results if rc != 0}
-        reads = {n: r for n, rc, _, r in results if rc == 0}
+        red = {n: tail for n, rc, tail, _, _ in results if rc != 0}
+        reads = {n: r for n, rc, _, r, _ in results if rc == 0}
+        untracked = {n: u for n, rc, _, _, u in results if rc == 0}          # 빈 칸도 적는다 — 칸이 있다는 것이 「비추적을 재 봤다」이다(옛 장부 위에 `--only` 로 일부만 덮어도 안 잰 칸이 비어 보이지 않는다)
         for n, o in sorted(red.items()):
             print(f"  ✗ {n}\n" + "\n".join("      " + x for x in o.splitlines()[-6:]), file=sys.stderr)
         print(f"{len(reads)}/{len(names)}개 파일 · 읽은 추적 파일 합 {sum(map(len, reads.values()))}개 · 벽시계 {time.monotonic() - t:.0f}초 (병렬 {a.jobs}) · 빨강 {len(red)}")
@@ -423,8 +428,9 @@ def main(argv: list[str] | None = None) -> int:
             if a.only:      # 일부만 쟀다 — 나머지 칸은 그대로 두고 잰 칸만 덮는다(없어진 파일은 버린다)
                 reads = {**{k: v for k, v in old.get("reads", {}).items() if k in files}, **reads}
                 hashes = {**{k: v for k, v in old.get("hashes", {}).items() if k in files}, **hashes}
-            READS_LEDGER.write_text(json.dumps({"_": "tools/testpick.py --measure-reads --write 가 쓴다. 손으로 고치지 않는다. 시험 파일 → 실행 중 연 추적 파일(감사 훅) · hashes = 잰 때의 시험 본문 지문(낡음 판정) · ambient = 거의 모든 시험이 읽어 닿음으로 안 세는 배경 파일.",
-                                                "ambient": ambient(reads), "hashes": dict(sorted(hashes.items())),
+                untracked = {**{k: v for k, v in old.get("untracked", {}).items() if k in files and k not in names}, **untracked}
+            READS_LEDGER.write_text(json.dumps({"_": "tools/testpick.py --measure-reads --write 가 쓴다. 손으로 고치지 않는다. 시험 파일 → 실행 중 연 추적 파일(감사 훅) · hashes = 잰 때의 시험 본문 지문(낡음 판정) · ambient = 거의 모든 시험이 읽어 닿음으로 안 세는 배경 파일 · untracked = 시험 파일 → 연 **비추적 실존 파일**(`.gitignore` 생성물 · 환경 파일 · 빈 칸은 「안 읽는다」).",
+                                                "ambient": ambient(reads), "hashes": dict(sorted(hashes.items())), "untracked": dict(sorted(untracked.items())),
                                                 "reads": dict(sorted(reads.items()))}, ensure_ascii=False, indent=0) + "\n", encoding="utf-8")
             print(f"읽기 장부 {READS_LEDGER} 를 썼다")
         return 1 if red else 0

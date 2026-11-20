@@ -107,6 +107,7 @@ def changed(before: dict[str, str], after: dict[str, str]) -> list[str]:
 
 _WRITES: dict[tuple[str, str], str] = {}     # (추적 파일, 시험) → 어떻게 썼나 — 세션 **도중**에 쓴 것(되돌려도 남는다). 자식의 쓰기는 `… · 자식` 으로 적힌다
 READS: dict[str, set[str]] = {}               # 시험 파일 → 그 시험이 연 추적 파일들(세션 · 수집 중 읽기는 `fsaudit.SESSION` 칸)
+UNTRACKED: dict[str, set[str]] = {}           # 시험 파일 → 그 시험이 연 **비추적 실존 파일**들(생성물 · 환경 파일 — 훅의 `n` 종류 · 선언 검사는 `audit_site/untracked_reads.py`)
 
 _AUDIT_SITE = str(Path(__file__).resolve().parent / "audit_site")
 
@@ -129,6 +130,8 @@ def _sink(kind: str, rel: str, test: str, event: str) -> None:
     """부모 프로세스의 감사 이벤트 → 쓰기는 `_WRITES`(시험 id 로) · 읽기는 `READS`(시험 파일로)."""
     if kind == "w":
         _WRITES.setdefault((rel, test.split(" ")[0] or "(시험 밖 · 수집 · 세션)"), event)
+    elif kind == "n":
+        UNTRACKED.setdefault(fsaudit.test_file_of(test), set()).add(rel)
     else:
         READS.setdefault(fsaudit.test_file_of(test), set()).add(rel)
 
@@ -170,6 +173,8 @@ def _drain_children() -> None:
         if kind == "w":
             if rel not in WRITE_ALLOW:
                 _WRITES.setdefault((rel, test), f"{event} · 자식")
+        elif kind == "n":
+            UNTRACKED.setdefault(test, set()).add(rel)
         else:
             READS.setdefault(test, set()).add(rel)
 
@@ -202,7 +207,9 @@ def pytest_sessionfinish(session, exitstatus) -> None:
     out_path = session.config.getoption("fl_reads_out", default=None)      # 읽기 실측 길(`testpick --measure-reads`)만 켠다 — 평소엔 안 쓴다
     if out_path:
         import json
-        Path(out_path).write_text(json.dumps({k: sorted(v) for k, v in sorted(READS.items())}, ensure_ascii=False), encoding="utf-8")
+        # `_untracked` 칸은 **같은 파일의 예약 키**다 — 읽는 쪽은 시험 파일 이름으로만 고르므로(`testpick.run_reads`) 옛 독자가 안 깨진다
+        Path(out_path).write_text(json.dumps({**{k: sorted(v) for k, v in sorted(READS.items())},
+                                              "_untracked": {k: sorted(v) for k, v in sorted(UNTRACKED.items())}}, ensure_ascii=False), encoding="utf-8")
     shutil.rmtree(_STATE.pop("audit_dir", ""), ignore_errors=True)
     bad = changed(_STATE["before"], snapshot())
     tr = session.config.pluginmanager.get_plugin("terminalreporter")

@@ -2,6 +2,7 @@
 
 IN    파이썬 감사 이벤트(`open` · `os.remove` · `os.rename` · `os.replace` · `shutil.copyfile`) · 환경변수 `FIRE_LANE_AUDIT_DIR`
 OUT   `FIRE_LANE_AUDIT_DIR/log` 에 한 줄씩(`종류\\t경로\\t시험 파일\\t이벤트`) — 자식이 낸다. 부모는 메모리에 쌓는다.
+      종류는 `r`(추적 파일 읽기) · `w`(추적 파일 쓰기) · `n`(**비추적** 실존 파일 읽기 — 생성물 · 환경 파일. 도구 · 캐시 디렉터리와 `.pyc` · `.so` 는 뺀다 · `untracked_read`). 비추적 쓰기는 안 센다.
 PARAM 없음
 TAG   `FIRE_LANE_AUDIT_TAG` 가 있으면 시험 파일 대신 그 이름이 꼬리표다 — 시험이 아닌 사슬(`tools/fix.sh` 의 단계)이 같은 훅으로 의존을 잴 때 쓴다(PLAN #220)
 밖    **파이썬이 아닌 자식**(`sed -i` · `cp` · `git checkout`)은 못 본다. `os.listdir` · `glob` 같은 **디렉터리 읽기**는 안 센다(그 뒤에 파일을 열면 그 열기가 센다).
@@ -55,6 +56,20 @@ def rel_of(path: object, root: str) -> str | None:
     return rel
 
 
+_SKIP_DIRS = frozenset({".git", ".venv", "node_modules", "__pycache__", ".pytest_cache", ".ruff_cache", ".cache"})    # 도구 · 캐시 — 시험의 입력이 아니다
+_SKIP_SUFFIX = (".pyc", ".so")
+
+
+def untracked_read(rel: str, root: str) -> bool:
+    """추적 안 되는 `rel` 의 읽기를 **적을 만한가** — 도구 · 캐시 디렉터리 아래와 `.pyc` · `.so` 는 아니고, **실제로 존재하는 파일**만 센다.
+
+    ★ 싼 문자열 검사를 먼저 하고 `isfile`(시스템 호출)은 마지막이다 — 뜨거운 길이다(`.venv` 의 import 마다 오는 열기가 대부분이라 거기서 걸러진다).
+    `isfile` 은 열기 **이벤트가 난 경로**에만 부른다 — 존재하지 않는 경로를 여는 시도(없으면 거르는 `Path.exists()` 는 열기가 아니다)는 읽기가 아니다."""
+    if rel.endswith(_SKIP_SUFFIX) or not _SKIP_DIRS.isdisjoint(rel.split("/")[:-1]):
+        return False
+    return (Path(root) / rel).is_file()
+
+
 def test_file_of(current: str) -> str:
     """`PYTEST_CURRENT_TEST` (`tests/test_x.py::name (call)`) → 시험 파일 이름. 비면 `SESSION`."""
     head = current.split(" ")[0].split("::")[0]
@@ -74,8 +89,12 @@ def make_hook(root: str, tracked: set[str], sink: Callable[[str, str, str, str],
                 return
             kind, path = got
             rel = rel_of(path, root)
-            if rel is None or rel not in tracked:
+            if rel is None:
                 return
+            if rel not in tracked:
+                if kind != "r" or not untracked_read(rel, root):         # 비추적은 **읽기만** 적는다(쓰기는 현행 그대로 안 센다)
+                    return
+                kind = "n"
             _busy = True
             try:
                 sink(kind, rel, test_of(), event)
