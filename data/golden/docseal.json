@@ -18070,12 +18070,12 @@
   "fp": "view-v3",
   "kind": "read",
   "legacy": [
-   "2041adceb4a7b5a1",
-   "435a3154d15e36c0",
-   "5f50641c84397e73",
-   "cb7d9c639fc7a3bc",
-   "d4e81fc47add4816",
-   "d503630f4eea24bc"
+   "2a1469a39aa124b8",
+   "54beff4242692c21",
+   "8010985585173bbb",
+   "c4020a5d597a647a",
+   "ca14598c114397fa",
+   "d431c6063b367ef3"
   ],
   "parts": {
    "ops-worker/scripts/deploy.sh": "65cc7cd4211fdcca",
@@ -18200,7 +18200,7 @@
    "tools/oneway_match.py": "ffb52bd18782a993",
    "tools/ortho_probe.py": "4e29d31f4ec5a40d",
    "tools/park_forecast.py": "7bf395c1ec015b0e",
-   "tools/pushdenom.py": "8b562bd56b63b548",
+   "tools/pushdenom.py": "4c888a7cf071bf2e",
    "tools/pushready.py": "0c125dc26bd8c7da",
    "tools/ratchet.py": "cbc7688aafb782c4",
    "tools/ratchetstore.py": "008512b99bba5ccd",
@@ -18216,7 +18216,7 @@
    "web/navi/package.json": "a1e30a72f5affcec",
    "본문": "c58be3917be23ee4"
   },
-  "sha": "2041adceb4a7b5a1"
+  "sha": "c4020a5d597a647a"
  },
  "MASTER/24": {
   "doc": "docs/MASTER.md",

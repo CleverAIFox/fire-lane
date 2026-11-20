@@ -91,7 +91,7 @@ def test_the_green_report_carries_both_denominators(capsys: pytest.CaptureFixtur
 
 def test_the_real_testpick_prints_a_reads_line_the_denominator_can_read() -> None:
     """실물 꼴 — `testpick` 가 말을 바꾸면 ㉥ 의 분모가 조용히 「못 읽었다」가 된다. 0.5초라 한 번 읽는다."""
-    r = subprocess.run([sys.executable, str(ROOT / "tools/testpick.py"), "--list"], cwd=ROOT, capture_output=True, text=True, encoding="utf-8", timeout=120, check=False)
+    r = subprocess.run([sys.executable, str(ROOT / "tools/testpick.py"), *D.LIST_ARGS], cwd=ROOT, capture_output=True, text=True, encoding="utf-8", timeout=120, check=False)
     if r.returncode != 0:
         pytest.skip(f"환경skip(도구) — testpick 가 rc {r.returncode} 로 끝났다")
     g = D.reads_gap(r.stdout + r.stderr)
