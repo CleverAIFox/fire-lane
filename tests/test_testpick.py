@@ -317,17 +317,28 @@ def test_the_real_reads_ledger_names_only_real_test_files_and_sorted_reads():
 def test_measure_reads_runs_one_process_per_file_and_writes_the_ledger(monkeypatch, tmp_path):
     calls: list[str] = []
     monkeypatch.setattr(T, "test_files", lambda root=T.ROOT: ["test_a.py", "test_b.py"])
-    monkeypatch.setattr(T, "run_reads", lambda n, *a, **k: (calls.append(n) or (0, "", ["docs/x.md"])))
+    monkeypatch.setattr(T, "run_reads", lambda n, *a, **k: (calls.append(n) or (0, "", ["docs/x.md"], ["data/processed/g.csv"] if n == "test_a.py" else [])))
     monkeypatch.setattr(T, "READS_LEDGER", tmp_path / "r.json")
     monkeypatch.setattr(T, "test_hash", lambda n, root=T.ROOT: "h")
     assert T.main(["--measure-reads", "--write", "--jobs", "2"]) == 0
     assert sorted(calls) == ["test_a.py", "test_b.py"]
-    assert json.loads((tmp_path / "r.json").read_text(encoding="utf-8"))["reads"] == {"test_a.py": ["docs/x.md"], "test_b.py": ["docs/x.md"]}
+    d = json.loads((tmp_path / "r.json").read_text(encoding="utf-8"))
+    assert d["reads"] == {"test_a.py": ["docs/x.md"], "test_b.py": ["docs/x.md"]}
+    assert d["untracked"] == {"test_a.py": ["data/processed/g.csv"], "test_b.py": []}, "비추적 칸은 잰 시험마다 있고(빈 칸 = 안 읽는다) 읽기 칸과 따로다"
+
+
+def test_the_measure_path_deselects_only_a_test_that_really_exists():
+    """재는 길의 면제(`MEASURE_DESELECT`)는 실제 시험 이름을 가리킨다 — 이름이 바뀌면 면제가 죽은 채 재측정이 다시 막힌다."""
+    ids = [x for v in T.MEASURE_DESELECT.values() for x in v if x != "--deselect"]
+    src = {n: (T.ROOT / "tests" / n).read_text(encoding="utf-8") for n in T.MEASURE_DESELECT}
+    for n, v in T.MEASURE_DESELECT.items():
+        assert v[0] == "--deselect" and v[1].startswith(f"tests/{n}::") and f"def {v[1].split('::')[1]}(" in src[n], f"면제가 없는 시험을 가리킨다: {v}"
+    assert len(ids) == 1, "면제는 하나다 — 늘리면 재는 길이 시험을 건너뛰는 구멍이 된다"
 
 
 def test_a_red_file_blocks_writing_the_reads_ledger(monkeypatch, tmp_path):
     monkeypatch.setattr(T, "test_files", lambda root=T.ROOT: ["test_a.py"])
-    monkeypatch.setattr(T, "run_reads", lambda n, *a, **k: (1, "빨강", []))
+    monkeypatch.setattr(T, "run_reads", lambda n, *a, **k: (1, "빨강", [], []))
     monkeypatch.setattr(T, "READS_LEDGER", tmp_path / "r.json")
     assert T.main(["--measure-reads", "--write"]) == 1
     assert not (tmp_path / "r.json").exists()
@@ -394,11 +405,12 @@ def test_measure_reads_only_overwrites_the_measured_cells_and_their_hashes(monke
     led.write_text(json.dumps({"ambient": [], "hashes": {"test_a.py": "old", "test_b.py": "keep"}, "reads": {"test_a.py": ["x"], "test_b.py": ["y"]}}), encoding="utf-8")
     monkeypatch.setattr(T, "READS_LEDGER", led)
     monkeypatch.setattr(T, "test_files", lambda root=T.ROOT: ["test_a.py", "test_b.py"])
-    monkeypatch.setattr(T, "run_reads", lambda n, *a, **k: (0, "", ["z"]))
+    monkeypatch.setattr(T, "run_reads", lambda n, *a, **k: (0, "", ["z"], ["web/review.html"]))
     monkeypatch.setattr(T, "test_hash", lambda n, root=T.ROOT: "new")
     assert T.main(["--measure-reads", "--write", "--only", "test_a.py"]) == 0
     d = json.loads(led.read_text(encoding="utf-8"))
     assert d["reads"] == {"test_a.py": ["z"], "test_b.py": ["y"]} and d["hashes"] == {"test_a.py": "new", "test_b.py": "keep"}
+    assert d["untracked"] == {"test_a.py": ["web/review.html"]}, "`--only` 는 잰 칸의 비추적만 덮는다(안 잰 칸은 옛 장부 그대로 — 옛 장부에 없으면 없는 채)"
 
 
 def test_no_ledger_file_reaches_the_per_test_timeout():

@@ -175,6 +175,32 @@ def test_reads_are_recorded_per_test_file_including_children_and_the_import_at_c
     assert {"tracked.txt", "other.txt", "helper_mod.py"} <= got, got
 
 
+def test_untracked_existing_reads_are_recorded_apart_and_tools_caches_and_missing_paths_are_not(repo: Path, plugin, tmp_path: Path) -> None:
+    """비추적 읽기(`_untracked`) — 생성물 · 환경 파일을 **실제로 연** 시험만 그 칸에 든다. 존재하지 않는 경로를 열려다 만 것 · `.venv` 아래 · `.pyc` 는 안 센다. 추적 읽기 칸은 그대로다."""
+    (repo / "gen.csv").write_text("a\n", encoding="utf-8")                                    # 커밋 안 한 실존 파일
+    (repo / ".venv" / "lib").mkdir(parents=True)
+    (repo / ".venv" / "lib" / "m.py").write_text("X = 1\n", encoding="utf-8")
+    (repo / "mod.pyc").write_bytes(b"\0")
+    body = ("import subprocess, sys\nfrom pathlib import Path\n\ndef test_reads():\n"
+            "    Path('tracked.txt').read_text()\n    Path('gen.csv').read_text()\n    Path('.venv/lib/m.py').read_text()\n    open('mod.pyc', 'rb').read()\n"
+            "    assert not Path('absent.csv').exists()\n"
+            "    try:\n        open('absent.csv')\n    except OSError:\n        pass\n"
+            "    Path('w.out').write_text('x')\n"
+            "    subprocess.run([sys.executable, '-c', \"open('gen.csv').read()\"], check=True)\n")
+    (repo / "test_x.py").write_text(body, encoding="utf-8")
+    _git(repo, "add", "test_x.py")
+    _git(repo, "commit", "-q", "-m", "t")
+    out = tmp_path / "reads.json"
+    env = {**os.environ, "PYTHONPATH": os.pathsep.join([str(TESTS), os.environ.get("PYTHONPATH", "")])}
+    r = subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "-p", "tg_for_test", "--fl-reads-out", str(out), "test_x.py"],
+                       cwd=repo, env=env, capture_output=True, text=True, timeout=120, check=False)
+    assert r.returncode == 0, r.stdout + r.stderr
+    import json
+    got = json.loads(out.read_text(encoding="utf-8"))
+    assert got["_untracked"]["test_x.py"] == ["gen.csv"], got["_untracked"]
+    assert "tracked.txt" in got["test_x.py"] and "gen.csv" not in got["test_x.py"], "비추적이 추적 읽기 칸으로 새면 `touching` 의 뜻이 바뀐다"
+
+
 def test_the_audit_is_off_without_a_session(tmp_path: Path) -> None:
     """환경에 감사 디렉터리가 없으면 `sitecustomize` 는 아무것도 안 한다 — 훅을 안 달고 로그도 안 만든다."""
     env = {k: v for k, v in os.environ.items() if k != "FIRE_LANE_AUDIT_DIR"}

@@ -30,146 +30,17 @@ import json
 from pathlib import Path
 
 import mutatescope as MS
+import pushdenom as D
+from pushdenom import CLOSURE_OUT, IN_PRINT, OUT_OF_PRINT, closure, definitions, problems
 
 ROOT = Path(__file__).resolve().parents[1]
-FILES = ("mutate.py", "mutatescope.py")
+FILES = D.PRINT_FILES
 LEDGER = ROOT / "data" / "golden" / "mutation.json"
 
 #: 도구당 흔들 상한의 선언값. 상수를 바꾸면 이 줄도 같이 바뀌어야 하므로 바꾼 사실이 눈에 든다.
 DECLARED_CAP = 4
 
-#: 지문에 드는 5개 — `sampler_print` 가 해시하는 소스(`pick` · `_site_keys` · `mutants` · 연산자 표 둘).
-IN_PRINT = {
-    "mutatescope.py::pick",
-    "mutatescope.py::_site_keys",
-    "mutate.py::mutants",
-    "mutate.py::_CMP",
-    "mutate.py::_CMP_SRC",
-}
-
-#: 폐포 안인데 지문 밖인 정의의 사유. 지금은 비어 있다 — 지문 5가 서로와 표준 꾸러미만 부른다.
-#: 지문 5 중 하나가 새 보조 정의를 부르면 그 정의가 여기 오르거나 지문에 들어야 한다.
-CLOSURE_OUT: dict[str, str] = {}
-
-#: 지문 밖 32개와 사유. 모두 코드를 읽고 적었다 — 한 이름에 한 줄이다.
-OUT_OF_PRINT: dict[str, str] = {
-    # ── mutate.py ──
-    "mutate.py::ROOT": "저장소 뿌리 경로라 후보 자리도 표본도 안 정한다 — 붙잡이 명령의 작업 디렉터리와 상대 경로만 가리킨다",
-    "mutate.py::LEDGER": "장부 파일의 위치 상수라 읽고 쓸 곳만 가리키고 어느 자리를 흔들지는 안 정한다",
-    "mutate.py::MAX_PER_TOOL": "표본 크기를 정하는 상수(4)라 지문 밖이면 값이 조용히 바뀐다 — 지문을 넓히는 대신 `cap_problems` 가 선언값 · 호출 모양 · 장부의 흔든 수를 따로 묻는다",
-    "mutate.py::TIMEOUT": "돌연변이 하나에 주는 시간이라 넘기면 「못 쟀다」로 갈릴 뿐 자리 목록과 표본은 그대로다",
-    "mutate.py::SURVIVORS": "장부의 생존 수를 맞대는 래칫 선언값이라 결과를 비교할 뿐 자리를 정하지 않는다 — 값을 올리는 일은 래칫 관문이 따로 문다",
-    "mutate.py::MUTANTS": "흔든 수(분모)를 잠그는 래칫 선언값이라 표본의 결과를 세어 맞댈 뿐 표본을 고르지 않는다",
-    "mutate.py::UNCATCHABLE": "붙잡이가 0 인 과녁 수의 선언값이라 측정 결과를 맞대는 표지 하나이고 자리 규칙과 무관하다",
-    "mutate.py::UNSORTED": "아직 안 가른 생존 수의 선언값(`SURVIVORS` 의 종속값)이라 결과 쪽 표지이지 표본 규칙이 아니다",
-    "mutate.py::RATCHETS": "어느 상수가 래칫인지 이름만 적은 표라 `sort_survivors` 의 분류에 읽힐 뿐 자리 목록에는 안 읽힌다",
-    "mutate.py::_HARMLESS": "무해 돌연변이로 덧붙이는 주석 한 줄이라 붙잡이가 내용 지문에 우는지 가릴 때만 쓰이고 후보가 아니다",
-    "mutate.py::catchers": "어떤 명령이 붙잡이인지 도출하므로 생존 판정에 닿지만 흔들 자리는 안 만든다 — 자리는 이미 `mutants` · `pick` 이 정한 뒤다",
-    "mutate.py::_run": "붙잡이 명령 하나를 돌려 초록 여부와 침묵 통과를 가르는 실행 도우미라 자리를 정하지 않는다",
-    "mutate.py::live_catchers": "밑동에서 초록이고 무해 변이에 안 우는 붙잡이만 거르므로 생존 수에 닿지만 표본의 자리는 안 정한다",
-    "mutate.py::shake": "표본을 쓰는 쪽이다 — `pick(mutants(원문), cap, 원문)` 으로 부르고 돌려 생존을 센다. 뽑는 규칙은 지문 5가 들고 부르는 모양은 `cap_problems` 가 ast 로 묻는다",
-    "mutate.py::_ratchet_line": "도구 소스에서 모듈 수준 대입의 줄 번호만 읽는 보조라 자기검사와 시험에서 쓰이고 표본에 안 든다",
-    "mutate.py::sort_survivors": "끝난 생존을 래칫이 드는 것과 아직 안 가른 것으로 나눠 `UNSORTED` 를 내는 분류라 자리 목록에는 안 읽힌다",
-    "mutate.py::ratchet_values": "장부를 읽어 래칫 값을 내고 지문이 낡았으면 운다 — 지문을 비교하는 쪽이지 지문 입력이 아니다",
-    "mutate.py::selftest": "옆집 자기검사를 함수 안에서 불러 올 뿐인 한 줄 위임이라 아무 값도 정하지 않는다",
-    "mutate.py::main": "인자 해석 · 출력 · 장부 쓰기의 진입점이다 — 상한은 `--max` 기본값으로 흘리는 자리만 `cap_problems` 가 묻는다",
-    # ── mutatescope.py ──
-    "mutatescope.py::ROOT": "저장소 뿌리 경로라 지문 입력의 파일 위치만 가리키고 값을 안 정한다",
-    "mutatescope.py::TOOLS": "도구 폴더 경로라 어느 파일을 읽을지만 가리키고 후보 자리와 표본은 안 정한다",
-    "mutatescope.py::TESTS": "시험 폴더 경로라 이름을 적은 시험을 찾을 곳만 가리킬 뿐 값을 안 정한다",
-    "mutatescope.py::MUTATE_SRC": "후보 소스 파일의 경로라 값이 아니라 위치다 — 다른 경로로 바꿔 보는 시험이 이미 있고 `operators_source` 가 그 파일의 소스를 읽는다",
-    "mutatescope.py::_OPERATOR_NAMES": "지문에 넣을 연산자 표 이름 둘이다 — 바꾸면 `operators_source` 의 「셋을 찾았는가」 검사가 울어 조용히 어긋나지 않는다",
-    "mutatescope.py::targets": "어느 도구가 과녁인지 도출한다 — 과녁 집합은 별도 시험이 장부 도구 집합과 같음을 묻고 표본 자체는 안 정한다",
-    "mutatescope.py::imported": "소스가 끌어오는 최상위 모듈 이름을 센다 — 지문의 옆집 모듈 몫과 과녁 고르기가 쓰고 표본 규칙은 아니다",
-    "mutatescope.py::_imports_ratchet": "선언을 옆집에 둔 관문도 과녁으로 치는 판별이라 어느 도구가 장부에 드는지만 정한다",
-    "mutatescope.py::named_tests": "도구 이름을 적은 시험을 모으는 함수라 지문의 시험 몫 입력이고 후보 자리와 표본에는 안 읽힌다",
-    "mutatescope.py::local_imports": "도구가 끌어오는 옆집 모듈 이름을 모으는 함수라 지문의 옆집 몫 입력이고 표본 규칙이 아니다",
-    "mutatescope.py::catch_print": "지문을 합치는 자리 그 자체다 — 도구 · 옆집 · 시험 · 표본 규칙 지문을 섞을 뿐 자기 소스는 입력이 아니다",
-    "mutatescope.py::operators_source": "지문에 넣을 후보 규칙의 소스를 뽑는 함수다 — 못 찾으면 운다는 시험이 있고 뽑은 결과는 지문에 든다",
-    "mutatescope.py::sampler_print": "표본 규칙의 지문을 만드는 함수다 — 출력이 모든 도구의 지문에 섞이므로 입력 소스가 바뀔 때만 값이 달라진다",
-}
-
-
-# ── 판별(순수 함수 — 소스 문자열만 받는다) ───────────────────────
-def _names(node: ast.AST) -> list[str]:
-    """최상위 정의가 내는 이름들. 함수 · 클래스는 이름 하나, 대입은 대상 이름 전부."""
-    if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef):
-        return [node.name]
-    if isinstance(node, ast.Assign):
-        return [n.id for t in node.targets for n in ast.walk(t) if isinstance(n, ast.Name)]
-    if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
-        return [node.target.id]
-    return []
-
-
-def definitions(sources: dict[str, str]) -> dict[str, ast.AST]:
-    """`{"파일::이름": 노드}` — 같은 이름이 두 파일에 있으면 둘로 센다."""
-    out: dict[str, ast.AST] = {}
-    for fname, src in sources.items():
-        for node in ast.parse(src).body:
-            for nm in _names(node):
-                out[f"{fname}::{nm}"] = node
-    return out
-
-
-def _refs(node: ast.AST) -> set[str]:
-    """그 정의가 이름으로 · 속성으로 · 이름 문자열로 가리키는 것. 함수 머리말 문자열은 안 센다."""
-    skip: set[int] = set()
-    for n in ast.walk(node):
-        if isinstance(n, ast.FunctionDef | ast.ClassDef) and ast.get_docstring(n, clean=False):
-            first = n.body[0]
-            if isinstance(first, ast.Expr):
-                skip.add(id(first.value))
-    out: set[str] = set()
-    for n in ast.walk(node):
-        if isinstance(n, ast.Name):
-            out.add(n.id)
-        elif isinstance(n, ast.Attribute):
-            out.add(n.attr)
-        elif isinstance(n, ast.Constant) and isinstance(n.value, str) and id(n) not in skip:
-            out.add(n.value)
-    return out
-
-
-def closure(defs: dict[str, ast.AST], seeds: set[str]) -> set[str]:
-    """씨앗이 직접 · 간접으로 부르거나 읽는 정의(씨앗은 뺀다). 같은 파일을 먼저 보고 없으면 다른 파일."""
-    seen = {k for k in seeds if k in defs}
-    todo = sorted(seen)
-    while todo:
-        key = todo.pop()
-        home = key.split("::")[0]
-        for r in _refs(defs[key]):
-            hits = [f"{home}::{r}"] if f"{home}::{r}" in defs else [k for k in defs if k.split("::", 1)[1] == r]
-            for h in hits:
-                if h not in seen:
-                    seen.add(h)
-                    todo.append(h)
-    return seen - seeds
-
-
-def problems(sources: dict[str, str], in_print: set[str], out_of_print: dict[str, str],
-             closure_out: dict[str, str]) -> list[str]:
-    """어긋난 것 목록. 비어 있으면 조용하다 — 이 값이 「선언이 정의와 같다」다."""
-    defs = definitions(sources)
-    got: list[str] = []
-    for k in sorted(in_print - set(defs)):
-        got.append(f"지문 5 에 적었는데 실제로 없다(죽은 선언): {k}")
-    clo = closure(defs, in_print)
-    for k in sorted(clo - set(closure_out)):
-        got.append(f"폐포 안인데 지문 밖이고 사유가 없다: {k}")
-    for k in sorted(set(closure_out) - clo):
-        got.append(f"폐포 선언인데 폐포가 아니다(죽은 선언): {k}")
-    rest = set(defs) - in_print - clo
-    for k in sorted(rest - set(out_of_print)):
-        got.append(f"선언 밖의 새 정의: {k}")
-    for k in sorted(set(out_of_print) - set(defs)):
-        got.append(f"선언표에 있는데 실제로 없다(죽은 선언): {k}")
-    for k in sorted((set(out_of_print) & set(defs)) & (in_print | clo)):
-        got.append(f"선언표에 있는데 지문 · 폐포 안이다: {k}")
-    for k, why in {**out_of_print, **closure_out}.items():
-        if len(why.strip()) < 12:
-            got.append(f"사유가 비었거나 짧다: {k}")
-    return got
+# 지문 5 · 선언표 · 판별 함수는 `pushdenom` 에 산다 — 도구 출력(`pushready` ㉤ 의 분모 줄)과 이 시험이 같은 것을 센다(복사본이 둘이면 갈린다).
 
 
 def cap_problems(src: str, ledger_rows: list[dict], declared: int) -> list[str]:

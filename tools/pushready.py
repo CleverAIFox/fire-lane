@@ -190,10 +190,10 @@ _MUTATE_PROBE = "import mutate; mutate.ratchet_values()"
 
 def check_mutate(root: Path, run: Runner) -> Block | None:
     rc, out = run([*_PY, "-c", _MUTATE_PROBE], root / "tools")
+    D.record("㉤", D.print_denom())      # 지문 5/37 — 지문 밖 정의의 선언 몫(PLAN #259)
     if rc == 0:
         return None
-    last = [x for x in out.strip().splitlines() if x.strip()][-2:]
-    return Block("㉤", "변이 장부가 낡았다(또는 못 읽는다)", last,
+    return Block("㉤", "변이 장부가 낡았다(또는 못 읽는다)", [x for x in out.strip().splitlines() if x.strip()][-2:],
                  [" ".join([*_PY, "tools/mutate.py", "--write", "--stale"]) + "   # 느리다 · 고친 도구의 과녁만 다시 잰다"])
 
 
