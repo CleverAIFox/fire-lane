@@ -11,6 +11,13 @@
  *
  * 내비 범례와 관제 범례가 같은 줄을 쓴다.
  */
+/**
+ * ★ 판정 이름은 **`style` 한 곳**에서 읽는다(PLAN #265 · DECISIONS §843). 범례 · 상단 네 수 · 카드 · 경로 문구가 같은 낱말을 쓰는 길이다 —
+ * 화면 코드에 판정 이름 글자를 따로 적으면 설정 파일의 이름이 바뀔 때 한 화면이 둘로 말한다.
+ */
+export type VerdictName = (k: string) => string;
+export const verdictName = (st: Record<string, { label: string }>): VerdictName => (k) => st[k]?.label ?? k;
+
 export const VERDICT_ORDER = ["clear", "needs_cv", "blocked", "unknown"] as const;
 
 // ★ 2026-10-09 (DECISIONS §445 · PLAN #143 닫힘). `VERDICT_MEANING` 을 **지웠다.**

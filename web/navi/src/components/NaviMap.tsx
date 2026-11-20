@@ -344,7 +344,7 @@ export function NaviMap(props: Props) {
 
   // ── 판정 음영 ─────────────────────────────────────────────────
   useEffect(() => {
-    whenReady((m) => m.setLayoutProperty("seg-tint", "visibility", P.current.tint ? "visible" : "none"));
+    whenReady((m) => { for (const id of ["seg-tint", "seg-tint-dash"]) m.setLayoutProperty(id, "visibility", P.current.tint ? "visible" : "none"); });
   }, [p.tint]);  
 
   // ── 경로 ──────────────────────────────────────────────────────

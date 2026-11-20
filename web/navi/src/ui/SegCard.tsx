@@ -25,7 +25,7 @@
 import { edgeClearance, fmtClearance } from "../domain/clearance";
 import type { GraphEdge, VehicleSpec, VerdictStyle } from "../domain/types";
 import { CLEARANCE_SCALE, segmentReason } from "./clearanceMeaning";
-import { grayReason } from "./verdictMeaning";
+import { grayReason, verdictName } from "./verdictMeaning";
 import { countText } from "../domain/pressure";
 import { Row } from "./OpsBits";
 import { D, dot, secBox, whyBox } from "./opsTheme";
@@ -36,7 +36,7 @@ export function SegCard({ e, style, spec, reachable, vehicle, onClose }: {
 }) {
   const s = style[e.verdict];
   const c = edgeClearance(e, spec);
-  const why = segmentReason(e, spec);
+  const why = segmentReason(e, spec, verdictName(style));
   const cctvOk = e.cctv_dist_m != null && e.cctv_dist_m <= 19;
   const gray = grayReason(e);
   return (

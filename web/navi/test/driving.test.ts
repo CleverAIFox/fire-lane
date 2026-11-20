@@ -11,7 +11,7 @@ import { TopBar } from "../src/ui/TopBar";
 import { STATUS, type StatusKey } from "../src/domain/status";
 
 const base: BottleneckData = {
-  kind: "needs_cv", more: 3, segUid: "s1", segLabel: "밤실로4번길 1-11", aheadM: 323.4, widthM: 3.4, requiredM: 3.0,
+  kind: "needs_cv", kindText: "영상판정 전", more: 3, segUid: "s1", segLabel: "밤실로4번길 1-11", aheadM: 323.4, widthM: 3.4, requiredM: 3.0,
   lengthM: 36, coverage: 1, samples: 16, verdictLabel: "판정 보류", verdictColor: "#f59e0b", cctvDistM: 5, grayReason: null,
   reason: { head: "REASON머리", detail: "REASON근거", action: "REASON조치" }, park: 4, ecam: 0,
 };
@@ -32,7 +32,7 @@ function targets(h: string): number[] {
 
 test("병목 패널 기본 화면 — 다음 구간 하나 · 거리 · 도로명 · 위험 종류 · 여유 · 외 N곳", () => {
   const h = html();
-  for (const t of ["323m 앞", "밤실로4번길 1-11", "확인 필요", "여유 +0.4m", "외 3곳"]) ok(h.includes(t), `${t} 가 안 보인다`);
+  for (const t of ["323m 앞", "밤실로4번길 1-11", "영상판정 전", "여유 +0.4m", "외 3곳"]) ok(h.includes(t), `${t} 가 안 보인다`);
 });
 
 test("병목 패널 기본 화면 — 옛 몸통(유효폭 · 요구폭 · 사유 · 판정 근거)은 접혀 있고 「자세히」 안에 있다(지운 것이 아니다)", () => {
@@ -47,8 +47,8 @@ test("병목 패널 — 구간 하나만 말한다(구간 목록이 아니다): 
 });
 
 test("병목 패널 — 폭 모름이면 여유 줄이 없다(모르는 수를 쓰면 보는 사람이 믿는다)", () => {
-  const h = html({ kind: "unknown", widthM: 2.4 });
-  ok(h.includes("폭 모름") && !h.includes("여유"), "폭 모름인데 여유가 적혔다");
+  const h = html({ kind: "unknown", kindText: "영상으로 확정 못 함", widthM: 2.4 });
+  ok(h.includes("영상으로 확정 못 함") && !h.includes("여유"), "폭 모름인데 여유가 적혔다");
 });
 
 test("병목 패널 — 「외 N곳」은 남았을 때만(0 이면 안 보인다)", () => {

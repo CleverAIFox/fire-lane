@@ -16,6 +16,8 @@ import { countText } from "../domain/pressure";
 export interface BottleneckData {
   /** 위험 종류 — 패널 기본 화면의 둘째 줄(`needs_cv` · `unknown` · `tight`) */
   kind: "needs_cv" | "unknown" | "tight" | "blocked";
+  /** 그 종류의 말 — 판정이면 범례와 같은 `style` 의 이름(`riskKindText`) */
+  kindText: string;
   /** 이 구간 **뒤로** 남은 앞서 알릴 구간 수 — 「외 N곳」 */
   more: number;
   segUid: string;

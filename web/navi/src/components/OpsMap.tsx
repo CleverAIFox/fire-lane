@@ -336,6 +336,7 @@ export function OpsMap(props: Props) {
       m.setFilter("ops-verdict-case", f);
       // 흰 점 테두리도 같이 숨긴다 — 색 선만 숨기면 점만 남는다
       m.setFilter("ops-verdict-halo-unknown", andFilter(["==", ["get", "verdict"], "unknown"], f) as never);
+      m.setFilter("ops-verdict-edge-blocked", andFilter(["==", ["get", "verdict"], "blocked"], f) as never);
       const r = P.current.reachable;
       m.setFilter("ops-unreach", andFilter(
         r ? ["!", ["in", ["get", "seg_uid"], ["literal", [...r]]]] : null, rf) as never);

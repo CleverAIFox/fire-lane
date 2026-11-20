@@ -65,7 +65,7 @@ COLOR_MIN_DE = 14
 #: 휘도비를 정수 래칫으로 올릴 때 쓰는 배율. **만분율이다**(§480-2).
 LUM_SCALE = 10_000
 
-COLOR_MIN_LUM = 10021
+COLOR_MIN_LUM = 10590   # 2026-11-20 (PLAN #265 · DECISIONS §843) 10021 → 10590: unknown 의 lightColor 를 어둡게 해 blocked ↔ unknown 이 갈렸다 — 정확도(구분) 쪽으로 올렸다
 
 RATCHETS = {"COLOR_MIN_DE": "up", "COLOR_MIN_LUM": "up"}
 

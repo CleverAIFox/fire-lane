@@ -19,7 +19,7 @@
 import { clearanceBand, edgeClearance, fmtClearance, type ClearanceBand } from "../domain/clearance";
 import { TUNING } from "../domain/vehicle";
 import type { GraphEdge, VehicleSpec } from "../domain/types";
-import { GRAY_REASON } from "./verdictMeaning";
+import { GRAY_REASON, type VerdictName } from "./verdictMeaning";
 
 /** 화면이 「무엇을 보여주는가」 를 한 줄로 말할 때 쓰는 정의. 그대로 찍는다 */
 // ★ 2026-10-09 (DECISIONS §445 · PLAN #143 닫힘). `CLEARANCE_FORMULA` 를 **지웠다** —
@@ -57,7 +57,7 @@ export function widthLine(e: Pick<GraphEdge, "width_min_m">, spec: VehicleSpec):
  * ★ 초록이고 여유가 넉넉하면 null 을 낸다 — 적을 사유도, 취할 조치도 없다.
  */
 export function segmentReason(
-  e: Pick<GraphEdge, "width_min_m" | "verdict" | "unknown_reason">, spec: VehicleSpec,
+  e: Pick<GraphEdge, "width_min_m" | "verdict" | "unknown_reason">, spec: VehicleSpec, nm: VerdictName,
 ): SegmentReason | null {
   const c = edgeClearance(e, spec);
   const detail = widthLine(e, spec);
@@ -81,13 +81,13 @@ export function segmentReason(
   if (e.verdict === "needs_cv") {
     if (c.band === "neg") {
       return {
-        head: "확인 필요 — 도면상 요구폭 미만",
+        head: `${nm("needs_cv")} — 도면상 요구폭 미만`,
         detail,
         action: "영상판정 전까지 진입 불가로 본다 — 우회로를 같이 잡는다",
       };
     }
     return {
-      head: c.band === "tight" ? `확인 필요 — 여유 ${tightM}m 미만` : "확인 필요 — 영상판정 대상",
+      head: c.band === "tight" ? `${nm("needs_cv")} — 여유 ${tightM}m 미만` : `${nm("needs_cv")} — 영상판정 대상`,
       detail,
       action: c.band === "tight"
         ? "주차 한 대로 막힌다 — 서행 · 미러 접기, 선행 차로 확인"
@@ -98,7 +98,7 @@ export function segmentReason(
   if (e.verdict === "unknown") {
     const g = e.unknown_reason ? GRAY_REASON[e.unknown_reason] : null;
     return {
-      head: `폭 모름 — ${g?.short ?? e.unknown_reason ?? "CCTV 19m 밖"}`,
+      head: `${nm("unknown")} — ${g?.short ?? e.unknown_reason ?? "CCTV 19m 밖"}`,
       detail,
       action: c.band === "neg"
         ? "도면상 요구폭 미만 — 진입 전 현장 확인이 필요하다"

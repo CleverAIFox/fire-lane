@@ -72,7 +72,7 @@ export const Z = { road: 16, bldg: 16, hydrant: 16.5, cctv: 16.5, poi: 17.5 } as
  * 판정색을 배경 쪽으로 당겨 **배경선용 음영**을 만든다.
  * ★ 새 색을 정의하는 것이 아니라 정본 색에서 파생하는 것이다.
  */
-function shade(css: string, keep = 0.55): string {
+function shade(css: string, keep = 0.9): string {
   const m = css.match(/(\d+)\D+(\d+)\D+(\d+)/);
   if (!m) return css;
   const rgb = [Number(m[1]), Number(m[2]), Number(m[3])];
@@ -117,14 +117,15 @@ export function sources(dataUrl: string, terrainBounds?: [number, number, number
  */
 export const NAVI_OFF = [
   // 접지 그림자 · 평면 건물 · 전 도로 판정 4색 · 건물 라벨 12,663 · 상가 라벨 2,106
-  "bldg-contact", "bldg-flat", "seg-tint", "lbl-bldg", "lbl-poi",
+  "bldg-contact", "bldg-flat", "seg-tint", "seg-tint-dash", "lbl-bldg", "lbl-poi",
 ] as const;
 
 // ★ PLAN 행 235. 토지이용 면의 층 명세(`landuseLayers` · `withLanduse`)는 `components/landuse.ts` 에 산다 — 이 파일은 진입 청크에 통째로 실리므로
 //   첫 화면 뒤에 얹는 층은 여기 두지 않는다(내비는 `map.on('load')` 뒤 동적 import · 관제는 제 청크에서 정적 import).
 
 export function baseLayers(style: Record<string, VerdictStyle>): LayerSpecification[] {
-  const tint = (k: string) => shade(style[k]?.color ?? "rgb(120,128,140)");
+  // ★ 밝은 지도라 **라이트 모드 색**(`lightColor`)에서 파생한다 — 종전에는 다크 모드 색을 읽어 아무 화면도 안 읽던 값이 남아 있었다(PLAN #265 · §843)
+  const tint = (k: string) => shade(style[k]?.lightColor ?? style[k]?.color ?? "rgb(120,128,140)");
   const w = (a: number, b: number) =>
     ["interpolate", ["linear"], ["zoom"], 15, a, 19, b] as unknown as number;
 
@@ -154,8 +155,13 @@ export function baseLayers(style: Record<string, VerdictStyle>): LayerSpecificat
         "line-color": ["match", ["get", "verdict"],
           "clear", tint("clear"), "needs_cv", tint("needs_cv"),
           "blocked", tint("blocked"), tint("unknown")],
-        "line-opacity": .85,
+        "line-opacity": 1,
       } },
+    // 영상판정 전만 바탕색 짧은 틈 — 음영이 밝기 하나로만 갈리면 통행 가능과 한 색이 된다(실측 휘도비 1.02 · 1.17). 관제의 같은 무늬(`VERDICT_DASH`)다.
+    { id: "seg-tint-dash", type: "line", source: "segments",
+      filter: ["==", ["get", "verdict"], "needs_cv"] as never,
+      layout: { "line-cap": "butt", visibility: "none" },
+      paint: { "line-width": w(2, 9), "line-color": `rgb(${MAP.bg.join(",")})`, "line-dasharray": [0.8, 2.8] } },
 
     // 접지 그림자 — 건물이 **땅에 붙어 보이게** 하는 한 겹. (§261)
     // ★ 2026-09-27. 사용자 보고 「도로랑 건물이 서로 다른 지면에 올라간 것처럼 뜬다」.

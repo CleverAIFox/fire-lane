@@ -75,7 +75,7 @@ import { snap as snapOnce, prepare } from "./domain/snap";
 import { distM, type LngLat } from "./domain/geo";
 import type { GraphEdge, HistorySummary } from "./domain/types";
 import { fmtDur, fmtSec, hhmm, hhmmss } from "./ui/tokens";
-import { VERDICT_ORDER } from "./ui/verdictMeaning";
+import { VERDICT_ORDER, verdictName } from "./ui/verdictMeaning";
 import { CLEARANCE_SCALE } from "./ui/clearanceMeaning";
 import { VehicleArt } from "./ui/VehicleArt";
 import { Center, RouteCheckpoints, Sec, Tile, VerdictTally, dashSwatch, haloSwatch } from "./ui/OpsBits";
@@ -241,7 +241,7 @@ export default function OpsApp() {
 
   if (fatal) return <Center>★ {fatal}</Center>;
   if (!data) return <Center>불러오는 중…</Center>;
-  const style = data.graph.style;
+  const style = data.graph.style, nm = verdictName(style);
   const vehicle = fleet.current;
 
   // ★ 2026-10-02 (§351). 종전에 `./?incident=…` 였고 **관제가 한 장 더 열렸다** —
@@ -384,7 +384,7 @@ export default function OpsApp() {
 
             <label style={lab}>경로 — 관제가 정한다</label>
             <div style={{ display: "flex", gap: 6 }}>
-              {([["safe", "안전", "폭으로 본 안전 — 확인 필요 · 폭 모름 구간을 피한다"],
+              {([["safe", "안전", `폭으로 본 안전 — ${nm("needs_cv")} · ${nm("unknown")} 구간을 피한다`],
                  ["fast", "빠른", "도착이 빠르다 — 폭 신뢰도가 낮은 구간을 지날 수 있다"]] as const)
                 .map(([m, ko, why]) => (
                   <button key={m} onClick={() => setRoute(m)} title={why}
@@ -409,7 +409,7 @@ export default function OpsApp() {
                     )}
                     {/* ★ §220 — 경로의 **가장 좁은 곳의 여유폭**. 관제가 지령 전에 보는 수다 */}
                     <div style={{ fontSize: 12, color: D.sub, marginTop: 4 }}>
-                      확인 필요 {plan.plan.edges.filter((e) => e.verdict === "needs_cv").length}개 · 폭 모름 {plan.plan.edges.filter((e) => e.verdict === "unknown").length}개 ·
+                      {nm("needs_cv")} {plan.plan.edges.filter((e) => e.verdict === "needs_cv").length}개 · {nm("unknown")} {plan.plan.edges.filter((e) => e.verdict === "unknown").length}개 ·
                       최소폭 {Math.min(...plan.plan.edges.map((e) => e.width_min_m ?? 99)).toFixed(1)}m / 요구 {need.toFixed(1)}m ·
                       여유폭 <b style={{ color: D.ink }}>
                         {fmtClearance(Math.min(...plan.plan.edges.map((e) => e.width_min_m ?? 99)) - need)}

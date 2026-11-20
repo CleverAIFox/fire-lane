@@ -34,13 +34,13 @@ const CONFIG = {
        아래 값은 배경을 #dfe3ea 로 낮춘 상태에서 네 색이 모두 대비 2.4~3.5,
        색상(hue)도 서로 충분히 떨어지도록 다시 고른 것이다. */
   verdict: {
-    blocked : { color:[255, 77, 61], lightColor:[224, 53, 38], label:"통행 불가",
+    blocked : { color:[255,128,112], lightColor:[224, 53, 38], label:"통행 불가",
                 desc:"벽 사이 폭 3.0m 미만. 주차 차량이 없어도 소방차가 못 지나간다" },
     needs_cv: { color:[255,171, 46], lightColor:[212,124, 10], label:"영상판정 전",
                 desc:"영상이 닿는 구간이지만 아직 판정하지 않았다. 영상판정(호모그래피) 대상" },
     clear   : { color:[ 74,209,143], lightColor:[ 26,150, 96], label:"통행 가능",
                 desc:"도로 폭 7.0m 이상. 양쪽에 주차가 있어도 통과. 영상판정 불필요" },
-    unknown : { color:[154,163,181], lightColor:[110,120,138], label:"영상으로 확정 못 함",
+    unknown : { color:[154,163,181], lightColor:[ 84, 94,112], label:"영상으로 확정 못 함",
                 desc:"폭은 쟀으나 영상이 닿지 않아 통과 여부를 못 정했다" },
   },
 

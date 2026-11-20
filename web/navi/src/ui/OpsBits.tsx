@@ -17,7 +17,7 @@
  * OUT   조각 넷
  * 밖    무엇을 보일지 고르지 않는다. 고르는 것은 `OpsApp.tsx` 다.
  */
-import { VERDICT_DASH, VERDICT_HALO } from "../components/opsLayers";
+import { VERDICT_DASH, VERDICT_EDGE, VERDICT_HALO } from "../components/opsLayers";
 import { D, LAYER, secBox, tile, shell } from "./opsTheme";
 import type { Tier } from "./opsTheme";
 import { emphasis } from "./motion";
@@ -87,7 +87,8 @@ export function dashSwatch(k: string): string | undefined {
 
 /** 범례 조각 — 파선이 없는 판정의 둘째 채널(흰 점 테두리)을 작은 띠 가장자리에 그대로 보인다. */
 export function haloSwatch(k: string): React.CSSProperties | undefined {
-  return VERDICT_HALO[k] ? { outline: "1.5px dotted #ffffff", outlineOffset: 1 } : undefined;
+  return VERDICT_HALO[k] ? { outline: "1.5px dotted #ffffff", outlineOffset: 1 }
+    : VERDICT_EDGE[k] ? { outline: "1.5px solid #ffffff", outlineOffset: 0 } : undefined;
 }
 
 /** 판정 넷의 수를 한 줄에 같은 크기로 나란히 놓는다 — 어느 하나를 작게 쓰지 않는다(PLAN #265 · DECISIONS §842).

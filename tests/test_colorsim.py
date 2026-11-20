@@ -83,15 +83,23 @@ def test_the_declared_ratchets_match_what_the_colors_actually_say():
     assert got["COLOR_MIN_LUM"] == C.COLOR_MIN_LUM
 
 
-def test_two_verdicts_still_share_the_same_lightness():
-    """★ 음성 대조. `blocked` 와 `unknown` 의 휘도비가 **정상 시각에서 1.00**
-    이다 — 색상은 다른데 밝기가 같다. 누가 색을 고쳐 이 칸이 벌어지면 이
-    시험이 울고, 그때 §383 을 다시 읽고 지운다. 고쳐지는 것이 목적이다.
+def test_blocked_and_unknown_no_longer_share_the_same_lightness():
+    """★ 2026-11-20 (PLAN #265 · DECISIONS §843). 종전 음성 대조(`blocked` ↔ `unknown` 정상 시각 휘도비 1.00 이라 울면 §383 을 읽고 지운다)가
+    **고쳐져서 울었다.** 지운 것이 아니라 뒤집었다 — 이제 그 쌍이 벌어져 있음을 지킨다(1.0021 → 1.47).
+    """
+    row = next(r for r in C.matrix(C.colors())
+               if r["pair"] == "blocked ↔ unknown" and r["vision"] == "normal")
+    assert row["lum"] >= 1.3, f"통행 불가 ↔ 확정 못 함 밝기가 다시 붙었다 — {row}"
+
+
+def test_the_weakest_lightness_pair_is_now_clear_vs_needs_cv():
+    """★ 음성 대조(옮겼다). 가장 안 갈리는 밝기 쌍은 이제 `clear` ↔ `needs_cv`(색각 이상 · 1.06)이고 둘째 채널(파선)이 가른다.
+    누가 색을 고쳐 이 쌍이 벌어지면 이 시험이 울고, 그때 지운다.
     """
     m = C.matrix(C.colors())
     worst = min(m, key=lambda r: r["lum"])
-    assert worst["lum"] < 1.05, f"밝기가 벌어졌다 — {worst}"
-    assert worst["vision"] == "normal", "색각 이상이 아니라 정상 시각의 일이다"
+    assert worst["lum"] < 1.1, f"밝기가 벌어졌다 — {worst}"
+    assert worst["pair"] == "clear ↔ needs_cv", worst
 
 
 def test_the_tool_passes_its_own_selftest():

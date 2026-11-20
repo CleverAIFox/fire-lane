@@ -13,7 +13,7 @@ import {
 } from "../src/domain/clearance";
 import { TUNING, edgeCost, requiredWidth, unknownIsNeverCheaper } from "../src/domain/vehicle";
 import { CLEARANCE_SCALE, segmentReason, widthLine } from "../src/ui/clearanceMeaning";
-import { GRAY_REASON } from "../src/ui/verdictMeaning";
+import { GRAY_REASON, verdictName } from "../src/ui/verdictMeaning";
 import {
   SAME_ROUTE_TITLE, compareKind, riskList, routeStats, sameRoute,
 } from "../src/domain/compare";
@@ -110,10 +110,12 @@ test("구간별 개수의 합이 전 구간이다 — 범례가 빠뜨리는 구
 // ── 3. 사유 문장 ──────────────────────────────────────────────────
 
 const S = specOf("pump-js");
+/** 판정 이름 — 실제 발행물의 `style` 에서 읽는다(화면이 범례와 같은 곳에서 읽는지 문다) */
+const NM = verdictName(graph.style);
 const NEED = requiredWidth(S);
 
 function reason(e: Partial<GraphEdge> & Pick<GraphEdge, "verdict">) {
-  return segmentReason({ width_min_m: null, unknown_reason: null, ...e }, S);
+  return segmentReason({ width_min_m: null, unknown_reason: null, ...e }, S, NM);
 }
 
 test("사유 — 빨강은 어느 폭이 얼마나 모자란지 적는다", () => {
@@ -138,7 +140,7 @@ test("사유 — 회색은 `unknown_reason` 넷을 그대로 말한다", () => {
   for (const k of Object.keys(GRAY_REASON)) {
     const r = reason({ verdict: "unknown", width_min_m: 3.2, unknown_reason: k })!;
     ok(r.head.includes(GRAY_REASON[k].short), `${k}: ${r.head}`);
-    ok(r.head.includes("폭 모름"), `${k}: ${r.head}`);
+    ok(r.head.includes(NM("unknown")), `${k}: ${r.head}`);
     ok(!!r.action, `${k}: 조치가 없다`);
   }
   // 모르는 사유가 와도 그 문자열을 잃지 않는다
@@ -146,7 +148,7 @@ test("사유 — 회색은 `unknown_reason` 넷을 그대로 말한다", () => {
   ok(odd.head.includes("새_사유"), odd.head);
   // 사유가 아예 없는 회색도 말은 한다
   const bare = reason({ verdict: "unknown", width_min_m: 3.2 })!;
-  ok(bare.head.includes("폭 모름"), bare.head);
+  ok(bare.head.includes(NM("unknown")), bare.head);
 });
 
 test("사유 — 주황은 여유폭 부호에 따라 다른 조치를 낸다", () => {
@@ -169,7 +171,7 @@ test("사유 — 실제 발행물의 빨강 · 주황 · 회색은 전부 사유
   let n = 0;
   for (const e of graph.edges) {
     if (e.verdict === "clear") continue;
-    const r = segmentReason(e, S);
+    const r = segmentReason(e, S, NM);
     ok(r != null, `${e.seg_uid} (${e.verdict}) 사유가 없다`);
     ok(r!.head.length > 0 && r!.detail.length > 0, `${e.seg_uid} 빈 사유`);
     ok(!!r!.action, `${e.seg_uid} 조치가 없다`);
@@ -298,20 +300,20 @@ test("경로 위 경고 — 문장은 거리 · 이름 · 종류 · 여유를 **
     { verdict: "needs_cv", width_min_m: NEED - 0.4, seg_label: "A로", length_m: 60 },
     { verdict: "clear", width_min_m: NEED + 0.2, seg_label: "B로" },
     { verdict: "unknown", width_min_m: null, seg_label: "C로" }), NEED);
-  const la = riskLine(a);
-  ok(la.includes("0m") && la.includes("A로") && la.includes("확인 필요") && la.includes("-0.4"), la);
-  const lb = riskLine(b);
+  const la = riskLine(a, NM);
+  ok(la.includes("0m") && la.includes("A로") && la.includes(NM("needs_cv")) && la.includes("-0.4"), la);
+  const lb = riskLine(b, NM);
   ok(lb.includes("60m") && lb.includes("B로") && lb.includes("여유") && lb.includes("+0.2"), lb);
-  const lc = riskLine(c);
-  ok(lc.includes("C로") && lc.includes("폭 모름"), lc);
+  const lc = riskLine(c, NM);
+  ok(lc.includes("C로") && lc.includes(NM("unknown")), lc);
 });
 
 test("경로 위 경고 — 카드는 최대 몇 줄만 보이고 나머지는 「외 N곳」 수로 말한다", () => {
   const many = plan(...Array.from({ length: RISK_LINES_MAX + 3 }, (_, i) => ({ verdict: "needs_cv" as const, seg_label: `R${i}` })));
-  const opt = riskSummary(many, NEED);
+  const opt = riskSummary(many, NEED, null, NM);
   ok(opt.lines.length === RISK_LINES_MAX, `줄 수 ${opt.lines.length}`);
   ok(opt.more === 3, `외 ${opt.more}`);
-  const none = riskSummary(plan({ verdict: "clear", width_min_m: NEED + 5 }), NEED);
+  const none = riskSummary(plan({ verdict: "clear", width_min_m: NEED + 5 }), NEED, null, NM);
   ok(none.lines.length === 0 && none.more === 0, "위험이 없는데 줄을 냈다");
 });
 
@@ -319,21 +321,21 @@ test("경로 위 경고 — 상대 경로가 있으면 이 경로에만 있는 �
   const common = [0, 1, 2].map((i) => ({ seg_uid: `C${i}`, seg_label: `공통${i}`, verdict: "needs_cv" as const }));
   const mineOnly = { seg_uid: "M", seg_label: "내것", verdict: "needs_cv" as const }, theirOnly = { seg_uid: "T", seg_label: "남것", verdict: "needs_cv" as const };
   const mine = plan(...common, mineOnly), theirs = plan(...common, theirOnly);
-  const a = riskSummary(mine, NEED, theirs), b = riskSummary(theirs, NEED, mine);
+  const a = riskSummary(mine, NEED, theirs, NM), b = riskSummary(theirs, NEED, mine, NM);
   ok(a.lines[0].includes("내것") && b.lines[0].includes("남것"), `갈리는 구간이 맨 앞이 아니다: ${a.lines[0]} · ${b.lines[0]}`);
   ok(!a.lines[0].includes("공통") && a.lines.length === 4 && a.shared === 3, `줄 ${a.lines.length} · 공통 ${a.shared}`);
   ok(a.lines.slice(1).every((l) => l.includes("공통")), "공통 구간이 뒤에 안 모였다");
-  const plain = riskSummary(mine, NEED);                                        // 상대가 없으면 종전 그대로(경로 순서)
+  const plain = riskSummary(mine, NEED, null, NM);                                        // 상대가 없으면 종전 그대로(경로 순서)
   ok(plain.lines[0].includes("공통0") && plain.shared === undefined, "상대가 없는데 순서가 바뀌었다");
 });
 
 test("경로 위 경고 — 공통 구간이 줄 수를 넘으면 갈리는 구간이 먼저 살아남고 공통이 「외 N곳」 으로 밀린다", () => {
   const common = Array.from({ length: RISK_LINES_MAX + 2 }, (_, i) => ({ seg_uid: `C${i}`, seg_label: `공통${i}`, verdict: "needs_cv" as const }));
   const mine = plan(...common, { seg_uid: "M", seg_label: "내것", verdict: "needs_cv" as const }), theirs = plan(...common);
-  const r = riskSummary(mine, NEED, theirs);
+  const r = riskSummary(mine, NEED, theirs, NM);
   ok(r.lines[0].includes("내것"), "갈리는 구간이 줄 수 제한에 잘렸다 — 공통이 자리를 다 먹었다");
   ok(r.shared === RISK_LINES_MAX - 1 && r.more === 3, `공통 ${r.shared} · 외 ${r.more}`);
-  const same = riskSummary(mine, NEED, mine);                                    // 완전히 같은 경로면 전부 공통
+  const same = riskSummary(mine, NEED, mine, NM);                                    // 완전히 같은 경로면 전부 공통
   ok(same.shared === same.lines.length, "같은 경로인데 공통이 아니라고 읽었다");
 });
 
@@ -363,8 +365,8 @@ import type { RouteOption } from "../src/ui/RouteCompare";
 test("폭 모름이면 여유 수를 안 쓴다 — 다른 소스의 폭 값이 붙어 있어도(모르는 수를 믿게 하지 않는다)", () => {
   const [u] = riskList(plan({ verdict: "unknown", width_min_m: NEED + 2.4, seg_label: "U로" }), NEED);
   ok(u.kind === "unknown" && u.marginM === null, "unknown 인데 여유 수가 만들어졌다");
-  const line = riskLine(u);
-  ok(line.includes("폭 모름") && !line.includes("여유") && !/[+-]\d/.test(line), line);
+  const line = riskLine(u, NM);
+  ok(line.includes(NM("unknown")) && !line.includes("여유") && !/[+-]\d/.test(line), line);
 });
 
 test("앞서 알릴 구간의 정의는 하나다 — 확인 필요 · 폭 모름 · 여유 0.5m 미만(병목 패널과 카드가 같이 쓴다)", () => {
@@ -377,10 +379,10 @@ test("앞서 알릴 구간의 정의는 하나다 — 확인 필요 · 폭 모�
 
 function opt(over: Partial<RouteOption>): RouteOption {
   return {
-    title: "안전 경로", recommended: true, sec: 600, lengthM: 2290, needsCvCount: 7, uncertainM: 100,
+    title: "안전 경로", recommended: true, sec: 600, lengthM: 2290, names: { blocked: NM("blocked"), needs_cv: NM("needs_cv"), unknown: NM("unknown") }, needsCvCount: 7, uncertainM: 100,
     unknownCount: 0, minWidthM: 3.1, requiredM: 2.6, blockedCount: 0, ruleCount: 2, deltaSec: 0,
     note: "NOTE문장", rules: "RULES요약", limits: "LIMITS한계",
-    risks: { lines: ["0m RISK구간 · 확인 필요 · 여유 +0.5m"], more: 3 }, ...over,
+    risks: { lines: [`0m RISK구간 · ${NM("needs_cv")} · 여유 +0.5m`], more: 3 }, ...over,
   };
 }
 const html = (safe: RouteOption, fast: RouteOption | null, same = false) =>
@@ -388,10 +390,10 @@ const html = (safe: RouteOption, fast: RouteOption | null, same = false) =>
 
 test("경로 카드 — 접혀 있을 때는 시간 · 최소폭 · 여유 · 확인 필요만 보이고 나머지는 접혀 있다(지우지 않았다)", () => {
   const h = html(opt({}), opt({ title: "빠른 경로", recommended: false, sec: 520, needsCvCount: 14 }));
-  for (const shown of ["최소폭", "여유", "확인 필요", "10분", "2.3km", "자세히"]) ok(h.includes(shown), `${shown} 이 안 보인다`);
+  for (const shown of ["최소폭", "여유", NM("needs_cv"), "10분", "2.3km", "자세히"]) ok(h.includes(shown), `${shown} 이 안 보인다`);
   for (const folded of ["RISK구간", "RULES요약", "LIMITS한계", "NOTE문장", "규칙 경고", "차량 한계", "경로 주변", "통행 불가", "길이", "여유폭 ="])
     ok(!h.includes(folded), `접혀 있어야 할 ${folded} 가 카드에 나온다`);
-  ok(h.includes("빠른 경로가 1분 20초 빠르고 확인 필요가 7곳 많다"), "두 경로의 비교가 한 문장에 안 나온다");
+  ok(h.includes(`빠른 경로가 1분 20초 빠르고 ${NM("needs_cv")} 7곳 많다`), "두 경로의 비교가 한 문장에 안 나온다");
   ok(h.indexOf("빠른 경로가 1분 20초") < h.indexOf("안전 경로</b>"), "비교 문장이 카드보다 아래에 있다 — 고르는 데 필요한 것이 먼저여야 한다");
   ok(!h.includes("폭으로만 본 안전이다"), "카드 밖에 떠 있는 고지가 남았다");
   ok(h.includes("폭으로만 본 안전"), "고지가 안전 경로 카드에 안 붙었다");
@@ -402,9 +404,9 @@ test("경로 카드 — 통행 불가는 0 이 아닐 때만 보이고 폭 모�
   ok(!html(opt({}), null).includes("통행 불가"), "0곳인데 통행 불가가 보인다");
   const h = html(opt({ blockedCount: 1, unknownCount: 2 }), null);
   ok(h.includes("통행 불가") && h.includes("<sup>*</sup>"), "0 이 아닌 값이 안 보이거나 최소폭에 각주 표지가 없다");
-  ok(!h.includes("폭 모름 2곳은 뺀 수"), "각주 풀이가 본문 한가운데 있다 — 접힌 쪽에 있어야 한다");
+  ok(!h.includes(`${NM("unknown")} 2곳은 뺀 수`), "각주 풀이가 본문 한가운데 있다 — 접힌 쪽에 있어야 한다");
   const d = renderToStaticMarkup(createElement(Details, { o: opt({ unknownCount: 2 }) }));
-  ok(d.includes("* 폭 모름 2곳은 뺀 수"), "접힌 쪽에 각주 풀이가 없다");
+  ok(d.includes(`* ${NM("unknown")} 2곳은 뺀 수`), "접힌 쪽에 각주 풀이가 없다");
 });
 
 test("경로 카드 — 같은 경로면 카드 하나이고 비교 줄이 없다", () => {
@@ -431,9 +433,9 @@ test("riskKind — 구간 하나의 위험 종류 · 폭 모름이면 여유가 
 
 test("경로 카드 — 확인 필요(needs_cv)와 폭 모름(unknown)을 갈라 센다 · 합치지 않는다(PLAN #250 · DECISIONS §798)", () => {
   const h = html(opt({ needsCvCount: 3, unknownCount: 2 }), null);
-  ok(h.includes("3곳") && h.includes("폭 모름 2곳"), "두 수가 따로 안 보인다");
+  ok(h.includes("3곳") && h.includes(`${NM("unknown")} 2곳`), "두 수가 따로 안 보인다");
   const v = verdictLine(opt({ needsCvCount: 1, unknownCount: 0 }), opt({ needsCvCount: 4, unknownCount: 2 }));
-  ok(v.text.includes("확인 필요가 3곳 많다") && v.worse, `비교 문장 ${v.text}`);   // 비교 문장은 확인 필요(needs_cv)만 — 폭 모름은 카드의 제 줄이 든다
+  ok(v.text.includes(`${NM("needs_cv")} 3곳 많다`) && v.worse, `비교 문장 ${v.text}`);   // 비교 문장은 확인 필요(needs_cv)만 — 폭 모름은 카드의 제 줄이 든다
   const same = verdictLine(opt({ needsCvCount: 2, unknownCount: 1 }), opt({ needsCvCount: 2, unknownCount: 5 }));
-  ok(same.text.includes("확인 필요는 같다") && !same.worse, same.text);
+  ok(same.text.includes(`${NM("needs_cv")} 수는 같다`) && !same.worse, same.text);
 });
