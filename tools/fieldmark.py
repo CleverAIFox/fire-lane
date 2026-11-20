@@ -55,6 +55,30 @@ def seen_uids(rv_rows: list[dict], marks: list[dict]) -> set[str]:
     return out | set(RV_NAMED) | {m["seg_uid"] for m in marks}
 
 
+def load_marks(path: Path = MARKS) -> list[dict]:
+    """표지 행. 파일이 없으면 빈 목록 — 비어 있으면 판독표 검정은 종전과 같다."""
+    return read_rows(path) if path.exists() else []
+
+
+def nonroad_uids(marks: list[dict]) -> frozenset[str]:
+    """비도로 표지의 `seg_uid`(막다른마당은 길이 맞아 안 든다)."""
+    return frozenset(m["seg_uid"] for m in marks if m["종류"] in NONROAD_KINDS)
+
+
+def answers_seen(rows: list[dict], views: bool, marked: frozenset[str] | set[str]) -> list[str]:
+    """검정의 분모에 드는 답 — 로드뷰로 보는 가설(`views`)은 거리뷰 「있다」인 행만 · 가림 · 길 아님 · 빈 답 · **현장 표지된 행**은 뺀다(PLAN #260 ② · 보고용 · 판정 불변)."""
+    return [a for r in rows if (r["거리뷰"].strip() == "있다" or not views) and (a := r["답"].strip()) not in ("", "가림", "길 아님") and r["seg_uid"] not in marked]
+
+
+def sheet_marks(rv_rows: list[dict], marks: list[dict]) -> dict:
+    """판독표 대 표지 — 맞은 행 · 분모에서 빼는 행(비도로) · 길이 맞아 안 빼는 행(막다른마당) · 판독표에 없는 표지. 표지 0건이면 요약이 그렇게 말한다."""
+    rv = {r["seg_uid"] for r in rv_rows}
+    hit = [m for m in marks if m["seg_uid"] in rv]
+    out = sum(m["종류"] in NONROAD_KINDS for m in hit)
+    return {"표지 파일 행": len(marks), "표지된 행": len(hit), "분모에서 뺌(비도로)": out, "안 뺌(막다른마당 · 길이 맞다)": len(hit) - out, "판독표에 없는 표지": len(marks) - len(hit),
+            "요약": f"표지 {len(marks)}건 · 판독표 {len(rv_rows)}행 중 표지된 행 {len(hit)} · 분모에서 뺌 {out}" + (" — 표지 0건이라 분모는 종전과 같다" if not marks else "")}
+
+
 def mark_faults(marks: list[dict]) -> list[str]:
     """표지 파일의 결함 — 같은 열쇠가 두 번 · 닫힌 집합 밖의 종류."""
     bad, seen = [], set()
