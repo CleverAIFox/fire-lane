@@ -15,7 +15,7 @@ import {
 } from "../src/components/layers";
 // ★ 2026-09-29 (§311). 관제 전용 층이 `opsLayers.ts` 로 갈라졌다 — 두 화면의 일이 다르다.
 import {
-  VERDICT_DASH, VERDICT_HALO, opsSegLayers, opsHistoryLayers, opsOverlayLayers, hillshadeLayer,
+  VERDICT_DASH, VERDICT_EDGE, VERDICT_HALO, opsSegLayers, opsHistoryLayers, opsOverlayLayers, hillshadeLayer,
   opsClearanceBand, opsClearanceColor, landmarkSource, landmarkLayers,
 } from "../src/components/opsLayers";
 import { CLEARANCE_SCALE } from "../src/ui/clearanceMeaning";
@@ -86,18 +86,21 @@ test("관제 레이어 — 판정선 · 이력 · 덧그림 (무효 식이 조�
   //   점선이 색 선 **위**가 아니면 무늬가 안 보인다.
   const dashIds = Object.keys(VERDICT_DASH).map((k) => `ops-verdict-dash-${k}`);
   const haloIds = Object.keys(VERDICT_HALO).map((k) => `ops-verdict-halo-${k}`);
+  const edgeIds = Object.keys(VERDICT_EDGE).map((k) => `ops-verdict-edge-${k}`);
   ok(segs.map((l) => l.id).join() ===
-     ["ops-verdict-case", ...haloIds, "ops-verdict", ...dashIds, "ops-unreach", "ops-selected"].join(),
+     ["ops-verdict-case", ...haloIds, ...edgeIds, "ops-verdict", ...dashIds, "ops-unreach", "ops-selected"].join(),
      `판정선 차례가 다르다 — ${segs.map((l) => l.id).join()}`);
   // ★ 넷을 가르는 채널이 **둘**인가. 색 하나면 `blocked` ↔ `unknown` 이 휘도비
   //   1.00 이라 밝기만 보는 자리에서 같은 선이 된다(§383).
   const dashes = Object.values(VERDICT_DASH).map((d) => d.join());
   ok(new Set(dashes).size === dashes.length, "판정 둘이 같은 무늬다 — 채널이 하나로 돌아간다");
   // ★ 파선이 없는 판정은 **흰 점 테두리**가 둘째 채널이다 — 무늬 없는 실선이 둘이면 `clear` 와 섞인다.
+  ok(Object.keys(VERDICT_EDGE).every((k) => !(k in VERDICT_DASH) && !(k in VERDICT_HALO) && k !== "clear"),
+     "이음 테두리 판정이 파선 · 점 테두리도 갖거나 clear 다 — 판정마다 채널이 하나씩만 달라야 한다");
   ok(Object.keys(VERDICT_HALO).every((k) => !(k in VERDICT_DASH) && k !== "clear"),
      "테두리 판정이 파선도 갖거나 clear 다 — 판정마다 채널이 하나씩만 달라야 한다");
   const lineVerdicts = ["needs_cv", "blocked", "unknown"];
-  ok(lineVerdicts.every((k) => k in VERDICT_DASH || k in VERDICT_HALO), "무늬도 테두리도 없는 판정이 있다");
+  ok(lineVerdicts.every((k) => k in VERDICT_DASH || k in VERDICT_HALO || k in VERDICT_EDGE), "무늬도 테두리도 없는 판정이 있다");
   ok(!("clear" in VERDICT_DASH), "`clear` 에 무늬를 줬다 — 기준이 실선이어야 나머지가 무늬로 읽힌다");
   check("ops-seg", segs);
   check("ops-history", opsHistoryLayers());

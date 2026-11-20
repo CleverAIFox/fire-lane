@@ -61,7 +61,7 @@ import { Truck } from "./ui/icons";
 import { C, hhmm, hhmmss } from "./ui/tokens";
 import { routeHazards } from "./domain/context";
 import { shortStation } from "./domain/fleetName";
-import { grayReason } from "./ui/verdictMeaning";
+import { grayReason, verdictName } from "./ui/verdictMeaning";
 import { segmentReason } from "./ui/clearanceMeaning";
 
 /** 병목 탭을 띄우는 앞 거리(m). 와이어프레임 04 가 「전방 300m」 다 */
@@ -139,6 +139,7 @@ export default function App() {
   //   memo(175 · 269)의 의존이 매번 바뀌었다 — 캐시가 한 번도 안 맞았다.
   //   eslint 가 없던 동안 아무도 몰랐다.
   const style = useMemo(() => n.data?.graph.style ?? {}, [n.data?.graph.style]);
+  const nm = useMemo(() => verdictName(style), [style]);
   const need = requiredWidth(spec);
   const vehicleKind = fleet.current?.label ?? spec.kind ?? "소방차";
   const guiding = n.phase === "guiding";
@@ -222,10 +223,10 @@ export default function App() {
     const b = n.fastPlan && !same ? n.fastPlan : null;
     return {
       same,
-      safe: routeOption(a, need, b, true, n.access),
-      fast: b ? routeOption(b, need, a, false, n.access) : null,
+      safe: routeOption(a, need, b, true, n.access, nm),
+      fast: b ? routeOption(b, need, a, false, n.access, nm) : null,
     };
-  }, [n.plan, n.fastPlan, need, n.access]);
+  }, [n.plan, n.fastPlan, need, n.access, nm]);
 
   // ── 주행 ──────────────────────────────────────────────────────
   // ★ §216-3 경로 위 주변 사정 — 경로가 바뀔 때만 다시 센다
@@ -276,6 +277,7 @@ export default function App() {
     const rest = n.plan.edges.slice(n.plan.edges.findIndex((x) => x.seg_uid === e.seg_uid) + 1);
     return {
       kind: riskKind(e, need)?.kind ?? "tight",
+      nm,
       more: rest.filter((x) => isHeadsUp(x, need)).length,
       segUid: e.seg_uid,
       segLabel: e.seg_label ?? e.road_name ?? e.seg_uid,
@@ -285,14 +287,14 @@ export default function App() {
       cctvDistM: e.cctv_dist_m ?? null,
       grayReason: grayReason(e)?.long ?? null,
       // ★ 2026-09-23 (§220) 색만이 아니라 사유를. 판정마다 한 줄 — 없으면 null 이고 패널이 뺀다
-      reason: segmentReason(e, spec),
+      reason: segmentReason(e, spec, nm),
       // ★ `?? null` — 옛 발행물의 `undefined` 를 0 이 아니라 **모름**으로 옮긴다
       park: e.park ?? null,
       ecam: e.ecam ?? null,
       verdictLabel: style[e.verdict]?.label ?? e.verdict,
       verdictColor: style[e.verdict]?.color ?? C.panelInk,
     };
-  }, [bottleneckEdge, n.plan, n.driven, need, spec, style]);
+  }, [bottleneckEdge, n.plan, n.driven, need, spec, style, nm]);
 
   /** 병목 구간의 가운데 — 관제 공유 좌표 · 카메라 초점 */
   const bottleneckAt: LngLat | null = useMemo(() => {
@@ -386,9 +388,9 @@ export default function App() {
     const m = compareMarks(base, other);
     const out: MapNote[] = [];
     if (m.commonAt) out.push({ id: "common", at: m.commonAt, kind: "common", text: "공통 구간" });
-    if (m.checkAt) out.push({ id: "check", at: m.checkAt, kind: "check", text: `확인 필요\n${m.checkM}m` });
+    if (m.checkAt) out.push({ id: "check", at: m.checkAt, kind: "check", text: `${nm("needs_cv")}\n${m.checkM}m` });
     return out;
-  }, [s.screen, n.plan, n.fastPlan, choice]);
+  }, [s.screen, n.plan, n.fastPlan, choice, nm]);
   const finalLeg = !s.planning && endPoint && incident ? [endPoint, incident.point] : null;
 
   // ── 관제로 보낼 상태 (§214-3). 경로 참조는 경로가 바뀔 때만 바뀐다 ──

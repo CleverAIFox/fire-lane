@@ -33,7 +33,7 @@ import { C, F, S } from "./tokens";
 import { CLEARANCE_SCALE } from "./clearanceMeaning";
 import { clearanceBand, fmtClearance } from "../domain/clearance";
 import { BottleneckDetail, type BottleneckData } from "./BottleneckDetail";
-import { RISK_KIND_TEXT } from "./routeOption";
+import { riskKindText } from "./routeOption";
 
 export type { BottleneckData };
 
@@ -75,7 +75,7 @@ export function BottleneckPanel(d: Props) {
         {d.more > 0 && <span style={{ fontSize: 24, fontWeight: 800, color: C.panelSub }}>외 {d.more}곳</span>}
       </div>
       <div style={{ fontSize: 24, fontWeight: 700, marginTop: 2 }}>{d.segLabel}</div>
-      <div style={{ fontSize: 24, fontWeight: 800, marginTop: 6, color: d.kind === "blocked" ? C.danger : C.warn }}>{RISK_KIND_TEXT[d.kind]}</div>
+      <div style={{ fontSize: 24, fontWeight: 800, marginTop: 6, color: d.kind === "blocked" ? C.danger : C.warn }}>{riskKindText(d.kind, d.nm)}</div>
       {margin != null && <div style={{ fontSize: 24, fontWeight: 800, color: band.color }}>여유 {fmtClearance(margin)}</div>}
 
       <div style={{ display: "flex", gap: 8, marginTop: 14 }}>

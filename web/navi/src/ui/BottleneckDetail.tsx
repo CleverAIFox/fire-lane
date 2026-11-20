@@ -12,10 +12,13 @@ import { C, F } from "./tokens";
 import { CLEARANCE_SCALE, type SegmentReason } from "./clearanceMeaning";
 import { clearanceBand, fmtClearance } from "../domain/clearance";
 import { countText } from "../domain/pressure";
+import type { VerdictName } from "./verdictMeaning";
 
 export interface BottleneckData {
   /** 위험 종류 — 패널 기본 화면의 둘째 줄(`needs_cv` · `unknown` · `tight`) */
   kind: "needs_cv" | "unknown" | "tight" | "blocked";
+  /** 판정 이름을 읽는 길 — 범례와 같은 `style` 에서 읽는다(`riskKindText` 가 이 길로 종류의 말을 만든다) */
+  nm: VerdictName;
   /** 이 구간 **뒤로** 남은 앞서 알릴 구간 수 — 「외 N곳」 */
   more: number;
   segUid: string;

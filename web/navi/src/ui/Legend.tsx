@@ -33,7 +33,7 @@ const FEATURES = [
 const ROUTE = [
   { color: C.route, label: "안내 경로" },
   { color: C.routeUnverified, label: "CCTV 미검증 골목" },
-  { color: C.routeBottleneck, label: "병목 · 확인 필요" },
+  { color: C.routeBottleneck, label: "병목" },
   { color: C.routeAlt, label: "빠른 경로 (비교)" },
 ];
 
@@ -44,7 +44,7 @@ export function Legend({ style, open }: Props) {
     <div style={{ ...panel, position: "absolute", zIndex: 5, left: 86, top: S.guideBarH + 90 }}>
       <div style={head}>경로</div>
       {ROUTE.map((f) => (
-        <Row key={f.label} label={f.label}
+        <Row key={f.label} label={f.label === "병목" ? `병목 · ${style.needs_cv?.label ?? ""}` : f.label}
              color={f.label.startsWith("병목") ? (style.needs_cv?.color ?? f.color) : f.color} />
       ))}
       <div style={{ ...head, marginTop: 10 }}>구간 판정 (도로 음영)</div>

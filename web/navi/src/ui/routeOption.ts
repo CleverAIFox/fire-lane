@@ -19,23 +19,25 @@ import { travelSeconds } from "../domain/speed";
 import type { RoutePlan } from "../domain/types";
 import type { RouteOption } from "./RouteCompare";
 import { fmtDur } from "./tokens";
+import type { VerdictName } from "./verdictMeaning";
 
 /** 카드에 올리는 경고 줄 수. 넘치면 「외 N곳」 으로 수만 말한다 — 지도를 가리는 것이 이 앱에서 제일 나쁘다 */
 export const RISK_LINES_MAX = 4;
 
-export const RISK_KIND_TEXT: Record<RiskItem["kind"], string> = {
-  blocked: "통행 불가", needs_cv: "확인 필요", unknown: "폭 모름", tight: "여유 부족",
-};
+/** 경고의 종류 말 — 판정 셋은 범례와 같은 `style` 의 이름이고 `tight` 만 판정이 아니라 여기서 쓴다 */
+export function riskKindText(kind: RiskItem["kind"], nm: VerdictName): string {
+  return kind === "tight" ? "여유 부족" : nm(kind);
+}
 
 /** 경고 한 줄 — 거리 · 이름 · 종류 · 여유를 **실제 수로** 쓴다. **폭 모름이면 여유 수를 안 쓴다** — 모르는 수를 쓰면 보는 사람이 믿는다 */
-export function riskLine(r: RiskItem): string {
+export function riskLine(r: RiskItem, nm: VerdictName): string {
   const margin = r.kind !== "unknown" && r.marginM != null ? ` · 여유 ${r.marginM >= 0 ? "+" : ""}${r.marginM.toFixed(1)}m` : "";
-  return `${r.atM}m ${r.label} · ${RISK_KIND_TEXT[r.kind]}${margin}`;
+  return `${r.atM}m ${r.label} · ${riskKindText(r.kind, nm)}${margin}`;
 }
 
 export function routeOption(
   p: RoutePlan, need: number, other: RoutePlan | null, rec: boolean,
-  access: { alt: boolean; walkM: number } | null,
+  access: { alt: boolean; walkM: number } | null, nm: VerdictName,
 ): RouteOption {
   const st = routeStats(p);
   const unc = { length: st.needsCvCount };
@@ -43,13 +45,15 @@ export function routeOption(
   const deltaSec = other ? sec - travelSeconds(other) : 0;
   const otherUnc = other ? routeStats(other).needsCvCount : unc.length;
   const slower = deltaSec > 1 ? `${fmtDur(deltaSec)} 느리지만 ` : "";
-  const recNote = !unc.length ? `${slower}확인 필요 구간을 우회합니다.`
-    : unc.length < otherUnc ? `${slower}확인 필요 구간이 ${otherUnc - unc.length}개 적습니다.`
-    : `확인 필요 구간 ${unc.length}개를 지납니다 — 피할 수 있는 경로가 없습니다.`;
+  const cv = nm("needs_cv");
+  const recNote = !unc.length ? `${slower}${cv} 구간을 우회합니다.`
+    : unc.length < otherUnc ? `${slower}${cv} 구간이 ${otherUnc - unc.length}개 적습니다.`
+    : `${cv} 구간 ${unc.length}개를 지납니다 — 피할 수 있는 경로가 없습니다.`;
   const tail = access?.alt
     ? ` 차량은 사건 지점 약 ${Math.round(access.walkM)}m(직선) 앞 대체 접근 지점까지 갑니다.` : "";
   return {
     title: rec ? "안전 경로" : "빠른 경로", recommended: rec, sec, lengthM: st.lengthM,
+    nm,
     needsCvCount: st.needsCvCount,
     unknownCount: st.unknownCount,
     uncertainM: st.uncertainM,
@@ -61,7 +65,7 @@ export function routeOption(
     note: (rec ? recNote : "도착은 빠르지만 폭 측정 신뢰도가 낮은 구간이 포함됩니다.") + tail,
     rules: ruleSummary(p.rules),
     limits: limitSummary(p.rules),
-    risks: riskSummary(p, need, other),
+    risks: riskSummary(p, need, other, nm),
   };
 }
 
@@ -71,11 +75,12 @@ export function routeOption(
  * ★ **상대 경로가 있으면 이 경로에만 있는 구간을 먼저 올린다**(DECISIONS §727 · B4). 두 경로가 출발 쪽을 같이 쓰므로 각자 경로 순서로 앞 네 줄을 올리면 **같은 공통 구간이 양쪽 앞을 채워**
  *   「고르라고 펼치는 건데 같은 걸 두 번 본다」가 됐다. 갈리는 구간이 먼저고 공통 구간은 뒤(넘치면 「외 N곳」)이며 `shared` 는 **보이는 줄 중 끝에서 몇 줄이 공통인가**다(화면이 흐리게 그린다).
  */
-export function riskSummary(p: Pick<RoutePlan, "edges">, need: number, other: Pick<RoutePlan, "edges"> | null = null): RouteOption["risks"] {
+export function riskSummary(p: Pick<RoutePlan, "edges">, need: number, other: Pick<RoutePlan, "edges"> | null, nm: VerdictName): RouteOption["risks"] {
   const all = riskList(p, need);
-  if (!other) return { lines: all.slice(0, RISK_LINES_MAX).map(riskLine), more: Math.max(0, all.length - RISK_LINES_MAX) };
+  const line = (r: RiskItem) => riskLine(r, nm);
+  if (!other) return { lines: all.slice(0, RISK_LINES_MAX).map(line), more: Math.max(0, all.length - RISK_LINES_MAX) };
   const theirs = new Set(riskList(other, need).map((r) => r.segUid));
   const ordered = [...all.filter((r) => !theirs.has(r.segUid)), ...all.filter((r) => theirs.has(r.segUid))];   // 각 묶음 안은 경로 순서 그대로
   const shown = ordered.slice(0, RISK_LINES_MAX);
-  return { lines: shown.map(riskLine), more: Math.max(0, ordered.length - shown.length), shared: shown.filter((r) => theirs.has(r.segUid)).length };
+  return { lines: shown.map(line), more: Math.max(0, ordered.length - shown.length), shared: shown.filter((r) => theirs.has(r.segUid)).length };
 }

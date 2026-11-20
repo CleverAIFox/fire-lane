@@ -65,9 +65,20 @@ export function opsVerdictColor(col: (k: string) => string): unknown {
  * ★ `clear` 는 **실선**이다. 기준이 하나 있어야 나머지가 「무늬가 있다」로 읽힌다.
  */
 export const VERDICT_DASH: Record<string, [number, number]> = {
-  needs_cv: [2.4, 1.0],   // 성긴 파선
-  blocked: [0.6, 0.9],    // 촘촘한 점선
+  needs_cv: [0.8, 2.8],   // 짧은 틈 — 색이 길게 남는다(종전 [2.4, 1.0] 은 색 보이는 길이가 29% 였다 · PLAN #265)
 };
+
+/**
+ * ── ★ 2026-11-20 (PLAN #265 · DECISIONS §843) `blocked` 는 파내지 않고 **흰 이음 테두리 + 밝은 붉은 실선**이다 ──
+ * 종전 `blocked` 는 촘촘한 점선으로 파내고(색 보이는 길이 60%) 붉은 색(255,77,61)이 어두운 바탕에서 휘도가 낮아,
+ * 실제 렌더에서 3:1 이상인 길이가 범위 안 8.1% 였다. 소방차가 못 드는 구간이 지도에서 제일 안 보였다.
+ * 파선을 걷고 색을 밝혀(계약 파일 · 붉은 계열 그대로) 선 **아래**에 끊김 없는 흰 테두리를 깐다 — `unknown` 의 점 테두리와는
+ * 끊기느냐로 갈린다. 폭이 좁은 구간(대부분 3m 미만)이 1.5~4.5px 로 그려지던 것은 `BLOCKED_MIN_M` 로 바닥을 올렸다 — 올리면 이음 테두리가 읽혀 쌍 구분이 오른다(§843).
+ * 값은 테두리가 선 폭 밖으로 나오는 px 이다.
+ */
+export const VERDICT_EDGE: Record<string, number> = { blocked: 2.5 };
+/** `blocked` 가 선폭을 셀 때 쓰는 폭의 바닥(m). 나머지 판정은 2 그대로다 */
+export const BLOCKED_MIN_M = 3.5;
 
 /**
  * ── ★ 2026-11-20 (PLAN #265 · DECISIONS §842) `unknown` 은 파선이 아니라 **밝은 실선 + 흰 점 테두리**다 ──
@@ -98,7 +109,7 @@ export const REF_FACTOR = { general: 0.3, blocked: 0.7 } as const;
 /** 층별 기존 불투명도. 발행 범위 안(target · corridor · listed)은 이 값 그대로다. */
 export const OPS_SEG_OPACITY = {
   "ops-verdict-case": 0.55, "ops-verdict": 1,
-  "ops-verdict-dash-needs_cv": 0.9, "ops-verdict-dash-blocked": 0.9, "ops-verdict-halo-unknown": 0.9,
+  "ops-verdict-dash-needs_cv": 0.9, "ops-verdict-edge-blocked": 0.95, "ops-verdict-halo-unknown": 0.9,
   "ops-unreach": 0.75,
   "seg-tint": 0.85,
 } as const;
@@ -148,7 +159,7 @@ export function parseShowRef(search: string): boolean {
 
 export function opsSegLayers(col: (k: string) => string, showRef = true): LayerSpecification[] {
   const op = (id: keyof typeof OPS_SEG_OPACITY) => refOpacity(showRef, OPS_SEG_OPACITY[id]) as never;
-  const wm = ["min", 12, ["max", 2, ["coalesce", ["get", "width_min_m"], 3]]];
+  const wm = ["min", 12, ["max", ["case", ["==", ["get", "verdict"], "blocked"], BLOCKED_MIN_M, 2], ["coalesce", ["get", "width_min_m"], 3]]];
   const W = (add = 0) => ["interpolate", ["linear"], ["zoom"],
     14, ["+", add, ["*", 0.25, wm]], 18, ["+", add, ["*", 1.5, wm]]] as never;
   return [
@@ -163,6 +174,13 @@ export function opsSegLayers(col: (k: string) => string, showRef = true): LayerS
       paint: { "line-width": W(4), "line-color": "#ffffff",
                "line-opacity": op(`ops-verdict-halo-${k}` as keyof typeof OPS_SEG_OPACITY),
                "line-dasharray": dash },
+    } as LayerSpecification)),
+    ...Object.entries(VERDICT_EDGE).map(([k, add]) => ({
+      id: `ops-verdict-edge-${k}`, type: "line", source: "segments",
+      filter: ["==", ["get", "verdict"], k] as never,
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: { "line-width": W(add), "line-color": "#ffffff",
+               "line-opacity": op(`ops-verdict-edge-${k}` as keyof typeof OPS_SEG_OPACITY) },
     } as LayerSpecification)),
     { id: "ops-verdict", type: "line", source: "segments",
       layout: { "line-cap": "round", "line-join": "round" },
