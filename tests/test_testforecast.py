@@ -251,7 +251,7 @@ _OUT = ("PASSED tests/test_evalgen.py::test_a\nPASSED tests/test_evalgen.py::tes
 
 
 def test_the_artifact_marker_finds_the_real_skip_files_and_not_prose() -> None:
-    texts = {p.name: p.read_text(encoding="utf-8") for p in (ROOT / "tests").glob("test_*.py")}
+    texts = {n: (ROOT / "tests" / n).read_text(encoding="utf-8") for n in P.test_files()}
     got = F.artifact_files(texts)
     assert {"test_evalgen.py", "test_evalset.py", "test_lineage_last_writer.py"} <= set(got), got
     assert "test_skip_policy.py" not in got, "사유를 설명하는 글을 사유로 센다"

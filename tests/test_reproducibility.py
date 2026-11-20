@@ -665,8 +665,8 @@ def test_baseline_nfa_delta_matches_by_road():
 # 파이썬 소스는 추적 파일이라 CI 에도 있다 — 비면 운다. R4 의 거름은 합성 입력에서 제 뜻대로 거르는지 본다.
 
 def test_the_scanned_source_lists_are_not_empty() -> None:
-    assert sorted(ETL.rglob("*.py")), "`src/firelane/**/*.py` 를 한 장도 못 찾았다 — R5 매개변수 시험이 0건으로 초록이다"
-    assert sorted((ROOT / "tools").rglob("*.py")), "`tools/**/*.py` 를 한 장도 못 찾았다 — R4 가 그 폴더를 0건 훑는다"
+    for d in ("src/firelane", "tools", "tests"):
+        assert sorted((ROOT / d).rglob("*.py")), f"`{d}/**/*.py` 를 한 장도 못 찾았다 — 그 폴더를 훑는 매개변수 시험이 0건으로 초록이다"
 
 
 def test_r4_filter_flags_unseeded_random_and_nothing_else(tmp_path: Path) -> None:
