@@ -85,13 +85,30 @@ def test_marked_rows_leave_the_denominator_and_are_counted_by_name() -> None:
     assert F.answers_seen([_row("only_in_sheet", "한쪽")], True, F.nonroad_uids(marks)) == ["한쪽"], "표지에 없는 판독표 행은 그대로 센다"
 
 
+def _synthetic_samples(feats: list[dict]) -> dict[str, list[dict]]:
+    """발행본(저장소에 든 구간 파일)에서 표본 행을 **스스로 만든다** — 표본 파일(`data/processed/width_samples.csv`)은 생성물이라 러너에 없다.
+
+    검정이 구간을 가설군 · 대조군으로 가르는 데 쓰는 것은 최소폭 표본 행 하나뿐이다(번호 · 폭이 발행값과 같아야 한다). 그 행만 발행 속성에서 세운다.
+    ★ 좌표 검사(최소폭 표본 지점)는 합성 표본으로는 안 맞아 결함 목록에 오르지만 이 시험은 통계만 본다 — 결함 목록은 안 읽는다.
+    """
+    out: dict[str, list[dict]] = {}
+    for f in feats:
+        p = f["properties"]
+        i, w = p.get("width_min_sample_idx"), p.get("width_min_m")
+        if i is None or w is None or p.get("length_m") is None:
+            continue
+        rows = [{"seg_uid": p["seg_uid"], "w_m": str(w), "s_m": str(float(p["length_m"]) / 2)} for _ in range(int(i) + 1)]
+        out[p["seg_uid"]] = rows
+    return out
+
+
 def test_empty_marks_change_nothing_and_say_zero() -> None:
     """(b) 표지가 비면 분모 · 통계가 종전과 같고 요약이 「표지 0건」을 분모와 함께 낸다 — 판정 불변."""
     from pathlib import Path
 
     import evalset as E
     feats = json.loads(E.SEG.read_text(encoding="utf-8"))["features"]
-    samples = E.rv_samples()
+    samples = _synthetic_samples(feats)
     path = E.OUT_CSV.parent / E.RV_FILE
     _, none = E.rv_check(path, feats, samples, marks=[])
     assert none["현장 표지"]["표지 파일 행"] == 0 and "표지 0건" in none["현장 표지"]["요약"] and "판독표 40행" in none["현장 표지"]["요약"]
