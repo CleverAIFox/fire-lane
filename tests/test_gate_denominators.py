@@ -110,7 +110,7 @@ def test_holes_2_3_canary_the_same_check_is_quiet_on_the_real_sources_and_cries_
 
 # ── ④ ㉥ 읽기 실측 분모 ────────────────────────────────────────
 def test_hole_4_the_tests_column_states_measured_over_total_from_the_real_list() -> None:
-    r = subprocess.run([sys.executable, str(ROOT / "tools/testpick.py"), "--list"], cwd=ROOT, capture_output=True, text=True,
+    r = subprocess.run([sys.executable, str(ROOT / "tools/testpick.py"), *D.LIST_ARGS], cwd=ROOT, capture_output=True, text=True,
                        encoding="utf-8", timeout=120, check=False)
     assert r.returncode == 0, r.stderr[-300:]
     g = D.reads_gap(r.stdout + r.stderr)
@@ -119,6 +119,23 @@ def test_hole_4_the_tests_column_states_measured_over_total_from_the_real_list()
     assert total > 0 and 0 < n <= total, "분모가 0 이 아니고 본 몫이 숫자다"
     line = D.tests_denom(r.stdout + r.stderr)[0]
     assert re.match(rf"㉥ 읽기 실측 {n}/{total}개 파일\(\d+\.\d%\)", line), line
+
+
+def test_hole_4_the_denominator_does_not_depend_on_how_many_files_the_push_range_changed(monkeypatch, capsys) -> None:
+    """전제 「범위 크기와 무관하다」 — 바뀐 파일 범위가 1,400개로 부푼 상태(지금 저장소가 그렇다)를 합성해도 분모 호출은 범위를 안 읽는다.
+
+    `--list` 의 닿는 시험 계산은 바뀐 파일 수에 비례해 느리다(1,431개에서 3분 40초 — 시한 120초를 넘겼다). 분모(n/M)는 범위를 안 보므로 `--files` 한 파일로 부른다."""
+    import testpick as T
+
+    def boom(*_a, **_k):
+        raise AssertionError("분모를 내는 호출이 git 범위를 읽었다 — 범위가 크면 느려진다")
+    monkeypatch.setattr(T, "changed_files", boom)
+    assert "--files" in D.LIST_ARGS and "--range" not in D.LIST_ARGS
+    assert T.main([*D.LIST_ARGS]) == 0
+    g = D.reads_gap(capsys.readouterr().err)
+    assert g is not None, "읽기 실측 줄이 없다"
+    n, total, _ = g
+    assert 0 < n <= total
 
 
 def test_hole_4_canary_a_gap_the_new_tests_do_not_explain_blocks_and_a_missing_line_says_unread() -> None:
