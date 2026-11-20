@@ -114,7 +114,7 @@ def test_the_pixel_is_gsd_and_the_image_is_north_up():
 
 
 def test_the_image_centre_is_the_sheet_centre():
-    """★ 본체. 영상이 도엽보다 커도 **가운데가 같다** — 그것이 '사방으로 민다'다.
+    """★ 본체. 영상이 도엽보다 커도 **가운데가 같다**(교정 이동만큼만 되돌린다) — 그것이 '사방으로 민다'다.
 
     수를 손으로 적지 않는다. 도엽 경계에서 **유도한다** — 적으면 그 수가
     둘째 정의가 되고, 둘이면 어긋난다(§18-3).
@@ -127,11 +127,12 @@ def test_the_image_centre_is_the_sheet_centre():
             a = o.sheet_origin_5186(key, w, h)
             cx = a.c + w * o.GSD / 2
             cy = a.f - h * o.GSD / 2
-            if abs(cx - (box[0] + box[2]) / 2) > 1e-6 or \
-                    abs(cy - (box[1] + box[3]) / 2) > 1e-6:
+            sx, sy = o.SHEET_SHIFT_5186.get(key, (0.0, 0.0))     # PLAN 10 — 도엽별 교정 이동(영상이 벡터보다 간 양)을 되돌린다
+            if abs(cx - ((box[0] + box[2]) / 2 - sx)) > 1e-6 or \
+                    abs(cy - ((box[1] + box[3]) / 2 - sy)) > 1e-6:
                 bad.append(f"{key} {w}x{h}: 중심 ({cx:.3f}, {cy:.3f}) ≠ "
-                           f"({(box[0]+box[2])/2:.3f}, {(box[1]+box[3])/2:.3f})")
-    assert not bad, "영상 중심이 도엽 중심과 다르다 — 배경이 그만큼 밀린다\n  " \
+                           f"({(box[0]+box[2])/2 - sx:.3f}, {(box[1]+box[3])/2 - sy:.3f})")
+    assert not bad, "영상 중심이 도엽 중심에서 교정 이동만큼 되돌린 자리가 아니다 — 배경이 그만큼 밀린다\n  " \
         + "\n  ".join(bad)
 
 
@@ -143,8 +144,9 @@ def test_an_image_exactly_the_sheet_size_gets_no_padding():
     w = round((box[2] - box[0]) / o.GSD)
     h = round((box[3] - box[1]) / o.GSD)
     a = o.sheet_origin_5186(key, w, h)
-    assert abs(a.c - box[0]) < o.GSD, f"{a.c} ≠ {box[0]}"
-    assert abs(a.f - box[3]) < o.GSD, f"{a.f} ≠ {box[3]}"
+    sx, sy = o.SHEET_SHIFT_5186.get(key, (0.0, 0.0))
+    assert abs(a.c - (box[0] - sx)) < o.GSD, f"{a.c} ≠ {box[0] - sx}"
+    assert abs(a.f - (box[3] - sy)) < o.GSD, f"{a.f} ≠ {box[3] - sy}"
 
 
 def test_a_bigger_image_pushes_the_origin_outward_by_half_the_surplus():

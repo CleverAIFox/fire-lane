@@ -89,6 +89,11 @@ SHEET_5179 = {
 }
 
 
+# 도엽별 교정 이동(m · 영상이 벡터보다 간 양 — DECISIONS 543-5 · 등록 도구). 원점을 이만큼 되돌린다(PLAN 10).
+# 047 은 신뢰 창이 18개뿐이라 +-0.3m 가 남는다.
+SHEET_SHIFT_5186 = {"037": (-1.03, 0.90), "038": (0.48, 0.08), "047": (-0.68, 1.82), "048": (-0.32, 1.54)}
+
+
 def sheet_origin_5186(key: str, w_px: int, h_px: int) -> Affine:
     """도엽 bbox(5179)를 5186 으로 옮겨 정사영상 transform 을 만든다.
 
@@ -101,7 +106,8 @@ def sheet_origin_5186(key: str, w_px: int, h_px: int) -> Affine:
     sheet_w, sheet_h = box[2] - box[0], box[3] - box[1]
     img_w, img_h = w_px * GSD, h_px * GSD
     pad_x, pad_y = (img_w - sheet_w) / 2, (img_h - sheet_h) / 2
-    return Affine(GSD, 0, box[0] - pad_x, 0, -GSD, box[3] + pad_y)
+    dx, dy = SHEET_SHIFT_5186.get(key, (0.0, 0.0))
+    return Affine(GSD, 0, box[0] - pad_x - dx, 0, -GSD, box[3] + pad_y - dy)
 
 
 def _ortho_tifs() -> list[str]:
